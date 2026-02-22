@@ -3,6 +3,7 @@
 #include "Editor/Interfaces/Workspace/AssetsExplorerInterface.h"
 
 #include "Loopie/Core/Log.h"
+#include "Loopie/Core/Application.h"
 #include "Loopie/Math/MathTypes.h"
 
 #include "Loopie/Components/Transform.h"
@@ -111,6 +112,14 @@ namespace Loopie {
 		if (ImGui::InputText("Name", nameBuffer, sizeof(nameBuffer))) {
 			entity->SetName(std::string(nameBuffer));
 		}
+
+		ImGui::SameLine();
+
+		if (ImGui::Button("UUID"))
+		{
+			Application::GetInstance().m_clipboard.Copy(entity->GetUUID().Get());
+			Log::Warn("{0}", Application::GetInstance().m_clipboard.Paste());
+		}
 		
 		ImGui::Separator();
 		
@@ -125,6 +134,9 @@ namespace Loopie {
 
 		bool open = ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen);
 		bool modified = false;
+		
+		ComponentContextMenu(transform, false);
+
 		if (open) {
 			vec3 position = transform->GetLocalPosition();
 			vec3 rotation = transform->GetLocalEulerAngles();
@@ -155,7 +167,7 @@ namespace Loopie {
 
 		bool open = ImGui::CollapsingHeader("Camera");
 
-		if (RemoveComponent(camera)) {
+		if (ComponentContextMenu(camera)) {
 			ImGui::PopID();
 			return;
 		}
@@ -189,14 +201,63 @@ namespace Loopie {
 
 		bool open = ImGui::CollapsingHeader("Mesh Renderer");
 
-		if (RemoveComponent(meshRenderer)) {
+		if (ComponentContextMenu(meshRenderer)) {
 			ImGui::PopID();
 			return;
 		}
 
 		if (open) {
 			auto mesh = meshRenderer->GetMesh();
+			int prevMeshIndex = 0;
+			int meshIndex = 0;
+			if (mesh)
+			{
+				prevMeshIndex = mesh->GetMeshIndex();
+				meshIndex = prevMeshIndex;
+			}
 			ImGui::Text("Mesh: %s", mesh ? "Assigned" : "None");
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(80);
+			ImGui::InputInt("", &meshIndex,1,0);
+			if (meshIndex < 0)
+				meshIndex = 0;
+			ImGui::SameLine();
+			if (meshIndex != prevMeshIndex && mesh)
+			{
+				Metadata* data = AssetRegistry::GetMetadata(mesh->GetUUID());
+				if (data && data->Type == ResourceType::MESH)
+				{
+					int maxIndex = data->CachesPath.size();
+					if (meshIndex >= maxIndex)
+						meshIndex = maxIndex - 1;
+					std::shared_ptr<Mesh> newMesh = ResourceManager::GetMesh(*data, meshIndex);
+					if (newMesh)
+					{
+						mesh = newMesh;
+						meshRenderer->SetMesh(mesh);
+					}
+				}
+			}
+			if (ImGui::Button("Paste"))
+			{
+				std::string uuid = Application::GetInstance().m_clipboard.Paste();
+				if (UUID::IsValid(uuid))
+				{
+					Metadata* data = AssetRegistry::GetMetadata(UUID(uuid));
+					if (data && data->Type == ResourceType::MESH)
+					{
+						int maxIndex = data->CachesPath.size();
+						if (meshIndex >= maxIndex)
+							meshIndex = maxIndex - 1;
+						std::shared_ptr<Mesh> newMesh = ResourceManager::GetMesh(*data, meshIndex);
+						if (newMesh)
+						{
+							mesh = newMesh;
+							meshRenderer->SetMesh(mesh);
+						}
+					}
+				}
+			}
 			if (!mesh) {
 				ImGui::PopID();
 				return;
@@ -226,8 +287,6 @@ namespace Loopie {
 			DrawMaterial(material);
 			
 		}
-
-		RemoveComponent(meshRenderer);	
 		ImGui::PopID();
 	}
 
@@ -237,7 +296,7 @@ namespace Loopie {
 
 		bool open = ImGui::CollapsingHeader(scriptClass->GetClassName().c_str());
 
-		if (RemoveComponent(scriptClass)) {
+		if (ComponentContextMenu(scriptClass)) {
 			ImGui::PopID();
 			return;
 		}
@@ -386,23 +445,6 @@ namespace Loopie {
 			
 
 			ImGui::EndCombo();
-		}
-	}
-
-	bool InspectorInterface::RemoveComponent(Component* component)
-	{
-		if (!component)
-			return false;
-
-		if (ImGui::BeginPopupContextItem())
-		{
-			if (ImGui::MenuItem("Remove Component"))
-			{
-				component->GetOwner()->RemoveComponent(component);
-				ImGui::EndPopup();
-				return true;
-			}
-			ImGui::EndPopup();
 		}
 	}
 
@@ -580,5 +622,25 @@ namespace Loopie {
 		else if (id == OnEntityOrFileNotification::OnFileSelect) {
 			m_mode = InspectorMode::ImportMode;
 		}
+	}
+
+	bool InspectorInterface::ComponentContextMenu(Component* component, bool canRemove)
+	{
+		if (ImGui::BeginPopupContextItem("Component Options"))
+		{
+			if (ImGui::MenuItem("Copy UUID"))
+			{
+				Application::GetInstance().m_clipboard.Copy(component->GetUUID().Get());
+				Log::Warn("{0}", Application::GetInstance().m_clipboard.Paste());
+			}
+			if (canRemove && ImGui::MenuItem("Remove Component"))
+			{
+				component->GetOwner()->RemoveComponent(component);
+				ImGui::EndPopup();
+				return true;
+			}
+			ImGui::EndPopup();
+		}
+		return false;
 	}
 }
