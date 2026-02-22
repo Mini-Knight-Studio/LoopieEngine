@@ -9,6 +9,11 @@
 #include "Loopie/Render/Gizmo.h"
 
 
+// *** REMINDER: No passive Octree Rebuild *** - PSS 22/02/2026
+// If no insert / remove / rebuilds are done, the octree will remain static.
+// Changes on the octree only occur when the octree receives an insert or remove.
+// If this has performance implications, create a timer so that the octree rebuilds
+// after certain seconds. Otherwise, we can rebuild the octree based on a diff. criteria.
 namespace Loopie
 {
 	// *** World Bounds as a constructor *** - PSS 14/12/2025
@@ -16,6 +21,7 @@ namespace Loopie
 	// Keep in mind - it should be best to avoid the exact center, otherwise
 	// if we place things at height 0, it will collide with all quadrants.
 	Octree::Octree(const AABB& rootBounds)
+		: m_rootBounds(rootBounds)
 	{
 		m_rootNode = std::make_unique<OctreeNode>(rootBounds);
 	}
@@ -32,31 +38,50 @@ namespace Loopie
 	//    position in space.
 	// 4. If it reaches maximum depth, stop subdividing and add the object in
 	//    the list of entities of the node even we are over max entities (8) capacity.
-	void Octree::Insert(std::shared_ptr<Entity> entity)
+	void Octree::Insert(const std::shared_ptr<Entity>& entity)
 	{
 		AABB entityAABB = GetEntityAABB(entity);
 		InsertRecursively(m_rootNode.get(), entity, entityAABB, 0);
 	}
 
-	void Octree::Remove(std::shared_ptr<Entity> entity)
+	// *** Remove via entity-to-node map *** - PSS 22/02/2026
+	// Uses the m_entityToNode lookup map to find the node directly,
+	// avoiding the old bug where traversal with the entity's current AABB
+	// would fail if the entity had moved since insertion.
+	void Octree::Remove(const std::shared_ptr<Entity>& entity)
 	{
-		AABB entityAABB = GetEntityAABB(entity);
-		RemoveRecursively(m_rootNode.get(), entity, entityAABB);
+		auto it = m_entityToNode.find(entity.get());
+		if (it != m_entityToNode.end())
+		{
+			OctreeNode* node = it->second;
+			node->m_entities.erase(entity);
+			m_entityToNode.erase(it);
+		}
+		else
+		{
+			Log::Warn("Octree::Remove - Entity not found in entity-to-node map.");
+		}
 	}
 
 	// This can be optimized if it's too slow
-	void Octree::Update(std::shared_ptr<Entity> entity)
+	void Octree::Update(const std::shared_ptr<Entity>& entity)
 	{
 		Remove(entity);
 		Insert(entity);
 	}
 
+	// *** Clear now recreates the root node *** - PSS 22/02/2026
+	// Previously Clear() would set m_rootNode to null, leaving the tree
+	// in an unusable state. Now it recreates the root with the original bounds.
 	void Octree::Clear()
 	{
 		if (m_rootNode)
 		{
 			m_rootNode.reset();
 		}
+		m_entityToNode.clear();
+		m_rootNode = std::make_unique<OctreeNode>(m_rootBounds);
+		m_rootNode->m_isLeaf = true;
 	}
 
 	// *** How Rebuild works *** - PSS 14/12/2025
@@ -67,15 +92,10 @@ namespace Loopie
 	// for example after X frames, or if an internal node holds too many entities.
 	void Octree::Rebuild()
 	{
-		AABB rootBounds = m_rootNode->m_aabb;
-		//std::vector<std::shared_ptr<Entity>> allEntities;
 		std::unordered_set<std::shared_ptr<Entity>> allEntities;
 		CollectAllEntitiesFromNode(m_rootNode.get(), allEntities);
 
 		Clear();
-
-		m_rootNode = std::make_unique<OctreeNode>(rootBounds);
-		m_rootNode->m_isLeaf = true;
 
 		for (auto& entity : allEntities)
 		{
@@ -113,13 +133,13 @@ namespace Loopie
 		Log::Info("Empty Leaves = {0}", statistics.emptyNodes);
 		Log::Info("Overfilled Leaves = {0}", statistics.overfilledNodes);
 	}
-	
+
 	void Octree::DebugPrintOctreeHierarchy()
 	{
 		Log::Info("==========================");
 		Log::Info("Printing Octree Hierarchy");
 		Log::Info("==========================");
-		
+
 		DebugPrintOctreeHierarchyRecursively(m_rootNode.get(), 0);
 	}
 
@@ -140,26 +160,26 @@ namespace Loopie
 	// I haven't programmed the rayhit to return any meaningful value at the moment or to do anything with it
 	// I will have to check on it at some point
 	void Octree::CollectIntersectingObjectsWithRay(vec3 rayOrigin, vec3 rayDirection,
-												   std::unordered_set<std::shared_ptr<Entity>>& entities)
+		std::unordered_set<std::shared_ptr<Entity>>& entities)
 	{
 		vec3 rayHit;
 		CollectIntersectingObjectsWithRayRecursively(m_rootNode.get(), rayOrigin, rayDirection, rayHit, entities);
 	}
 
 	void Octree::CollectIntersectingObjectsWithAABB(const AABB& queryBox,
-													std::unordered_set<std::shared_ptr<Entity>>& entities)
+		std::unordered_set<std::shared_ptr<Entity>>& entities)
 	{
 		CollectIntersectingObjectsWithAABBRecursively(m_rootNode.get(), queryBox, entities);
 	}
 
 	void Octree::CollectIntersectingObjectsWithSphere(const vec3& center, const float& radius,
-													  std::unordered_set<std::shared_ptr<Entity>>& entities)
+		std::unordered_set<std::shared_ptr<Entity>>& entities)
 	{
 		CollectIntersectingObjectsWithSphereRecursively(m_rootNode.get(), center, radius, entities);
 	}
 
-	void Octree::CollectVisibleEntitiesFrustum(const Frustum& frustum, 
-											   std::unordered_set<std::shared_ptr<Entity>>& visibleEntities)
+	void Octree::CollectVisibleEntitiesFrustum(const Frustum& frustum,
+		std::unordered_set<std::shared_ptr<Entity>>& visibleEntities)
 	{
 		CollectVisibleEntitiesFrustumRecursively(m_rootNode.get(), frustum, visibleEntities);
 	}
@@ -195,12 +215,12 @@ namespace Loopie
 		{
 			vec3 entityPosition = entity->GetTransform()->GetPosition();
 			AABB aabb(entityPosition);
-			
+
 			return aabb;
 		}
 	}
-	
-	void Octree::InsertRecursively(OctreeNode* node, std::shared_ptr<Entity> entity, const AABB& entityAABB, int depth)
+
+	void Octree::InsertRecursively(OctreeNode* node, const std::shared_ptr<Entity>& entity, const AABB& entityAABB, int depth)
 	{
 		if (!node)
 		{
@@ -213,6 +233,7 @@ namespace Loopie
 		if (node->m_isLeaf)
 		{
 			node->m_entities.insert(entity);
+			m_entityToNode[entity.get()] = node;
 
 			if (node->m_entities.size() > MAX_ENTITIES_PER_NODE && depth < MAXIMUM_DEPTH)
 			{
@@ -226,7 +247,7 @@ namespace Loopie
 		int totalNodesIntersecting = 0;
 		int nodeNumberFound = -1;
 
-		for (int i = 0; i < MAX_ENTITIES_PER_NODE; ++i)
+		for (int i = 0; i < NUM_CHILDREN; ++i)
 		{
 			if (node->m_children[i] && node->m_children[i]->m_aabb.Intersects(entityAABB))
 			{
@@ -234,6 +255,7 @@ namespace Loopie
 				if (totalNodesIntersecting > 1)
 				{
 					node->m_entities.insert(entity);
+					m_entityToNode[entity.get()] = node;
 					return;
 				}
 				nodeNumberFound = i;
@@ -250,16 +272,20 @@ namespace Loopie
 		{
 			// No children intersect - store at this node (edge case)
 			node->m_entities.insert(entity);
+			m_entityToNode[entity.get()] = node;
 		}
 	}
 
-	void Octree::RemoveRecursively(OctreeNode* node, std::shared_ptr<Entity> entity, const AABB& entityAABB)
+	// *** Remove is now handled via m_entityToNode map *** - PSS 22/02/2026
+	// This recursive version is kept as a fallback but is no longer the primary
+	// removal path. The public Remove() uses the map for O(1) lookup.
+	void Octree::RemoveRecursively(OctreeNode* node, const std::shared_ptr<Entity>& entity, const AABB& entityAABB)
 	{
 		if (!node)
 		{
 			return;
 		}
-		
+
 		// Early exit - if the entities' AABB doesn't intersect with this node's AABB, skip it and its children.
 		if (!entityAABB.Intersects(node->m_aabb))
 		{
@@ -272,33 +298,32 @@ namespace Loopie
 		if (foundEntity)
 		{
 			node->m_entities.erase(entity);
+			m_entityToNode.erase(entity.get());
 			return;
 		}
 
-		int totalNodesIntersecting = 0;
-		int nodeNumberFound = -1;
+		if (node->m_isLeaf)
+		{
+			return;
+		}
 
-		for (int i = 0; i < MAX_ENTITIES_PER_NODE; ++i)
+		// Search all intersecting children (not just one), because the entity
+		// could have been stored at any child that intersected its AABB at insertion time.
+		for (int i = 0; i < NUM_CHILDREN; ++i)
 		{
 			if (node->m_children[i] && node->m_children[i]->m_aabb.Intersects(entityAABB))
 			{
-				totalNodesIntersecting++;
-				nodeNumberFound = i;
+				RemoveRecursively(node->m_children[i].get(), entity, entityAABB);
 			}
-		}
-
-		if (totalNodesIntersecting == 1)
-		{
-			RemoveRecursively(node->m_children[nodeNumberFound].get(), entity, entityAABB);
 		}
 	}
 
 	void Octree::Subdivide(OctreeNode* node)
 	{
 		// Subdivide node into 8 different nodes
-		std::array<AABB, MAX_ENTITIES_PER_NODE> childAABBs = ComputeChildAABBs(node->m_aabb);
+		std::array<AABB, NUM_CHILDREN> childAABBs = ComputeChildAABBs(node->m_aabb);
 
-		for (int i = 0; i < MAX_ENTITIES_PER_NODE; ++i)
+		for (int i = 0; i < NUM_CHILDREN; ++i)
 		{
 			node->m_children[i] = std::make_unique<OctreeNode>(childAABBs[i]);
 			node->m_children[i]->m_parent = node;
@@ -327,7 +352,7 @@ namespace Loopie
 			int totalNodesIntersecting = 0;
 			int nodeNumberFound = -1;
 
-			for (int i = 0; i < MAX_ENTITIES_PER_NODE; ++i)
+			for (int i = 0; i < NUM_CHILDREN; ++i)
 			{
 				if (node->m_children[i] && node->m_children[i]->m_aabb.Intersects(entityAABB))
 				{
@@ -343,20 +368,23 @@ namespace Loopie
 			if (totalNodesIntersecting > 1)
 			{
 				node->m_entities.insert(entity);
+				m_entityToNode[entity.get()] = node;
 			}
 			else if (totalNodesIntersecting == 1)
 			{
 				node->m_children[nodeNumberFound]->m_entities.insert(entity);
+				m_entityToNode[entity.get()] = node->m_children[nodeNumberFound].get();
 			}
 			else
 			{
 				// Intersects with no children (edge case) -> Parent keeps entity
 				node->m_entities.insert(entity);
+				m_entityToNode[entity.get()] = node;
 			}
 		}
 
 		// After redistribution, check each child if it needs further subdivision
-		for (int i = 0; i < MAX_ENTITIES_PER_NODE; ++i)
+		for (int i = 0; i < NUM_CHILDREN; ++i)
 		{
 			if (node->m_children[i] && node->m_children[i]->m_entities.size() > MAX_ENTITIES_PER_NODE
 				&& depth + 1 < MAXIMUM_DEPTH)
@@ -367,14 +395,14 @@ namespace Loopie
 		}
 	}
 
-	std::array<AABB, MAX_ENTITIES_PER_NODE> Octree::ComputeChildAABBs(const AABB& parentAABB) const
+	std::array<AABB, NUM_CHILDREN> Octree::ComputeChildAABBs(const AABB& parentAABB) const
 	{
-		std::array<AABB, MAX_ENTITIES_PER_NODE> children;
+		std::array<AABB, NUM_CHILDREN> children;
 		vec3 center = parentAABB.GetCenter();
 		vec3 min = parentAABB.MinPoint;
 		vec3 max = parentAABB.MaxPoint;
 
-		for (int i = 0; i < MAX_ENTITIES_PER_NODE; ++i)
+		for (int i = 0; i < NUM_CHILDREN; ++i)
 		{
 			// This generates all octants by using bit-wise operations
 			vec3 childMin, childMax;
@@ -410,8 +438,8 @@ namespace Loopie
 			Gizmo::DrawCube(node->m_aabb.MinPoint, node->m_aabb.MaxPoint, color);
 		}
 
-		for (int i = 0; i < MAX_ENTITIES_PER_NODE; ++i)
-		{			
+		for (int i = 0; i < NUM_CHILDREN; ++i)
+		{
 			if (node->m_children[i])
 			{
 				DebugDrawRecursively(node->m_children[i].get(), color, depth + 1);
@@ -432,7 +460,7 @@ namespace Loopie
 			return;
 		}
 
-		for (int i = 0; i < MAX_ENTITIES_PER_NODE; ++i)
+		for (int i = 0; i < NUM_CHILDREN; ++i)
 		{
 			DebugPrintOctreeHierarchyRecursively(node->m_children[i].get(), depth + 1);
 		}
@@ -472,7 +500,7 @@ namespace Loopie
 		{
 			stats.internalNodes++;
 
-			for (int i = 0; i < MAX_ENTITIES_PER_NODE; ++i)
+			for (int i = 0; i < NUM_CHILDREN; ++i)
 			{
 				if (node->m_children[i])
 				{
@@ -496,7 +524,7 @@ namespace Loopie
 
 		if (!node->m_isLeaf)
 		{
-			for (int i = 0; i < MAX_ENTITIES_PER_NODE; ++i)
+			for (int i = 0; i < NUM_CHILDREN; ++i)
 			{
 				if (node->m_children[i])
 				{
@@ -507,7 +535,7 @@ namespace Loopie
 	}
 
 	void Octree::CollectIntersectingObjectsWithRayRecursively(OctreeNode* node, vec3 rayOrigin, vec3 rayDirection, vec3& rayHit,
-															  std::unordered_set<std::shared_ptr<Entity>>& entities)
+		std::unordered_set<std::shared_ptr<Entity>>& entities)
 	{
 		if (!node)
 		{
@@ -533,7 +561,7 @@ namespace Loopie
 			return;
 		}
 
-		for (int i = 0; i < MAX_ENTITIES_PER_NODE; ++i)
+		for (int i = 0; i < NUM_CHILDREN; ++i)
 		{
 			if (node->m_children[i])
 			{
@@ -543,7 +571,7 @@ namespace Loopie
 	}
 
 	void Octree::CollectIntersectingObjectsWithAABBRecursively(OctreeNode* node, const AABB& queryBox,
-																std::unordered_set<std::shared_ptr<Entity>>& entities)
+		std::unordered_set<std::shared_ptr<Entity>>& entities)
 	{
 		if (!node)
 		{
@@ -569,7 +597,7 @@ namespace Loopie
 			return;
 		}
 
-		for (int i = 0; i < MAX_ENTITIES_PER_NODE; ++i)
+		for (int i = 0; i < NUM_CHILDREN; ++i)
 		{
 			if (node->m_children[i])
 			{
@@ -579,7 +607,7 @@ namespace Loopie
 	}
 
 	void Octree::CollectIntersectingObjectsWithSphereRecursively(OctreeNode* node, const vec3& center, const float& radius,
-																 std::unordered_set<std::shared_ptr<Entity>>& entities)
+		std::unordered_set<std::shared_ptr<Entity>>& entities)
 	{
 		if (!node)
 		{
@@ -605,7 +633,7 @@ namespace Loopie
 			return;
 		}
 
-		for (int i = 0; i < MAX_ENTITIES_PER_NODE; ++i)
+		for (int i = 0; i < NUM_CHILDREN; ++i)
 		{
 			if (node->m_children[i])
 			{
@@ -615,7 +643,7 @@ namespace Loopie
 	}
 
 	void Octree::CollectVisibleEntitiesFrustumRecursively(OctreeNode* node, const Frustum& frustum,
-														  std::unordered_set<std::shared_ptr<Entity>>& visibleEntities)
+		std::unordered_set<std::shared_ptr<Entity>>& visibleEntities)
 	{
 		if (!node)
 		{
@@ -641,7 +669,7 @@ namespace Loopie
 			return;
 		}
 
-		for (int i = 0; i < MAX_ENTITIES_PER_NODE; ++i)
+		for (int i = 0; i < NUM_CHILDREN; ++i)
 		{
 			if (node->m_children[i])
 			{
