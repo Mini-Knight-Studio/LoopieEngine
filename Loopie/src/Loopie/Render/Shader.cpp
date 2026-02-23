@@ -115,6 +115,18 @@ namespace Loopie {
 		glUniformMatrix4fv(location, 1, GL_FALSE, &matrix[0][0]);
 	}
 
+	void Shader::SetUniformMat4Array(const std::string& name, const Loopie::matrix4* matrices, int count)
+	{
+		if (!CheckIfShaderIsBoundAndWarn()) return;
+		GLint location = GetUniformLocation(name);
+		if (location == -1)
+		{
+			Log::Warn("Uniform '{0}' not found in shader.", name);
+			return;
+		}
+		glUniformMatrix4fv(location, count, GL_FALSE, &matrices[0][0][0]);
+	}
+
 	void Shader::SetUniformVec2(const std::string& name, const Loopie::vec2& vector)
 	{
 		if (!CheckIfShaderIsBoundAndWarn()) return;

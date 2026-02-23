@@ -228,16 +228,22 @@ namespace Loopie
 			for (size_t i = 0; i < renderers.size(); i++)
 			{
 				MeshRenderer* renderer = renderers[i];
+				const MeshData& data = renderer->GetMesh()->GetData();
+
+				std::vector<matrix4> bones = {};
+				if (data.HasBones) {
+					bones = std::vector<matrix4>(data.Skeleton.size(), matrix4(1.0f));
+				}
 
 				if (!Renderer::IsGizmoActive() || entity != selectedEntity) {
-					Renderer::AddRenderItem(renderer->GetMesh()->GetVAO(), renderer->GetMaterial(), entity->GetTransform());
+					Renderer::AddRenderItem(renderer->GetMesh()->GetVAO(), renderer->GetMaterial(), entity->GetTransform(), bones);
 				}
 				else {
 					Renderer::SetStencilFunc(Renderer::StencilFunc::ALWAYS, 1, 0xFF);
 					Renderer::SetStencilOp(Renderer::StencilOp::KEEP, Renderer::StencilOp::KEEP, Renderer::StencilOp::REPLACE);
 					Renderer::SetStencilMask(0xFF);
 
-					Renderer::FlushRenderItem(renderer->GetMesh()->GetVAO(), renderer->GetMaterial(), entity->GetTransform());
+					Renderer::FlushRenderItem(renderer->GetMesh()->GetVAO(), renderer->GetMaterial(), entity->GetTransform(), bones);
 
 					Renderer::SetStencilFunc(Renderer::StencilFunc::NOTEQUAL, 1, 0xFF);
 					Renderer::SetStencilMask(0x00);

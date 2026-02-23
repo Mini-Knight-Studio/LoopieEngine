@@ -7,6 +7,10 @@ layout (location = 2) in vec3 a_Normal;
 layout (location = 3) in vec3 a_Tangent;
 layout (location = 4) in vec4 a_Color;
 
+// GPU Skinning
+layout (location = 5) in ivec4 a_BoneIDs;
+layout (location = 6) in vec4 a_Weights;
+
 layout (std140, binding = 0) uniform Matrices
 {
     mat4 lp_Projection;
@@ -14,16 +18,35 @@ layout (std140, binding = 0) uniform Matrices
 };
 
 uniform mat4 lp_Transform;
+uniform mat4 lp_Bones[100]; 
 ///
+
+uniform bool u_SkinnedMode = false;
 
 out vec2 v_TexCoord;
 out vec3 v_Normal;
 
+
 void main()
 {
-    gl_Position = lp_Projection * lp_View* lp_Transform * vec4(a_Position, 1.0);
+    mat4 skinMatrix = mat4(1.0);
+
+    if (u_SkinnedMode)
+    {
+
+        skinMatrix = 
+              a_Weights.x * lp_Bones[a_BoneIDs.x] +
+              a_Weights.y * lp_Bones[a_BoneIDs.y] +
+              a_Weights.z * lp_Bones[a_BoneIDs.z] +
+              a_Weights.w * lp_Bones[a_BoneIDs.w];
+    }
+
+    vec4 skinnedPos = skinMatrix * vec4(a_Position, 1.0);
+    vec3 skinnedNormal = mat3(skinMatrix) * a_Normal;
+
+    gl_Position = lp_Projection * lp_View * lp_Transform * skinnedPos;
     v_TexCoord = a_TexCoord;
-    v_Normal = mat3(lp_Transform) * a_Normal;
+    v_Normal = normalize(mat3(lp_Transform) * skinnedNormal);
 }
 
 
@@ -36,28 +59,13 @@ out vec4 FragColor;
 uniform sampler2D u_Albedo;
 uniform vec4 u_Color = vec4(1.0);
 
-uniform bool u_UseChecker = false;
-uniform float u_CheckerScale = 8;
-uniform vec4 u_CheckerColor1 = vec4(1.0);
-uniform vec4 u_CheckerColor2 = vec4(0.0,0.0,0.0,1.0);
-
 void main()
 {
     vec4 texColor;
 
-    if (u_UseChecker)
-    {
-        vec2 uv = v_TexCoord * u_CheckerScale;
-        float checker = mod(floor(uv.x) + floor(uv.y), 2.0);
-        vec4 col = mix(u_CheckerColor1, u_CheckerColor2, checker);
-        texColor = col;
-    }
-    else
-    {
-        texColor = texture(u_Albedo, v_TexCoord);
+    texColor = texture(u_Albedo, v_TexCoord);
         if (texColor.a < 0.5f)
             discard;
-    }
 
     vec3 lightDir = normalize(vec3(0.3, 0.7, 0.5));
     vec3 normal = normalize(v_Normal);

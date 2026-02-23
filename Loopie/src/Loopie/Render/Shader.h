@@ -64,6 +64,7 @@ namespace Loopie {
 		void SetUniformMat2(const std::string& name, const Loopie::matrix2& matrix);
 		void SetUniformMat3(const std::string& name, const Loopie::matrix3& matrix);
 		void SetUniformMat4(const std::string& name, const Loopie::matrix4& matrix);
+		void SetUniformMat4Array(const std::string& name, const Loopie::matrix4* matrices, int count);
 		void SetUniformVec2(const std::string& name, const Loopie::vec2& vector);
 		void SetUniformVec3(const std::string& name, const Loopie::vec3& vector);
 		void SetUniformVec4(const std::string& name, const Loopie::vec4& vector);

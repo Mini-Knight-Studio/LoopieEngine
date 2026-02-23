@@ -203,6 +203,7 @@ namespace Loopie {
 			}
 			ImGui::Text("Mesh Resource Count: %u", mesh->GetReferenceCount());
 			ImGui::Text("Mesh Vertices: %d", mesh->GetData().VerticesAmount);
+			ImGui::Text("Has Bones: %s", mesh->GetData().HasBones ? "True" : "False");
 
 			ImGui::Separator();
 

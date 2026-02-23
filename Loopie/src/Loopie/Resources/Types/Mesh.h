@@ -13,13 +13,42 @@
 
 namespace Loopie {
 
+	constexpr int MAX_BONE_INFLUENCE = 4;
+
+
+	struct Bone
+	{
+		std::string Name;
+		int ParentIndex = -1;
+		matrix4 OffsetMatrix = matrix4(1);
+	};
+
+	struct VertexBoneData
+	{
+		int IDs[MAX_BONE_INFLUENCE] = { 0,0,0,0 };
+		float Weights[MAX_BONE_INFLUENCE] = { 0,0,0,0 };
+
+		void AddBoneData(int id, float weight)
+		{
+			for (int i = 0; i < MAX_BONE_INFLUENCE; i++)
+			{
+				if (Weights[i] == 0.0f)
+				{
+					IDs[i] = id;
+					Weights[i] = weight;
+					return;
+				}
+			}
+		}
+	};
+
 	struct MeshData {
 		std::string Name;
 
 		AABB BoundingBox;
 		vec3 Position = vec3(0); /// Still NotWorking
 		quaternion Rotation = quaternion(1,0,0,0); /// Still NotWorking
-		vec3 Scale = vec3(0); /// Still NotWorking
+		vec3 Scale = vec3(1); /// Still NotWorking
 
 		unsigned int VerticesAmount = 0;
 		unsigned int VertexElements = 0;
@@ -30,9 +59,13 @@ namespace Loopie {
 		bool HasNormal = false;
 		bool HasTangent = false;
 		bool HasColor = false;
+		bool HasBones = false;
 
 		std::vector<float> Vertices;
 		std::vector<unsigned int> Indices;
+
+		std::vector<VertexBoneData> Bones;
+		std::vector<Bone> Skeleton;
 
 	};
 	
@@ -56,6 +89,9 @@ namespace Loopie {
 		std::shared_ptr<VertexArray> m_vao;
 		std::shared_ptr<VertexBuffer> m_vbo;
 		std::shared_ptr<IndexBuffer> m_ebo;
+
+		std::shared_ptr<VertexBuffer> m_boneIDBuffer;
+
 
 		unsigned int m_meshIndex = 0;
 

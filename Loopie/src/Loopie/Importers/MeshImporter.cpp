@@ -20,7 +20,10 @@ namespace Loopie {
 
 
 		Assimp::Importer importer;
-		const aiScene* scene = importer.ReadFile(filepath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_GenBoundingBoxes);
+		const aiScene* scene = importer.ReadFile(filepath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_GenBoundingBoxes |
+			aiProcess_OptimizeMeshes |
+			aiProcess_JoinIdenticalVertices |
+			aiProcess_ImproveCacheLocality);
 
 		if (!scene || !scene->mRootNode) {
 			Log::Error("Assimp Error: {0}", importer.GetErrorString());
@@ -37,27 +40,18 @@ namespace Loopie {
 		Log::Trace("Mesh Imported -> {0}", filepath);
 	}
 
-	void MeshImporter::LoadModel(const std::string& path ,Mesh& mesh)
+	void MeshImporter::LoadModel(const std::string& path, Mesh& mesh)
 	{
 		Project project = Application::GetInstance().m_activeProject;
 		std::filesystem::path filepath = project.GetChachePath() / path;
+
 		if (!std::filesystem::exists(filepath))
 			return;
 
-
-		/// READ
 		std::ifstream file(filepath, std::ios::binary);
-		if (!file) {
+		if (!file)
+		{
 			Log::Warn("Error opening .mesh file -> {0}", filepath.string());
-			return;
-		}
-
-		file.seekg(0, std::ios::end);
-		std::streamsize size = file.tellg();
-		file.seekg(0, std::ios::beg);
-
-		if (size <= 0) {
-			Log::Warn("Error reading .mesh file -> {0}", filepath.string());
 			return;
 		}
 
@@ -71,35 +65,93 @@ namespace Loopie {
 		file.read(reinterpret_cast<char*>(&data.BoundingBox.MinPoint), sizeof(data.BoundingBox.MinPoint));
 		file.read(reinterpret_cast<char*>(&data.BoundingBox.MaxPoint), sizeof(data.BoundingBox.MaxPoint));
 
-		file.read(reinterpret_cast<char*>(&data.Position), sizeof(data.Position)); /// Still NotWorking
-		file.read(reinterpret_cast<char*>(&data.Rotation), sizeof(data.Rotation)); /// Still NotWorking
-		file.read(reinterpret_cast<char*>(&data.Scale), sizeof(data.Scale)); /// Still NotWorking
+		file.read(reinterpret_cast<char*>(&data.Position), sizeof(data.Position));
+		file.read(reinterpret_cast<char*>(&data.Rotation), sizeof(data.Rotation));
+		file.read(reinterpret_cast<char*>(&data.Scale), sizeof(data.Scale));
 
-		file.read(reinterpret_cast<char*>(&data.VerticesAmount), sizeof data.VerticesAmount);
-		file.read(reinterpret_cast<char*>(&data.VertexElements), sizeof data.VertexElements);
-		file.read(reinterpret_cast<char*>(&data.IndicesAmount), sizeof data.IndicesAmount);
+		file.read(reinterpret_cast<char*>(&data.VerticesAmount), sizeof(data.VerticesAmount));
+		file.read(reinterpret_cast<char*>(&data.VertexElements), sizeof(data.VertexElements));
+		file.read(reinterpret_cast<char*>(&data.IndicesAmount), sizeof(data.IndicesAmount));
 
-		file.read(reinterpret_cast<char*>(&data.HasPosition), sizeof data.HasPosition);
-		file.read(reinterpret_cast<char*>(&data.HasNormal), sizeof data.HasNormal);
-		file.read(reinterpret_cast<char*>(&data.HasTexCoord), sizeof data.HasTexCoord);
-		file.read(reinterpret_cast<char*>(&data.HasTangent), sizeof data.HasTangent);
-		file.read(reinterpret_cast<char*>(&data.HasColor), sizeof data.HasColor);
+		file.read(reinterpret_cast<char*>(&data.HasPosition), sizeof(data.HasPosition));
+		file.read(reinterpret_cast<char*>(&data.HasNormal), sizeof(data.HasNormal));
+		file.read(reinterpret_cast<char*>(&data.HasTexCoord), sizeof(data.HasTexCoord));
+		file.read(reinterpret_cast<char*>(&data.HasTangent), sizeof(data.HasTangent));
+		file.read(reinterpret_cast<char*>(&data.HasColor), sizeof(data.HasColor));
 
-		data.Vertices.clear();
-		data.Vertices = std::vector<float>(data.VerticesAmount * data.VertexElements);
+		file.read(reinterpret_cast<char*>(&data.HasBones), sizeof(data.HasBones));
+		
+		if (data.HasBones)
+		{
+			unsigned int skeletonSize;
+			file.read(reinterpret_cast<char*>(&skeletonSize), sizeof(skeletonSize));
 
-		for (unsigned int i = 0; i < data.VerticesAmount * data.VertexElements; ++i) {
-			file.read(reinterpret_cast<char*>(&data.Vertices[i]), sizeof data.Vertices[i]);
+			data.Skeleton.resize(skeletonSize);
+
+			for (unsigned int i = 0; i < skeletonSize; ++i)
+			{
+				unsigned int nameLength;
+				file.read(reinterpret_cast<char*>(&nameLength), sizeof(nameLength));
+
+				data.Skeleton[i].Name.resize(nameLength);
+				file.read(data.Skeleton[i].Name.data(), nameLength);
+
+				file.read(reinterpret_cast<char*>(&data.Skeleton[i].ParentIndex), sizeof(int));
+				file.read(reinterpret_cast<char*>(&data.Skeleton[i].OffsetMatrix), sizeof(matrix4));
+			}
 		}
-		data.Indices.clear();
-		data.Indices = std::vector<unsigned int>(data.IndicesAmount);
-		for (unsigned int i = 0; i < data.IndicesAmount; ++i) {
-			file.read(reinterpret_cast<char*>(&data.Indices[i]), sizeof data.Indices[i]);
+
+		data.Vertices.resize(data.VerticesAmount * data.VertexElements);
+
+		if (data.HasBones)
+			data.Bones.resize(data.VerticesAmount);
+
+		unsigned int floatIndex = 0;
+
+		for (unsigned int v = 0; v < data.VerticesAmount; ++v)
+		{
+			for (unsigned int e = 0; e < data.VertexElements; ++e)
+			{
+				file.read(reinterpret_cast<char*>(&data.Vertices[floatIndex++]), sizeof(float));
+			}
+
+			if (data.HasBones)
+			{
+				file.read(reinterpret_cast<char*>(data.Bones[v].IDs), sizeof(int) * 4);
+				file.read(reinterpret_cast<char*>(data.Bones[v].Weights), sizeof(float) * 4);
+			}
 		}
+
+		data.Indices.resize(data.IndicesAmount);
+		for (unsigned int i = 0; i < data.IndicesAmount; ++i)
+			file.read(reinterpret_cast<char*>(&data.Indices[i]), sizeof(unsigned int));
+
 		file.close();
-		///
 
-		mesh.m_vbo = std::make_shared<VertexBuffer>(data.Vertices.data(), (unsigned int)(sizeof(float) * data.VerticesAmount * data.VertexElements));
+		if (data.HasBones)
+		{
+			std::vector<float> interleaved;
+			interleaved.reserve(data.VerticesAmount * (data.VertexElements + 8));
+
+			unsigned int srcIndex = 0;
+
+			for (unsigned int v = 0; v < data.VerticesAmount; ++v)
+			{
+				for (unsigned int e = 0; e < data.VertexElements; ++e)
+					interleaved.push_back(data.Vertices[srcIndex++]);
+
+				for (int i = 0; i < 4; ++i)
+					interleaved.push_back(static_cast<float>(data.Bones[v].IDs[i]));
+
+				for (int i = 0; i < 4; ++i)
+					interleaved.push_back(data.Bones[v].Weights[i]);
+			}
+
+			data.VertexElements += 8;
+			data.Vertices = std::move(interleaved);
+		}
+
+		mesh.m_vbo = std::make_shared<VertexBuffer>(data.Vertices.data(), (unsigned int)(sizeof(float) * data.Vertices.size()));
 		mesh.m_ebo = std::make_shared<IndexBuffer>(data.Indices.data(), data.IndicesAmount);
 		mesh.m_vao = std::make_shared<VertexArray>();
 
@@ -115,6 +167,12 @@ namespace Loopie {
 			layout.AddLayoutElement(3, GLVariableType::FLOAT, 3, "a_Tangent");
 		if (data.HasColor)
 			layout.AddLayoutElement(4, GLVariableType::FLOAT, 4, "a_Color");
+
+		if (data.HasBones)
+		{
+			layout.AddLayoutElement(5, GLVariableType::INT, 4, "a_BoneIDs");
+			layout.AddLayoutElement(6, GLVariableType::FLOAT, 4, "a_Weights");
+		}
 
 		mesh.m_data = data;
 		mesh.m_vao->AddBuffer(mesh.m_vbo.get(), mesh.m_ebo.get());
@@ -155,7 +213,9 @@ namespace Loopie {
 	std::string MeshImporter::ProcessMesh(void* nodePtr, void* meshPtr, const void* scenePtr) {
 		auto node = static_cast<const aiNode*>(nodePtr);
 		auto mesh = static_cast<const aiMesh*>(meshPtr);
-		MeshData data;
+		auto scene = static_cast<const aiScene*>(scenePtr);
+
+		MeshData data{};
 
 		data.Name = node->mName.C_Str();
 		unsigned int nameLength = (unsigned int)data.Name.size();
@@ -178,9 +238,11 @@ namespace Loopie {
 		data.BoundingBox.MinPoint = { mesh->mAABB.mMin.x,mesh->mAABB.mMin.y,mesh->mAABB.mMin.z };
 
 		data.VerticesAmount = mesh->mNumVertices;
+		data.HasBones = mesh->HasBones();
+		data.Bones.resize(data.VerticesAmount);
 
 		data.HasPosition = mesh->mNumVertices > 0;
-		data.HasTexCoord = mesh->mTextureCoords[0];
+		data.HasTexCoord = mesh->mTextureCoords[0] != nullptr;
 		data.HasNormal = mesh->HasNormals();
 		data.HasTangent = mesh->HasTangentsAndBitangents();
 		data.HasColor = mesh->HasVertexColors(0);
@@ -191,6 +253,88 @@ namespace Loopie {
 		data.VertexElements += data.HasTangent ? 3 : 0;
 		data.VertexElements += data.HasColor ? 4 : 0;
 
+
+		std::unordered_map<std::string, int> boneMapping;
+
+		if (mesh->HasBones())
+		{
+			data.HasBones = true;
+			data.Bones.resize(data.VerticesAmount);
+
+			data.Skeleton.reserve(mesh->mNumBones);
+
+			for (unsigned int i = 0; i < mesh->mNumBones; i++)
+			{
+				aiBone* aiBone = mesh->mBones[i];
+
+				Bone bone;
+				bone.Name = aiBone->mName.C_Str();
+				bone.ParentIndex = -1;
+
+				aiMatrix4x4& m = aiBone->mOffsetMatrix;
+				bone.OffsetMatrix = matrix4(
+					m.a1, m.b1, m.c1, m.d1,
+					m.a2, m.b2, m.c2, m.d2,
+					m.a3, m.b3, m.c3, m.d3,
+					m.a4, m.b4, m.c4, m.d4
+				);
+
+				int boneIndex = (int)data.Skeleton.size();
+				boneMapping[bone.Name] = boneIndex;
+
+				data.Skeleton.push_back(bone);
+			}
+
+			for (unsigned int i = 0; i < mesh->mNumBones; i++)
+			{
+				aiBone* aiBone = mesh->mBones[i];
+				int boneIndex = boneMapping[aiBone->mName.C_Str()];
+
+				for (unsigned int w = 0; w < aiBone->mNumWeights; w++)
+				{
+					int vertexId = aiBone->mWeights[w].mVertexId;
+					float weight = aiBone->mWeights[w].mWeight;
+
+					data.Bones[vertexId].AddBoneData(boneIndex, weight);
+				}
+			}
+
+			for (unsigned int i = 0; i < data.VerticesAmount; ++i)
+			{
+				float total = 0.0f;
+				for (int j = 0; j < MAX_BONE_INFLUENCE; ++j)
+					total += data.Bones[i].Weights[j];
+
+				if (total > 0.0f)
+					for (int j = 0; j < MAX_BONE_INFLUENCE; ++j)
+						data.Bones[i].Weights[j] /= total;
+			}
+
+			for (size_t i = 0; i < data.Skeleton.size(); ++i)
+			{
+				const std::string& boneName = data.Skeleton[i].Name;
+
+				aiNode* boneNode = scene->mRootNode->FindNode(boneName.c_str());
+				if (!boneNode || !boneNode->mParent)
+					continue;
+
+				std::string parentName = boneNode->mParent->mName.C_Str();
+
+				auto it = boneMapping.find(parentName);
+				if (it != boneMapping.end())
+					data.Skeleton[i].ParentIndex = it->second;
+			}
+		}
+		else
+		{
+			data.HasBones = false;
+		}
+
+		data.IndicesAmount = 0;
+		for (unsigned int i = 0; i < mesh->mNumFaces; ++i) {
+			const aiFace& face = mesh->mFaces[i];
+			data.IndicesAmount += face.mNumIndices;
+		}
 
 		///// File Creation
 		Project project = Application::GetInstance().m_activeProject;
@@ -216,12 +360,6 @@ namespace Loopie {
 		fs.write(reinterpret_cast<const char*>(&data.VerticesAmount), sizeof data.VerticesAmount);
 		fs.write(reinterpret_cast<const char*>(&data.VertexElements), sizeof data.VertexElements);
 
-
-		for (unsigned int i = 0; i < mesh->mNumFaces; ++i) {
-			const aiFace& face = mesh->mFaces[i];
-			data.IndicesAmount += face.mNumIndices;
-		}
-
 		fs.write(reinterpret_cast<const char*>(&data.IndicesAmount), sizeof data.IndicesAmount);
 
 		fs.write(reinterpret_cast<const char*>(&data.HasPosition), sizeof data.HasPosition);
@@ -230,6 +368,24 @@ namespace Loopie {
 		fs.write(reinterpret_cast<const char*>(&data.HasTangent), sizeof data.HasTangent);
 		fs.write(reinterpret_cast<const char*>(&data.HasColor), sizeof data.HasColor);
 
+		fs.write(reinterpret_cast<const char*>(&data.HasBones), sizeof data.HasBones);
+
+		// Write skeleton
+		if (data.HasBones)
+		{
+			unsigned int skeletonSize = (unsigned int)data.Skeleton.size();
+			fs.write((char*)&skeletonSize, sizeof(skeletonSize));
+
+			for (auto& bone : data.Skeleton)
+			{
+				unsigned int len = (unsigned int)bone.Name.size();
+				fs.write((char*)&len, sizeof(len));
+				fs.write(bone.Name.data(), len);
+
+				fs.write((char*)&bone.ParentIndex, sizeof(bone.ParentIndex));
+				fs.write((char*)&bone.OffsetMatrix, sizeof(bone.OffsetMatrix));
+			}
+		}
 
 		for (unsigned int i = 0; i < mesh->mNumVertices; ++i) {
 			///Position
@@ -267,6 +423,12 @@ namespace Loopie {
 				fs.write(reinterpret_cast<const char*>(&c.g), sizeof c.g);
 				fs.write(reinterpret_cast<const char*>(&c.b), sizeof c.b);
 				fs.write(reinterpret_cast<const char*>(&c.a), sizeof c.a);
+			}
+
+			if (data.HasBones)
+			{
+				fs.write(reinterpret_cast<const char*>(data.Bones[i].IDs), sizeof(int) * 4);
+				fs.write(reinterpret_cast<const char*>(data.Bones[i].Weights), sizeof(float) * 4);
 			}
 
 		}
