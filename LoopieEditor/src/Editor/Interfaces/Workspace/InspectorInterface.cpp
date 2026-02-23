@@ -15,6 +15,9 @@
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Resources/ResourceManager.h"
 
+#include "Loopie/Components/AudioSource.h"
+#include "Loopie/Components/AudioListener.h"
+
 #include <imgui.h>
 #include <unordered_map>
 
@@ -37,6 +40,9 @@ namespace Loopie {
 
 	void InspectorInterface::Render() {
 		if (ImGui::Begin("Inspector")) {
+
+			ImGui::Checkbox("Lock Inspector", &m_locked);
+			ImGui::Separator();
 
 			switch (m_mode)
 			{
@@ -73,6 +79,12 @@ namespace Loopie {
 			}
 			else if (component->GetTypeID() == ScriptClass::GetTypeIDStatic()) {
 				DrawScriptClass(static_cast<ScriptClass*>(component));
+			}
+			else if (component->GetTypeID() == AudioSource::GetTypeIDStatic()) {
+				DrawAudioSource(static_cast<AudioSource*>(component));
+			}
+			else if (component->GetTypeID() == AudioListener::GetTypeIDStatic()) {
+				DrawAudioListener(static_cast<AudioListener*>(component));
 			}
 		}
 		AddComponent(entity);
@@ -333,6 +345,116 @@ namespace Loopie {
 		ImGui::PopID();
 	}
 
+	void InspectorInterface::DrawAudioSource(AudioSource* source)
+	{
+		ImGui::PushID(source);
+		bool open = ImGui::CollapsingHeader("Audio Source", ImGuiTreeNodeFlags_DefaultOpen);
+		if (RemoveComponent(source)) { ImGui::PopID(); return; }
+
+		if (open)
+		{
+			bool loop = source->loop;
+			if (ImGui::Checkbox("Loop Audio", &loop)) {
+				source->SetLoop(loop);
+			}
+
+			ImGui::Separator();
+			ImGui::Text("Playlist");
+
+			std::string previewValue = "None";
+			if (source->currentClipIndex >= 0 && source->currentClipIndex < source->audioClips.size()) {
+				std::filesystem::path p(source->audioClips[source->currentClipIndex]);
+				previewValue = p.filename().string();
+				if (previewValue.empty()) previewValue = "Empty Slot";
+			}
+
+			if (ImGui::BeginCombo("Current Clip", previewValue.c_str()))
+			{
+				for (int i = 0; i < source->audioClips.size(); i++)
+				{
+					std::filesystem::path p(source->audioClips[i]);
+					std::string name = p.filename().string();
+					if (name.empty()) name = "Slot " + std::to_string(i);
+
+					const bool is_selected = (source->currentClipIndex == i);
+					if (ImGui::Selectable(name.c_str(), is_selected))
+					{
+						source->SetCurrentClip(i);
+					}
+
+					if (is_selected)
+						ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+			}
+
+			ImGui::TextDisabled("Audio Library:");
+			for (int i = 0; i < source->audioClips.size(); i++)
+			{
+				ImGui::PushID(i);
+
+				if (ImGui::Button("X")) {
+					source->audioClips.erase(source->audioClips.begin() + i);
+					if (source->currentClipIndex >= i && source->currentClipIndex > 0) source->currentClipIndex--;
+					ImGui::PopID();
+					continue;
+				}
+
+				ImGui::SameLine();
+				ImGui::Text("%d: %s", i, source->audioClips[i].c_str());
+				ImGui::PopID();
+			}
+
+			ImGui::Button(" [ Drop New Audio Here ] ", ImVec2(ImGui::GetContentRegionAvail().x, 30));
+
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_EXPLORER_FILE"))
+				{
+					const char* path = (const char*)payload->Data;
+					std::filesystem::path resourcePath(path);
+
+					std::string finalPath = resourcePath.string();
+					size_t pos = finalPath.find("assets");
+					if (pos != std::string::npos) finalPath = finalPath.substr(pos);
+					std::replace(finalPath.begin(), finalPath.end(), '\\', '/');
+
+					source->AddClip(finalPath);
+
+					if (source->audioClips.size() == 1) source->SetCurrentClip(0);
+				}
+				ImGui::EndDragDropTarget();
+			}
+
+			ImGui::Separator();
+
+			ImGui::Checkbox("Play On Awake", &source->playOnAwake);
+			if (ImGui::Button("Play")) source->Play();
+			ImGui::SameLine();
+			if (ImGui::Button("Stop")) source->Stop();
+		}
+		ImGui::PopID();
+	}
+
+	void InspectorInterface::DrawAudioListener(AudioListener* listener)
+	{
+		ImGui::PushID(listener);
+
+		bool open = ImGui::CollapsingHeader("Audio Listener", ImGuiTreeNodeFlags_DefaultOpen);
+
+		if (RemoveComponent(listener)) {
+			ImGui::PopID();
+			return;
+		}
+
+		if (open)
+		{
+			ImGui::Text("Audio Listener Active");
+			ImGui::TextDisabled("(No editable properties)");
+		}
+		ImGui::PopID();
+	}
+
 	void InspectorInterface::AddComponent(const std::shared_ptr<Entity>& entity)
 	{
 		if (!entity)
@@ -378,6 +500,26 @@ namespace Loopie {
 				if (ImGui::Selectable(scriptClass.second->GetClassName().c_str()))
 				{
 					entity->AddComponent<ScriptClass>(scriptClass.first);
+					ImGui::EndCombo();
+					return;
+				}
+			}
+
+			if (!entity->HasComponent<AudioSource>())
+			{
+				if (ImGui::Selectable("Audio Source"))
+				{
+					entity->AddComponent<AudioSource>();
+					ImGui::EndCombo();
+					return;
+				}
+			}
+
+			if (!entity->HasComponent<AudioListener>())
+			{
+				if (ImGui::Selectable("Audio Listener"))
+				{
+					entity->AddComponent<AudioListener>();
 					ImGui::EndCombo();
 					return;
 				}
@@ -574,6 +716,8 @@ namespace Loopie {
 
 	void InspectorInterface::OnNotify(const OnEntityOrFileNotification& id)
 	{
+		if (m_locked) return;
+
 		if (id == OnEntityOrFileNotification::OnEntitySelect) {
 			m_mode = InspectorMode::EntityMode;
 		}

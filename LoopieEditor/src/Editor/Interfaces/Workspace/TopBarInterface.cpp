@@ -7,6 +7,9 @@
 #include "Loopie/Components/Component.h"
 #include "Loopie/Core/Log.h"
 
+#include "Loopie/Core/AudioManager.h"
+#include "Loopie/Core/Application.h" 
+
 #include <imgui.h>
 #include <imgui_stdlib.h>
 
@@ -96,6 +99,8 @@ namespace Loopie
 				ScriptingManager::RuntimeStart();
                 Application::GetInstance().GetScene().SaveScene("recoverScene.scene");
                 m_actualMode = PLAY;
+
+                AudioManager::StartSceneAudio(&Application::GetInstance().GetScene());
 
                 for (const auto& [uuid, entity] : Application::GetInstance().GetScene().GetAllEntities())
                 {

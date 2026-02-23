@@ -19,6 +19,14 @@ namespace Loopie {
 	std::unordered_map<std::string, UUID> AssetRegistry::s_PathToUUID;
 	std::unordered_map<UUID, std::string> AssetRegistry::s_UUIDToPath;
 
+	static bool IsAudioFile(const std::string& path) {
+		std::filesystem::path p(path);
+		if (!p.has_extension()) return false;
+
+		std::string ext = p.extension().string();
+		return ext == ".wav" || ext == ".mp3" || ext == ".ogg" || ext == ".bank";
+	}
+
 	void AssetRegistry::Initialize() {
 	
 		RefreshAssetRegistry();
@@ -74,6 +82,12 @@ namespace Loopie {
 					scriptReloadRequired = true;
 				}
 				scriptFiles++;
+			}
+			else if (metadata.Type == ResourceType::AUDIO || IsAudioFile(pathString)) {
+				if (metadata.Type != ResourceType::AUDIO) {
+					metadata.Type = ResourceType::AUDIO;
+					updated = true; 
+				}
 			}
 
 			///

@@ -20,6 +20,10 @@
 #include "Loopie/Components/MeshRenderer.h"
 #include "Loopie/Components/Transform.h"
 #include "Loopie/Resources/Types/Material.h"
+
+#include "Loopie/Components/AudioListener.h"
+#include "Loopie/Components/AudioSource.h"
+#include <memory>
 ///
 
 #include <glad/glad.h>
@@ -83,6 +87,7 @@ namespace Loopie
 
 		Application& app = Application::GetInstance();
 		InputEventManager& inputEvent = app.GetInputEvent();
+		AudioManager::UpdateSceneAudio(m_currentScene);
 
 		m_hierarchy.Update(inputEvent);
 		m_assetsExplorer.Update(inputEvent);

@@ -10,6 +10,8 @@ namespace Loopie {
 	class MeshRenderer;
 	class ScriptClass;
 	class Material;
+	class AudioSource;
+	class AudioListener;
 
 
 	class InspectorInterface : public Interface , public IObserver<OnEntityOrFileNotification>{
@@ -36,6 +38,8 @@ namespace Loopie {
 		void DrawCamera(Camera* camera);
 		void DrawMeshRenderer(MeshRenderer* meshRenderer);
 		void DrawScriptClass(ScriptClass* scriptClass);
+		void DrawAudioSource(AudioSource* source);
+		void DrawAudioListener(AudioListener* listener);
 		void AddComponent(const std::shared_ptr<Entity>& entity);
 		bool RemoveComponent(Component* component);
 
@@ -48,5 +52,6 @@ namespace Loopie {
 	private:
 
 		InspectorMode m_mode = InspectorMode::None;
+		bool m_locked = false;
 	};
 }
