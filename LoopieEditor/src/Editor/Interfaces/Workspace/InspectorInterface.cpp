@@ -166,8 +166,25 @@ namespace Loopie {
 			float farPlane = camera->GetFarPlane();
 			bool isMainCamera = Camera::GetMainCamera() == camera;
 
-			if (ImGui::DragFloat("Fov", &fov, 1.0f, 1.0f, 179.0f))
-				camera->SetFov(fov);
+			CameraProjection projection = camera->GetProjection();
+			int projIndex = (int)projection;
+			const char* projectionLabels[] = { "Perspective", "Orthographic" };
+
+			if (ImGui::Combo("Projection", &projIndex, projectionLabels, IM_ARRAYSIZE(projectionLabels))) {
+				camera->SetProjection((CameraProjection)projIndex);
+			}
+
+			if (camera->GetProjection() == CameraProjection::Perspective)
+			{
+				if (ImGui::DragFloat("Fov", &fov, 1.0f, 1.0f, 179.0f))
+					camera->SetFov(fov);
+			}
+			else
+			{
+				float orthoSize = camera->GetOrthoSize();
+				if (ImGui::DragFloat("Ortho Size", &orthoSize, 0.1f, 0.1f, 100000.0f))
+					camera->SetOrthoSize(orthoSize);
+			}
 
 			if (ImGui::DragFloat("Near Plane", &nearPlane, 0.01f, 0.01f, farPlane - 0.01f))
 				camera->SetNearPlane(nearPlane);
@@ -175,6 +192,7 @@ namespace Loopie {
 			if (ImGui::DragFloat("Far Plane", &farPlane, 1.0f, nearPlane + 0.1f, 10000.0f))
 				camera->SetFarPlane(farPlane);
 
+			ImGui::Separator();
 			if (ImGui::Checkbox("Main Camera", &isMainCamera)) {
 				if(isMainCamera)
 					camera->SetAsMainCamera();
