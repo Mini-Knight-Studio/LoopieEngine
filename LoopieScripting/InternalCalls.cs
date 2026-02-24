@@ -118,6 +118,31 @@ namespace Loopie
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Input_GetScrollDelta(out Vector2 scrollDelta);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Input_GetLeftAxis(out Vector2 axis);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Input_GetRightAxis(out Vector2 axis);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool Input_IsAnyKeyDown();
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool Input_IsAnyButtonDown();
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool Input_IsAnyMouseButtonDown();
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool Input_IsAnyDown();
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Input_SetAxisDeadzone(float deadzone);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static float Input_GetAxisDeadzone();
+
         #endregion
         #region Time
         [MethodImplAttribute(MethodImplOptions.InternalCall)]

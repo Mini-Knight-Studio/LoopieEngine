@@ -55,6 +55,7 @@ namespace Loopie {
 		bool HasFileBeenDropped() const;
 
 		void SetAxisDeadzone(float value) { m_axisDeadZone = value; }
+		float GetAxisDeadzone() { return m_axisDeadZone; }
 
 		void SetMouseCaptured(bool capture);
 
