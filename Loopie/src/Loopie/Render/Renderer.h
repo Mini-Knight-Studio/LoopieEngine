@@ -62,6 +62,32 @@ namespace Loopie {
 			const Transform* Transform;
 		};
 
+		struct RenderParticlesData
+		{
+			const unsigned int maxInstances = 1000;
+			unsigned int count = 0;
+			//VBOs
+
+			struct PosSizeData_
+			{
+				vec3 position;
+				float size;
+
+				PosSizeData_(vec3& pos_, float size_) : position(pos_), size(size_) {}
+
+			};
+			struct ColorData_
+			{
+				vec4 color;
+				ColorData_(vec4& col) : color(col) {}
+			};
+			std::vector<PosSizeData_> PosSizeData;
+			std::vector<ColorData_> ColorData;
+
+		};
+
+		static RenderParticlesData s_ParticlesData;
+
 		static void Init(void* context);
 		static void Shutdown();
 
@@ -84,6 +110,12 @@ namespace Loopie {
 
 		static void EnableDepth();
 		static void DisableDepth();
+		static void EnableDepthMask();
+		static void DisableDepthMask();
+
+		static void EnableBlend();
+		static void DisableBlend();
+		static void BlendFunction();
 
 		static void EnableStencil();
 		static void DisableStencil();
@@ -100,12 +132,20 @@ namespace Loopie {
 		static void SetRenderUniforms(std::shared_ptr<Material> material, const matrix4& modelMatrix);
 		static void FlushRenderQueue();
 
+
+		static void AddParticleItem(vec3& position, float size, vec4& color);
+		static void FlushParticleItems(std::shared_ptr<Material> material);
+
 	public:
 	private:
 
 		static std::vector<RenderItem> s_RenderQueue;
 		static std::vector<Camera*> s_RenderCameras;
 		static std::shared_ptr<UniformBuffer> s_MatricesUniformBuffer;
+
+		static std::shared_ptr<VertexBuffer> s_billboardVBO;
+		static std::shared_ptr<VertexBuffer>s_posSizeVBO;
+		static std::shared_ptr<VertexBuffer>s_colorVBO;
 
 		static bool s_UseGizmos;
 

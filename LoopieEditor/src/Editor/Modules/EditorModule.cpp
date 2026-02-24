@@ -21,6 +21,8 @@
 #include "Loopie/Components/Transform.h"
 #include "Loopie/Resources/Types/Material.h"
 ///
+#include "Loopie/ParticleSystemEn/Emitter.h"
+#include "Loopie/Core/Time.h"
 
 #include <glad/glad.h>
 
@@ -90,6 +92,15 @@ namespace Loopie
 		m_scene.Update(inputEvent);
 		m_topBar.Update(inputEvent);
 
+
+		//Launch Firework
+		if (inputEvent.GetKeyStatus(SDL_SCANCODE_1) == KeyState::DOWN)
+		{
+			Emitter* firework = new Emitter(1000, FIREWORK, CAMERA_FACING, vec3(0.0f, 5.0f, 10.0f), 20);
+			m_currentScene->GetEntity("ParticleSystemFirework")->GetComponent<ParticleComponent>()->AddElemToEmitterVector(firework);
+
+
+		}
 		const std::vector<Camera*>& cameras = Renderer::GetRendererCameras();
 		for (const auto cam : cameras)
 		{
@@ -128,6 +139,7 @@ namespace Loopie
 			m_scene.StartScene();
 			Renderer::BeginScene(m_scene.GetCamera()->GetViewMatrix(), m_scene.GetCamera()->GetProjectionMatrix(), true);
 			RenderWorld(m_scene.GetCamera());
+			RenderParticles(m_scene.GetCamera());
 			Renderer::EndScene();
 			m_scene.EndScene();
 		}		
@@ -138,6 +150,7 @@ namespace Loopie
 			if (m_game.GetCamera() && m_game.GetCamera()->GetIsActive()) {
 				Renderer::BeginScene(m_game.GetCamera()->GetViewMatrix(), m_game.GetCamera()->GetProjectionMatrix(), false);
 				RenderWorld(m_game.GetCamera());
+				RenderParticles(m_game.GetCamera());
 				Renderer::EndScene();
 			}
 			m_game.EndScene();
@@ -260,6 +273,34 @@ namespace Loopie
 			}
 			m_currentScene->GetOctree().DebugDraw(Color::GREEN);
 		}
+	}
+	void EditorModule::RenderParticles(Camera* cam)
+	{
+		Renderer::DisableStencil();
+		Renderer::EnableDepth();
+		Renderer::EnableDepthMask();
+		Renderer::EnableBlend();
+		Renderer::BlendFunction();
+
+		auto& particleEntities = m_currentScene->GetAllEntities();
+		for (const auto& [id, entity] : particleEntities)
+		{
+			const std::vector<Component*>& components = entity->GetComponents();
+			for (size_t i = 0; i < components.size(); i++)
+			{
+				Component* component = components[i];
+				if (!component->GetIsActive())
+					continue;
+				if (component->GetTypeID() == ParticleComponent::GetTypeIDStatic())
+				{
+					ParticleComponent* particleSystem = static_cast<ParticleComponent*>(component);
+					particleSystem->Render(cam);
+				}
+			}
+
+		}
+		Renderer::EnableDepthMask();
+		Renderer::DisableBlend();
 	}
 
 	void EditorModule::CreateBakerHouse()

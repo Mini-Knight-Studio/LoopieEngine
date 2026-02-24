@@ -14,6 +14,9 @@
 #include "Editor/Interfaces/Workspace/TopBarInterface.h"
 #include "Editor/Interfaces/Workspace/TextEditorInterface.h"
 
+#include "Loopie/ParticleSystemEn/ParticleSystem.h"  
+#include "Loopie/Components/ParticleComponent.h"
+
 namespace Loopie {
 
 	class Camera;
@@ -35,6 +38,7 @@ namespace Loopie {
 		void OnInterfaceRender()override;
 	private:
 		void RenderWorld(Camera* camera);
+		void RenderParticles(Camera* cam);
 		/// Test
 		void CreateBakerHouse();
 		void CreateCity();
