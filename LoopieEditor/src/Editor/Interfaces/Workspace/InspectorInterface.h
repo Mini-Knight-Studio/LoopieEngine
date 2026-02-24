@@ -10,6 +10,7 @@ namespace Loopie {
 	class MeshRenderer;
 	class ScriptClass;
 	class Material;
+	class RectTransform;
 
 
 	class InspectorInterface : public Interface , public IObserver<OnEntityOrFileNotification>{

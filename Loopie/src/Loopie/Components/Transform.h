@@ -1,3 +1,4 @@
+#pragma once
 #include "Loopie/Components/Component.h"
 #include "Loopie/Scene/Entity.h"
 #include "Loopie/Math/MathTypes.h"
@@ -64,6 +65,14 @@ namespace Loopie
         JsonNode Serialize(JsonNode& parent) const override;
         void Deserialize(const JsonNode& data) override;    
 
+		virtual bool IsRectTransform() const { return false; }
+
+        virtual float GetWidth() const { return 0.0f; }
+		virtual float GetHeight() const { return 0.0f; }
+
+        virtual void SetWidth(float) {}
+		virtual void SetHeight(float) {}
+
     private:
         vec3 GetWorldPosition() const;
         quaternion GetWorldRotation() const;
@@ -74,7 +83,7 @@ namespace Loopie
     public:
         Event<TransformNotification> m_transformNotifier;
 
-    private:
+    protected:
         vec3 m_localPosition = vec3(0);
         quaternion m_localRotation = quaternion(1, 0, 0, 0);
         vec3 m_localScale = vec3(1);

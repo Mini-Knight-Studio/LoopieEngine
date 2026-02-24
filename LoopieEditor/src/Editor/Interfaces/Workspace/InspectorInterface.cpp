@@ -6,6 +6,7 @@
 #include "Loopie/Math/MathTypes.h"
 
 #include "Loopie/Components/Transform.h"
+#include "Loopie/Components/RectTransform.h"
 #include "Loopie/Components/Camera.h"
 #include "Loopie/Components/MeshRenderer.h"
 #include "Loopie/Components/ScriptClass.h"
@@ -64,6 +65,9 @@ namespace Loopie {
 		for (auto* component : components) {
 			if (component->GetTypeID() == Transform::GetTypeIDStatic()) {
 				DrawTransform(static_cast<Transform*>(component));
+			}
+			else if (component->GetTypeID() == RectTransform::GetTypeIDStatic()) {
+				DrawTransform(static_cast<RectTransform*>(component));
 			}
 			else if (component->GetTypeID() == Camera::GetTypeIDStatic()) {
 				DrawCamera(static_cast<Camera*>(component));
@@ -141,6 +145,17 @@ namespace Loopie {
 			if (ImGui::DragFloat3("Scale", &scale.x, 0.1f)) {
 				modified = true;
 				transform->SetLocalScale(scale);
+			}
+			if (transform->IsRectTransform())
+			{
+				float w = transform->GetWidth();
+				float h = transform->GetHeight();
+
+				if (ImGui::DragFloat("Width", &w, 1.f))
+					transform->SetWidth(w);
+
+				if (ImGui::DragFloat("Height", &h, 1.f))
+					transform->SetHeight(h);
 			}
 		}
 		ImGui::PopID();

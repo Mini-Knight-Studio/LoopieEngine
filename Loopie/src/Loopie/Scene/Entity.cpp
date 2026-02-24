@@ -18,8 +18,8 @@ namespace Loopie {
 
 	bool Entity::RemoveComponent(Component* component)
 	{
-		if (component->GetTypeID() == m_transform->GetTypeID())
-			return false;
+		//if (component->GetTypeID() == m_transform->GetTypeID())
+			//return false;
 
 		for (size_t i = 0; i < m_components.size(); i++)
 		{

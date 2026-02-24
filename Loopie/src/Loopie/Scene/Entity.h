@@ -24,8 +24,8 @@ namespace Loopie {
 		T* AddComponent(Args&&... args)
 		{
 			if constexpr (std::is_same_v<T, Transform>) {
-				if (m_transform)
-					return GetTransform();
+				if (m_transform && typeid(*m_transform) == typeid(T))
+					return static_cast<T*>(m_transform);
 			}
 
 			m_components.push_back(std::make_unique<T>(std::forward<Args>(args)...));
@@ -41,6 +41,28 @@ namespace Loopie {
 			return componentPtr;
 		}
 
+		template<typename T, typename = std::enable_if_t<std::is_base_of_v<Transform, T>>>
+		T* ReplaceTransform()
+		{
+			Transform* oldTransform = m_transform;
+			if (!oldTransform)
+				return AddComponent<T>();
+
+			glm::vec3 position = oldTransform->GetLocalPosition();
+			glm::quat rotation = oldTransform->GetLocalRotation();
+			glm::vec3 scale = oldTransform->GetLocalScale();
+
+			RemoveComponent(oldTransform);
+
+			T* newTransform = AddComponent<T>();
+			m_transform = newTransform;
+
+			newTransform->SetLocalPosition(position);
+			newTransform->SetLocalRotation(rotation);
+			newTransform->SetLocalScale(scale);
+
+			return newTransform;
+		}
 
 		template<typename T, typename = std::enable_if_t<std::is_base_of_v<Component, T>>>
 		T* GetComponent() const

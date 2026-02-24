@@ -3,6 +3,7 @@
 #include "Loopie/Core/Application.h"
 #include "Loopie/Core/Log.h"
 #include "Loopie/Components/Transform.h"
+#include "Loopie/Components/RectTransform.h"
 #include "Loopie/Components/Camera.h"
 #include "Loopie/Components/MeshRenderer.h"
 #include "Loopie/Components/ScriptClass.h"
@@ -418,6 +419,11 @@ namespace Loopie {
 					{
 						JsonNode node = componentNode.Child("transform");
 						entity->GetTransform()->Deserialize(node);
+					}
+					else if (componentNode.Contains("recttransform"))
+					{
+						JsonNode node = componentNode.Child("recttransform");
+						entity->ReplaceTransform<RectTransform>()->Deserialize(node);
 					}
 					else if (componentNode.Contains("camera"))
 					{
