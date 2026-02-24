@@ -416,6 +416,42 @@ namespace Loopie
 	{
 		*scrollDelta = Application::GetInstance().GetInputEvent().GetScrollDelta();
 	}
+
+	static void Input_GetLeftAxis(vec2* axis) {
+		*axis = Application::GetInstance().GetInputEvent().GetLeftAxis();
+	}
+
+	static void Input_GetRightAxis(vec2* axis) {
+		*axis = Application::GetInstance().GetInputEvent().GetRightAxis();
+	}
+
+	static MonoBoolean Input_IsAnyKeyDown() {
+		return Application::GetInstance().GetInputEvent().AnyKeyDown();
+	}
+
+	static MonoBoolean Input_IsAnyButtonDown() {
+		return Application::GetInstance().GetInputEvent().AnyButtonDown();
+	}
+
+	static MonoBoolean Input_IsAnyMouseButtonDown() {
+		return Application::GetInstance().GetInputEvent().AnyMouseButtonDown();
+	}
+
+	static MonoBoolean Input_IsAnyDown() {
+		return Application::GetInstance().GetInputEvent().AnyDown();
+	}
+
+
+	static void Input_SetAxisDeadzone(float deadzone) {
+		Application::GetInstance().GetInputEvent().SetAxisDeadzone(deadzone);
+	}
+
+	static float Input_GetAxisDeadzone() {
+		return Application::GetInstance().GetInputEvent().GetAxisDeadzone();
+	}
+
+
+
 #pragma endregion
 
 #pragma region Time
@@ -517,6 +553,15 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Input_GetMousePosition);
 		ADD_INTERNAL_CALL(Input_GetMouseDelta);
 		ADD_INTERNAL_CALL(Input_GetScrollDelta);
+		ADD_INTERNAL_CALL(Input_GetLeftAxis);
+		ADD_INTERNAL_CALL(Input_GetRightAxis);
+		ADD_INTERNAL_CALL(Input_IsAnyKeyDown);
+		ADD_INTERNAL_CALL(Input_IsAnyButtonDown);
+		ADD_INTERNAL_CALL(Input_IsAnyMouseButtonDown);
+		ADD_INTERNAL_CALL(Input_IsAnyDown);
+		ADD_INTERNAL_CALL(Input_SetAxisDeadzone);
+		ADD_INTERNAL_CALL(Input_GetAxisDeadzone);
+
 
 		ADD_INTERNAL_CALL(Time_GetDeltaTime);
 		ADD_INTERNAL_CALL(Time_GetFixedDeltaTime);
