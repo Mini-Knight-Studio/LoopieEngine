@@ -687,6 +687,17 @@ namespace Loopie {
 						newPath.string() + file.extension().string() + ".meta");
 				};
 		}
+		ImGui::Separator();
+
+		if (ImGui::MenuItem("Copy UUID"))
+		{
+			Metadata* data = AssetRegistry::GetMetadata(file.string());
+			if (data)
+			{
+				Application::GetInstance().m_clipboard.Copy(data->UUID.Get());
+				Log::Warn("{0}", Application::GetInstance().m_clipboard.Paste());
+			}
+		}
 
 		ImGui::Separator();
 

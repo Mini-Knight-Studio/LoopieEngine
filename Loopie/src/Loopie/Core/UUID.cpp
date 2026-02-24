@@ -31,6 +31,13 @@ namespace Loopie {
         return res;
     }
 
+    bool UUID::IsValid(const std::string& id)
+    {
+        if (id.size() != UUID_SIZE)
+            return false;
+        return true;
+    }
+
     bool UUID::operator==(const UUID& other) const {
         return m_id == other.m_id;
     }

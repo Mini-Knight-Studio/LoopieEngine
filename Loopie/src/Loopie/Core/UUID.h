@@ -10,6 +10,7 @@ namespace Loopie {
 
         const std::string& Get() const;
         static std::string Generate();
+        static bool IsValid(const std::string& id);
 
         bool operator==(const UUID& other) const;
 
