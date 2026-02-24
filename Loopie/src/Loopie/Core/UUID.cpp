@@ -33,8 +33,8 @@ namespace Loopie {
 
     bool UUID::IsValid(const std::string& id)
     {
-        if(id.size() != UUID_SIZE)
-			return false;
+        if (id.size() != UUID_SIZE)
+            return false;
         return true;
     }
 

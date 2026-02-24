@@ -39,7 +39,7 @@ namespace Loopie {
 		void DrawAnimator(Animator* animator);
 		void DrawScriptClass(ScriptClass* scriptClass);
 		void AddComponent(const std::shared_ptr<Entity>& entity);
-		bool RemoveComponent(Component* component);
+		bool ComponentContextMenu(Component* component, bool canRemove = true);
 
 		///FilesRelated
 		void DrawMaterial(std::shared_ptr<Material> material);
