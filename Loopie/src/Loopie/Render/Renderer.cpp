@@ -121,7 +121,7 @@ namespace Loopie {
 			
 			item.VAO->Bind();
 			item.Material->Bind();
-			SetRenderUniforms(item.Material, item.Transform);
+			SetRenderUniforms(item.Material, item.Transform, item.Bones);
 			glDrawElements(GL_TRIANGLES, item.IndexCount, GL_UNSIGNED_INT, nullptr);
 			item.VAO->Unbind();
 		}
@@ -137,20 +137,24 @@ namespace Loopie {
 	{
 		material->GetShader().SetUniformMat4("lp_Transform", modelMatrix);
 
+		material->GetShader().SetUniformInt("lp_Skinned", !bones.empty() ? 1 : 0);
+
 		if (!bones.empty())
 		{
+
 			size_t count = std::min(bones.size(), size_t(100));
 			material->GetShader().SetUniformMat4Array("lp_Bones", bones.data(), count);
+			
 		}
 
 	}
 	void Renderer::EnableDepth()
 	{
-			glEnable(GL_DEPTH_TEST);
+		glEnable(GL_DEPTH_TEST);
 	}
 	void Renderer::DisableDepth()
 	{
-			glDisable(GL_DEPTH_TEST);
+		glDisable(GL_DEPTH_TEST);
 	}
 	void Renderer::EnableStencil()
 	{

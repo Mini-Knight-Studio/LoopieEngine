@@ -8,7 +8,7 @@ layout (location = 3) in vec3 a_Tangent;
 layout (location = 4) in vec4 a_Color;
 
 // GPU Skinning
-layout (location = 5) in ivec4 a_BoneIDs;
+layout (location = 5) in vec4 a_BoneIDs;
 layout (location = 6) in vec4 a_Weights;
 
 layout (std140, binding = 0) uniform Matrices
@@ -19,9 +19,9 @@ layout (std140, binding = 0) uniform Matrices
 
 uniform mat4 lp_Transform;
 uniform mat4 lp_Bones[100]; 
+uniform bool lp_Skinned;
 ///
 
-uniform bool u_SkinnedMode = false;
 
 out vec2 v_TexCoord;
 out vec3 v_Normal;
@@ -31,20 +31,20 @@ void main()
 {
     mat4 skinMatrix = mat4(1.0);
 
-    if (u_SkinnedMode)
+    if (lp_Skinned)
     {
-
-        skinMatrix = 
-              a_Weights.x * lp_Bones[a_BoneIDs.x] +
-              a_Weights.y * lp_Bones[a_BoneIDs.y] +
-              a_Weights.z * lp_Bones[a_BoneIDs.z] +
-              a_Weights.w * lp_Bones[a_BoneIDs.w];
+        skinMatrix =
+              a_Weights[0] * lp_Bones[int(a_BoneIDs[0])] +
+              a_Weights[1] * lp_Bones[int(a_BoneIDs[1])] +
+              a_Weights[2] * lp_Bones[int(a_BoneIDs[2])] +
+              a_Weights[3] * lp_Bones[int(a_BoneIDs[3])];
     }
 
-    vec4 skinnedPos = skinMatrix * vec4(a_Position, 1.0);
+    vec4 localPos = skinMatrix * vec4(a_Position, 1.0);
     vec3 skinnedNormal = mat3(skinMatrix) * a_Normal;
 
-    gl_Position = lp_Projection * lp_View * lp_Transform * skinnedPos;
+    gl_Position = lp_Projection * lp_View * lp_Transform * localPos;
+
     v_TexCoord = a_TexCoord;
     v_Normal = normalize(mat3(lp_Transform) * skinnedNormal);
 }

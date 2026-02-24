@@ -10,6 +10,7 @@ namespace Loopie {
 	class MeshRenderer;
 	class ScriptClass;
 	class Material;
+	class Animator;
 
 
 	class InspectorInterface : public Interface , public IObserver<OnEntityOrFileNotification>{
@@ -35,6 +36,7 @@ namespace Loopie {
 		void DrawTransform(Transform* transform);
 		void DrawCamera(Camera* camera);
 		void DrawMeshRenderer(MeshRenderer* meshRenderer);
+		void DrawAnimator(Animator* animator);
 		void DrawScriptClass(ScriptClass* scriptClass);
 		void AddComponent(const std::shared_ptr<Entity>& entity);
 		bool RemoveComponent(Component* component);

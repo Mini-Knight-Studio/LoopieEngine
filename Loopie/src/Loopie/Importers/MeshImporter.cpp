@@ -14,6 +14,19 @@
 
 
 namespace Loopie {
+
+	matrix4 ConvertMatrix(const aiMatrix4x4& m)
+	{
+		matrix4 result;
+
+		result[0][0] = m.a1; result[1][0] = m.a2; result[2][0] = m.a3; result[3][0] = m.a4;
+		result[0][1] = m.b1; result[1][1] = m.b2; result[2][1] = m.b3; result[3][1] = m.b4;
+		result[0][2] = m.c1; result[1][2] = m.c2; result[2][2] = m.c3; result[3][2] = m.c4;
+		result[0][3] = m.d1; result[1][3] = m.d2; result[2][3] = m.d3; result[3][3] = m.d4;
+
+		return result;
+	}
+
 	void MeshImporter::ImportModel(const std::string& filepath, Metadata& metadata) {
 		if (metadata.HasCache && !metadata.IsOutdated)
 			return;
@@ -96,9 +109,74 @@ namespace Loopie {
 				data.Skeleton[i].Name.resize(nameLength);
 				file.read(data.Skeleton[i].Name.data(), nameLength);
 
-				file.read(reinterpret_cast<char*>(&data.Skeleton[i].ParentIndex), sizeof(int));
+				file.read(reinterpret_cast<char*>(&data.Skeleton[i].ID), sizeof(int));
+				file.read(reinterpret_cast<char*>(&data.Skeleton[i].ParentID), sizeof(int));
 				file.read(reinterpret_cast<char*>(&data.Skeleton[i].OffsetMatrix), sizeof(matrix4));
 			}
+		}
+
+		unsigned int animCount = 0;
+		file.read((char*)&animCount, sizeof(animCount));
+
+		for (unsigned int a = 0; a < animCount; ++a)
+		{
+			AnimationClip clip;
+
+			unsigned int nameLen;
+			file.read((char*)&nameLen, sizeof(nameLen));
+			clip.Name.resize(nameLen);
+			file.read(clip.Name.data(), nameLen);
+
+			file.read((char*)&clip.Duration, sizeof(clip.Duration));
+
+			unsigned int trackCount;
+			file.read((char*)&trackCount, sizeof(trackCount));
+
+			for (unsigned int t = 0; t < trackCount; ++t)
+			{
+				unsigned int boneNameLen;
+				file.read((char*)&boneNameLen, sizeof(boneNameLen));
+
+				std::string boneName;
+				boneName.resize(boneNameLen);
+				file.read(boneName.data(), boneNameLen);
+
+				KeyFrame keyFrame;
+
+				// Positions
+				unsigned int posCount;
+				file.read((char*)&posCount, sizeof(posCount));
+				keyFrame.Positions.resize(posCount);
+				for (unsigned int i = 0; i < posCount; ++i)
+				{
+					file.read((char*)&keyFrame.Positions[i].Time, sizeof(float));
+					file.read((char*)&keyFrame.Positions[i].Value, sizeof(vec3));
+				}
+
+				// Rotations
+				unsigned int rotCount;
+				file.read((char*)&rotCount, sizeof(rotCount));
+				keyFrame.Rotations.resize(rotCount);
+				for (unsigned int i = 0; i < rotCount; ++i)
+				{
+					file.read((char*)&keyFrame.Rotations[i].Time, sizeof(float));
+					file.read((char*)&keyFrame.Rotations[i].Value, sizeof(quaternion));
+				}
+
+				// Scales
+				unsigned int scaleCount;
+				file.read((char*)&scaleCount, sizeof(scaleCount));
+				keyFrame.Scales.resize(scaleCount);
+				for (unsigned int i = 0; i < scaleCount; ++i)
+				{
+					file.read((char*)&keyFrame.Scales[i].Time, sizeof(float));
+					file.read((char*)&keyFrame.Scales[i].Value, sizeof(vec3));
+				}
+
+				clip.KeyFrames[boneName] = keyFrame;
+			}
+
+			data.AnimationClips.push_back(clip);
 		}
 
 		data.Vertices.resize(data.VerticesAmount * data.VertexElements);
@@ -170,7 +248,7 @@ namespace Loopie {
 
 		if (data.HasBones)
 		{
-			layout.AddLayoutElement(5, GLVariableType::INT, 4, "a_BoneIDs");
+			layout.AddLayoutElement(5, GLVariableType::FLOAT, 4, "a_BoneIDs");
 			layout.AddLayoutElement(6, GLVariableType::FLOAT, 4, "a_Weights");
 		}
 
@@ -266,18 +344,13 @@ namespace Loopie {
 			for (unsigned int i = 0; i < mesh->mNumBones; i++)
 			{
 				aiBone* aiBone = mesh->mBones[i];
+				aiMatrix4x4& m = aiBone->mOffsetMatrix;
 
 				Bone bone;
 				bone.Name = aiBone->mName.C_Str();
-				bone.ParentIndex = -1;
-
-				aiMatrix4x4& m = aiBone->mOffsetMatrix;
-				bone.OffsetMatrix = matrix4(
-					m.a1, m.b1, m.c1, m.d1,
-					m.a2, m.b2, m.c2, m.d2,
-					m.a3, m.b3, m.c3, m.d3,
-					m.a4, m.b4, m.c4, m.d4
-				);
+				bone.ParentID = -1;
+				bone.ID = 0;
+				bone.OffsetMatrix = ConvertMatrix(aiBone->mOffsetMatrix);
 
 				int boneIndex = (int)data.Skeleton.size();
 				boneMapping[bone.Name] = boneIndex;
@@ -310,25 +383,110 @@ namespace Loopie {
 						data.Bones[i].Weights[j] /= total;
 			}
 
+
+			std::unordered_map<std::string, aiNode*> boneNodes;
+			for (unsigned int i = 0; i < mesh->mNumBones; i++) {
+				aiBone* aiBone = mesh->mBones[i];
+				aiNode* boneNode = scene->mRootNode->FindNode(aiBone->mName);
+				if (boneNode) {
+					boneNodes[aiBone->mName.C_Str()] = boneNode;
+				}
+			}
+
 			for (size_t i = 0; i < data.Skeleton.size(); ++i)
 			{
 				const std::string& boneName = data.Skeleton[i].Name;
+				auto it = boneNodes.find(boneName);
 
-				aiNode* boneNode = scene->mRootNode->FindNode(boneName.c_str());
-				if (!boneNode || !boneNode->mParent)
+				if (it == boneNodes.end() || !it->second->mParent) {
+					data.Skeleton[i].ParentID = -1;
 					continue;
+				}
 
-				std::string parentName = boneNode->mParent->mName.C_Str();
+				aiNode* parentNode = it->second->mParent;
+				int parentID = -1;
 
-				auto it = boneMapping.find(parentName);
-				if (it != boneMapping.end())
-					data.Skeleton[i].ParentIndex = it->second;
+				while (parentNode && parentID == -1)
+				{
+					std::string parentName = parentNode->mName.C_Str();
+
+					if (parentName.find("_$Assimp") == std::string::npos)
+					{
+						for (size_t j = 0; j < data.Skeleton.size(); j++) {
+							if (data.Skeleton[j].Name == parentName) {
+								parentID = (int)j;
+								break;
+							}
+						}
+					}
+					parentNode = parentNode->mParent;
+				}
+
+				data.Skeleton[i].ParentID = parentID;
 			}
 		}
 		else
 		{
 			data.HasBones = false;
 		}
+
+
+		if (scene->HasAnimations())
+		{
+			for (unsigned int a = 0; a < scene->mNumAnimations; ++a)
+			{
+				aiAnimation* aiAnim = scene->mAnimations[a];
+
+				AnimationClip clip;
+				clip.Name = aiAnim->mName.C_Str();
+				clip.Duration = (float)aiAnim->mDuration / (float)aiAnim->mTicksPerSecond;
+
+				for (unsigned int c = 0; c < aiAnim->mNumChannels; ++c)
+				{
+					aiNodeAnim* channel = aiAnim->mChannels[c];
+
+					KeyFrame keyFrame;
+
+					for (unsigned int i = 0; i < channel->mNumPositionKeys; ++i)
+					{
+						Vec3Key kp;
+						kp.Time = (float)channel->mPositionKeys[i].mTime / (float)aiAnim->mTicksPerSecond;
+
+						auto& v = channel->mPositionKeys[i].mValue;
+						kp.Value = vec3(v.x, v.y, v.z);
+
+						keyFrame.Positions.push_back(kp);
+					}
+
+					for (unsigned int i = 0; i < channel->mNumRotationKeys; ++i)
+					{
+						QuaternionKey kr;
+						kr.Time = (float)channel->mRotationKeys[i].mTime / (float)aiAnim->mTicksPerSecond;
+
+						auto& q = channel->mRotationKeys[i].mValue;
+						kr.Value = quaternion(q.w, q.x, q.y, q.z);
+
+						keyFrame.Rotations.push_back(kr);
+					}
+
+					for (unsigned int i = 0; i < channel->mNumScalingKeys; ++i)
+					{
+						Vec3Key ks;
+						ks.Time = (float)channel->mScalingKeys[i].mTime / (float)aiAnim->mTicksPerSecond;
+
+						auto& s = channel->mScalingKeys[i].mValue;
+						ks.Value = vec3(s.x, s.y, s.z);
+
+						keyFrame.Scales.push_back(ks);
+					}
+
+					clip.KeyFrames[channel->mNodeName.C_Str()] = keyFrame;
+				}
+
+				data.AnimationClips.push_back(clip);
+			}
+		}
+
 
 		data.IndicesAmount = 0;
 		for (unsigned int i = 0; i < mesh->mNumFaces; ++i) {
@@ -367,7 +525,6 @@ namespace Loopie {
 		fs.write(reinterpret_cast<const char*>(&data.HasTexCoord), sizeof data.HasTexCoord);
 		fs.write(reinterpret_cast<const char*>(&data.HasTangent), sizeof data.HasTangent);
 		fs.write(reinterpret_cast<const char*>(&data.HasColor), sizeof data.HasColor);
-
 		fs.write(reinterpret_cast<const char*>(&data.HasBones), sizeof data.HasBones);
 
 		// Write skeleton
@@ -382,10 +539,61 @@ namespace Loopie {
 				fs.write((char*)&len, sizeof(len));
 				fs.write(bone.Name.data(), len);
 
-				fs.write((char*)&bone.ParentIndex, sizeof(bone.ParentIndex));
+				fs.write((char*)&bone.ID, sizeof(bone.ID));
+				fs.write((char*)&bone.ParentID, sizeof(bone.ParentID));
 				fs.write((char*)&bone.OffsetMatrix, sizeof(bone.OffsetMatrix));
 			}
 		}
+
+		unsigned int animCount = (unsigned int)data.AnimationClips.size();
+		fs.write((char*)&animCount, sizeof(animCount));
+
+		for (auto& clip : data.AnimationClips)
+		{
+			unsigned int nameLen = (unsigned int)clip.Name.size();
+			fs.write((char*)&nameLen, sizeof(nameLen));
+			fs.write(clip.Name.data(), nameLen);
+
+			fs.write((char*)&clip.Duration, sizeof(clip.Duration));
+
+			unsigned int trackCount = (unsigned int)clip.KeyFrames.size();
+			fs.write((char*)&trackCount, sizeof(trackCount));
+
+			for (auto& [boneName, keyFrame] : clip.KeyFrames)
+			{
+				unsigned int boneNameLen = (unsigned int)boneName.size();
+				fs.write((char*)&boneNameLen, sizeof(boneNameLen));
+				fs.write(boneName.data(), boneNameLen);
+
+				// Positions
+				unsigned int posCount = (unsigned int)keyFrame.Positions.size();
+				fs.write((char*)&posCount, sizeof(posCount));
+				for (auto& p : keyFrame.Positions)
+				{
+					fs.write((char*)&p.Time, sizeof(p.Time));
+					fs.write((char*)&p.Value, sizeof(p.Value));
+				}
+
+				// Rotations
+				unsigned int rotCount = (unsigned int)keyFrame.Rotations.size();
+				fs.write((char*)&rotCount, sizeof(rotCount));
+				for (auto& r : keyFrame.Rotations)
+				{
+					fs.write((char*)&r.Time, sizeof(r.Time));
+					fs.write((char*)&r.Value, sizeof(r.Value));
+				}
+
+				// Scales
+				unsigned int scaleCount = (unsigned int)keyFrame.Scales.size();
+				fs.write((char*)&scaleCount, sizeof(scaleCount));
+				for (auto& s : keyFrame.Scales)
+				{
+					fs.write((char*)&s.Time, sizeof(s.Time));
+					fs.write((char*)&s.Value, sizeof(s.Value));
+				}
+			}
+		}
+
 
 		for (unsigned int i = 0; i < mesh->mNumVertices; ++i) {
 			///Position

@@ -18,6 +18,7 @@
 #include "Loopie/Importers/MaterialImporter.h"
 
 #include "Loopie/Components/MeshRenderer.h"
+#include "Loopie/Components/Animator.h"
 #include "Loopie/Components/Transform.h"
 #include "Loopie/Resources/Types/Material.h"
 ///
@@ -232,7 +233,12 @@ namespace Loopie
 
 				std::vector<matrix4> bones = {};
 				if (data.HasBones) {
-					bones = std::vector<matrix4>(data.Skeleton.size(), matrix4(1.0f));
+					Animator* animator = renderer->GetLinkedAnimator();
+					if (animator) {
+						animator->Update();
+						bones = animator->GetFinalBoneMatrices();
+					}else
+						bones = std::vector<matrix4>(data.Skeleton.size(), matrix4(1.0f));
 				}
 
 				if (!Renderer::IsGizmoActive() || entity != selectedEntity) {

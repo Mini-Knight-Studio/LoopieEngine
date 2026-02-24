@@ -8,6 +8,8 @@
 #include "Loopie/Render/VertexBuffer.h"
 #include "Loopie/Render/VertexArray.h"
 
+#include "Loopie/Animations/AnimationClip.h"
+
 #include <vector>
 #include <memory>
 
@@ -18,8 +20,9 @@ namespace Loopie {
 
 	struct Bone
 	{
+		int ID = -1;
+		int ParentID = -1;
 		std::string Name;
-		int ParentIndex = -1;
 		matrix4 OffsetMatrix = matrix4(1);
 	};
 
@@ -28,17 +31,16 @@ namespace Loopie {
 		int IDs[MAX_BONE_INFLUENCE] = { 0,0,0,0 };
 		float Weights[MAX_BONE_INFLUENCE] = { 0,0,0,0 };
 
+		int Index = 0;
+
 		void AddBoneData(int id, float weight)
 		{
-			for (int i = 0; i < MAX_BONE_INFLUENCE; i++)
-			{
-				if (Weights[i] == 0.0f)
-				{
-					IDs[i] = id;
-					Weights[i] = weight;
-					return;
-				}
-			}
+			if (Index == MAX_BONE_INFLUENCE)
+				return;
+
+			IDs[Index] = id;
+			Weights[Index] = weight;
+			Index++;
 		}
 	};
 
@@ -67,6 +69,16 @@ namespace Loopie {
 		std::vector<VertexBoneData> Bones;
 		std::vector<Bone> Skeleton;
 
+		std::vector<AnimationClip> AnimationClips;
+		const AnimationClip* GetAnimationClip(const std::string& name) const {
+			for (const auto& clip : AnimationClips) {
+				if (clip.Name == name) {
+					return &clip;
+				}
+			}
+			return nullptr;
+		}
+
 	};
 	
 	class Mesh : public Resource{
@@ -88,10 +100,8 @@ namespace Loopie {
 
 		std::shared_ptr<VertexArray> m_vao;
 		std::shared_ptr<VertexBuffer> m_vbo;
+		std::shared_ptr<VertexBuffer> m_boneIDVBO;
 		std::shared_ptr<IndexBuffer> m_ebo;
-
-		std::shared_ptr<VertexBuffer> m_boneIDBuffer;
-
 
 		unsigned int m_meshIndex = 0;
 

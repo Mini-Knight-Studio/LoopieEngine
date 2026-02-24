@@ -14,26 +14,30 @@ layout (std140, binding = 0) uniform Matrices
 };
 
 uniform mat4 lp_Transform;
+uniform bool lp_Skinned;
 ///
 
 uniform float outlineThickness = 0.01;
 
 void main()
 {
-    // Transform to view space
-    vec4 viewPos = lp_View * lp_Transform * vec4(a_Position, 1.0);
-    // Compute normal in view space
-    vec3 normalViewSpace = normalize(mat3(lp_View * lp_Transform) * a_Normal);
-    // Distance scaling so outline looks constant
-    float dist = length(viewPos.xyz);
-    // Extract projection info
-    float projScale = lp_Projection[1][1]; // = 1/tan(fov/2)
-    // Convert screen-space thickness to view-space offset
-    float viewOffset = outlineThickness * dist / projScale;
-    // Apply offset
-    viewPos.xyz += normalViewSpace * viewOffset;
-    // Projection
-    gl_Position = lp_Projection * viewPos;
+    if(!lp_Skinned){
+
+        // Transform to view space
+        vec4 viewPos = lp_View * lp_Transform * vec4(a_Position, 1.0);
+        // Compute normal in view space
+        vec3 normalViewSpace = normalize(mat3(lp_View * lp_Transform) * a_Normal);
+        // Distance scaling so outline looks constant
+        float dist = length(viewPos.xyz);
+        // Extract projection info
+        float projScale = lp_Projection[1][1]; // = 1/tan(fov/2)
+        // Convert screen-space thickness to view-space offset
+        float viewOffset = outlineThickness * dist / projScale;
+        // Apply offset
+        viewPos.xyz += normalViewSpace * viewOffset;
+        // Projection
+        gl_Position = lp_Projection * viewPos;
+    }
 
 }
 

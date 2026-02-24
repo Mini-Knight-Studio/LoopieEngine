@@ -9,6 +9,7 @@
 #include "Loopie/Components/Camera.h"
 #include "Loopie/Components/MeshRenderer.h"
 #include "Loopie/Components/ScriptClass.h"
+#include "Loopie/Components/Animator.h"
 
 #include "Loopie/Scripting/ScriptingManager.h"
 
@@ -71,9 +72,13 @@ namespace Loopie {
 			else if (component->GetTypeID() == MeshRenderer::GetTypeIDStatic()) {
 				DrawMeshRenderer(static_cast<MeshRenderer*>(component));
 			}
+			else if (component->GetTypeID() == Animator::GetTypeIDStatic()) {
+				DrawAnimator(static_cast<Animator*>(component));
+			}
 			else if (component->GetTypeID() == ScriptClass::GetTypeIDStatic()) {
 				DrawScriptClass(static_cast<ScriptClass*>(component));
 			}
+
 		}
 		AddComponent(entity);
 	}
@@ -228,7 +233,72 @@ namespace Loopie {
 			
 		}
 
-		RemoveComponent(meshRenderer);	
+		ImGui::PopID();
+	}
+
+	void InspectorInterface::DrawAnimator(Animator* animator)
+	{
+		ImGui::PushID(animator);
+
+		bool open = ImGui::CollapsingHeader("Animator");
+
+		if (RemoveComponent(animator)) {
+			ImGui::PopID();
+			return;
+		}
+
+		if (open) {
+			if(ImGui::Button("Auto-Get MeshRenderer")){
+				animator->SetMeshRenderer(animator->GetOwner()->GetComponent<MeshRenderer>());
+			}
+			MeshRenderer* linkedRenderer = animator->GetMeshRenderer();
+			if (linkedRenderer) {
+				std::shared_ptr<Mesh> mesh = linkedRenderer->GetMesh();
+				if (mesh) {
+					auto& clips = mesh->GetData().AnimationClips;
+					int totalAnimationClips = static_cast<int>(clips.size());
+
+					if (totalAnimationClips > 0)
+					{
+						// Store selected index inside animator (recommended)
+						int selectedClipIndex = animator->GetCurrentClipIndex();
+
+						// Clamp safety
+						if (selectedClipIndex >= totalAnimationClips)
+							selectedClipIndex = 0;
+
+						// Current preview label
+						const char* currentClipName = clips[selectedClipIndex].Name.c_str();
+
+						if (ImGui::BeginCombo("Animation Clip", currentClipName))
+						{
+							for (int i = 0; i < totalAnimationClips; i++)
+							{
+								bool isSelected = (selectedClipIndex == i);
+
+								if (ImGui::Selectable(clips[i].Name.c_str(), isSelected))
+								{
+									selectedClipIndex = i;
+									animator->Play(clips[i].Name);
+								}
+
+								if (isSelected)
+									ImGui::SetItemDefaultFocus();
+							}
+
+							ImGui::EndCombo();
+						}
+					}
+					else
+					{
+						ImGui::Text("No animation clips found.");
+					}
+				}
+
+			}
+
+		}
+
 		ImGui::PopID();
 	}
 
@@ -359,6 +429,13 @@ namespace Loopie {
 			if (ImGui::Selectable("Mesh Renderer"))
 			{
 				entity->AddComponent<MeshRenderer>();
+				ImGui::EndCombo();
+				return;
+			}
+
+			if (ImGui::Selectable("Animator"))
+			{
+				entity->AddComponent<Animator>();
 				ImGui::EndCombo();
 				return;
 			}

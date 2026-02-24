@@ -6,6 +6,7 @@
 #include "Loopie/Components/Transform.h"
 #include "Loopie/Components/Camera.h"
 #include "Loopie/Components/MeshRenderer.h"
+#include "Loopie/Components/Animator.h"
 
 #include "Loopie/Core/UUID.h"
 #include "Loopie/Core/InputEventManager.h"
@@ -357,6 +358,138 @@ namespace Loopie
 	}
 #pragma endregion
 
+#pragma region Animator
+	static void Animator_Stop(MonoString* entityID) {
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		Animator* animator = entity->GetComponent<Animator>();
+		if (animator)
+			animator->Stop();
+	}
+
+	static void Animator_Play(MonoString* entityID, MonoString* clipName)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		Animator* animator = entity->GetComponent<Animator>();
+		if (animator)
+			animator->Play(Utils::MonoStringToString(clipName));
+	}
+
+	static int Animator_GetCurrentClipIndex(MonoString* entityID)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		Animator* animator = entity->GetComponent<Animator>();
+		if (animator)
+			return animator->GetCurrentClipIndex();
+		return -1;
+	}
+
+	static MonoString* Animator_GetCurrentClipName(MonoString* entityID)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		Animator* animator = entity->GetComponent<Animator>();
+		if (animator) {
+			const AnimationClip* clip = animator->GetCurrentClip();
+			if (clip)
+			{
+				std::string clipName = clip->Name;
+				return ScriptingManager::CreateString(clipName.c_str());
+			}
+		}
+		return ScriptingManager::CreateString("");
+	}
+
+	static MonoString* Animator_GetClipName(MonoString* entityID, int clipIndex)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		Animator* animator = entity->GetComponent<Animator>();
+		if (animator) {
+			const AnimationClip* clip = animator->GetClipByIndex(clipIndex);
+			if (clip)
+			{
+				std::string clipName = clip->Name;
+				return ScriptingManager::CreateString(clipName.c_str());
+			}
+		}
+		return ScriptingManager::CreateString("");
+	}
+
+	static float Animator_GetPlaybackSpeed(MonoString* entityID)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		Animator* animator = entity->GetComponent<Animator>();
+		if (animator)
+			return animator->GetPlaybackSpeed();
+		return 0.0f;
+	}
+
+	static void Animator_SetPlaybackSpeed(MonoString* entityID, float speed)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		Animator* animator = entity->GetComponent<Animator>();
+		if (animator)
+			animator->SetPlaybackSpeed(speed);
+	}
+
+	static MonoBoolean Animator_IsLooping(MonoString* entityID)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		Animator* animator = entity->GetComponent<Animator>();
+		if (animator)
+			return animator->IsLooping();
+		return false;
+	}
+
+	static MonoBoolean Animator_IsPlaying(MonoString* entityID)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		Animator* animator = entity->GetComponent<Animator>();
+		if (animator)
+			return animator->IsPlaying();
+		return false;
+	}
+
+	static void Animator_SetLooping(MonoString* entityID, MonoBoolean loop)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		Animator* animator = entity->GetComponent<Animator>();
+		if (animator)
+			animator->SetLooping(loop != 0);
+	}
+
+	static float Animator_GetCurrentTime(MonoString* entityID)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		Animator* animator = entity->GetComponent<Animator>();
+		if (animator)
+			return animator->GetCurrentTime();
+		return 0.0f;
+	}
+
+#pragma endregion
+
+
 #pragma region Input
 	static MonoBoolean Input_IsKeyDown(int keycode)
 	{
@@ -416,6 +549,42 @@ namespace Loopie
 	{
 		*scrollDelta = Application::GetInstance().GetInputEvent().GetScrollDelta();
 	}
+
+	static void Input_GetLeftAxis(vec2* axis) {
+		*axis = Application::GetInstance().GetInputEvent().GetLeftAxis();
+	}
+
+	static void Input_GetRightAxis(vec2* axis) {
+		*axis = Application::GetInstance().GetInputEvent().GetRightAxis();
+	}
+
+	static MonoBoolean Input_IsAnyKeyDown() {
+		return Application::GetInstance().GetInputEvent().AnyKeyDown();
+	}
+
+	static MonoBoolean Input_IsAnyButtonDown() {
+		return Application::GetInstance().GetInputEvent().AnyButtonDown();
+	}
+
+	static MonoBoolean Input_IsAnyMouseButtonDown() {
+		return Application::GetInstance().GetInputEvent().AnyMouseButtonDown();
+	}
+
+	static MonoBoolean Input_IsAnyDown() {
+		return Application::GetInstance().GetInputEvent().AnyDown();
+	}
+
+
+	static void Input_SetAxisDeadzone(float deadzone) {
+		Application::GetInstance().GetInputEvent().SetAxisDeadzone(deadzone);
+	}
+
+	static float Input_GetAxisDeadzone() {
+		return Application::GetInstance().GetInputEvent().GetAxisDeadzone();
+	}
+
+
+
 #pragma endregion
 
 #pragma region Time
@@ -463,6 +632,7 @@ namespace Loopie
 	{
 		s_EntityHasComponentFuncs.clear();
 		RegisterComponent<Transform>();
+		RegisterComponent<Animator>();
 		RegisterComponent<Camera>();
 		RegisterComponent<MeshRenderer>();
 	}
@@ -505,6 +675,19 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Transform_Left);
 		ADD_INTERNAL_CALL(Transform_Right);
 
+		ADD_INTERNAL_CALL(Animator_Stop);
+		ADD_INTERNAL_CALL(Animator_Play);
+		ADD_INTERNAL_CALL(Animator_GetCurrentClipIndex);
+		ADD_INTERNAL_CALL(Animator_GetCurrentClipName);
+		ADD_INTERNAL_CALL(Animator_GetClipName);
+		ADD_INTERNAL_CALL(Animator_GetPlaybackSpeed);
+		ADD_INTERNAL_CALL(Animator_SetPlaybackSpeed);
+		ADD_INTERNAL_CALL(Animator_SetLooping);
+		ADD_INTERNAL_CALL(Animator_IsLooping);
+		ADD_INTERNAL_CALL(Animator_IsPlaying);
+		ADD_INTERNAL_CALL(Animator_GetCurrentTime);
+
+
 		ADD_INTERNAL_CALL(Input_IsKeyDown);
 		ADD_INTERNAL_CALL(Input_IsKeyUp);
 		ADD_INTERNAL_CALL(Input_IsKeyPressed);
@@ -517,6 +700,15 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Input_GetMousePosition);
 		ADD_INTERNAL_CALL(Input_GetMouseDelta);
 		ADD_INTERNAL_CALL(Input_GetScrollDelta);
+		ADD_INTERNAL_CALL(Input_GetLeftAxis);
+		ADD_INTERNAL_CALL(Input_GetRightAxis);
+		ADD_INTERNAL_CALL(Input_IsAnyKeyDown);
+		ADD_INTERNAL_CALL(Input_IsAnyButtonDown);
+		ADD_INTERNAL_CALL(Input_IsAnyMouseButtonDown);
+		ADD_INTERNAL_CALL(Input_IsAnyDown);
+		ADD_INTERNAL_CALL(Input_SetAxisDeadzone);
+		ADD_INTERNAL_CALL(Input_GetAxisDeadzone);
+
 
 		ADD_INTERNAL_CALL(Time_GetDeltaTime);
 		ADD_INTERNAL_CALL(Time_GetFixedDeltaTime);

@@ -8,10 +8,6 @@
 		"u_Color": {
 			"type": "Vec4",
 			"value": "1,1,1,1"
-		},
-		"u_SkinnedMode": {
-			"type": "Bool",
-			"value": "False"
 		}
 	}
 }
