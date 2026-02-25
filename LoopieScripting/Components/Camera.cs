@@ -54,11 +54,12 @@ namespace Loopie
 
         private static Camera GetMainCamera()
         {
-            string cameraID = InternalCalls.Camera_GetMainCamera();
-            if (cameraID == "")
+            string cameraEntityID = InternalCalls.Camera_GetMainCamera();
+            if (cameraEntityID == "")
                 return null;
 
-            return null;
+            Entity cameraEntity = new Entity(cameraEntityID);
+            return cameraEntity.GetComponent<Camera>();
         }
 
         public Vector4 GetViewport()

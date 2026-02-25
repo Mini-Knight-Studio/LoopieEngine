@@ -597,8 +597,10 @@ namespace Loopie
 
 	static MonoString* Camera_GetMainCamera() {
 		Camera* camera = Camera::GetMainCamera();
-		if (camera)
-			return ScriptingManager::CreateString(camera->GetUUID().Get().c_str());
+		if (camera) {
+			std::shared_ptr<Entity> entity = camera->GetOwner();
+			return ScriptingManager::CreateString(entity->GetUUID().Get().c_str());
+		}
 		return ScriptingManager::CreateString("");
 	}
 
