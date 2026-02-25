@@ -155,17 +155,11 @@ namespace Loopie {
 		if (entity)
 		{
 			std::vector<Component*> components = entity->GetComponents();
-			for (auto component : components)
+			MeshRenderer* meshRenderer = static_cast<MeshRenderer*>(entity->GetComponent(UUID(meshRendererUUID)));
+
+			if (meshRenderer)
 			{
-				if (component->GetUUID() == meshRendererUUID)
-				{
-					MeshRenderer* meshRenderer = static_cast<MeshRenderer*>(component);
-					if (meshRenderer)
-					{
-						SetMeshRenderer(meshRenderer);
-						break;
-					}
-				}
+				SetMeshRenderer(meshRenderer);
 			}
 		}
 		meshRendererUUID = "";

@@ -11,7 +11,22 @@ namespace Loopie
 
         public void Play(string clipName)
         {
-            InternalCalls.Animator_Play(entity.ID, clipName);
+            InternalCalls.Animator_PlayClip(entity.ID, clipName);
+        }
+
+        public void Play()
+        {
+            InternalCalls.Animator_Play(entity.ID);
+        }
+
+        public void Pause()
+        {
+            InternalCalls.Animator_Pause(entity.ID);
+        }
+
+        public void Resume()
+        {
+            InternalCalls.Animator_Resume(entity.ID);
         }
 
         public int GetCurrentClipIndex()

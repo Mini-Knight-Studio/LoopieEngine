@@ -118,6 +118,21 @@ namespace Loopie {
 		return outComponents;
 	}
 
+	Component* Entity::GetComponent(UUID uuid) {
+		auto it = m_componentsByUUID.find(uuid);
+		if (it != m_componentsByUUID.end())
+			return it->second;
+		return nullptr;
+	}
+
+	void Entity::OnComponentUUIDChange(Component* component, UUID oldUUID) {
+		auto it = m_componentsByUUID.find(oldUUID);
+		if (it != m_componentsByUUID.end()) {
+			m_componentsByUUID.erase(it);
+			m_componentsByUUID[component->GetUUID()] = component;
+		}
+	}
+
 	Transform* Entity::GetTransform() const
 	{
 		return m_transform;

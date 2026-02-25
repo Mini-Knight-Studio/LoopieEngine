@@ -92,5 +92,14 @@ namespace Loopie
 
             return new Entity(instanceId);
         }
+
+        public Entity Clone(Entity entity, bool cloneChilds = false)
+        {
+            string instanceId = InternalCalls.Entity_Clone(entity.ID, cloneChilds); ;
+            if (instanceId == "")
+                return null;
+
+            return new Entity(instanceId);
+        }
     }
 }

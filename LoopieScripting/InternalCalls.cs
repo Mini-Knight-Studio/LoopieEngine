@@ -86,7 +86,13 @@ namespace Loopie
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Animator_Stop(string entityID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Animator_Play(string entityID, string clipName);
+        internal extern static void Animator_PlayClip(string entityID, string clipName);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Animator_Play(string entityID);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Animator_Pause(string entityID);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Animator_Resume(string entityID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static int Animator_GetCurrentClipIndex(string entityID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
@@ -105,6 +111,28 @@ namespace Loopie
         internal extern static bool Animator_IsPlaying(string entityID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static float Animator_GetCurrentTime(string entityID);
+        #endregion
+        #region Camera
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Camera_SetFov(string entityID, float fov);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static float Camera_GetFov(string entityID);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Camera_SetNearPlane(string entityID, float fov);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static float Camera_GetNearPlane(string entityID);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Camera_SetFarPlane(string entityID, float fov);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static float Camera_GetFarPlane(string entityID);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool Camera_IsMainCamera(string entityID);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Camera_SetMainCamera(string entityID);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static string Camera_GetMainCamera();
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Camera_GetViewport(string entityID, out Vector4 viewport);
         #endregion
         #region Input
         [MethodImplAttribute(MethodImplOptions.InternalCall)]

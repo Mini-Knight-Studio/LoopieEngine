@@ -5,6 +5,7 @@
 
 #include <string>
 #include <vector>
+#include <unordered_map>
 #include <memory>
 
 namespace Loopie {
@@ -38,6 +39,7 @@ namespace Loopie {
 				m_transform = componentPtr;
 			}
 
+			m_componentsByUUID[componentPtr->GetUUID()] = componentPtr;
 			return componentPtr;
 		}
 
@@ -52,6 +54,10 @@ namespace Loopie {
 			
 			return nullptr;
 		}
+
+		Component* GetComponent(UUID uuid);
+
+		void OnComponentUUIDChange(Component* component, UUID oldUUID);
 
 		template<typename T, typename = std::enable_if_t<std::is_base_of_v<Component, T>>>
 		std::vector<T*> GetComponents() const
@@ -81,6 +87,7 @@ namespace Loopie {
 			for (size_t i = 0; i < m_components.size(); i++)
 			{
 				if (m_components[i]->GetTypeID() == T::GetTypeIDStatic()){
+					m_componentsByUUID.erase(m_components[i]->GetUUID());
 					m_components.erase(m_components.begin() + i);
 					return true;
 				}
@@ -117,6 +124,7 @@ namespace Loopie {
 		std::weak_ptr<Entity> m_parentEntity;
 		std::vector<std::shared_ptr<Entity>> m_childrenEntities;
 		std::vector<std::unique_ptr<Component>> m_components; // Might want to re-do this to a map for optimization
+		std::unordered_map<UUID, Component*> m_componentsByUUID;
 		Transform* m_transform = nullptr;
 
 		UUID m_uuid;
