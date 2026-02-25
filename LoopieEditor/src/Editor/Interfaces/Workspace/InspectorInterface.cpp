@@ -309,26 +309,36 @@ namespace Loopie {
 		}
 
 		if (open) {
-			if(ImGui::Button("Auto-Get MeshRenderer")){
+			ImGui::Text("Get MeshRenderer");
+			ImGui::SameLine();
+			if(ImGui::Button("Auto-Get")){
 				animator->SetMeshRenderer(animator->GetOwner()->GetComponent<MeshRenderer>());
 			}
+			ImGui::SameLine();
+			if (ImGui::Button("Paste")) {
+				//animator->SetMeshRenderer(animator->GetOwner()->GetComponent<MeshRenderer>());
+			}
+
 			MeshRenderer* linkedRenderer = animator->GetMeshRenderer();
+
+			ImGui::Separator();
+			ImGui::Text("MeshRenderer: %s", linkedRenderer ? "Assigned" : "None");
+
+
 			if (linkedRenderer) {
 				std::shared_ptr<Mesh> mesh = linkedRenderer->GetMesh();
 				if (mesh) {
+					ImGui::Separator();
 					auto& clips = mesh->GetData().AnimationClips;
 					int totalAnimationClips = static_cast<int>(clips.size());
 
 					if (totalAnimationClips > 0)
 					{
-						// Store selected index inside animator (recommended)
 						int selectedClipIndex = animator->GetCurrentClipIndex();
 
-						// Clamp safety
 						if (selectedClipIndex >= totalAnimationClips)
 							selectedClipIndex = 0;
 
-						// Current preview label
 						const char* currentClipName = clips[selectedClipIndex].Name.c_str();
 
 						if (ImGui::BeginCombo("Animation Clip", currentClipName))
@@ -340,7 +350,7 @@ namespace Loopie {
 								if (ImGui::Selectable(clips[i].Name.c_str(), isSelected))
 								{
 									selectedClipIndex = i;
-									animator->Play(clips[i].Name);
+									animator->SelectClip(clips[i].Name);
 								}
 
 								if (isSelected)
@@ -348,6 +358,23 @@ namespace Loopie {
 							}
 
 							ImGui::EndCombo();
+						}
+
+						if (ImGui::Button("Play")) {
+							animator->Play();
+						}
+						ImGui::SameLine();
+						if (ImGui::Button("Pause")) {
+							animator->Pause();
+						}
+						ImGui::SameLine();
+						if (ImGui::Button("Resume")) {
+							animator->Resume();
+						}
+						ImGui::SameLine();
+						if (ImGui::Button("Stop"))
+						{
+							animator->Stop();
 						}
 					}
 					else

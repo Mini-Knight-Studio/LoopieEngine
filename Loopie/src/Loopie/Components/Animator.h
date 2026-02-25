@@ -37,14 +37,24 @@ namespace Loopie {
 		float GetCurrentTime() const { return m_currentTime; }
 
 		void Play(const std::string& clipName);
+		void Play();
+
+		void Pause() { m_isPlaying = false; }
+		void Resume() { m_isPlaying = true; }
+
 		void Stop();
+
 		void Update();
 
-		const std::vector<glm::mat4>& GetFinalBoneMatrices() const { return m_finalBoneMatrices; }
 
+		bool SelectClip(const std::string& clipName);
+
+		const std::vector<glm::mat4>& GetFinalBoneMatrices() const { return m_finalBoneMatrices; }
+		bool HasAnimation() const { return m_currentClip != nullptr; }
 
 		JsonNode Serialize(JsonNode& parent) const override;
 		void Deserialize(const JsonNode& data) override;
+		void OnSceneDeserialized() override;
 
 	private:
 		MeshRenderer* m_meshRenderer;
@@ -59,5 +69,10 @@ namespace Loopie {
 
 		std::vector<glm::mat4> m_finalBoneMatrices;
 		void CalculateBoneTransform();
+
+
+		/// Serialization Temporal fields
+		std::string meshRendererUUID;
+		std::string meshRendererOwnerUUID;
 	};
 }

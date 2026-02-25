@@ -234,11 +234,10 @@ namespace Loopie
 				std::vector<matrix4> bones = {};
 				if (data.HasBones) {
 					Animator* animator = renderer->GetLinkedAnimator();
-					if (animator) {
+					if (animator && animator->HasAnimation()) {
 						animator->Update();
 						bones = animator->GetFinalBoneMatrices();
-					}else
-						bones = std::vector<matrix4>(data.Skeleton.size(), matrix4(1.0f));
+					}
 				}
 
 				if (!Renderer::IsGizmoActive() || entity != selectedEntity) {

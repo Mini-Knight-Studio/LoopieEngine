@@ -1,5 +1,7 @@
 #include "Animator.h"
 
+#include "Loopie/Core/Application.h"
+
 #include "Loopie/Components/MeshRenderer.h"
 #include "Loopie/Components/Transform.h"
 #include "Loopie/Core/Time.h"
@@ -61,19 +63,22 @@ namespace Loopie {
 			return;
 		}
 
-		int index = 0;
-		for(const auto& clip : mesh->GetData().AnimationClips) {
-			if (clip.Name == clipName) {
-
-				m_currentClip = &clip;
-				m_currentTime = 0.0f;
-				m_isPlaying = true;
-				m_finalBoneMatrices.resize(m_meshRenderer->GetMesh()->GetData().Skeleton.size(),matrix4(1.0f));
-				break;
-			}
-			index++;
+		if (SelectClip(clipName)) {
+			m_isPlaying = true;
 		}
-		m_currentClipIndex = index;
+	}
+
+	void Animator::Play()
+	{
+		auto mesh = m_meshRenderer->GetMesh();
+		if (mesh == nullptr) {
+			return;
+		}
+
+		m_currentClip = &mesh->GetData().AnimationClips[m_currentClipIndex];
+		m_currentTime = 0.0f;
+		m_isPlaying = true;
+		m_finalBoneMatrices.resize(m_meshRenderer->GetMesh()->GetData().Skeleton.size(), matrix4(1.0f));
 	}
 
 	void Animator::Stop()
@@ -85,7 +90,7 @@ namespace Loopie {
 
 	void Animator::Update()
 	{
-		if (!m_currentClip || !m_meshRenderer)
+		if (!m_currentClip || !m_meshRenderer || !m_isPlaying)
 			return;
 
 		auto mesh = m_meshRenderer->GetMesh();
@@ -107,14 +112,64 @@ namespace Loopie {
 		CalculateBoneTransform();
 	}
 
+	bool Animator::SelectClip(const std::string& clipName)
+	{
+		auto mesh = m_meshRenderer->GetMesh();
+		int index = 0;
+		for (const auto& clip : mesh->GetData().AnimationClips) {
+			if (clip.Name == clipName) {
+
+				m_currentClip = &clip;
+				m_currentTime = 0.0f;
+				m_finalBoneMatrices.resize(m_meshRenderer->GetMesh()->GetData().Skeleton.size(), matrix4(1.0f));
+				m_currentClipIndex = index;
+				return true;
+			}
+			index++;
+		}
+		return false;
+	}
+
 	JsonNode Animator::Serialize(JsonNode& parent) const
 	{
-		return JsonNode();
+		JsonNode animatorObj = parent.CreateObjectField("animator");
+
+		std::string meshRendererUUID = m_meshRenderer ? m_meshRenderer->GetUUID().Get() : "";
+		animatorObj.CreateField("rendererObject", meshRendererUUID);
+
+		std::string meshRendererOwnerUUID = m_meshRenderer ? m_meshRenderer->GetOwner()->GetUUID().Get() : "";
+		animatorObj.CreateField("rendererOwner", meshRendererOwnerUUID);
+
+		return animatorObj;
 	}
 
 	void Animator::Deserialize(const JsonNode& data)
 	{
+		meshRendererUUID = data.GetValue<std::string>("rendererObject", "").Result;
+		meshRendererOwnerUUID = data.GetValue<std::string>("rendererOwner", "").Result;
+	}
 
+	void Animator::OnSceneDeserialized()
+	{
+		std::shared_ptr<Entity> entity = Application::GetInstance().GetScene().GetEntity(UUID(meshRendererOwnerUUID));
+		if (entity)
+		{
+			std::vector<Component*> components = entity->GetComponents();
+			for (auto component : components)
+			{
+				if (component->GetUUID() == meshRendererUUID)
+				{
+					MeshRenderer* meshRenderer = static_cast<MeshRenderer*>(component);
+					if (meshRenderer)
+					{
+						SetMeshRenderer(meshRenderer);
+						break;
+					}
+				}
+			}
+		}
+		meshRendererUUID = "";
+		meshRendererOwnerUUID = "";
 	}
 
 	void Animator::CalculateBoneTransform()

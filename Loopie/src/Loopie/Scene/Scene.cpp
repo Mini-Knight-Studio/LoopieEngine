@@ -5,6 +5,7 @@
 #include "Loopie/Components/Transform.h"
 #include "Loopie/Components/Camera.h"
 #include "Loopie/Components/MeshRenderer.h"
+#include "Loopie/Components/Animator.h"
 #include "Loopie/Components/ScriptClass.h"
 #include "Loopie/Helpers/LoopieHelpers.h"
 #include "Loopie/Resources/AssetRegistry.h"
@@ -55,6 +56,7 @@ namespace Loopie {
 			{
 				JsonData componentObj = JsonData();
 				component->Serialize(componentObj.Node());
+				componentObj.CreateField<std::string>("uuid", component->GetUUID().Get());
 				componentsObj.AddArrayElement(componentObj.GetRoot());
 			}
 
@@ -404,11 +406,12 @@ namespace Loopie {
 			JsonNode componentsObj = entityNode.Child("components");
 			if (componentsObj.IsValid() && componentsObj.IsArray())
 			{
-
 				for (size_t j = 0; j < componentsObj.Size(); ++j)
 				{
 					JsonResult<json> componentJson = componentsObj.GetArrayElement<json>(uint32_t(j));
 					JsonNode componentNode = JsonNode(&componentJson.Result);
+
+					UUID componentUUID = UUID(componentNode.GetValue<std::string>("uuid").Result);
 
 					// *** Component Checking *** - PSS 08/12/25
 					// This checks manually which component type it is.
@@ -418,6 +421,7 @@ namespace Loopie {
 					{
 						JsonNode node = componentNode.Child("transform");
 						entity->GetTransform()->Deserialize(node);
+						entity->GetTransform()->SetUUID(componentUUID.Get());
 					}
 					else if (componentNode.Contains("camera"))
 					{
@@ -426,6 +430,7 @@ namespace Loopie {
 						if (camera)
 						{
 							camera->Deserialize(node);
+							camera->SetUUID(componentUUID.Get());
 						}
 					}
 					else if (componentNode.Contains("meshrenderer"))
@@ -435,6 +440,7 @@ namespace Loopie {
 						if (meshRenderer)
 						{
 							meshRenderer->Deserialize(node);
+							meshRenderer->SetUUID(componentUUID.Get());
 						}
 					}
 					else if (componentNode.Contains("script"))
@@ -444,11 +450,37 @@ namespace Loopie {
 						if (scriptClass)
 						{
 							scriptClass->Deserialize(node);
+							scriptClass->SetUUID(componentUUID.Get());
+						}
+					}
+					else if (componentNode.Contains("animator"))
+					{
+						JsonNode node = componentNode.Child("animator");
+						auto animatorClass = entity->AddComponent<Animator>();
+						if (animatorClass)
+						{
+							animatorClass->Deserialize(node);
+							animatorClass->SetUUID(componentUUID.Get());
 						}
 					}
 				}
 			}
 		}
+
+		for (auto& [uuid, entity] : m_entities)
+		{
+			if (!entity)
+				continue;
+
+			auto& components = entity->GetComponents();
+			for (auto& component : components)
+			{
+				if (component)
+					component->OnSceneDeserialized();
+			}
+		}
+
+
 		Log::Info("Scene loaded successfully");
 
 		if (safeSceneAsLastLoaded) {
