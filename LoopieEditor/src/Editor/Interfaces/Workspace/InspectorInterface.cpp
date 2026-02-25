@@ -10,6 +10,7 @@
 #include "Loopie/Components/Camera.h"
 #include "Loopie/Components/MeshRenderer.h"
 #include "Loopie/Components/ScriptClass.h"
+#include "Loopie/Components/Canvas.h"
 
 #include "Loopie/Scripting/ScriptingManager.h"
 
@@ -77,6 +78,9 @@ namespace Loopie {
 			}
 			else if (component->GetTypeID() == ScriptClass::GetTypeIDStatic()) {
 				DrawScriptClass(static_cast<ScriptClass*>(component));
+			}
+			else if (component->GetTypeID() == Canvas::GetTypeIDStatic()) {
+				DrawCanvas(static_cast<Canvas*>(component));
 			}
 		}
 		AddComponent(entity);
@@ -363,6 +367,20 @@ namespace Loopie {
 					break;
 				}
 			}
+		}
+		ImGui::PopID();
+	}
+
+	void InspectorInterface::DrawCanvas(Canvas* canvas)
+	{
+		ImGui::PushID(canvas);
+		bool open = ImGui::CollapsingHeader("Canvas");
+		if (RemoveComponent(canvas)) {
+			ImGui::PopID();
+			return;
+		}
+		if (open) {
+			
 		}
 		ImGui::PopID();
 	}

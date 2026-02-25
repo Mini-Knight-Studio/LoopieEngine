@@ -66,6 +66,9 @@ namespace Loopie
         void Deserialize(const JsonNode& data) override;    
 
 		virtual bool IsRectTransform() const { return false; }
+        virtual bool HasSize() const { return false; }
+
+        virtual vec2 GetSize() const { return vec2(0.0f); }
 
         virtual float GetWidth() const { return 0.0f; }
 		virtual float GetHeight() const { return 0.0f; }
@@ -73,12 +76,15 @@ namespace Loopie
         virtual void SetWidth(float) {}
 		virtual void SetHeight(float) {}
 
+        virtual vec3 GetLocalBoundsMin() const { return vec3(0); }
+        virtual vec3 GetLocalBoundsMax() const { return vec3(0); }
+
     protected:
         vec3 GetWorldPosition() const;
         quaternion GetWorldRotation() const;
         vec3 GetWorldScale() const;
 
-        virtual void RefreshMatrices() const;
+        void RefreshMatrices() const;
 
     public:
         Event<TransformNotification> m_transformNotifier;

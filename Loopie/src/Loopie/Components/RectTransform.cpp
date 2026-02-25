@@ -19,16 +19,13 @@ float Loopie::RectTransform::GetHeight() const
 void Loopie::RectTransform::SetWidth(float w)
 {
 	m_width = w;
+    MarkWorldDirty();
 }
 
 void Loopie::RectTransform::SetHeight(float h)
 {
 	m_height = h;
-}
-
-void Loopie::RectTransform::RefreshMatrices() const
-{
-	Transform::RefreshMatrices();
+    MarkWorldDirty();
 }
 
 Loopie::JsonNode Loopie::RectTransform::Serialize(JsonNode& parent) const

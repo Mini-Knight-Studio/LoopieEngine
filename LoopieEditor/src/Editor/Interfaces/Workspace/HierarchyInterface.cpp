@@ -4,6 +4,7 @@
 #include "Loopie/Resources/ResourceManager.h"
 #include "Loopie/Importers/MeshImporter.h"
 #include "Loopie/Components/RectTransform.h"
+#include "Loopie/Components/Canvas.h"
 
 #include "Editor/Interfaces/Workspace/SceneInterface.h"
 #include <imgui.h>
@@ -236,10 +237,12 @@ namespace Loopie {
 
 		return newEntity;
 	}
+	
 	std::shared_ptr<Entity> HierarchyInterface::CreateCanvas(const std::string& name, const std::shared_ptr<Entity>& parent)
 	{
 		std::shared_ptr<Entity> newEntity = m_scene->CreateEntity(name, parent);
 		newEntity->ReplaceTransform<RectTransform>();
+		newEntity->AddComponent<Canvas>();
 
 		return newEntity;
 	}

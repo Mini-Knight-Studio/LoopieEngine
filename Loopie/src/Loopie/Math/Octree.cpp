@@ -191,13 +191,59 @@ namespace Loopie
 		{
 			return meshRenderer->GetWorldAABB();
 		}
-		else
+		/*else
+		{
+			vec3 entityPosition = entity->GetTransform()->GetPosition();
+			AABB aabb(entityPosition);
+			
+			return aabb;
+		}*/
+
+		Transform* transform = entity->GetTransform();
+		if(!transform)
 		{
 			vec3 entityPosition = entity->GetTransform()->GetPosition();
 			AABB aabb(entityPosition);
 			
 			return aabb;
 		}
+
+		const vec3 localMin = transform->GetLocalBoundsMin();
+		const vec3 localMax = transform->GetLocalBoundsMax();
+
+		if (localMin == vec3(0.0f) && localMax == vec3(0.0f))
+		{
+			vec3 entityPosition = transform->GetPosition();
+			AABB aabb(entityPosition);
+			
+			return aabb;
+		}
+
+		const matrix4& m = transform->GetLocalToWorldMatrix();
+		const vec3 corners[8] = 
+		{
+			vec3(localMin.x, localMin.y, localMin.z),
+			vec3(localMax.x, localMin.y, localMin.z),
+			vec3(localMin.x, localMax.y, localMin.z),
+			vec3(localMax.x, localMax.y, localMin.z),
+			
+			vec3(localMin.x, localMin.y, localMax.z),
+			vec3(localMax.x, localMin.y, localMax.z),
+			vec3(localMin.x, localMax.y, localMax.z),
+			vec3(localMax.x, localMax.y, localMax.z)
+		};
+
+		vec3 minW = vec3(m * vec4(corners[0], 1.0f));
+		vec3 maxW = minW;
+
+		for (int i = 1; i < 8; ++i)
+		{
+			vec3 worldCorner = vec3(m * vec4(corners[i], 1.0f));
+			minW = glm::min(minW, worldCorner);
+			maxW = glm::max(maxW, worldCorner);
+		}
+
+		return AABB(minW, maxW);
 	}
 	
 	void Octree::InsertRecursively(OctreeNode* node, std::shared_ptr<Entity> entity, const AABB& entityAABB, int depth)

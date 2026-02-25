@@ -7,6 +7,7 @@
 #include "Loopie/Components/Camera.h"
 #include "Loopie/Components/MeshRenderer.h"
 #include "Loopie/Components/ScriptClass.h"
+#include "Loopie/Components/Canvas.h"
 #include "Loopie/Helpers/LoopieHelpers.h"
 #include "Loopie/Resources/AssetRegistry.h"
 
@@ -229,7 +230,6 @@ namespace Loopie {
 				);
 				continue;
 			}
-
 			// Camera
 			if (componentData.Child("camera").IsValid())
 			{
@@ -248,6 +248,12 @@ namespace Loopie {
 				std::string classID = componentData.Child("script").GetValue<std::string>("class_id", "").Result;
 				ScriptClass* scriptClass = clone->AddComponent<ScriptClass>(classID);
 				scriptClass->Deserialize(componentData.Child("script"));
+			}
+			 // Canvas
+			else if (componentData.Child("canvas").IsValid())
+			{
+				auto canvas = clone->AddComponent<Canvas>();
+				canvas->Deserialize(componentData.Child("canvas"));
 			}
 		}
 
@@ -450,6 +456,15 @@ namespace Loopie {
 						if (scriptClass)
 						{
 							scriptClass->Deserialize(node);
+						}
+					}
+					else if (componentNode.Contains("canvas"))
+					{
+						JsonNode node = componentNode.Child("canvas");
+						auto canvas = entity->AddComponent<Canvas>();
+						if (canvas)
+						{
+							canvas->Deserialize(node);
 						}
 					}
 				}

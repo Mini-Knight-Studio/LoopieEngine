@@ -88,7 +88,8 @@ namespace Loopie {
 	void Renderer::EndScene()
 	{
 		FlushRenderQueue();
-		Gizmo::EndGizmo();
+		if(s_UseGizmos)
+			Gizmo::EndGizmo();
 	}
 
 	void Renderer::AddRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const Transform* transform)
