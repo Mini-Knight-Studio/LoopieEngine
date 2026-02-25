@@ -151,6 +151,8 @@ namespace Loopie {
 
 	void Animator::OnSceneDeserialized()
 	{
+		if (meshRendererOwnerUUID.empty() || meshRendererUUID.empty())
+			return;
 		std::shared_ptr<Entity> entity = Application::GetInstance().GetScene().GetEntity(UUID(meshRendererOwnerUUID));
 		if (entity)
 		{

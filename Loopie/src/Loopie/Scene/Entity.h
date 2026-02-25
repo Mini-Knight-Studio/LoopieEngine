@@ -55,6 +55,14 @@ namespace Loopie {
 			return nullptr;
 		}
 
+		template<typename T, typename = std::enable_if_t<std::is_base_of_v<Component, T>>>
+		T* GetComponent(UUID uuid) {
+			auto it = m_componentsByUUID.find(uuid);
+			if (it != m_componentsByUUID.end())
+				return static_cast<T*>(it->second);
+			return nullptr;
+		}
+
 		Component* GetComponent(UUID uuid);
 
 		void OnComponentUUIDChange(Component* component, UUID oldUUID);

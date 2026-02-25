@@ -34,10 +34,18 @@ namespace Loopie
 		MonoProperty* entityProperty =
 			mono_class_get_property_from_name(ScriptingManager::s_Data.ComponentClass->GetMonoClass() , "entity");
 
-		MonoObject* entityInstance = ScriptingManager::CreateManagedEntity(GetOwner()->GetUUID());
+		MonoProperty* idProperty =
+			mono_class_get_property_from_name(ScriptingManager::s_Data.ComponentClass->GetMonoClass(), "ID");
 
-		void* args[1] = { entityInstance };
+		MonoObject* entityInstance = ScriptingManager::CreateManagedEntity(GetOwner()->GetUUID());
+		MonoObject* componentInstance = ScriptingManager::CreateManagedEntity(GetUUID());
+
+		void* args[1] = { nullptr };
+		args[0] = entityInstance;
 		mono_property_set_value(entityProperty, m_instance, args, nullptr);
+
+		args[0] = componentInstance;
+		mono_property_set_value(idProperty, m_instance, args, nullptr);
 
 		// Restore fields
 		for (const auto& [name, field] : m_scriptingClass->GetFields())

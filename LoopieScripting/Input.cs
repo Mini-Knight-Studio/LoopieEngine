@@ -110,12 +110,14 @@ namespace Loopie
         {
             Vector2 axis = Vector2.Zero;
             InternalCalls.Input_GetLeftAxis(out axis);
+            axis.y *= -1;
             return axis;
         }
         private static Vector2 GetRightAxis()
         {
             Vector2 axis = Vector2.Zero;
             InternalCalls.Input_GetRightAxis(out axis);
+            axis.y *= -1;
             return axis;
         }
 

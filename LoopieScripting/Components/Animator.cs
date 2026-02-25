@@ -6,52 +6,52 @@ namespace Loopie
     {
         public void Stop()
         {
-            InternalCalls.Animator_Stop(entity.ID);
+            InternalCalls.Animator_Stop(entity.ID, ID);
         }
 
         public void Play(string clipName)
         {
-            InternalCalls.Animator_PlayClip(entity.ID, clipName);
+            InternalCalls.Animator_PlayClip(entity.ID, ID, clipName);
         }
 
         public void Play()
         {
-            InternalCalls.Animator_Play(entity.ID);
+            InternalCalls.Animator_Play(entity.ID, ID);
         }
 
         public void Pause()
         {
-            InternalCalls.Animator_Pause(entity.ID);
+            InternalCalls.Animator_Pause(entity.ID, ID);
         }
 
         public void Resume()
         {
-            InternalCalls.Animator_Resume(entity.ID);
+            InternalCalls.Animator_Resume(entity.ID, ID);
         }
 
         public int GetCurrentClipIndex()
         {
-            return InternalCalls.Animator_GetCurrentClipIndex(entity.ID);
+            return InternalCalls.Animator_GetCurrentClipIndex(entity.ID, ID);
         }
 
         public string GetCurrentClipName()
         {
-            return InternalCalls.Animator_GetCurrentClipName(entity.ID);
+            return InternalCalls.Animator_GetCurrentClipName(entity.ID, ID);
         }
 
         public string GetClipName(int index)
         {
-            return InternalCalls.Animator_GetClipName(entity.ID, index);
+            return InternalCalls.Animator_GetClipName(entity.ID, ID, index);
         }
 
         public float GetPlaybackSpeed()
         {
-            return InternalCalls.Animator_GetPlaybackSpeed(entity.ID);
+            return InternalCalls.Animator_GetPlaybackSpeed(entity.ID, ID);
         }
 
         public void SetPlaybackSpeed(float speed)
         {
-            InternalCalls.Animator_SetPlaybackSpeed(entity.ID, speed);
+            InternalCalls.Animator_SetPlaybackSpeed(entity.ID, ID, speed);
         }
 
         public bool Looping
@@ -59,12 +59,12 @@ namespace Loopie
 
         private void SetLooping(bool isLooping)
         {
-            InternalCalls.Animator_SetLooping(entity.ID, isLooping);
+            InternalCalls.Animator_SetLooping(entity.ID, ID, isLooping);
         }
 
         private bool IsLooping()
         {
-            return InternalCalls.Animator_IsLooping(entity.ID);
+            return InternalCalls.Animator_IsLooping(entity.ID, ID);
         }
 
         public bool Playing
@@ -72,12 +72,12 @@ namespace Loopie
 
         private bool IsPlaying()
         {
-            return InternalCalls.Animator_IsPlaying(entity.ID);
+            return InternalCalls.Animator_IsPlaying(entity.ID, ID);
         }
 
         public float GetCurrentTime()
         {
-            return InternalCalls.Animator_GetCurrentTime(entity.ID);
+            return InternalCalls.Animator_GetCurrentTime(entity.ID, ID);
         }
 
     }

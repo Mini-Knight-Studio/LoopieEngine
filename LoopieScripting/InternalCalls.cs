@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 
 namespace Loopie
@@ -84,55 +85,55 @@ namespace Loopie
         #endregion
         #region Animator
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Animator_Stop(string entityID);
+        internal extern static void Animator_Stop(string entityID, string componentID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Animator_PlayClip(string entityID, string clipName);
+        internal extern static void Animator_PlayClip(string entityID, string componentID, string clipName);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Animator_Play(string entityID);
+        internal extern static void Animator_Play(string entityID, string componentID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Animator_Pause(string entityID);
+        internal extern static void Animator_Pause(string entityID, string componentID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Animator_Resume(string entityID);
+        internal extern static void Animator_Resume(string entityID, string componentID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static int Animator_GetCurrentClipIndex(string entityID);
+        internal extern static int Animator_GetCurrentClipIndex(string entityID, string componentID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static string Animator_GetCurrentClipName(string entityID);
+        internal extern static string Animator_GetCurrentClipName(string entityID, string componentID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static string Animator_GetClipName(string entityID, int index);
+        internal extern static string Animator_GetClipName(string entityID, string componentID, int index);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static float Animator_GetPlaybackSpeed(string entityID);
+        internal extern static float Animator_GetPlaybackSpeed(string entityID, string componentID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Animator_SetPlaybackSpeed(string entityID, float time);
+        internal extern static void Animator_SetPlaybackSpeed(string entityID, string componentID, float time);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Animator_SetLooping(string entityID, bool isLooping);
+        internal extern static void Animator_SetLooping(string entityID, string componentID, bool isLooping);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static bool Animator_IsLooping(string entityID);
+        internal extern static bool Animator_IsLooping(string entityID, string componentID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static bool Animator_IsPlaying(string entityID);
+        internal extern static bool Animator_IsPlaying(string entityID, string componentID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static float Animator_GetCurrentTime(string entityID);
+        internal extern static float Animator_GetCurrentTime(string entityID, string componentID);
         #endregion
         #region Camera
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Camera_SetFov(string entityID, float fov);
+        internal extern static void Camera_SetFov(string entityID, string componentID, float fov);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static float Camera_GetFov(string entityID);
+        internal extern static float Camera_GetFov(string entityID, string componentID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Camera_SetNearPlane(string entityID, float fov);
+        internal extern static void Camera_SetNearPlane(string entityID, string componentID, float fov);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static float Camera_GetNearPlane(string entityID);
+        internal extern static float Camera_GetNearPlane(string entityID, string componentID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Camera_SetFarPlane(string entityID, float fov);
+        internal extern static void Camera_SetFarPlane(string entityID, string componentID, float fov);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static float Camera_GetFarPlane(string entityID);
+        internal extern static float Camera_GetFarPlane(string entityID, string componentID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static bool Camera_IsMainCamera(string entityID);
+        internal extern static bool Camera_IsMainCamera(string entityID, string componentID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Camera_SetMainCamera(string entityID);
+        internal extern static void Camera_SetMainCamera(string entityID, string componentID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static string Camera_GetMainCamera();
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Camera_GetViewport(string entityID, out Vector4 viewport);
+        internal extern static void Camera_GetViewport(string entityID, string componentID, out Vector4 viewport);
         #endregion
         #region Input
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
@@ -219,9 +220,11 @@ namespace Loopie
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Entity_Destroy(string entityID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static bool Entity_AddComponent(string entityID, string componentFullName);
+        internal extern static bool Entity_AddComponent(string entityID, string componentFullName, out string componentID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static bool Entity_HasComponent(string entityID, Type componentType);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool Entity_GetComponent(string entityID, Type componentType, out string componentID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static string Entity_FindEntityByName(string name);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]

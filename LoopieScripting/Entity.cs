@@ -17,15 +17,19 @@ namespace Loopie
         public bool HasComponent<T>() where T : Component, new()
         {
             Type componentType = typeof(T);
-            return InternalCalls.Entity_HasComponent (ID, componentType);
+            return InternalCalls.Entity_HasComponent(ID, componentType);
         }
 
         public T GetComponent<T>() where T : Component, new()
         {
-            if (HasComponent<T>())
+            Type componentType = typeof(T);
+            if (InternalCalls.Entity_HasComponent(ID, componentType))
             {
+                if (!InternalCalls.Entity_GetComponent(ID, componentType, out string componentID))
+                    return null;
                 T component = new T();
                 component.entity = this;
+                component.ID = componentID;
                 return component;
             }
 
@@ -65,10 +69,11 @@ namespace Loopie
         public T AddComponent<T>() where T : Component, new()
         {
             string componentType = typeof(T).FullName;
-            if(InternalCalls.Entity_AddComponent(ID, componentType))
+            if(InternalCalls.Entity_AddComponent(ID, componentType, out string componentID))
             {
                 T component = new T();
                 component.entity = this;
+                component.ID = componentID;
                 return component;
             }
             return null;

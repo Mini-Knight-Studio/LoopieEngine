@@ -24,6 +24,7 @@
 namespace Loopie
 {
 	static std::unordered_map<_MonoType*, std::function<bool(std::shared_ptr<Entity>)>> s_EntityHasComponentFuncs;
+	static std::unordered_map<_MonoType*, std::function<UUID(std::shared_ptr<Entity>)>> s_EntityGetComponentFuncs;
 
 	namespace Utils {
 		std::string MonoStringToString(MonoString* string)
@@ -143,7 +144,7 @@ namespace Loopie
 		return ScriptingManager::CreateString(clone->GetUUID().Get().c_str());
 	}
 
-	static MonoBoolean Entity_AddComponent(MonoString* entityID, MonoString* componentType) {
+	static MonoBoolean Entity_AddComponent(MonoString* entityID, MonoString* componentType, MonoString** componentID) {
 		UUID uuid(Utils::MonoStringToString(entityID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		ASSERT(scene == nullptr, "Scene not found");
@@ -157,6 +158,7 @@ namespace Loopie
 		}
 
 		ScriptClass* scriptComponent = entity->AddComponent<ScriptClass>(scriptingClass->GetFullName());
+		*componentID = ScriptingManager::CreateString(scriptComponent->GetUUID().Get().c_str());
 		scriptComponent->SetUp();
 		scriptComponent->InvokeOnCreate();
 		return true;
@@ -175,6 +177,23 @@ namespace Loopie
 		if (s_EntityHasComponentFuncs.find(managedType) == s_EntityHasComponentFuncs.end())
 			return false;
 		return s_EntityHasComponentFuncs.at(managedType)(entity);
+	}
+
+	static MonoBoolean Entity_GetComponent(MonoString* entityID, MonoReflectionType* componentType, MonoString** componentID)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		ASSERT(scene == nullptr, "Scene not found");
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		ASSERT(entity == nullptr, "Entity not found");
+
+		MonoType* managedType = mono_reflection_type_get_type(componentType);
+
+		if (s_EntityHasComponentFuncs.find(managedType) == s_EntityHasComponentFuncs.end())
+			return false;
+		UUID componentUUID = s_EntityGetComponentFuncs.at(managedType)(entity);
+		*componentID = ScriptingManager::CreateString(componentUUID.Get().c_str());
+		return true;
 	}
 
 	static MonoString* Entity_FindEntityByName(MonoString* name)
@@ -206,7 +225,7 @@ namespace Loopie
 #pragma endregion
 
 #pragma region Transform
-	static void Transform_GetPosition(MonoString* entityID, vec3* position)
+	static void Transform_GetPosition(MonoString* entityID, MonoString* componentID, vec3* position)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
 		Scene* scene = &Application::GetInstance().GetScene();
@@ -360,70 +379,77 @@ namespace Loopie
 #pragma endregion
 
 #pragma region Animator
-	static void Animator_Stop(MonoString* entityID) {
+	static void Animator_Stop(MonoString* entityID, MonoString* componentID) {
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		Animator* animator = entity->GetComponent<Animator>();
+		Animator* animator = entity->GetComponent<Animator>(componentUUID);
 		if (animator)
 			animator->Stop();
 	}
 
-	static void Animator_PlayClip(MonoString* entityID, MonoString* clipName)
+	static void Animator_PlayClip(MonoString* entityID, MonoString* componentID, MonoString* clipName)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		Animator* animator = entity->GetComponent<Animator>();
+		Animator* animator = entity->GetComponent<Animator>(componentUUID);
 		if (animator)
 			animator->Play(Utils::MonoStringToString(clipName));
 	}
 
-	static void Animator_Play(MonoString* entityID)
+	static void Animator_Play(MonoString* entityID, MonoString* componentID)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		Animator* animator = entity->GetComponent<Animator>();
+		Animator* animator = entity->GetComponent<Animator>(componentUUID);
 		if (animator)
 			animator->Play();
 	}
 
-	static void Animator_Pause(MonoString* entityID) {
+	static void Animator_Pause(MonoString* entityID, MonoString* componentID) {
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		Animator* animator = entity->GetComponent<Animator>();
+		Animator* animator = entity->GetComponent<Animator>(componentUUID);
 		if (animator)
 			animator->Pause();
 	}
 
-	static void Animator_Resume(MonoString* entityID) {
+	static void Animator_Resume(MonoString* entityID, MonoString* componentID) {
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		Animator* animator = entity->GetComponent<Animator>();
+		Animator* animator = entity->GetComponent<Animator>(componentUUID);
 		if (animator)
 			animator->Resume();
 	}
 
-	static int Animator_GetCurrentClipIndex(MonoString* entityID)
+	static int Animator_GetCurrentClipIndex(MonoString* entityID, MonoString* componentID)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		Animator* animator = entity->GetComponent<Animator>();
+		Animator* animator = entity->GetComponent<Animator>(componentUUID);
 		if (animator)
 			return animator->GetCurrentClipIndex();
 		return -1;
 	}
 
-	static MonoString* Animator_GetCurrentClipName(MonoString* entityID)
+	static MonoString* Animator_GetCurrentClipName(MonoString* entityID, MonoString* componentID)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		Animator* animator = entity->GetComponent<Animator>();
+		Animator* animator = entity->GetComponent<Animator>(componentUUID);
 		if (animator) {
 			const AnimationClip* clip = animator->GetCurrentClip();
 			if (clip)
@@ -435,12 +461,13 @@ namespace Loopie
 		return ScriptingManager::CreateString("");
 	}
 
-	static MonoString* Animator_GetClipName(MonoString* entityID, int clipIndex)
+	static MonoString* Animator_GetClipName(MonoString* entityID, MonoString* componentID, int clipIndex)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		Animator* animator = entity->GetComponent<Animator>();
+		Animator* animator = entity->GetComponent<Animator>(componentUUID);
 		if (animator) {
 			const AnimationClip* clip = animator->GetClipByIndex(clipIndex);
 			if (clip)
@@ -452,65 +479,71 @@ namespace Loopie
 		return ScriptingManager::CreateString("");
 	}
 
-	static float Animator_GetPlaybackSpeed(MonoString* entityID)
+	static float Animator_GetPlaybackSpeed(MonoString* entityID, MonoString* componentID)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		Animator* animator = entity->GetComponent<Animator>();
+		Animator* animator = entity->GetComponent<Animator>(componentUUID);
 		if (animator)
 			return animator->GetPlaybackSpeed();
 		return 0.0f;
 	}
 
-	static void Animator_SetPlaybackSpeed(MonoString* entityID, float speed)
+	static void Animator_SetPlaybackSpeed(MonoString* entityID, MonoString* componentID, float speed)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		Animator* animator = entity->GetComponent<Animator>();
+		Animator* animator = entity->GetComponent<Animator>(componentUUID);
 		if (animator)
 			animator->SetPlaybackSpeed(speed);
 	}
 
-	static MonoBoolean Animator_IsLooping(MonoString* entityID)
+	static MonoBoolean Animator_IsLooping(MonoString* entityID, MonoString* componentID)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		Animator* animator = entity->GetComponent<Animator>();
+		Animator* animator = entity->GetComponent<Animator>(componentUUID);
 		if (animator)
 			return animator->IsLooping();
 		return false;
 	}
 
-	static MonoBoolean Animator_IsPlaying(MonoString* entityID)
+	static MonoBoolean Animator_IsPlaying(MonoString* entityID, MonoString* componentID)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		Animator* animator = entity->GetComponent<Animator>();
+		Animator* animator = entity->GetComponent<Animator>(componentUUID);
 		if (animator)
 			return animator->IsPlaying();
 		return false;
 	}
 
-	static void Animator_SetLooping(MonoString* entityID, MonoBoolean loop)
+	static void Animator_SetLooping(MonoString* entityID, MonoString* componentID, MonoBoolean loop)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		Animator* animator = entity->GetComponent<Animator>();
+		Animator* animator = entity->GetComponent<Animator>(componentUUID);
 		if (animator)
 			animator->SetLooping(loop != 0);
 	}
 
-	static float Animator_GetCurrentTime(MonoString* entityID)
+	static float Animator_GetCurrentTime(MonoString* entityID, MonoString* componentID)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		Animator* animator = entity->GetComponent<Animator>();
+		Animator* animator = entity->GetComponent<Animator>(componentUUID);
 		if (animator)
 			return animator->GetCurrentTime();
 		return 0.0f;
@@ -519,78 +552,86 @@ namespace Loopie
 #pragma endregion
 
 #pragma region Camera
-	static void Camera_SetFov(MonoString* entityID, float fov) {
+	static void Camera_SetFov(MonoString* entityID, MonoString* componentID, float fov) {
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		Camera* camera = entity->GetComponent<Camera>();
+		Camera* camera = entity->GetComponent<Camera>(componentUUID);
 		if (camera)
 			camera->SetFov(fov);
 	}
 
-	static float Camera_GetFov(MonoString* entityID) {
+	static float Camera_GetFov(MonoString* entityID, MonoString* componentID) {
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		Camera* camera = entity->GetComponent<Camera>();
+		Camera* camera = entity->GetComponent<Camera>(componentUUID);
 		if (camera)
 			return camera->GetFov();
 		return 0;
 	}
 
-	static float Camera_GetNearPlane(MonoString* entityID) {
+	static float Camera_GetNearPlane(MonoString* entityID, MonoString* componentID) {
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		Camera* camera = entity->GetComponent<Camera>();
+		Camera* camera = entity->GetComponent<Camera>(componentUUID);
 		if (camera)
 			return camera->GetNearPlane();
 		return 0;
 	}
 
-	static void Camera_SetNearPlane(MonoString* entityID, float nearPlane) {
+	static void Camera_SetNearPlane(MonoString* entityID, MonoString* componentID, float nearPlane) {
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		Camera* camera = entity->GetComponent<Camera>();
+		Camera* camera = entity->GetComponent<Camera>(componentUUID);
 		if (camera)
 			camera->SetNearPlane(nearPlane);
 	}
 
-	static float Camera_GetFarPlane(MonoString* entityID) {
+	static float Camera_GetFarPlane(MonoString* entityID, MonoString* componentID) {
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		Camera* camera = entity->GetComponent<Camera>();
+		Camera* camera = entity->GetComponent<Camera>(componentUUID);
 		if (camera)
 			return camera->GetNearPlane();
 		return 0;
 	}
 
-	static void Camera_SetFarPlane(MonoString* entityID, float farPlane) {
+	static void Camera_SetFarPlane(MonoString* entityID, MonoString* componentID, float farPlane) {
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		Camera* camera = entity->GetComponent<Camera>();
+		Camera* camera = entity->GetComponent<Camera>(componentUUID);
 		if (camera)
 			camera->SetFarPlane(farPlane);
 	}
 
-	static bool Camera_IsMainCamera(MonoString* entityID) {
+	static bool Camera_IsMainCamera(MonoString* entityID, MonoString* componentID) {
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		Camera* camera = entity->GetComponent<Camera>();
+		Camera* camera = entity->GetComponent<Camera>(componentUUID);
 		if (camera)
 			return camera->IsMainCamera();
 		return false;
 	}
 
-	static void Camera_SetMainCamera(MonoString* entityID) {
+	static void Camera_SetMainCamera(MonoString* entityID, MonoString* componentID) {
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		Camera* camera = entity->GetComponent<Camera>();
+		Camera* camera = entity->GetComponent<Camera>(componentUUID);
 		if (camera)
 			camera->SetAsMainCamera();
 	}
@@ -604,11 +645,12 @@ namespace Loopie
 		return ScriptingManager::CreateString("");
 	}
 
-	static void Camera_GetViewport(MonoString* entityID, vec4* viewport) {
+	static void Camera_GetViewport(MonoString* entityID, MonoString* componentID,vec4* viewport) {
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		Camera* camera = entity->GetComponent<Camera>();
+		Camera* camera = entity->GetComponent<Camera>(componentUUID);
 		*viewport = vec4(0);
 		if (camera)
 			*viewport = camera->GetViewport();
@@ -750,6 +792,7 @@ namespace Loopie
 					return;
 				}
 				s_EntityHasComponentFuncs[managedType] = [](std::shared_ptr<Entity> entity) { return entity->HasComponent<Comp>(); };
+				s_EntityGetComponentFuncs[managedType] = [](std::shared_ptr<Entity> entity) { return entity->GetComponent<Comp>()->GetUUID(); };
 			}());
 	}
 
@@ -757,6 +800,7 @@ namespace Loopie
 	void ScriptGlue::RegisterComponents()
 	{
 		s_EntityHasComponentFuncs.clear();
+		s_EntityGetComponentFuncs.clear();
 		RegisterComponent<Transform>();
 		RegisterComponent<Animator>();
 		RegisterComponent<Camera>();
@@ -780,6 +824,7 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Entity_FindEntityByName);
 		ADD_INTERNAL_CALL(Entity_FindEntityByID);
 		ADD_INTERNAL_CALL(Entity_HasComponent);
+		ADD_INTERNAL_CALL(Entity_GetComponent);
 
 		ADD_INTERNAL_CALL(Transform_GetPosition);
 		ADD_INTERNAL_CALL(Transform_SetPosition);
