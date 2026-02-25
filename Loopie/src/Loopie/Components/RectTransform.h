@@ -21,6 +21,8 @@ namespace Loopie
         JsonNode Serialize(JsonNode& parent) const override;
         void Deserialize(const JsonNode& data) override;
 
+		void RefreshMatrices() const override;
+
     private:
         float m_width;
         float m_height;

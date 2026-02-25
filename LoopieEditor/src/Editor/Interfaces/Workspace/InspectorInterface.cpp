@@ -127,7 +127,8 @@ namespace Loopie {
 	{
 		ImGui::PushID(transform);
 
-		bool open = ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen);
+		const char* label = transform->IsRectTransform() ? "Rect Transform" : "Transform";
+		bool open = ImGui::CollapsingHeader(label, ImGuiTreeNodeFlags_DefaultOpen);
 		bool modified = false;
 		if (open) {
 			vec3 position = transform->GetLocalPosition();

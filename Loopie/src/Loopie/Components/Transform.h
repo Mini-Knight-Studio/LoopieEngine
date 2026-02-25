@@ -73,12 +73,12 @@ namespace Loopie
         virtual void SetWidth(float) {}
 		virtual void SetHeight(float) {}
 
-    private:
+    protected:
         vec3 GetWorldPosition() const;
         quaternion GetWorldRotation() const;
         vec3 GetWorldScale() const;
 
-        void RefreshMatrices() const;
+        virtual void RefreshMatrices() const;
 
     public:
         Event<TransformNotification> m_transformNotifier;

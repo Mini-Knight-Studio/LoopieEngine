@@ -26,6 +26,11 @@ void Loopie::RectTransform::SetHeight(float h)
 	m_height = h;
 }
 
+void Loopie::RectTransform::RefreshMatrices() const
+{
+	Transform::RefreshMatrices();
+}
+
 Loopie::JsonNode Loopie::RectTransform::Serialize(JsonNode& parent) const
 {
     JsonNode rectTransformObj = parent.CreateObjectField("recttransform");
