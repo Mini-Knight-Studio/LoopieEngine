@@ -24,11 +24,7 @@ namespace Loopie {
 		GameLogic();
 		~GameLogic();
 		void Init() override;
-		void Update(const InputEventManager& inputEvent) override;
-		void Render() override;
-
-		void StartScene();
-		void EndScene();
+		void Update(const InputEventManager& inputEvent) override;		
 
 		bool IsVisible() { return m_visible; }
 
@@ -36,7 +32,6 @@ namespace Loopie {
 
 	private:
 		bool m_visible = false;
-		std::shared_ptr<FrameBuffer> m_buffer;
 		ivec2 m_windowSize = ivec2(0);
 	};
 }

@@ -92,7 +92,7 @@ namespace Loopie
 				continue;
 
 			Renderer::BeginScene(cam->GetViewMatrix(), cam->GetProjectionMatrix(), false);
-			Renderer::SetViewport(0, 0, buffer->GetWidth(), buffer->GetWidth());
+			Renderer::SetViewport(0, 0, buffer->GetWidth(), buffer->GetHeight());
 			buffer->Bind();
 			RenderWorld(cam);
 			Renderer::EndScene();
@@ -101,17 +101,17 @@ namespace Loopie
 				buffer->Unbind();
 			}
 		}
+		ivec2 size = Application::GetInstance().GetWindow().GetSize();
+		
+		m_game.GetCamera()->SetViewport(0, 0, size.x, size.y);
+		Renderer::SetViewport(0, 0, size.x, size.y);
 
-		/// GameWindowRender
-		if (m_game.IsVisible()) {
-			m_game.StartScene();
 			if (m_game.GetCamera() && m_game.GetCamera()->GetIsActive()) {
 				Renderer::BeginScene(m_game.GetCamera()->GetViewMatrix(), m_game.GetCamera()->GetProjectionMatrix(), false);
 				RenderWorld(m_game.GetCamera());
 				Renderer::EndScene();
 			}
-			m_game.EndScene();
-		}
+
 		m_currentScene->FlushRemovedEntities();
 	}
 
@@ -169,47 +169,6 @@ namespace Loopie
 		Renderer::DisableStencil();
 
 	}
-
-
-	/*void GameModule::MousePick(Camera* camera)
-	{
-		Ray ray = Ray{ vec3(0), vec3(1) };
-		float distance = -1;
-		for (auto& [uuid, entity] : scene->GetAllEntities()) {
-			if (!entity->GetIsActive())
-				continue;
-			MeshRenderer* renderer = entity->GetComponent<MeshRenderer>();
-			if (!renderer || !renderer->GetIsActive() || !renderer->GetMesh())
-				continue;
-
-			if (!camera->GetFrustum().Intersects(renderer->GetWorldAABB()))
-				continue;
-
-			const AABB& worldAABB = renderer->GetWorldAABB();
-			vec3 hitPoint;
-			if (!worldAABB.IntersectsRay(ray.StartPoint(), ray.EndPoint(), hitPoint)) {
-				continue;
-			}
-
-			const MeshData& data = renderer->GetMesh()->GetData();
-			for (int i = 0; i < data.IndicesAmount/3; i++)
-			{
-				std::vector<vec3> vertices;
-				Triangle t;
-				if (!renderer->GetTriangle(i, t))continue;
-				vertices[0] = t.v0;
-				vertices[1] = t.v1;
-				vertices[2] = t.v2;
-				vec3 hitPoint;
-				if (ray.Intersects(vertices, true, hitPoint))
-				{
-					if (distance == -1 || distance > (hitPoint - ray.StartPoint()).length())continue;
-					HierarchyInterface::s_SelectedEntity = entity;
-					distance = (hitPoint - ray.StartPoint()).length();
-				}
-			}
-		}
-	}*/
 
 	void GameModule::OnNotify(const EngineNotification& type)
 	{
