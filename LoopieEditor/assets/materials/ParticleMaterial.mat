@@ -1,0 +1,9 @@
+{
+	"shader" : "assets/shaders/ParticleShader.shader",
+	"properties": {
+		"u_Color": {
+			"type": "Vec4",
+			"value": "1,1,1,1"
+		}
+	}
+}

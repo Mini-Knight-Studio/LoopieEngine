@@ -47,6 +47,15 @@ namespace Loopie
 		{
 			CreateCity();
 			m_currentScene->CreateEntity({ 0,1,-10 }, { 1,0,0,0 }, { 1,1,1 }, nullptr, "MainCamera")->AddComponent<Camera>();
+
+			//To check that particle system works:
+			ParticleSystem* partSystem = new(ParticleSystem);
+
+			std::shared_ptr<Entity> e1 = m_currentScene->CreateEntity({ 16,8,16 }, { 1,0,0,0 }, { 1,1,1 }, nullptr, "Smoke");
+			e1->AddComponent<ParticleComponent>(partSystem);
+			Emitter* smokeEmitter1 = new Emitter(1000, SMOKE, CAMERA_FACING, e1->GetTransform()->GetPosition(), 50);
+			e1->GetComponent<ParticleComponent>()->AddElemToEmitterVector(smokeEmitter1);
+
 		}
 		
 
@@ -127,6 +136,7 @@ namespace Loopie
 			Renderer::SetViewport(0, 0, buffer->GetWidth(), buffer->GetWidth());
 			buffer->Bind();
 			RenderWorld(cam);
+			RenderParticles(cam);
 			Renderer::EndScene();
 
 			if (buffer) {
