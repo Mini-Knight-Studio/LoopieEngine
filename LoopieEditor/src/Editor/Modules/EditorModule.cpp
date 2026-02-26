@@ -50,12 +50,15 @@ namespace Loopie
 
 			//To check that particle system works:
 			ParticleSystem* partSystem = new(ParticleSystem);
+			ParticleSystem* partSystemFirework = new(ParticleSystem);
 
-			std::shared_ptr<Entity> e1 = m_currentScene->CreateEntity({ 16,8,16 }, { 1,0,0,0 }, { 1,1,1 }, nullptr, "Smoke");
-			e1->AddComponent<ParticleComponent>(partSystem);
-			Emitter* smokeEmitter1 = new Emitter(1000, SMOKE, CAMERA_FACING, e1->GetTransform()->GetPosition(), 50);
-			e1->GetComponent<ParticleComponent>()->AddElemToEmitterVector(smokeEmitter1);
+			std::shared_ptr<Entity> smokeEntity = m_currentScene->CreateEntity({ 16,8,16 }, { 1,0,0,0 }, { 1,1,1 }, nullptr, "Smoke");
+			smokeEntity->AddComponent<ParticleComponent>(partSystem);
+			Emitter* smokeEmitter1 = new Emitter(1000, SMOKE, CAMERA_FACING, smokeEntity->GetTransform()->GetPosition(), 50);
+			smokeEntity->GetComponent<ParticleComponent>()->AddElemToEmitterVector(smokeEmitter1);
 
+			std::shared_ptr<Entity> fireworkEntity = m_currentScene->CreateEntity({ 0,8,50 }, { 1,0,0,0 }, { 1,1,1 }, nullptr, "ParticleSystemFirework");
+			fireworkEntity->AddComponent<ParticleComponent>(partSystemFirework);
 		}
 		
 
@@ -119,6 +122,17 @@ namespace Loopie
 				buffer->Bind();
 				buffer->Clear();
 				buffer->Unbind();
+			}
+		}
+
+		//TEMPORAL: For updating mainly particles
+		for (const auto& [uuid, entity] : Application::GetInstance().GetScene().GetAllEntities())
+		{
+			if (!entity->HasComponent<ParticleComponent>())
+				continue;
+			for (auto& component : entity->GetComponents<ParticleComponent>())
+			{
+				component->Update();
 			}
 		}
 
