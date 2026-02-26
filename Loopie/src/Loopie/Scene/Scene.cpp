@@ -9,6 +9,9 @@
 #include "Loopie/Helpers/LoopieHelpers.h"
 #include "Loopie/Resources/AssetRegistry.h"
 
+#include "Loopie/Components/AudioSource.h"
+#include "Loopie/Components/AudioListener.h"
+
 #include <unordered_set>
 
 
@@ -248,6 +251,18 @@ namespace Loopie {
 				ScriptClass* scriptClass = clone->AddComponent<ScriptClass>(classID);
 				scriptClass->Deserialize(componentData.Child("script"));
 			}
+			//AudioSource
+			else if (componentData.Child("AudioSource").IsValid())
+			{
+				auto audioSource = clone->AddComponent<AudioSource>();
+				audioSource->Deserialize(componentData.Child("AudioSource"));
+			}
+			//AudioListener
+			else if (componentData.Child("AudioListener").IsValid())
+			{
+				auto audioListener = clone->AddComponent<AudioListener>();
+				audioListener->Deserialize(componentData.Child("AudioListener"));
+			}
 		}
 
 		// ---- Clone children ----
@@ -444,6 +459,24 @@ namespace Loopie {
 						if (scriptClass)
 						{
 							scriptClass->Deserialize(node);
+						}
+					}
+					else if (componentNode.Contains("AudioSource"))
+					{
+						JsonNode node = componentNode.Child("AudioSource");
+						auto audioSource = entity->AddComponent<AudioSource>();
+						if (audioSource)
+						{
+							audioSource->Deserialize(node);
+						}
+					}
+					else if (componentNode.Contains("AudioListener"))
+					{
+						JsonNode node = componentNode.Child("AudioListener");
+						auto audioSource = entity->AddComponent<AudioListener>();
+						if (audioSource)
+						{
+							audioSource->Deserialize(node);
 						}
 					}
 				}
