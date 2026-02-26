@@ -226,6 +226,10 @@ namespace Loopie
 			if (!node.HasKey(name))
 				continue;
 
+			if (!m_scriptFields.count(name))
+				continue;
+
+
 			ScriptFieldData& fieldData = m_scriptFields[name];
 
 			switch (scriptField.Type)
