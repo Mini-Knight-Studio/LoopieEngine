@@ -11,7 +11,8 @@
 #include <fstream>
 #include <iostream>
 #include <filesystem> // Used for checking the extension
-
+#include <unordered_set>
+#include <functional>
 
 namespace Loopie {
 
@@ -98,6 +99,7 @@ namespace Loopie {
 		{
 			unsigned int skeletonSize;
 			file.read(reinterpret_cast<char*>(&skeletonSize), sizeof(skeletonSize));
+			file.read(reinterpret_cast<char*>(&data.GlobalInverseTransform), sizeof(matrix4));
 
 			data.Skeleton.resize(skeletonSize);
 
@@ -112,6 +114,7 @@ namespace Loopie {
 				file.read(reinterpret_cast<char*>(&data.Skeleton[i].ID), sizeof(int));
 				file.read(reinterpret_cast<char*>(&data.Skeleton[i].ParentID), sizeof(int));
 				file.read(reinterpret_cast<char*>(&data.Skeleton[i].OffsetMatrix), sizeof(matrix4));
+				file.read(reinterpret_cast<char*>(&data.Skeleton[i].LocalBindTransform), sizeof(matrix4));
 			}
 		}
 
@@ -287,369 +290,377 @@ namespace Loopie {
 			ProcessNode(node->mChildren[i], scene, outputPaths);
 		}
 	}
-
-	std::string MeshImporter::ProcessMesh(void* nodePtr, void* meshPtr, const void* scenePtr) {
-		auto node = static_cast<const aiNode*>(nodePtr);
-		auto mesh = static_cast<const aiMesh*>(meshPtr);
-		auto scene = static_cast<const aiScene*>(scenePtr);
-
-		MeshData data{};
-
-		data.Name = node->mName.C_Str();
-		unsigned int nameLength = (unsigned int)data.Name.size();
-
-
-		// Extract translation from matrix
-		const aiMatrix4x4& transformMatrix = node->mTransformation;
-		
-		aiVector3D aiScaling, aiPosition;
-		aiQuaternion aiRotation;
-		transformMatrix.Decompose(aiScaling, aiRotation, aiPosition);
-
-		data.Position = vec3(aiPosition.x, aiPosition.y, aiPosition.z);
-		data.Scale = vec3(aiScaling.x, aiScaling.y, aiScaling.z);
-		data.Rotation = quaternion(aiRotation.w, aiRotation.x, aiRotation.y, aiRotation.z);
-
-		// Extract translation from matrix
-
-		data.BoundingBox.MaxPoint = { mesh->mAABB.mMax.x,mesh->mAABB.mMax.y,mesh->mAABB.mMax.z };
-		data.BoundingBox.MinPoint = { mesh->mAABB.mMin.x,mesh->mAABB.mMin.y,mesh->mAABB.mMin.z };
-
-		data.VerticesAmount = mesh->mNumVertices;
-		data.HasBones = mesh->HasBones();
-		data.Bones.resize(data.VerticesAmount);
-
-		data.HasPosition = mesh->mNumVertices > 0;
-		data.HasTexCoord = mesh->mTextureCoords[0] != nullptr;
-		data.HasNormal = mesh->HasNormals();
-		data.HasTangent = mesh->HasTangentsAndBitangents();
-		data.HasColor = mesh->HasVertexColors(0);
-
-		data.VertexElements = data.HasPosition ? 3 : 0;
-		data.VertexElements += data.HasTexCoord ? 2 : 0;
-		data.VertexElements += data.HasNormal ? 3 : 0;
-		data.VertexElements += data.HasTangent ? 3 : 0;
-		data.VertexElements += data.HasColor ? 4 : 0;
-
-
-		std::unordered_map<std::string, int> boneMapping;
-
-		if (mesh->HasBones())
-		{
-			data.HasBones = true;
-			data.Bones.resize(data.VerticesAmount);
-
-			data.Skeleton.reserve(mesh->mNumBones);
-
-			for (unsigned int i = 0; i < mesh->mNumBones; i++)
-			{
-				aiBone* aiBone = mesh->mBones[i];
-				aiMatrix4x4& m = aiBone->mOffsetMatrix;
-
-				Bone bone;
-				bone.Name = aiBone->mName.C_Str();
-				bone.ParentID = -1;
-				bone.ID = 0;
-				bone.OffsetMatrix = ConvertMatrix(aiBone->mOffsetMatrix);
-
-				int boneIndex = (int)data.Skeleton.size();
-				boneMapping[bone.Name] = boneIndex;
-
-				data.Skeleton.push_back(bone);
-			}
-
-			for (unsigned int i = 0; i < mesh->mNumBones; i++)
-			{
-				aiBone* aiBone = mesh->mBones[i];
-				int boneIndex = boneMapping[aiBone->mName.C_Str()];
-
-				for (unsigned int w = 0; w < aiBone->mNumWeights; w++)
-				{
-					int vertexId = aiBone->mWeights[w].mVertexId;
-					float weight = aiBone->mWeights[w].mWeight;
-
-					data.Bones[vertexId].AddBoneData(boneIndex, weight);
-				}
-			}
-
-			for (unsigned int i = 0; i < data.VerticesAmount; ++i)
-			{
-				float total = 0.0f;
-				for (int j = 0; j < MAX_BONE_INFLUENCE; ++j)
-					total += data.Bones[i].Weights[j];
-
-				if (total > 0.0f)
-					for (int j = 0; j < MAX_BONE_INFLUENCE; ++j)
-						data.Bones[i].Weights[j] /= total;
-			}
-
-
-			std::unordered_map<std::string, aiNode*> boneNodes;
-			for (unsigned int i = 0; i < mesh->mNumBones; i++) {
-				aiBone* aiBone = mesh->mBones[i];
-				aiNode* boneNode = scene->mRootNode->FindNode(aiBone->mName);
-				if (boneNode) {
-					boneNodes[aiBone->mName.C_Str()] = boneNode;
-				}
-			}
-
-			for (size_t i = 0; i < data.Skeleton.size(); ++i)
-			{
-				const std::string& boneName = data.Skeleton[i].Name;
-				auto it = boneNodes.find(boneName);
-
-				if (it == boneNodes.end() || !it->second->mParent) {
-					data.Skeleton[i].ParentID = -1;
-					continue;
-				}
-
-				aiNode* parentNode = it->second->mParent;
-				int parentID = -1;
-
-				while (parentNode && parentID == -1)
-				{
-					std::string parentName = parentNode->mName.C_Str();
-
-					if (parentName.find("_$Assimp") == std::string::npos)
-					{
-						for (size_t j = 0; j < data.Skeleton.size(); j++) {
-							if (data.Skeleton[j].Name == parentName) {
-								parentID = (int)j;
-								break;
-							}
-						}
-					}
-					parentNode = parentNode->mParent;
-				}
-
-				data.Skeleton[i].ParentID = parentID;
-			}
-		}
-		else
-		{
-			data.HasBones = false;
-		}
-
-
-		if (scene->HasAnimations())
-		{
-			for (unsigned int a = 0; a < scene->mNumAnimations; ++a)
-			{
-				aiAnimation* aiAnim = scene->mAnimations[a];
-
-				AnimationClip clip;
-				clip.Name = aiAnim->mName.C_Str();
-				clip.Duration = (float)aiAnim->mDuration / (float)aiAnim->mTicksPerSecond;
-
-				for (unsigned int c = 0; c < aiAnim->mNumChannels; ++c)
-				{
-					aiNodeAnim* channel = aiAnim->mChannels[c];
-
-					KeyFrame keyFrame;
-
-					for (unsigned int i = 0; i < channel->mNumPositionKeys; ++i)
-					{
-						Vec3Key kp;
-						kp.Time = (float)channel->mPositionKeys[i].mTime / (float)aiAnim->mTicksPerSecond;
-
-						auto& v = channel->mPositionKeys[i].mValue;
-						kp.Value = vec3(v.x, v.y, v.z);
-
-						keyFrame.Positions.push_back(kp);
-					}
-
-					for (unsigned int i = 0; i < channel->mNumRotationKeys; ++i)
-					{
-						QuaternionKey kr;
-						kr.Time = (float)channel->mRotationKeys[i].mTime / (float)aiAnim->mTicksPerSecond;
-
-						auto& q = channel->mRotationKeys[i].mValue;
-						kr.Value = quaternion(q.w, q.x, q.y, q.z);
-
-						keyFrame.Rotations.push_back(kr);
-					}
-
-					for (unsigned int i = 0; i < channel->mNumScalingKeys; ++i)
-					{
-						Vec3Key ks;
-						ks.Time = (float)channel->mScalingKeys[i].mTime / (float)aiAnim->mTicksPerSecond;
-
-						auto& s = channel->mScalingKeys[i].mValue;
-						ks.Value = vec3(s.x, s.y, s.z);
-
-						keyFrame.Scales.push_back(ks);
-					}
-
-					clip.KeyFrames[channel->mNodeName.C_Str()] = keyFrame;
-				}
-
-				data.AnimationClips.push_back(clip);
-			}
-		}
-
-
-		data.IndicesAmount = 0;
-		for (unsigned int i = 0; i < mesh->mNumFaces; ++i) {
-			const aiFace& face = mesh->mFaces[i];
-			data.IndicesAmount += face.mNumIndices;
-		}
-
-		///// File Creation
-		Project project = Application::GetInstance().m_activeProject;
-		UUID id;
-		std::filesystem::path locationPath = "Meshes";
-		locationPath /= id.Get() + ".mesh";
-
-		std::filesystem::path pathToWrite = project.GetChachePath() / locationPath;
-
-		std::ofstream fs(pathToWrite, std::ios::binary | std::ios::trunc);
-
-		
-		fs.write(reinterpret_cast<const char*>(&nameLength), sizeof(nameLength));
-		fs.write(data.Name.data(), nameLength);
-
-		fs.write(reinterpret_cast<const char*>(&data.BoundingBox.MinPoint), sizeof(data.BoundingBox.MinPoint));
-		fs.write(reinterpret_cast<const char*>(&data.BoundingBox.MaxPoint), sizeof(data.BoundingBox.MaxPoint));
-
-		fs.write(reinterpret_cast<const char*>(&data.Position), sizeof(data.Position));
-		fs.write(reinterpret_cast<const char*>(&data.Rotation), sizeof(data.Rotation));
-		fs.write(reinterpret_cast<const char*>(&data.Scale), sizeof(data.Scale));
-
-		fs.write(reinterpret_cast<const char*>(&data.VerticesAmount), sizeof data.VerticesAmount);
-		fs.write(reinterpret_cast<const char*>(&data.VertexElements), sizeof data.VertexElements);
-
-		fs.write(reinterpret_cast<const char*>(&data.IndicesAmount), sizeof data.IndicesAmount);
-
-		fs.write(reinterpret_cast<const char*>(&data.HasPosition), sizeof data.HasPosition);
-		fs.write(reinterpret_cast<const char*>(&data.HasNormal), sizeof data.HasNormal);
-		fs.write(reinterpret_cast<const char*>(&data.HasTexCoord), sizeof data.HasTexCoord);
-		fs.write(reinterpret_cast<const char*>(&data.HasTangent), sizeof data.HasTangent);
-		fs.write(reinterpret_cast<const char*>(&data.HasColor), sizeof data.HasColor);
-		fs.write(reinterpret_cast<const char*>(&data.HasBones), sizeof data.HasBones);
-
-		// Write skeleton
-		if (data.HasBones)
-		{
-			unsigned int skeletonSize = (unsigned int)data.Skeleton.size();
-			fs.write((char*)&skeletonSize, sizeof(skeletonSize));
-
-			for (auto& bone : data.Skeleton)
-			{
-				unsigned int len = (unsigned int)bone.Name.size();
-				fs.write((char*)&len, sizeof(len));
-				fs.write(bone.Name.data(), len);
-
-				fs.write((char*)&bone.ID, sizeof(bone.ID));
-				fs.write((char*)&bone.ParentID, sizeof(bone.ParentID));
-				fs.write((char*)&bone.OffsetMatrix, sizeof(bone.OffsetMatrix));
-			}
-		}
-
-		unsigned int animCount = (unsigned int)data.AnimationClips.size();
-		fs.write((char*)&animCount, sizeof(animCount));
-
-		for (auto& clip : data.AnimationClips)
-		{
-			unsigned int nameLen = (unsigned int)clip.Name.size();
-			fs.write((char*)&nameLen, sizeof(nameLen));
-			fs.write(clip.Name.data(), nameLen);
-
-			fs.write((char*)&clip.Duration, sizeof(clip.Duration));
-
-			unsigned int trackCount = (unsigned int)clip.KeyFrames.size();
-			fs.write((char*)&trackCount, sizeof(trackCount));
-
-			for (auto& [boneName, keyFrame] : clip.KeyFrames)
-			{
-				unsigned int boneNameLen = (unsigned int)boneName.size();
-				fs.write((char*)&boneNameLen, sizeof(boneNameLen));
-				fs.write(boneName.data(), boneNameLen);
-
-				// Positions
-				unsigned int posCount = (unsigned int)keyFrame.Positions.size();
-				fs.write((char*)&posCount, sizeof(posCount));
-				for (auto& p : keyFrame.Positions)
-				{
-					fs.write((char*)&p.Time, sizeof(p.Time));
-					fs.write((char*)&p.Value, sizeof(p.Value));
-				}
-
-				// Rotations
-				unsigned int rotCount = (unsigned int)keyFrame.Rotations.size();
-				fs.write((char*)&rotCount, sizeof(rotCount));
-				for (auto& r : keyFrame.Rotations)
-				{
-					fs.write((char*)&r.Time, sizeof(r.Time));
-					fs.write((char*)&r.Value, sizeof(r.Value));
-				}
-
-				// Scales
-				unsigned int scaleCount = (unsigned int)keyFrame.Scales.size();
-				fs.write((char*)&scaleCount, sizeof(scaleCount));
-				for (auto& s : keyFrame.Scales)
-				{
-					fs.write((char*)&s.Time, sizeof(s.Time));
-					fs.write((char*)&s.Value, sizeof(s.Value));
-				}
-			}
-		}
-
-
-		for (unsigned int i = 0; i < mesh->mNumVertices; ++i) {
-			///Position
-			fs.write(reinterpret_cast<const char*>(&mesh->mVertices[i].x), sizeof mesh->mVertices[i].x);
-			fs.write(reinterpret_cast<const char*>(&mesh->mVertices[i].y), sizeof mesh->mVertices[i].y);
-			fs.write(reinterpret_cast<const char*>(&mesh->mVertices[i].z), sizeof mesh->mVertices[i].z);
-
-			///TexCoords
-			if (data.HasTexCoord) {
-				fs.write(reinterpret_cast<const char*>(&mesh->mTextureCoords[0][i].x), sizeof mesh->mTextureCoords[0][i].x);
-				fs.write(reinterpret_cast<const char*>(&mesh->mTextureCoords[0][i].y), sizeof mesh->mTextureCoords[0][i].y);
-			}
-
-			///Normals
-			if (data.HasNormal) {
-
-				fs.write(reinterpret_cast<const char*>(&mesh->mNormals[i].x), sizeof mesh->mNormals[i].x);
-				fs.write(reinterpret_cast<const char*>(&mesh->mNormals[i].y), sizeof mesh->mNormals[i].y);
-				fs.write(reinterpret_cast<const char*>(&mesh->mNormals[i].z), sizeof mesh->mNormals[i].z);
-			}
-
-			///Tangent
-			if (data.HasTangent) {
-
-				fs.write(reinterpret_cast<const char*>(&mesh->mTangents[i].x), sizeof mesh->mTangents[i].x);
-				fs.write(reinterpret_cast<const char*>(&mesh->mTangents[i].y), sizeof mesh->mTangents[i].y);
-				fs.write(reinterpret_cast<const char*>(&mesh->mTangents[i].z), sizeof mesh->mTangents[i].z);
-			}
-
-			///Color
-			if (data.HasColor) {
-				const aiColor4D& c = mesh->mColors[0][i];
-
-				fs.write(reinterpret_cast<const char*>(&c.r), sizeof c.r);
-				fs.write(reinterpret_cast<const char*>(&c.g), sizeof c.g);
-				fs.write(reinterpret_cast<const char*>(&c.b), sizeof c.b);
-				fs.write(reinterpret_cast<const char*>(&c.a), sizeof c.a);
-			}
-
-			if (data.HasBones)
-			{
-				fs.write(reinterpret_cast<const char*>(data.Bones[i].IDs), sizeof(int) * 4);
-				fs.write(reinterpret_cast<const char*>(data.Bones[i].Weights), sizeof(float) * 4);
-			}
-
-		}
-
-		for (unsigned int i = 0; i < mesh->mNumFaces; ++i) {
-			const aiFace& face = mesh->mFaces[i];
-			for (unsigned int j = 0; j < face.mNumIndices; ++j) {
-				fs.write(reinterpret_cast<const char*>(&face.mIndices[j]), sizeof face.mIndices[j]);
-			}
-		}
-		fs.close();
-
-
-		return locationPath.string();
-	}
+    std::string MeshImporter::ProcessMesh(void* nodePtr, void* meshPtr, const void* scenePtr) {
+        auto node = static_cast<const aiNode*>(nodePtr);
+        auto mesh = static_cast<const aiMesh*>(meshPtr);
+        auto scene = static_cast<const aiScene*>(scenePtr);
+
+        MeshData data{};
+
+        data.Name = node->mName.C_Str();
+        unsigned int nameLength = (unsigned int)data.Name.size();
+
+
+        // Extract translation from matrix
+        const aiMatrix4x4& transformMatrix = node->mTransformation;
+
+        aiVector3D aiScaling, aiPosition;
+        aiQuaternion aiRotation;
+        transformMatrix.Decompose(aiScaling, aiRotation, aiPosition);
+
+        data.Position = vec3(aiPosition.x, aiPosition.y, aiPosition.z);
+        data.Scale = vec3(aiScaling.x, aiScaling.y, aiScaling.z);
+        data.Rotation = quaternion(aiRotation.w, aiRotation.x, aiRotation.y, aiRotation.z);
+
+        // Extract translation from matrix
+        data.BoundingBox.MaxPoint = { mesh->mAABB.mMax.x,mesh->mAABB.mMax.y,mesh->mAABB.mMax.z };
+        data.BoundingBox.MinPoint = { mesh->mAABB.mMin.x,mesh->mAABB.mMin.y,mesh->mAABB.mMin.z };
+
+        data.VerticesAmount = mesh->mNumVertices;
+        data.HasBones = mesh->HasBones();
+        data.Bones.resize(data.VerticesAmount);
+
+        data.HasPosition = mesh->mNumVertices > 0;
+        data.HasTexCoord = mesh->mTextureCoords[0] != nullptr;
+        data.HasNormal = mesh->HasNormals();
+        data.HasTangent = mesh->HasTangentsAndBitangents();
+        data.HasColor = mesh->HasVertexColors(0);
+
+        data.VertexElements = data.HasPosition ? 3 : 0;
+        data.VertexElements += data.HasTexCoord ? 2 : 0;
+        data.VertexElements += data.HasNormal ? 3 : 0;
+        data.VertexElements += data.HasTangent ? 3 : 0;
+        data.VertexElements += data.HasColor ? 4 : 0;
+
+        std::unordered_map<std::string, aiMatrix4x4> boneOffsetMap;
+        std::unordered_set<std::string> boneNameSet;
+
+        if (mesh->HasBones())
+        {
+            data.HasBones = true;
+            data.Bones.resize(data.VerticesAmount);
+
+            for (unsigned int i = 0; i < mesh->mNumBones; ++i)
+            {
+                aiBone* aiBone = mesh->mBones[i];
+                boneNameSet.insert(aiBone->mName.C_Str());
+                boneOffsetMap[aiBone->mName.C_Str()] = aiBone->mOffsetMatrix;
+            }
+        }
+        else
+        {
+            data.HasBones = false;
+        }
+
+        matrix4 globalInverse = glm::inverse(ConvertMatrix(scene->mRootNode->mTransformation));
+        data.GlobalInverseTransform = globalInverse;
+
+        std::unordered_map<aiNode*, bool> nodeHasBoneDescendant;
+
+        std::function<bool(aiNode*)> computeFlag = [&](aiNode* node) -> bool {
+            bool flag = (boneNameSet.find(node->mName.C_Str()) != boneNameSet.end());
+            for (unsigned int i = 0; i < node->mNumChildren; ++i) {
+                if (computeFlag(node->mChildren[i]))
+                    flag = true;
+            }
+            nodeHasBoneDescendant[node] = flag;
+            return flag;
+            };
+        computeFlag(scene->mRootNode);
+
+        std::vector<aiNode*> skeletonNodes;
+        std::function<void(aiNode*)> collect = [&](aiNode* node) {
+            if (nodeHasBoneDescendant[node]) {
+                skeletonNodes.push_back(node);
+                for (unsigned int i = 0; i < node->mNumChildren; ++i)
+                    collect(node->mChildren[i]);
+            }
+            };
+        collect(scene->mRootNode);
+
+        std::unordered_map<aiNode*, int> nodeToIndex;
+        for (size_t i = 0; i < skeletonNodes.size(); ++i)
+            nodeToIndex[skeletonNodes[i]] = (int)i;
+
+        data.Skeleton.clear();
+        data.Skeleton.reserve(skeletonNodes.size());
+        std::unordered_map<std::string, int> boneNameToNewID;
+
+        for (aiNode* node : skeletonNodes)
+        {
+            Bone bone;
+            bone.Name = node->mName.C_Str();
+            bone.ID = (int)data.Skeleton.size();
+
+            aiNode* parent = node->mParent;
+            if (parent && nodeToIndex.count(parent))
+                bone.ParentID = nodeToIndex[parent];
+            else
+                bone.ParentID = -1;
+
+            bone.LocalBindTransform = ConvertMatrix(node->mTransformation);
+
+            auto it = boneOffsetMap.find(bone.Name);
+            if (it != boneOffsetMap.end()) {
+                bone.OffsetMatrix = ConvertMatrix(it->second);
+                boneNameToNewID[bone.Name] = bone.ID;
+            }
+            else {
+                bone.OffsetMatrix = matrix4(1.0f);
+            }
+
+            data.Skeleton.push_back(bone);
+        }
+
+        if (mesh->HasBones())
+        {
+            for (unsigned int i = 0; i < mesh->mNumBones; ++i)
+            {
+                aiBone* aiBone = mesh->mBones[i];
+                int boneIndex = boneNameToNewID[aiBone->mName.C_Str()];
+
+                for (unsigned int w = 0; w < aiBone->mNumWeights; ++w)
+                {
+                    int vertexId = aiBone->mWeights[w].mVertexId;
+                    float weight = aiBone->mWeights[w].mWeight;
+                    data.Bones[vertexId].AddBoneData(boneIndex, weight);
+                }
+            }
+
+            // Normalizar pesos
+            for (unsigned int i = 0; i < data.VerticesAmount; ++i)
+            {
+                float total = 0.0f;
+                for (int j = 0; j < MAX_BONE_INFLUENCE; ++j)
+                    total += data.Bones[i].Weights[j];
+                if (total > 0.0f)
+                    for (int j = 0; j < MAX_BONE_INFLUENCE; ++j)
+                        data.Bones[i].Weights[j] /= total;
+            }
+        }
+
+        if (scene->HasAnimations())
+        {
+            for (unsigned int a = 0; a < scene->mNumAnimations; ++a)
+            {
+                aiAnimation* aiAnim = scene->mAnimations[a];
+
+                AnimationClip clip;
+                clip.Name = aiAnim->mName.C_Str();
+
+                float ticksPerSecond = (float)aiAnim->mTicksPerSecond;
+                if (ticksPerSecond == 0.0f)
+                    ticksPerSecond = 25.0f; // Assimp default fallback
+
+                clip.Duration = (float)aiAnim->mDuration / ticksPerSecond;
+
+                for (unsigned int c = 0; c < aiAnim->mNumChannels; ++c)
+                {
+                    aiNodeAnim* channel = aiAnim->mChannels[c];
+
+                    KeyFrame keyFrame;
+
+                    for (unsigned int i = 0; i < channel->mNumPositionKeys; ++i)
+                    {
+                        Vec3Key kp;
+                        kp.Time = (float)channel->mPositionKeys[i].mTime / ticksPerSecond;
+
+                        auto& v = channel->mPositionKeys[i].mValue;
+                        kp.Value = vec3(v.x, v.y, v.z);
+
+                        keyFrame.Positions.push_back(kp);
+                    }
+
+                    for (unsigned int i = 0; i < channel->mNumRotationKeys; ++i)
+                    {
+                        QuaternionKey kr;
+                        kr.Time = (float)channel->mRotationKeys[i].mTime / ticksPerSecond;
+
+                        auto& q = channel->mRotationKeys[i].mValue;
+                        kr.Value = quaternion(q.w, q.x, q.y, q.z);
+
+                        keyFrame.Rotations.push_back(kr);
+                    }
+
+                    for (unsigned int i = 0; i < channel->mNumScalingKeys; ++i)
+                    {
+                        Vec3Key ks;
+                        ks.Time = (float)channel->mScalingKeys[i].mTime / ticksPerSecond;
+
+                        auto& s = channel->mScalingKeys[i].mValue;
+                        ks.Value = vec3(s.x, s.y, s.z);
+
+                        keyFrame.Scales.push_back(ks);
+                    }
+
+                    clip.KeyFrames[channel->mNodeName.C_Str()] = keyFrame;
+                }
+
+                data.AnimationClips.push_back(clip);
+            }
+        }
+
+        data.IndicesAmount = 0;
+        for (unsigned int i = 0; i < mesh->mNumFaces; ++i) {
+            const aiFace& face = mesh->mFaces[i];
+            data.IndicesAmount += face.mNumIndices;
+        }
+
+        ////// File Creation
+        Project project = Application::GetInstance().m_activeProject;
+        UUID id;
+        std::filesystem::path locationPath = "Meshes";
+        locationPath /= id.Get() + ".mesh";
+
+        std::filesystem::path pathToWrite = project.GetChachePath() / locationPath;
+
+        std::ofstream fs(pathToWrite, std::ios::binary | std::ios::trunc);
+
+
+        fs.write(reinterpret_cast<const char*>(&nameLength), sizeof(nameLength));
+        fs.write(data.Name.data(), nameLength);
+
+        fs.write(reinterpret_cast<const char*>(&data.BoundingBox.MinPoint), sizeof(data.BoundingBox.MinPoint));
+        fs.write(reinterpret_cast<const char*>(&data.BoundingBox.MaxPoint), sizeof(data.BoundingBox.MaxPoint));
+
+        fs.write(reinterpret_cast<const char*>(&data.Position), sizeof(data.Position));
+        fs.write(reinterpret_cast<const char*>(&data.Rotation), sizeof(data.Rotation));
+        fs.write(reinterpret_cast<const char*>(&data.Scale), sizeof(data.Scale));
+
+        fs.write(reinterpret_cast<const char*>(&data.VerticesAmount), sizeof data.VerticesAmount);
+        fs.write(reinterpret_cast<const char*>(&data.VertexElements), sizeof data.VertexElements);
+
+        fs.write(reinterpret_cast<const char*>(&data.IndicesAmount), sizeof data.IndicesAmount);
+
+        fs.write(reinterpret_cast<const char*>(&data.HasPosition), sizeof data.HasPosition);
+        fs.write(reinterpret_cast<const char*>(&data.HasNormal), sizeof data.HasNormal);
+        fs.write(reinterpret_cast<const char*>(&data.HasTexCoord), sizeof data.HasTexCoord);
+        fs.write(reinterpret_cast<const char*>(&data.HasTangent), sizeof data.HasTangent);
+        fs.write(reinterpret_cast<const char*>(&data.HasColor), sizeof data.HasColor);
+        fs.write(reinterpret_cast<const char*>(&data.HasBones), sizeof data.HasBones);
+
+        // Write skeleton
+        if (data.HasBones)
+        {
+            unsigned int skeletonSize = (unsigned int)data.Skeleton.size();
+            fs.write((char*)&skeletonSize, sizeof(skeletonSize));
+
+            fs.write((char*)&data.GlobalInverseTransform, sizeof(data.GlobalInverseTransform));
+            for (auto& bone : data.Skeleton)
+            {
+                unsigned int len = (unsigned int)bone.Name.size();
+                fs.write((char*)&len, sizeof(len));
+                fs.write(bone.Name.data(), len);
+
+                fs.write((char*)&bone.ID, sizeof(bone.ID));
+                fs.write((char*)&bone.ParentID, sizeof(bone.ParentID));
+                fs.write((char*)&bone.OffsetMatrix, sizeof(bone.OffsetMatrix));
+                fs.write((char*)&bone.LocalBindTransform, sizeof(bone.LocalBindTransform));
+            }
+        }
+
+        unsigned int animCount = (unsigned int)data.AnimationClips.size();
+        fs.write((char*)&animCount, sizeof(animCount));
+
+        for (auto& clip : data.AnimationClips)
+        {
+            unsigned int nameLen = (unsigned int)clip.Name.size();
+            fs.write((char*)&nameLen, sizeof(nameLen));
+            fs.write(clip.Name.data(), nameLen);
+
+            fs.write((char*)&clip.Duration, sizeof(clip.Duration));
+
+            unsigned int trackCount = (unsigned int)clip.KeyFrames.size();
+            fs.write((char*)&trackCount, sizeof(trackCount));
+
+            for (auto& [boneName, keyFrame] : clip.KeyFrames)
+            {
+                unsigned int boneNameLen = (unsigned int)boneName.size();
+                fs.write((char*)&boneNameLen, sizeof(boneNameLen));
+                fs.write(boneName.data(), boneNameLen);
+
+                // Positions
+                unsigned int posCount = (unsigned int)keyFrame.Positions.size();
+                fs.write((char*)&posCount, sizeof(posCount));
+                for (auto& p : keyFrame.Positions)
+                {
+                    fs.write((char*)&p.Time, sizeof(p.Time));
+                    fs.write((char*)&p.Value, sizeof(p.Value));
+                }
+
+                // Rotations
+                unsigned int rotCount = (unsigned int)keyFrame.Rotations.size();
+                fs.write((char*)&rotCount, sizeof(rotCount));
+                for (auto& r : keyFrame.Rotations)
+                {
+                    fs.write((char*)&r.Time, sizeof(r.Time));
+                    fs.write((char*)&r.Value, sizeof(r.Value));
+                }
+
+                // Scales
+                unsigned int scaleCount = (unsigned int)keyFrame.Scales.size();
+                fs.write((char*)&scaleCount, sizeof(scaleCount));
+                for (auto& s : keyFrame.Scales)
+                {
+                    fs.write((char*)&s.Time, sizeof(s.Time));
+                    fs.write((char*)&s.Value, sizeof(s.Value));
+                }
+            }
+        }
+
+        for (unsigned int i = 0; i < mesh->mNumVertices; ++i) {
+            ///Position
+            fs.write(reinterpret_cast<const char*>(&mesh->mVertices[i].x), sizeof mesh->mVertices[i].x);
+            fs.write(reinterpret_cast<const char*>(&mesh->mVertices[i].y), sizeof mesh->mVertices[i].y);
+            fs.write(reinterpret_cast<const char*>(&mesh->mVertices[i].z), sizeof mesh->mVertices[i].z);
+
+            ///TexCoords
+            if (data.HasTexCoord) {
+                fs.write(reinterpret_cast<const char*>(&mesh->mTextureCoords[0][i].x), sizeof mesh->mTextureCoords[0][i].x);
+                fs.write(reinterpret_cast<const char*>(&mesh->mTextureCoords[0][i].y), sizeof mesh->mTextureCoords[0][i].y);
+            }
+
+            ///Normals
+            if (data.HasNormal) {
+
+                fs.write(reinterpret_cast<const char*>(&mesh->mNormals[i].x), sizeof mesh->mNormals[i].x);
+                fs.write(reinterpret_cast<const char*>(&mesh->mNormals[i].y), sizeof mesh->mNormals[i].y);
+                fs.write(reinterpret_cast<const char*>(&mesh->mNormals[i].z), sizeof mesh->mNormals[i].z);
+            }
+
+            ///Tangent
+            if (data.HasTangent) {
+
+                fs.write(reinterpret_cast<const char*>(&mesh->mTangents[i].x), sizeof mesh->mTangents[i].x);
+                fs.write(reinterpret_cast<const char*>(&mesh->mTangents[i].y), sizeof mesh->mTangents[i].y);
+                fs.write(reinterpret_cast<const char*>(&mesh->mTangents[i].z), sizeof mesh->mTangents[i].z);
+            }
+
+            ///Color
+            if (data.HasColor) {
+                const aiColor4D& c = mesh->mColors[0][i];
+
+                fs.write(reinterpret_cast<const char*>(&c.r), sizeof c.r);
+                fs.write(reinterpret_cast<const char*>(&c.g), sizeof c.g);
+                fs.write(reinterpret_cast<const char*>(&c.b), sizeof c.b);
+                fs.write(reinterpret_cast<const char*>(&c.a), sizeof c.a);
+            }
+
+            if (data.HasBones)
+            {
+                fs.write(reinterpret_cast<const char*>(data.Bones[i].IDs), sizeof(int) * 4);
+                fs.write(reinterpret_cast<const char*>(data.Bones[i].Weights), sizeof(float) * 4);
+            }
+        }
+
+        for (unsigned int i = 0; i < mesh->mNumFaces; ++i) {
+            const aiFace& face = mesh->mFaces[i];
+            for (unsigned int j = 0; j < face.mNumIndices; ++j) {
+                fs.write(reinterpret_cast<const char*>(&face.mIndices[j]), sizeof face.mIndices[j]);
+            }
+        }
+        fs.close();
+
+        return locationPath.string();
+    }
 }

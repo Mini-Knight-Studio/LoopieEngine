@@ -24,6 +24,8 @@ namespace Loopie {
 		int ParentID = -1;
 		std::string Name;
 		matrix4 OffsetMatrix = matrix4(1);
+		matrix4 LocalBindTransform = matrix4(1);
+
 	};
 
 	struct VertexBoneData
@@ -69,6 +71,7 @@ namespace Loopie {
 		std::vector<VertexBoneData> Bones;
 		std::vector<Bone> Skeleton;
 
+		matrix4 GlobalInverseTransform = matrix4(1);
 		std::vector<AnimationClip> AnimationClips;
 		const AnimationClip* GetAnimationClip(const std::string& name) const {
 			for (const auto& clip : AnimationClips) {

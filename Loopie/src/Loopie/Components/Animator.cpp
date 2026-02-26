@@ -178,43 +178,52 @@ namespace Loopie {
 			return;
 
 		const auto& skeleton = mesh->GetData().Skeleton;
-		size_t n_bones = skeleton.size();
+		const matrix4& globalInverse =
+			mesh->GetData().GlobalInverseTransform;
 
-		m_finalBoneMatrices.resize(n_bones, matrix4(1.0f));
-		std::vector<matrix4> localBoneMatrices(n_bones, matrix4(1.0f));
+		size_t n = skeleton.size();
 
-		matrix4 sceneRootTransform = GetTransform()->GetLocalToWorldMatrix();
+		m_finalBoneMatrices.resize(n);
 
-		for (size_t i = 0; i < n_bones; ++i)
+		std::vector<matrix4> globalTransforms(n, matrix4(1.0f));
+
+		for (size_t i = 0; i < n; ++i)
 		{
-			const auto& bone = skeleton[i];
+			const Bone& bone = skeleton[i];
 
-			matrix4 parentTransform = matrix4(1.0f);
-			if (bone.ParentID >= 0)
-			{
-				parentTransform = localBoneMatrices[bone.ParentID];
-			}
+			matrix4 localTransform;
 
 			auto it = m_currentClip->KeyFrames.find(bone.Name);
-			matrix4 animTransform = matrix4(1.0f);
+
 			if (it != m_currentClip->KeyFrames.end())
 			{
 				const KeyFrame& keyFrame = it->second;
 
-				vec3 interpolatedPosition = Vec3Key::Interpolate(keyFrame.Positions, m_currentTime);
-				quaternion interpolatedRotation = QuaternionKey::Interpolate(keyFrame.Rotations, m_currentTime);
-				vec3 interpolatedScale = Vec3Key::Interpolate(keyFrame.Scales, m_currentTime);
+				vec3 pos = Vec3Key::Interpolate(keyFrame.Positions, m_currentTime);
+				quaternion rot = QuaternionKey::Interpolate(keyFrame.Rotations, m_currentTime);
+				vec3 scale = Vec3Key::Interpolate(keyFrame.Scales, m_currentTime);
 
-				matrix4 translation = glm::translate(matrix4(1.0f), interpolatedPosition);
-				matrix4 rotation = glm::toMat4(interpolatedRotation);
-				matrix4 scale = glm::scale(matrix4(1.0f), interpolatedScale);
+				matrix4 T = glm::translate(matrix4(1.0f), pos);
+				matrix4 R = glm::toMat4(rot);
+				matrix4 S = glm::scale(matrix4(1.0f), scale);
 
-				animTransform = translation * rotation * scale;
+				localTransform = T * R * S;
+			}
+			else
+			{
+				localTransform = bone.LocalBindTransform;
 			}
 
-			localBoneMatrices[i] = parentTransform * animTransform;
+			if (bone.ParentID >= 0)
+				globalTransforms[i] =
+				globalTransforms[bone.ParentID] * localTransform;
+			else
+				globalTransforms[i] = localTransform;
 
-			m_finalBoneMatrices[i] = localBoneMatrices[i] * bone.OffsetMatrix;
+			m_finalBoneMatrices[i] =
+				globalInverse *
+				globalTransforms[i] *
+				bone.OffsetMatrix;
 		}
 	}
 }
