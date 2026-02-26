@@ -48,6 +48,8 @@ namespace Loopie {
 
 	void Gizmo::EndGizmo()
 	{
+		if (!s_Data.LineBuffer)
+			return;
 		unsigned int dataSize = (uint32_t)((uint8_t*)s_Data.LineBuffer - (uint8_t*)s_Data.LineBufferModel);
 		s_Data.LineRender.VBO->SetData(s_Data.LineBufferModel, dataSize);
 

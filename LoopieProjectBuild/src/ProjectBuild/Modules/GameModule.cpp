@@ -28,8 +28,8 @@ namespace Loopie
 {
 	void GameModule::OnLoad()
 	{
-
-		Application::GetInstance().m_activeProject.Open("Game");
+		std::filesystem::path gamePath = "Game";	
+		Application::GetInstance().m_activeProject.Open(std::filesystem::absolute(gamePath));
 
 		AssetRegistry::Initialize();
 
@@ -42,20 +42,13 @@ namespace Loopie
 		Application::GetInstance().CreateScene(""); /// Maybe default One
 		m_currentScene = &Application::GetInstance().GetScene();
 
-		
-
 		JsonData data = Json::ReadFromFile(Application::GetInstance().m_activeProject.GetConfigPath());
 		JsonResult<std::string> result = data.Child("last_scene").GetValue<std::string>();
-		if (!result.Found || !m_currentScene->ReadAndLoadSceneFile(result.Result))
-		{
-			
-			m_currentScene->CreateEntity({ 0,1,-10 }, { 1,0,0,0 }, { 1,1,1 }, nullptr, "MainCamera")->AddComponent<Camera>();
-		}
-
-
-		Metadata& metadata = AssetRegistry::GetOrCreateMetadata("assets/materials/outlineMaterial.mat");
+		m_currentScene->ReadAndLoadSceneFile(result.Result);
 
 		////
+		AssetRegistry::RefreshAssetRegistry();
+
 		m_game.Init();
 
 		Application::GetInstance().m_notifier.AddObserver(this);
@@ -73,6 +66,8 @@ namespace Loopie
 
 		Application& app = Application::GetInstance();
 		InputEventManager& inputEvent = app.GetInputEvent();
+
+		m_game.Update(inputEvent);
 
 		const std::vector<Camera*>& cameras = Renderer::GetRendererCameras();
 		for (const auto cam : cameras)
@@ -122,25 +117,7 @@ namespace Loopie
 
 	void GameModule::OnInterfaceRender()
 	{
-		ImGuiViewport* viewport = ImGui::GetMainViewport();
-
-		ImGuiWindowFlags dockFlags =
-			ImGuiWindowFlags_NoDocking |
-			ImGuiWindowFlags_NoTitleBar |
-			ImGuiWindowFlags_NoResize |
-			ImGuiWindowFlags_NoMove |
-			ImGuiWindowFlags_NoScrollbar |
-			ImGuiWindowFlags_NoScrollWithMouse;
-
-		ImGui::Begin("DockSpace", nullptr, dockFlags);
-
-		ImGuiID dockspaceID = ImGui::GetID("EditorDockSpace");
-		ImGui::DockSpace(dockspaceID, ImVec2(0.0f, 0.0f));
-
-		ImGui::End();
-
 		m_game.Render();
-
 	}
 
 	void GameModule::RenderWorld(Camera* camera)

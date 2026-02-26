@@ -4,7 +4,7 @@
 #include "Loopie/Events/IObserver.h"
 #include "Loopie/Events/EventTypes.h"
 
-#include "ProjectBuild/Interfaces/GameInterface.h"
+#include "ProjectBuild/Interfaces/GameLogic.h"
 
 namespace Loopie {
 
@@ -27,14 +27,9 @@ namespace Loopie {
 		void OnInterfaceRender()override;
 	private:
 		void RenderWorld(Camera* camera);
-		/// Test
-		//void CreateBakerHouse();
-		//void CreateCity();
-		//void MousePick(Camera* camera);
-		///
 	private:
 
-		GameInterface m_game;
+		GameLogic m_game;
 
 		Scene* m_currentScene = nullptr;
 	};
