@@ -411,7 +411,12 @@ namespace Loopie {
 					JsonResult<json> componentJson = componentsObj.GetArrayElement<json>(uint32_t(j));
 					JsonNode componentNode = JsonNode(&componentJson.Result);
 
-					UUID componentUUID = UUID(componentNode.GetValue<std::string>("uuid").Result);
+					JsonResult<std::string> componentUUIDResult = componentNode.GetValue<std::string>("uuid");
+					UUID componentUUID = UUID();
+					if(componentUUIDResult.Found)
+					{
+						componentUUID = UUID(componentUUIDResult.Result);
+					}
 
 					// *** Component Checking *** - PSS 08/12/25
 					// This checks manually which component type it is.

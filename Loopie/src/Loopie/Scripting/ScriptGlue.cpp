@@ -225,7 +225,7 @@ namespace Loopie
 #pragma endregion
 
 #pragma region Transform
-	static void Transform_GetPosition(MonoString* entityID, MonoString* componentID, vec3* position)
+	static void Transform_GetPosition(MonoString* entityID, vec3* position)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
 		Scene* scene = &Application::GetInstance().GetScene();
