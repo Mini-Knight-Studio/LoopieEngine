@@ -25,10 +25,8 @@ namespace Loopie {
 		if (m_material)
 			m_material->DecrementReferenceCount();
 
-		if (m_linkedAnimator) {
-			if(m_linkedAnimator->GetMeshRenderer() == this)
-				m_linkedAnimator->SetMeshRenderer(nullptr);
-		}
+		if (m_linkedAnimator)
+			m_linkedAnimator->RemoveMeshRenderer(this);
 	}
 
 	void MeshRenderer::Init()

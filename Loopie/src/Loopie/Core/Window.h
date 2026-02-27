@@ -42,7 +42,7 @@ namespace Loopie {
 		SDL_GLContext GetSDL_GL_Context() const { return m_glContext; }
 		bool IsVsyncEnabled() const { return m_vsyncState; };
 		int GetFramerateLimit() const { return m_targetFramerate; }
-
+		bool GetFrameSwitch() const { return m_frameSwitch; }
 
 		void SetLogo(const std::string& filePath);
 
@@ -58,6 +58,8 @@ namespace Loopie {
 		bool m_vsyncState = false;
 
 		int m_targetFramerate = 60;
+
+		bool m_frameSwitch = true;
 	};
 }
 

@@ -309,82 +309,282 @@ namespace Loopie {
 		}
 
 		if (open) {
-			ImGui::Text("Get MeshRenderer");
-			ImGui::SameLine();
-			if(ImGui::Button("Auto-Get")){
-				animator->SetMeshRenderer(animator->GetOwner()->GetComponent<MeshRenderer>());
+			ImGui::Text("Linked MeshRenderers:");
+			const auto& renderers = animator->GetRenderers();
+
+			if (renderers.empty())
+			{
+				ImGui::TextColored(ImVec4(1, 1, 0, 1), "None");
 			}
-			ImGui::SameLine();
-			if (ImGui::Button("Paste")) {
-				//animator->SetMeshRenderer(animator->GetOwner()->GetComponent<MeshRenderer>());
-			}
+			else
+			{
+				int index = 0;
+				for (const auto& [uuid, data] : renderers)
+				{
+					MeshRenderer* renderer = data.Renderer;
+					if (!renderer) continue;
 
-			MeshRenderer* linkedRenderer = animator->GetMeshRenderer();
-
-			ImGui::Separator();
-			ImGui::Text("MeshRenderer: %s", linkedRenderer ? "Assigned" : "None");
-
-
-			if (linkedRenderer) {
-				std::shared_ptr<Mesh> mesh = linkedRenderer->GetMesh();
-				if (mesh) {
-					ImGui::Separator();
-					auto& clips = mesh->GetData().AnimationClips;
-					int totalAnimationClips = static_cast<int>(clips.size());
-
-					if (totalAnimationClips > 0)
-					{
-						int selectedClipIndex = animator->GetCurrentClipIndex();
-
-						if (selectedClipIndex >= totalAnimationClips)
-							selectedClipIndex = 0;
-
-						const char* currentClipName = clips[selectedClipIndex].Name.c_str();
-
-						if (ImGui::BeginCombo("Animation Clip", currentClipName))
-						{
-							for (int i = 0; i < totalAnimationClips; i++)
-							{
-								bool isSelected = (selectedClipIndex == i);
-
-								if (ImGui::Selectable(clips[i].Name.c_str(), isSelected))
-								{
-									selectedClipIndex = i;
-									animator->SelectClip(clips[i].Name);
-								}
-
-								if (isSelected)
-									ImGui::SetItemDefaultFocus();
-							}
-
-							ImGui::EndCombo();
-						}
-
-						if (ImGui::Button("Play")) {
-							animator->Play();
-						}
-						ImGui::SameLine();
-						if (ImGui::Button("Pause")) {
-							animator->Pause();
-						}
-						ImGui::SameLine();
-						if (ImGui::Button("Resume")) {
-							animator->Resume();
-						}
-						ImGui::SameLine();
-						if (ImGui::Button("Stop"))
-						{
-							animator->Stop();
+					ImGui::PushID(index++);
+					std::shared_ptr<Entity> owner = renderer->GetOwner();
+					auto allRenderersInEntity = owner->GetComponents<MeshRenderer>();
+					int rendererIndex = 0;
+					for (size_t i = 0; i < allRenderersInEntity.size(); i++) {
+						if (allRenderersInEntity[i] == renderer) {
+							rendererIndex = i;
+							break;
 						}
 					}
-					else
+
+					if (ImGui::SmallButton("X"))
 					{
-						ImGui::Text("No animation clips found.");
+						animator->RemoveMeshRenderer(renderer);
+						ImGui::PopID();
+						break;
+					}
+					ImGui::SameLine();
+
+					bool isTarget = (animator->GetTargetRenderer() == renderer);
+					std::string label;
+					if (allRenderersInEntity.size() > 1) {
+						label = fmt::format("{} [{}] : {}...", owner->GetName(), rendererIndex, renderer->GetUUID().Get().substr(0, 8));
+					}
+					else {
+						label = fmt::format("{} : {}...", owner->GetName(), renderer->GetUUID().Get().substr(0, 8));
+					}
+
+					if (isTarget)
+						ImGui::TextColored(ImVec4(0, 1, 0, 1), "%s (Target)", label.c_str());
+					else
+						ImGui::Text("%s", label.c_str());
+
+					ImGui::SameLine();
+
+					if (!isTarget && ImGui::SmallButton("Set Target"))
+					{
+						animator->SetTargetRenderer(renderer);
+					}
+					if (!isTarget) 
+						ImGui::SameLine();
+
+					if (ImGui::SmallButton("Copy UUID"))
+					{
+						Application::GetInstance().m_clipboard.Copy(renderer->GetUUID().Get());
+					}
+					ImGui::PopID();
+				}
+			}
+
+
+			ImGui::Separator();
+
+			ImGui::Text("Add MeshRenderer:");
+			static Entity* selectedEntity = nullptr;
+			static MeshRenderer* selectedRenderer = nullptr;
+
+			if (ImGui::BeginCombo("Target", selectedRenderer ? selectedRenderer->GetOwner()->GetName().c_str() : "Select..."))
+			{
+				std::shared_ptr<Entity> owner = animator->GetOwner()->shared_from_this();
+				std::vector<Entity*> candidates;
+				candidates.push_back(owner.get());
+
+				std::function<void(Entity*)> collect = [&](Entity* e) {
+					for (auto& child : e->GetChildren())
+					{
+						candidates.push_back(child.get());
+						collect(child.get());
+					}
+					};
+				collect(owner.get());
+
+				for (Entity* entity : candidates)
+				{
+					std::vector<MeshRenderer*> renderersInEntity = entity->GetComponents<MeshRenderer>();
+					if (renderersInEntity.empty()) 
+						continue;
+
+					int index = 0;
+					bool requiresIndex = renderersInEntity.size() > 1;
+					for (const auto renderer : renderersInEntity) {
+						if (renderers.find(renderer->GetUUID()) != renderers.end()) {
+							index++;
+							continue;
+						}
+						bool isSelected = (selectedRenderer == renderer);
+						std::string displayName = entity->GetName();
+						if (requiresIndex) {
+							displayName += fmt::format(" [{}]", index);
+						}
+
+						if (ImGui::Selectable((displayName + "##" + renderer->GetUUID().Get()).c_str(), isSelected))
+						{
+							selectedRenderer = renderer;
+							selectedEntity = entity;
+						}
+						index++;
+					}
+					
+				}
+				ImGui::EndCombo();
+			}
+
+			ImGui::SameLine();
+			if (ImGui::Button("Add") && selectedRenderer)
+			{
+				animator->AddMeshRenderer(selectedRenderer);
+				selectedRenderer = nullptr;
+			}
+
+			if (animator->GetOwner()->HasComponent<MeshRenderer>()) {
+				if (ImGui::Button("Get Self"))
+				{
+					std::vector<MeshRenderer*> renderersInEntity = animator->GetOwner()->GetComponents<MeshRenderer>();
+					for(const auto renderer : renderersInEntity)
+						animator->AddMeshRenderer(renderer);
+				}
+				ImGui::SameLine();
+			}
+
+			if (ImGui::Button("Add All Childs"))
+			{
+				std::shared_ptr<Entity> owner = animator->GetOwner();
+
+				std::function<void(Entity*)> addFrom = [&](Entity* entity) {
+					std::vector<MeshRenderer*> renderersInEntity = entity->GetComponents<MeshRenderer>();
+					for (const auto renderer : renderersInEntity)
+						animator->AddMeshRenderer(renderer);
+
+					for (auto& child : entity->GetChildren())
+						addFrom(child.get());
+				};
+
+				addFrom(owner.get());
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Clear"))
+			{
+				animator->ClearRenderers();
+			}
+
+			static std::unordered_map<Animator*, std::string> s_selectedTargetUUID;
+
+			if (!renderers.empty())
+			{
+				ImGui::Spacing();
+				ImGui::Separator();
+				ImGui::Text("Configuration");
+				
+				MeshRenderer* targetRenderer = animator->GetTargetRenderer();
+
+				if (!targetRenderer)
+				{
+					targetRenderer = animator->GetFirstMeshRenderer();
+					if (targetRenderer)
+					{
+						ImGui::TextColored(ImVec4(1, 1, 0, 1), "No target renderer selected. Using first.");
+						ImGui::SameLine();
+						if (ImGui::SmallButton("Set as Target"))
+						{
+							animator->SetTargetRenderer(targetRenderer);
+						}
 					}
 				}
 
-			}
+				if (targetRenderer)
+				{
+					std::shared_ptr<Entity> owner = targetRenderer->GetOwner();
+					auto allRenderersInEntity = owner->GetComponents<MeshRenderer>();
 
+					std::string targetLabel = owner->GetName();
+					if (allRenderersInEntity.size() > 1) {
+						int idx = 0;
+						for (size_t i = 0; i < allRenderersInEntity.size(); i++) {
+							if (allRenderersInEntity[i] == targetRenderer) {
+								idx = i;
+								break;
+							}
+						}
+						targetLabel += fmt::format(" [{}]", idx);
+					}
+					ImGui::Text("Active Target: %s", targetLabel.c_str());
+
+					if (ImGui::BeginCombo("Switch Target", "Select..."))
+					{
+						for (const auto& [uuid, data] : renderers)
+						{
+							MeshRenderer* renderer = data.Renderer;
+							if (!renderer || renderer == targetRenderer) 
+								continue;
+
+							std::shared_ptr<Entity> rOwner = renderer->GetOwner();
+							auto rRenderers = rOwner->GetComponents<MeshRenderer>();
+
+							std::string displayName = rOwner->GetName();
+							if (rRenderers.size() > 1) {
+								int idx = 0;
+								for (size_t i = 0; i < rRenderers.size(); i++) {
+									if (rRenderers[i] == renderer) {
+										idx = i;
+										break;
+									}
+								}
+								displayName += fmt::format(" [{}]", idx);
+							}
+
+							if (ImGui::Selectable(displayName.c_str()))
+							{
+								animator->SetTargetRenderer(renderer);
+							}
+						}
+						ImGui::EndCombo();
+					}
+
+					std::shared_ptr<Mesh> mesh = targetRenderer->GetMesh();
+					if (mesh)
+					{
+						auto& clips = mesh->GetData().AnimationClips;
+						int totalClips = static_cast<int>(clips.size());
+
+						if (totalClips > 0)
+						{
+							int selectedClipIndex = animator->GetCurrentClipIndex();
+							if (selectedClipIndex >= totalClips)
+								selectedClipIndex = 0;
+
+							const char* currentClipName = clips[selectedClipIndex].Name.c_str();
+
+							if (ImGui::BeginCombo("Animation Clip", currentClipName))
+							{
+								for (int i = 0; i < totalClips; i++)
+								{
+									bool isSelected = (selectedClipIndex == i);
+									if (ImGui::Selectable(clips[i].Name.c_str(), isSelected))
+									{
+										selectedClipIndex = i;
+										animator->SelectClip(clips[i].Name);
+									}
+									if (isSelected)
+										ImGui::SetItemDefaultFocus();
+								}
+								ImGui::EndCombo();
+							}
+
+							if (ImGui::Button("Play")) animator->Play();
+							ImGui::SameLine();
+							if (ImGui::Button("Pause")) animator->Pause();
+							ImGui::SameLine();
+							if (ImGui::Button("Resume")) animator->Resume();
+							ImGui::SameLine();
+							if (ImGui::Button("Stop")) animator->Stop();
+						}
+						else
+							ImGui::Text("No animation clips in target mesh.");
+					}
+					else
+						ImGui::Text("Target renderer has no mesh.");
+				}
+			}
+			else
+				ImGui::Text("Add a MeshRenderer to enable animation controls.");
 		}
 
 		ImGui::PopID();

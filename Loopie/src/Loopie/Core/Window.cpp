@@ -66,6 +66,7 @@ namespace Loopie {
 	{
 		SDL_GL_SwapWindow(m_window);
 		LimitFramerate();
+		m_frameSwitch = !m_frameSwitch;
 	}
 
 	void Window::ProcessEvents(InputEventManager& eventController) {

@@ -236,7 +236,7 @@ namespace Loopie
 					Animator* animator = renderer->GetLinkedAnimator();
 					if (animator && animator->HasAnimation()) {
 						animator->Update();
-						bones = animator->GetFinalBoneMatrices();
+						bones = animator->GetRendererData(renderer->GetUUID()).FinalBoneMatrices;
 					}
 				}
 

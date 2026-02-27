@@ -12,6 +12,12 @@ namespace Loopie {
 
 	class MeshRenderer;
 
+	struct RendererData
+	{
+		MeshRenderer * Renderer = nullptr;
+		std::vector<glm::mat4> FinalBoneMatrices;
+	};
+
 	class Animator : public Component
 	{
 	public:
@@ -22,8 +28,18 @@ namespace Loopie {
 
 		void Init() override;
 
-		void SetMeshRenderer(MeshRenderer* meshRenderer);
-		MeshRenderer* GetMeshRenderer() { return m_meshRenderer; }
+		void AddMeshRenderer(MeshRenderer* renderer);
+		void RemoveMeshRenderer(MeshRenderer* renderer);
+		void RemoveMeshRenderer(const UUID& uuid);
+		RendererData GetRendererData(const UUID& uuid);
+		void ClearRenderers();
+		MeshRenderer* GetFirstMeshRenderer() const;
+		void SetMeshRenderer(MeshRenderer* meshRenderer); // Replaces all with single
+		const std::unordered_map<UUID, RendererData>& GetRenderers() const { return m_renderers; }
+
+		void SetTargetRenderer(MeshRenderer* renderer);
+		MeshRenderer* GetTargetRenderer() const { return m_targetRenderer; }
+		bool HasTargetRenderer() const { return m_targetRenderer != nullptr; }
 
 		int GetCurrentClipIndex() const;
 		const AnimationClip* GetCurrentClip() const { return m_currentClip; }
@@ -49,15 +65,17 @@ namespace Loopie {
 
 		bool SelectClip(const std::string& clipName);
 
-		const std::vector<glm::mat4>& GetFinalBoneMatrices() const { return m_finalBoneMatrices; }
 		bool HasAnimation() const { return m_currentClip != nullptr; }
 
 		JsonNode Serialize(JsonNode& parent) const override;
 		void Deserialize(const JsonNode& data) override;
 		void OnSceneDeserialized() override;
-
 	private:
-		MeshRenderer* m_meshRenderer;
+		void CalculateBoneTransform();
+	private:
+		std::unordered_map<UUID, RendererData> m_renderers;
+		MeshRenderer* m_targetRenderer = nullptr;
+
 		const AnimationClip* m_currentClip = nullptr;
 		int m_currentClipIndex = 0;
 
@@ -67,12 +85,17 @@ namespace Loopie {
 		bool m_isPlaying = false;
 		bool m_looping = true;
 
-		std::vector<glm::mat4> m_finalBoneMatrices;
-		void CalculateBoneTransform();
 
 
 		/// Serialization Temporal fields
-		std::string meshRendererUUID;
-		std::string meshRendererOwnerUUID;
+		struct PendingRenderer
+		{
+			std::string rendererUUID;
+			std::string ownerUUID;
+		};
+		std::vector<PendingRenderer> m_pendingRenderers;
+		std::string m_pendingTargetRendererUUID;
+
+		bool m_frameSwitch = true;
 	};
 }
