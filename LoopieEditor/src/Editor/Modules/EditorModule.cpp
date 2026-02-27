@@ -75,6 +75,7 @@ namespace Loopie
 
 	void EditorModule::OnUnload()
 	{
+		UIRenderer::Shutdown();
 		AssetRegistry::Shutdown();
 		Application::GetInstance().m_notifier.RemoveObserver(this);
 	}

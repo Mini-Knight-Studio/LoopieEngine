@@ -46,17 +46,13 @@ namespace Loopie
 
 		const char* uiMatPath = "assets/materials/ui_default.mat";
 		Metadata& meta = AssetRegistry::GetOrCreateMetadata(uiMatPath);
+		if (!meta.HasCache)
+		{
+			MaterialImporter::ImportMaterial(uiMatPath, meta);
+		}
 		s_material = ResourceManager::GetMaterial(meta);
-
-		MaterialImporter::ImportMaterial(uiMatPath, meta);
-		if (!s_material)
-		{
-			s_material = Material::GetDefault();
-		}
-		else
-		{
-			s_material->Load();
-		}
+		s_material->Load();
+		s_material->SetIfEditable(true);
 
 		s_shader = new Shader("assets/shaders/UIQuad.shader");
 		s_material->SetShader(*s_shader);
@@ -72,6 +68,10 @@ namespace Loopie
 		s_quadVAO.reset();
 		s_quadVBO.reset();
 		s_quadEBO.reset();
+		
+		if (s_material && s_material->GetTexture())
+			s_material->GetTexture()->DecrementReferenceCount();
+		
 		s_material.reset();
 		s_initialized = false;
 	}
@@ -101,6 +101,9 @@ namespace Loopie
 
 		if (!s_quadVAO || !s_material || !texture)
 			return;
+
+		if (s_material->GetTexture() != texture)
+			s_material->GetTexture()->DecrementReferenceCount();
 
 		matrix4 model(1.0f);
 		model = glm::translate(model, vec3(posPixels.x, posPixels.y, 0.0f));
