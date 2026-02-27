@@ -114,7 +114,7 @@ namespace Loopie
 				continue;
 
 			Renderer::BeginScene(cam->GetViewMatrix(), cam->GetProjectionMatrix(), false);
-			Renderer::SetViewport(0, 0, buffer->GetWidth(), buffer->GetWidth());
+			Renderer::SetViewport(0, 0, buffer->GetWidth(), buffer->GetHeight());
 			buffer->Bind();
 			RenderWorld(cam);
 			Renderer::EndScene();
@@ -268,15 +268,28 @@ namespace Loopie
 
 	void EditorModule::RenderUI()
 	{
-		const vec4 vp = Renderer::GetCurrentViewport();
-		const float w = vp.z;
-		const float h = vp.w;
+		std::shared_ptr<FrameBuffer> buffer = m_game.GetFrameBuffer();
+		if (!buffer)
+			return;
+
+		buffer->Bind();
+
+		const float w = static_cast<float>(m_game.GetFrameBuffer()->GetWidth());
+		const float h = static_cast<float>(m_game.GetFrameBuffer()->GetHeight());
 
 		if (w <= 0.0f || h <= 0.0f)
+		{
+			buffer->Unbind();
 			return;
+		}
+
+		Renderer::SetViewport(0, 0, static_cast<unsigned int>(w), static_cast<unsigned int>(h));
 
 		Renderer::DisableDepth();
 		Renderer::DisableStencil();
+		Renderer::DisableCulling();
+
+		Renderer::EnableBlend();
 
 		const matrix4 uiView(1.0f);
 		const matrix4 uiProj = glm::ortho(0.0f, w, h, 0.0f, -1.0f, 1.0f);
@@ -286,11 +299,14 @@ namespace Loopie
 		// here would come the UI rendering
 		// ....................
 		// ....................
-		UIRenderer::DrawRect(vec2(20.0f, 20.0f), vec2(200.0f, 80.0f), vec4(1.0f, 0.2f, 0.2f, 0.6f));
+		UIRenderer::DrawRect(vec2(0.0f, 0.0f), vec2(200.0f, 80.0f), vec4(1.0f, 0.2f, 0.2f, 0.6f));
 
 		Renderer::EndScene();
 
+		Renderer::DisableBlend();
 		Renderer::EnableDepth();
+
+		buffer->Unbind();
 	}
 
 	void EditorModule::CreateBakerHouse()

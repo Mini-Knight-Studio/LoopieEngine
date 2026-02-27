@@ -95,6 +95,9 @@ namespace Loopie {
 		static void DisableCulling();
 		static void CullFace(CullFaceMode mode);
 
+		static void EnableBlend();
+		static void DisableBlend();
+
 	private:
 		static void SetRenderUniforms(std::shared_ptr<Material> material, const Transform* transform);
 		static void SetRenderUniforms(std::shared_ptr<Material> material, const matrix4& modelMatrix);

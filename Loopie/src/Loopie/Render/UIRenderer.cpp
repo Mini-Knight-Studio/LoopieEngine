@@ -13,6 +13,8 @@ namespace Loopie
 {
 	bool UIRenderer::s_initialized = false;
 	std::shared_ptr<VertexArray> UIRenderer::s_quadVAO = nullptr;
+	std::shared_ptr<VertexBuffer> UIRenderer::s_quadVBO = nullptr;
+	std::shared_ptr<IndexBuffer> UIRenderer::s_quadEBO = nullptr;
 	std::shared_ptr<Material> UIRenderer::s_material = nullptr;
 	Shader* UIRenderer::s_shader = nullptr;
 	
@@ -32,15 +34,15 @@ namespace Loopie
 
 		const unsigned int indices[] = { 0,1,2,2,3,0 };
 
-		auto vbo = std::make_shared<VertexBuffer>(vertices, (unsigned int)sizeof(vertices));
-		BufferLayout& layout = vbo->GetLayout();
+		s_quadVBO = std::make_shared<VertexBuffer>(vertices, (unsigned int)sizeof(vertices));
+		BufferLayout& layout = s_quadVBO->GetLayout();
 		layout.AddLayoutElement(0, GLVariableType::FLOAT, 3, "a_Position");
 		layout.AddLayoutElement(1, GLVariableType::FLOAT, 2, "a_TexCoord");
 
-		auto ebo = std::make_shared<IndexBuffer>(indices, (unsigned int)(sizeof(indices) / sizeof(indices[0])));
+		s_quadEBO = std::make_shared<IndexBuffer>(indices, (unsigned int)(sizeof(indices) / sizeof(indices[0])));
 
 		s_quadVAO = std::make_shared<VertexArray>();
-		s_quadVAO->AddBuffer(vbo.get(), ebo.get());
+		s_quadVAO->AddBuffer(s_quadVBO.get(), s_quadEBO.get());
 
 		const char* uiMatPath = "assets/materials/ui_default.mat";
 		Metadata& meta = AssetRegistry::GetOrCreateMetadata(uiMatPath);
@@ -68,6 +70,8 @@ namespace Loopie
 		s_shader = nullptr;
 
 		s_quadVAO.reset();
+		s_quadVBO.reset();
+		s_quadEBO.reset();
 		s_material.reset();
 		s_initialized = false;
 	}
