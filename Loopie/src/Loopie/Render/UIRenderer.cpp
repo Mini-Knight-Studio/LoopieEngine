@@ -45,12 +45,8 @@ namespace Loopie
 		const char* uiMatPath = "assets/materials/ui_default.mat";
 		Metadata& meta = AssetRegistry::GetOrCreateMetadata(uiMatPath);
 		s_material = ResourceManager::GetMaterial(meta);
-		s_material->SetIfEditable(false);
-		if (!meta.HasCache)
-		{
-			MaterialImporter::ImportMaterial(uiMatPath, meta);
-		}
-		s_material = ResourceManager::GetMaterial(meta);
+
+		MaterialImporter::ImportMaterial(uiMatPath, meta);
 		if (!s_material)
 		{
 			s_material = Material::GetDefault();
@@ -59,12 +55,6 @@ namespace Loopie
 		{
 			s_material->Load();
 		}
-
-		//const Shader uiShader("assets/shaders/UIQuad.shader");
-		//Metadata& meta_ = AssetRegistry::GetOrCreateMetadata("assets/shaders/UIQuad.shader");
-
-		Metadata& metadata = AssetRegistry::GetOrCreateMetadata("assets/materials/ui_default.mat");
-		s_material = ResourceManager::GetMaterial(metadata);
 
 		s_shader = new Shader("assets/shaders/UIQuad.shader");
 		s_material->SetShader(*s_shader);
