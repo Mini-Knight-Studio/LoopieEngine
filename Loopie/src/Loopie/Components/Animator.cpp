@@ -1,5 +1,4 @@
 #include "Animator.h"
-#include "Animator.h"
 
 #include "Loopie/Core/Application.h"
 
