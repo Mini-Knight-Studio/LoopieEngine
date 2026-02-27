@@ -5,6 +5,7 @@
 #include "Loopie/Render/Gizmo.h"
 #include "Loopie/Math/MathTypes.h"
 #include "Loopie/Components/Transform.h"
+#include "Loopie/Components/Animator.h"
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Resources/ResourceManager.h"
 
@@ -23,6 +24,11 @@ namespace Loopie {
 			m_mesh->DecrementReferenceCount();
 		if (m_material)
 			m_material->DecrementReferenceCount();
+
+		if (m_linkedAnimator) {
+			if(m_linkedAnimator->GetMeshRenderer() == this)
+				m_linkedAnimator->SetMeshRenderer(nullptr);
+		}
 	}
 
 	void MeshRenderer::Init()
