@@ -5,6 +5,7 @@
 //// Test
 #include "Loopie/Core/Log.h"
 #include "Loopie/Render/Renderer.h"
+#include "Loopie/Render/UIRenderer.h"
 #include "Loopie/Render/Gizmo.h"
 #include "Loopie/Render/Colors.h"
 
@@ -139,6 +140,9 @@ namespace Loopie
 				Renderer::BeginScene(m_game.GetCamera()->GetViewMatrix(), m_game.GetCamera()->GetProjectionMatrix(), false);
 				RenderWorld(m_game.GetCamera());
 				Renderer::EndScene();
+
+				// UI pass (ortographic overlay)
+				RenderUI();
 			}
 			m_game.EndScene();
 		}
@@ -260,6 +264,33 @@ namespace Loopie
 			}
 			m_currentScene->GetOctree().DebugDraw(Color::GREEN);
 		}
+	}
+
+	void EditorModule::RenderUI()
+	{
+		const vec4 vp = Renderer::GetCurrentViewport();
+		const float w = vp.z;
+		const float h = vp.w;
+
+		if (w <= 0.0f || h <= 0.0f)
+			return;
+
+		Renderer::DisableDepth();
+		Renderer::DisableStencil();
+
+		const matrix4 uiView(1.0f);
+		const matrix4 uiProj = glm::ortho(0.0f, w, h, 0.0f, -1.0f, 1.0f);
+
+		Renderer::BeginScene(uiView, uiProj, false);
+		
+		// here would come the UI rendering
+		// ....................
+		// ....................
+		UIRenderer::DrawRect(vec2(20.0f, 20.0f), vec2(200.0f, 80.0f), vec4(1.0f, 0.2f, 0.2f, 0.6f));
+
+		Renderer::EndScene();
+
+		Renderer::EnableDepth();
 	}
 
 	void EditorModule::CreateBakerHouse()

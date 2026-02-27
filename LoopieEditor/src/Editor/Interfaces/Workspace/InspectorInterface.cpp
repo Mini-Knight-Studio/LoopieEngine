@@ -380,7 +380,16 @@ namespace Loopie {
 			return;
 		}
 		if (open) {
-			
+			CanvasRenderMode renderMode = canvas->GetRenderMode();
+			int modeIndex = (int)renderMode;
+			const char* modeLabels[] = { "World", "Overlay" };
+			if (ImGui::Combo("Render Mode", &modeIndex, modeLabels, IM_ARRAYSIZE(modeLabels))) {
+				canvas->SetRenderMode((CanvasRenderMode)modeIndex);
+			}
+			if (canvas->GetRenderMode() == CanvasRenderMode::ScreenSpaceOverlay)
+			{
+				//.............
+			}
 		}
 		ImGui::PopID();
 	}

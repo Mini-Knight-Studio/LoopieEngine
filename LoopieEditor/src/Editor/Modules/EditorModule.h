@@ -14,6 +14,9 @@
 #include "Editor/Interfaces/Workspace/TopBarInterface.h"
 #include "Editor/Interfaces/Workspace/TextEditorInterface.h"
 
+#include "Loopie/Components/Canvas.h"
+#include "Loopie/Components/RectTransform.h"
+
 namespace Loopie {
 
 	class Camera;
@@ -35,6 +38,7 @@ namespace Loopie {
 		void OnInterfaceRender()override;
 	private:
 		void RenderWorld(Camera* camera);
+		void RenderUI();
 		/// Test
 		void CreateBakerHouse();
 		void CreateCity();

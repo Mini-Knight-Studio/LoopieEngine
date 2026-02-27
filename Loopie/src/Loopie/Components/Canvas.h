@@ -4,6 +4,13 @@
 #include "Loopie/Math/MathTypes.h"
 
 namespace Loopie {
+
+	enum class CanvasRenderMode
+	{
+		WorldSpace,
+		ScreenSpaceOverlay,
+	};
+
 	class Canvas : public Component, public IObserver<TransformNotification>
 	{
 	public:
@@ -21,6 +28,9 @@ namespace Loopie {
 		JsonNode Serialize(JsonNode& parent) const override;
 		void Deserialize(const JsonNode& data) override;
 
+		CanvasRenderMode GetRenderMode() const { return m_renderMode; }
+		void SetRenderMode(CanvasRenderMode mode) { m_renderMode = mode; }
+
 	private:
 		void RebuildWorldCornersIfNeeded() const;
 
@@ -30,5 +40,7 @@ namespace Loopie {
 
 		mutable bool m_cornersDirty = true;
 		mutable vec3 m_worldCorners[4]{};
+
+		CanvasRenderMode m_renderMode = CanvasRenderMode::WorldSpace;
 	};
 }

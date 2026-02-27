@@ -86,6 +86,7 @@ Loopie::JsonNode Loopie::Canvas::Serialize(JsonNode& parent) const
 {
 	JsonNode canvasObj = parent.CreateObjectField("canvas");
 	canvasObj.CreateField<bool>("draw_gizmo", m_drawGizmo);
+	canvasObj.CreateField<int>("render_mode", static_cast<int>(m_renderMode));
 
 	JsonNode colorObj = canvasObj.CreateObjectField("color");
 	colorObj.CreateField("r", m_color.r);
@@ -100,6 +101,8 @@ void Loopie::Canvas::Deserialize(const JsonNode& data)
 {
 	if (data.Contains("draw_gizmo"))
 		m_drawGizmo = data.GetValue<bool>("draw_gizmo", true).Result;
+	if (data.Contains("render_mode"))
+		m_renderMode = static_cast<CanvasRenderMode>(data.GetValue<int>("render_mode", static_cast<int>(CanvasRenderMode::WorldSpace)).Result);
 
 	JsonNode colorObj = data.Child("color");
 	if (colorObj.IsValid() && colorObj.IsObject())
