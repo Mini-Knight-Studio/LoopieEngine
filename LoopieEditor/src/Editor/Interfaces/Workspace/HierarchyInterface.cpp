@@ -136,6 +136,15 @@ namespace Loopie {
 
 		}*/
 
+		if (ImGui::MenuItem("Duplicate", nullptr, false, entity != nullptr))
+		{
+			if (s_SelectedEntity.lock() == entity)
+			{
+				std::shared_ptr<Entity> newEntity = m_scene->CloneEntity(s_SelectedEntity.lock());
+				s_SelectedEntity = newEntity;
+			}
+		}
+
 		if (ImGui::MenuItem("Delete",nullptr, false, entity != nullptr))
 		{
 			if (s_SelectedEntity.lock() == entity)

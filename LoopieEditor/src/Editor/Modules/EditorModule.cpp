@@ -114,7 +114,7 @@ namespace Loopie
 				continue;
 
 			Renderer::BeginScene(cam->GetViewMatrix(), cam->GetProjectionMatrix(), false);
-			Renderer::SetViewport(0, 0, buffer->GetWidth(), buffer->GetWidth());
+			Renderer::SetViewport(0, 0, buffer->GetWidth(), buffer->GetHeight());
 			buffer->Bind();
 			RenderWorld(cam);
 			Renderer::EndScene();
