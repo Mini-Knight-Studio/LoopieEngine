@@ -25,10 +25,6 @@ namespace Loopie {
 		ivec2 GetSize() { return ivec2(m_width, m_height); }
 
 		unsigned int GetRendererId() { return m_tb->GetRendererID(); }
-
-		void Bind(unsigned int unit = 0) const { if (m_tb) m_tb->Bind(unit); }
-		void Unbind() const { if (m_tb) m_tb->Unbind(); }
-
 	private:
 		//std::vector<unsigned char> m_pixels;
 		int m_width = 0;

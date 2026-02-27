@@ -20,7 +20,6 @@
 
 #include "Loopie/Components/MeshRenderer.h"
 #include "Loopie/Components/Transform.h"
-#include "Loopie/Components/Image.h"
 #include "Loopie/Resources/Types/Material.h"
 ///
 
@@ -287,40 +286,7 @@ namespace Loopie
 		// here would come the UI rendering
 		// ....................
 		// ....................
-		// UIRenderer::DrawRect(vec2(20.0f, 20.0f), vec2(200.0f, 80.0f), vec4(1.0f, 0.2f, 0.2f, 0.6f));
-
-		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities())
-		{
-			if (!entity || !entity->GetIsActive())
-				continue;
-
-			Canvas* canvas = entity->GetComponent<Canvas>();
-			if (!canvas || !canvas->GetIsActive())
-				continue;
-
-			if (canvas->GetRenderMode() != CanvasRenderMode::ScreenSpaceOverlay)
-				continue;
-		}
-
-		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities())
-		{
-			if (!entity || !entity->GetIsActive())
-				continue;
-
-			Image* img = entity->GetComponent<Image>();
-			RectTransform* rt = entity->GetComponent<RectTransform>();
-
-			if (!img || !img->GetIsActive() || !rt)
-				continue;
-
-			vec3 p = rt->GetLocalPosition();
-			vec2 size(rt->GetWidth(), rt->GetHeight());
-
-			vec2 topLeft(p.x - size.x * 0.5f, p.y - size.y * 0.5f);
-
-			//UIRenderer::DrawImage(topLeft, size, img->GetColor(), img->GetTexture());
-			UIRenderer::DrawRect(topLeft, size, img->GetColor());
-		}
+		UIRenderer::DrawRect(vec2(20.0f, 20.0f), vec2(200.0f, 80.0f), vec4(1.0f, 0.2f, 0.2f, 0.6f));
 
 		Renderer::EndScene();
 

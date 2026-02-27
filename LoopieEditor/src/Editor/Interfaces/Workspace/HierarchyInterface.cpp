@@ -5,7 +5,6 @@
 #include "Loopie/Importers/MeshImporter.h"
 #include "Loopie/Components/RectTransform.h"
 #include "Loopie/Components/Canvas.h"
-#include "Loopie/Components/Image.h"
 
 #include "Editor/Interfaces/Workspace/SceneInterface.h"
 #include <imgui.h>
@@ -166,12 +165,9 @@ namespace Loopie {
 		}
 		if (ImGui::BeginMenu("UI"))
 		{
-			if (ImGui::MenuItem("Canvas"))
+			if (ImGui::MenuItem("Canvas")) {
 				SelectEntity(CreateCanvas("Canvas", entity));
-
-			if (ImGui::MenuItem("Image"))
-				SelectEntity(CreateImage("Image", entity));
-
+			}
 			ImGui::EndMenu();
 		}
 	}
@@ -247,14 +243,6 @@ namespace Loopie {
 		std::shared_ptr<Entity> newEntity = m_scene->CreateEntity(name, parent);
 		newEntity->ReplaceTransform<RectTransform>();
 		newEntity->AddComponent<Canvas>();
-
-		return newEntity;
-	}
-	std::shared_ptr<Entity> HierarchyInterface::CreateImage(const std::string& name, const std::shared_ptr<Entity>& parent)
-	{
-		std::shared_ptr<Entity> newEntity = m_scene->CreateEntity(name, parent);
-		newEntity->ReplaceTransform<RectTransform>();
-		newEntity->AddComponent<Image>();
 
 		return newEntity;
 	}
