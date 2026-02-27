@@ -299,7 +299,8 @@ namespace Loopie
 		// here would come the UI rendering
 		// ....................
 		// ....................
-		UIRenderer::DrawRect(vec2(0.0f, 0.0f), vec2(200.0f, 80.0f), vec4(1.0f, 0.2f, 0.2f, 0.6f));
+		//UIRenderer::DrawRect(vec2(0.0f, 0.0f), vec2(200.0f, 80.0f), vec4(1.0f, 0.2f, 0.2f, 0.6f));
+		UIRenderer::DrawImage(vec2(10.0f, 10.0f), vec2(32.0f, 32.0f), Texture::GetDefault(), Color::WHITE);
 
 		Renderer::EndScene();
 

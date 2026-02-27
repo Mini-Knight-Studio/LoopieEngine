@@ -27,8 +27,10 @@ in vec2 v_TexCoord;
 out vec4 FragColor;
 
 uniform vec4 u_Color;
+uniform sampler2D u_Albedo;
 
 void main()
 {
-    FragColor = u_Color;
+    vec4 tex = texture(u_Albedo, v_TexCoord);
+    FragColor = tex * u_Color;
 }

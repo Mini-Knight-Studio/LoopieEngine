@@ -95,6 +95,27 @@ namespace Loopie
 		Renderer::FlushRenderItem(s_quadVAO, s_material, model);
 	}
 
+	void UIRenderer::DrawImage(const vec2& posPixels, const vec2& sizePixels, const std::shared_ptr<Texture>& texture, const vec4& tint)
+	{
+		EnsureInit();
+
+		if (!s_quadVAO || !s_material || !texture)
+			return;
+
+		matrix4 model(1.0f);
+		model = glm::translate(model, vec3(posPixels.x, posPixels.y, 0.0f));
+		model = glm::scale(model, vec3(sizePixels.x, sizePixels.y, 1.0f));
+
+		UniformValue c;
+		c.type = UniformType_vec4;
+		c.value = tint;
+		s_material->SetShaderVariable("u_Color", c);
+
+		s_material->SetTexture(texture);
+
+		Renderer::FlushRenderItem(s_quadVAO, s_material, model);
+	}
+
 	void UIRenderer::EnsureInit()
 	{
 		if (!s_initialized)
