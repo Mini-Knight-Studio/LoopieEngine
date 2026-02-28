@@ -15,6 +15,7 @@ namespace Loopie
         void Update();
 
         Camera* GetCamera() { return m_camera; }
+        bool IsMoving() { return m_isCameraMoving;  }
 
     private:
         float m_cameraMovementSpeed = 5.f;
@@ -38,5 +39,8 @@ namespace Loopie
         std::shared_ptr<Entity> m_entityToPivot;
         std::shared_ptr<Entity> m_entity;
         Camera* m_camera;
+
+
+        bool m_isCameraMoving = false;
     };
 }

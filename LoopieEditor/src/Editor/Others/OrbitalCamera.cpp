@@ -29,6 +29,8 @@ namespace Loopie
         m_panDirection = vec3(0);
         m_zoomInput = 0;
 
+        m_isCameraMoving = false;
+
         vec2 mouseScroll = inputEvent.GetScrollDelta();
         vec2 mouseDelta = inputEvent.GetMouseDelta();
 
@@ -55,15 +57,20 @@ namespace Loopie
                 m_entityToPivot = m_entity;
                 m_inputRotation = vec3(mouseDelta.x, mouseDelta.y, 0);
 
+                if (inputEvent.GetKeyStatus(SDL_SCANCODE_W) == KeyState::REPEAT) m_inputDirection.z += m_cameraMovementSpeed;
+                if (inputEvent.GetKeyStatus(SDL_SCANCODE_S) == KeyState::REPEAT) m_inputDirection.z -= m_cameraMovementSpeed;
+                if (inputEvent.GetKeyStatus(SDL_SCANCODE_A) == KeyState::REPEAT) m_inputDirection.x -= m_cameraMovementSpeed;
+                if (inputEvent.GetKeyStatus(SDL_SCANCODE_D) == KeyState::REPEAT) m_inputDirection.x += m_cameraMovementSpeed;
+
+                if (m_inputDirection != vec3(0))
+                    m_isCameraMoving = true;
+
                 if (inputEvent.GetKeyStatus(SDL_SCANCODE_LSHIFT) == KeyState::REPEAT)
                     m_speedMultiplier = 2.0f;
                 else
                     m_speedMultiplier = 1.0f;  
             }
-            if (inputEvent.GetKeyStatus(SDL_SCANCODE_W) == KeyState::REPEAT) m_inputDirection.z += m_cameraMovementSpeed;
-            if (inputEvent.GetKeyStatus(SDL_SCANCODE_S) == KeyState::REPEAT) m_inputDirection.z -= m_cameraMovementSpeed;
-            if (inputEvent.GetKeyStatus(SDL_SCANCODE_A) == KeyState::REPEAT) m_inputDirection.x -= m_cameraMovementSpeed;
-            if (inputEvent.GetKeyStatus(SDL_SCANCODE_D) == KeyState::REPEAT) m_inputDirection.x += m_cameraMovementSpeed;
+            
         }
         if (inputEvent.GetKeyStatus(SDL_SCANCODE_F) == KeyState::DOWN)
         {

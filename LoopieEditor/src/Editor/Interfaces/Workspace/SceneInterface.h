@@ -33,11 +33,15 @@ namespace Loopie {
 
 	private:
 
+		void HotKeysBasic(const InputEventManager& inputEvent);
 		void HotKeysSelectedEntiy(const InputEventManager& inputEvent);
 
 		void Drop();
 		void DrawHelperBar();
 		Ray MouseRay();
+
+		bool AddStyleGizmoOperationButton(int operationType);
+		void RemoveStyleGizmoOperationButton(bool hasStyle);
 
 
 	private:

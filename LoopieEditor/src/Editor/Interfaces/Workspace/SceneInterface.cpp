@@ -60,9 +60,11 @@ namespace Loopie {
 		
 		m_camera->ProcessEvent(inputEvent);
 		m_camera->Update();
+
 		if (inputEvent.GetMouseButtonStatus(0) == KeyState::DOWN && !m_usingGuizmo)
 			MousePick();
 
+		HotKeysBasic(inputEvent);
 		HotKeysSelectedEntiy(inputEvent);
 	}
 
@@ -137,6 +139,21 @@ namespace Loopie {
 		m_buffer->Unbind();
 	}
 
+	void SceneInterface::HotKeysBasic(const InputEventManager& inputEvent)
+	{
+		if (!m_camera->IsMoving()) {
+			if (inputEvent.GetKeyStatus(SDL_SCANCODE_W) == KeyState::DOWN)
+				m_gizmoOperation = (int)ImGuizmo::TRANSLATE;
+			if (inputEvent.GetKeyStatus(SDL_SCANCODE_E) == KeyState::DOWN)
+				m_gizmoOperation = (int)ImGuizmo::ROTATE;
+			if (inputEvent.GetKeyStatus(SDL_SCANCODE_R) == KeyState::DOWN)
+				m_gizmoOperation = (int)ImGuizmo::SCALE;
+			if (inputEvent.GetKeyStatus(SDL_SCANCODE_T) == KeyState::DOWN)
+				m_gizmoOperation = (int)ImGuizmo::UNIVERSAL;
+		}
+		
+	}
+
 	void SceneInterface::HotKeysSelectedEntiy(const InputEventManager& inputEvent)
 	{
 		auto selectedEntity = HierarchyInterface::s_SelectedEntity.lock();
@@ -160,7 +177,6 @@ namespace Loopie {
 		if (inputEvent.GetKeyWithModifier(SDL_SCANCODE_X, KeyModifier::CTRL)) {
 			/// Cut
 		}
-
 	}
 
 	void SceneInterface::Drop()
@@ -194,17 +210,27 @@ namespace Loopie {
 		if (ImGui::Combo("##mode", &currentMode, m_gizmoModes.data(), (int)m_gizmoModes.size()))
 			m_gizmoMode = (currentMode == 0) ? (int)ImGuizmo::WORLD : (int)ImGuizmo::LOCAL;
 
+
+
+		bool haStyle = AddStyleGizmoOperationButton((int)ImGuizmo::TRANSLATE);
 		if (ImGui::ImageButton("move",(ImTextureID)m_moveIcon->GetRendererId(), ImVec2(15, 15)))
 			m_gizmoOperation = (int)ImGuizmo::TRANSLATE;
+		RemoveStyleGizmoOperationButton(haStyle);
 
+		haStyle = AddStyleGizmoOperationButton((int)ImGuizmo::ROTATE);
 		if (ImGui::ImageButton("rotate", (ImTextureID)m_rotateIcon->GetRendererId(), ImVec2(15, 15)))
 			m_gizmoOperation = (int)ImGuizmo::ROTATE;
-
+		RemoveStyleGizmoOperationButton(haStyle);
+		
+		haStyle = AddStyleGizmoOperationButton((int)ImGuizmo::SCALE);
 		if (ImGui::ImageButton("scale", (ImTextureID)m_scaleIcon->GetRendererId(), ImVec2(15, 15)))
 			m_gizmoOperation = (int)ImGuizmo::SCALE;
-
+		RemoveStyleGizmoOperationButton(haStyle);
+		
+		haStyle = AddStyleGizmoOperationButton((int)ImGuizmo::UNIVERSAL);
 		if (ImGui::ImageButton("all", (ImTextureID)m_trsIcon->GetRendererId(), ImVec2(15, 15)))
 			m_gizmoOperation = (int)ImGuizmo::UNIVERSAL;
+		RemoveStyleGizmoOperationButton(haStyle);
 
 		if(!m_usingGuizmo)
 			m_usingGuizmo = ImGui::IsAnyItemHovered();
@@ -232,6 +258,21 @@ namespace Loopie {
 		vec3 end = vec3(rayWorldFar);
 
 		return Ray{ origin, normalize(end - origin), std::numeric_limits<float>::max()};
+	}
+
+	void SceneInterface::RemoveStyleGizmoOperationButton(bool hasStyle)
+	{
+		if (hasStyle)
+			ImGui::PopStyleColor();
+	}
+
+	bool SceneInterface::AddStyleGizmoOperationButton(int operationType)
+	{
+		if (m_gizmoOperation == operationType) {
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0, 0.5, 0.75, 1.0));
+			return true;
+		}
+		return false;
 	}
 
 	void SceneInterface::ChargeModel(const std::string& modelPath)
