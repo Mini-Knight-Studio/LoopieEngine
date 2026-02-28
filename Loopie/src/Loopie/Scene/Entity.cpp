@@ -40,7 +40,6 @@ namespace Loopie {
 			{
 				childParent->RemoveChild(child);
 			}
-
 			m_childrenEntities.push_back(child);
 			child->m_parentEntity = weak_from_this();
 		}
@@ -80,6 +79,17 @@ namespace Loopie {
 	}
 
 	bool Entity::GetIsActive() const
+	{
+		std::shared_ptr<Entity> parent = GetParent().lock();
+
+		if (parent) {
+			return m_isActive && parent->GetIsActive();
+		}
+
+		return m_isActive;
+	}
+
+	bool Entity::GetIsActiveInHierarchy() const
 	{
 		return m_isActive;
 	}

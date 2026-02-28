@@ -25,6 +25,7 @@ namespace Loopie {
 		std::shared_ptr<Entity> GetOwner() const { return m_owner.lock(); }
 		const UUID& GetUUID() const;
 		bool GetIsActive() const;
+		bool GetLocalIsActive() const;
 
 		// Default Calls
 		virtual void OnUpdate() {};

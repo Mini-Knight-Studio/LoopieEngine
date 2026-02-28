@@ -114,6 +114,7 @@ namespace Loopie {
 		const UUID& GetUUID() const;
 		const std::string& GetName() const;
 		bool GetIsActive() const;
+		bool GetIsActiveInHierarchy() const;
 		std::shared_ptr<Entity> GetChild(UUID uuid) const;
 		const std::vector<std::shared_ptr<Entity>>& GetChildren() const;
 		std::weak_ptr<Entity> GetParent() const;

@@ -225,6 +225,42 @@ namespace Loopie
 
 		return ScriptingManager::CreateString(entity->GetUUID().Get().c_str());
 	}
+
+	static void Entity_SetActive(MonoString* entityID, MonoBoolean active) {
+
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		ASSERT(scene == nullptr, "Scene not found");
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+
+		if (entity)
+			entity->SetIsActive(active != 0);
+	}
+
+	static MonoBoolean Entity_IsActive(MonoString* entityID) {
+
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		ASSERT(scene == nullptr, "Scene not found");
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+
+		if (!entity)
+			return entity->GetIsActive();
+		return false;
+	}
+
+	static MonoBoolean Entity_IsActiveInHierarchy(MonoString* entityID) {
+
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		ASSERT(scene == nullptr, "Scene not found");
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+
+		if (!entity)
+			return entity->GetIsActiveInHierarchy();
+		return false;
+	}
+
 #pragma endregion
 
 #pragma region Transform
@@ -830,6 +866,9 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Entity_FindEntityByID);
 		ADD_INTERNAL_CALL(Entity_HasComponent);
 		ADD_INTERNAL_CALL(Entity_GetComponent);
+		ADD_INTERNAL_CALL(Entity_SetActive);
+		ADD_INTERNAL_CALL(Entity_IsActive);
+		ADD_INTERNAL_CALL(Entity_IsActiveInHierarchy);
 
 		ADD_INTERNAL_CALL(Transform_GetPosition);
 		ADD_INTERNAL_CALL(Transform_SetPosition);

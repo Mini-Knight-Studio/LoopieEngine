@@ -374,7 +374,7 @@ namespace Loopie {
 			if (!entity->GetIsActive())
 				continue;
 			MeshRenderer* renderer = entity->GetComponent<MeshRenderer>();
-			if (!renderer || !renderer->GetIsActive() || !renderer->GetMesh())
+			if (!renderer || !renderer->GetLocalIsActive() || !renderer->GetMesh())
 				continue;
 			const AABB& aabb = renderer->GetWorldAABB();
 			if(!aabb.IntersectsRay(mouseRay.StartPoint(), mouseRay.EndPoint()))

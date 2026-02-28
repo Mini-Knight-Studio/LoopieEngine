@@ -21,6 +21,11 @@ namespace Loopie {
 		return m_isActive && m_owner.lock()->GetIsActive();
 	}
 
+	bool Component::GetLocalIsActive() const
+	{
+		return m_isActive;
+	}
+
 	void Component::SetIsActive(bool active)
 	{
 		m_isActive = active;

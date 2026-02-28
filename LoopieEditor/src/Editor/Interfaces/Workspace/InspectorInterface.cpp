@@ -107,7 +107,7 @@ namespace Loopie {
 		memset(nameBuffer, 0, sizeof(nameBuffer));
 		strncpy_s(nameBuffer, entity->GetName().c_str(), sizeof(nameBuffer) - 1);
 
-		bool isActive = entity->GetIsActive();
+		bool isActive = entity->GetIsActiveInHierarchy();
 		if (ImGui::Checkbox("##", &isActive)) {
 			entity->SetIsActive(isActive);
 		}

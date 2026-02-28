@@ -46,7 +46,7 @@ namespace Loopie {
 			{
 				if (!entity)
 					continue;
-				DrawEntitySlot(entity);
+				DrawEntitySlot(entity, entity->GetIsActiveInHierarchy());
 				
 			}
 		
@@ -71,7 +71,7 @@ namespace Loopie {
 		s_OnEntitySelected.Notify(OnEntityOrFileNotification::OnEntitySelect);
 	}
 
-	void HierarchyInterface::DrawEntitySlot(const std::shared_ptr<Entity>& entity)
+	void HierarchyInterface::DrawEntitySlot(const std::shared_ptr<Entity>& entity, bool active)
 	{
 		ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
 		const auto& children = entity->GetChildren();
@@ -82,7 +82,18 @@ namespace Loopie {
 		if (s_SelectedEntity.lock() == entity)
 			flags |= ImGuiTreeNodeFlags_Selected;
 
+		bool isActive = active && entity->GetIsActiveInHierarchy();
+		if (!isActive)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]);
+		}
+
 		bool opened = ImGui::TreeNodeEx((void*)entity.get(), flags, entity->GetName().c_str());
+
+		if (!isActive)
+		{
+			ImGui::PopStyleColor();
+		}
 
 		Drag(entity);
 		Drop(entity);
@@ -103,7 +114,7 @@ namespace Loopie {
 		{
 			for (const auto& child : children)
 			{
-				DrawEntitySlot(child);
+				DrawEntitySlot(child, isActive);
 			}
 			ImGui::TreePop();
 		}

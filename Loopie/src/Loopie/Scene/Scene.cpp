@@ -43,7 +43,7 @@ namespace Loopie {
 			
 			entityObj.CreateField<std::string>("uuid", id.Get());
 			entityObj.CreateField<std::string>("name", entity->GetName());
-			entityObj.CreateField<bool>("active", entity->GetIsActive());
+			entityObj.CreateField<bool>("active", entity->GetIsActiveInHierarchy());
 
 
 			if (std::shared_ptr<Entity> parentEntity = entity->GetParent().lock())
@@ -200,7 +200,7 @@ namespace Loopie {
 		m_octree->Rebuild();
 	}
 
-	std::shared_ptr<Entity> Scene::CloneEntity(const std::shared_ptr<Entity>& source, std::shared_ptr<Entity> newParent, bool cloneChildren)
+	std::shared_ptr<Entity> Scene::CloneEntity(const std::shared_ptr<Entity> source, std::shared_ptr<Entity> newParent, bool cloneChildren)
 	{
 		if (!source)
 			return nullptr;
@@ -214,7 +214,7 @@ namespace Loopie {
 			newParent
 		);
 
-		clone->SetIsActive(source->GetIsActive());
+		clone->SetIsActive(source->GetIsActiveInHierarchy());
 
 		// ---- Clone components ----
 		for (Component* component : source->GetComponents())
@@ -225,12 +225,9 @@ namespace Loopie {
 			// Transform already exists
 			if (componentData.Child("transform").IsValid())
 			{
-				clone->GetTransform()->Deserialize(
-					componentData.Child("transform")
-				);
+				clone->GetTransform()->Deserialize(componentData.Child("transform"));
 				continue;
 			}
-
 			// Camera
 			if (componentData.Child("camera").IsValid())
 			{
@@ -249,6 +246,12 @@ namespace Loopie {
 				std::string classID = componentData.Child("script").GetValue<std::string>("class_id", "").Result;
 				ScriptClass* scriptClass = clone->AddComponent<ScriptClass>(classID);
 				scriptClass->Deserialize(componentData.Child("script"));
+			}
+			/// Animator
+			else if (componentData.Child("animator").IsValid())
+			{
+				auto animator = clone->AddComponent<Animator>();
+				animator->Deserialize(componentData.Child("animator"));
 			}
 		}
 

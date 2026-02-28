@@ -245,31 +245,29 @@ namespace Loopie
 			for (size_t i = 0; i < components.size(); i++)
 			{
 				Component* component = components[i];
-				if (!component->GetIsActive())
+				if (!component->GetLocalIsActive())
 					continue;
 				component->OnUpdate();
 
 				if (component->GetTypeID() == ScriptClass::GetTypeIDStatic())
 				{
 					ScriptClass* script = static_cast<ScriptClass*>(component);
-					if (script->GetIsActive()) {
-						switch (mode)
-						{
-						case Loopie::START:
-							script->InvokeOnCreate();
-							break;
-						case Loopie::UPDATING:
-						case Loopie::NEXTFRAME:
-							script->InvokeOnUpdate();
-							break;
-						case Loopie::END:
-							script->DestroyInstance();
-							break;
-						case Loopie::PAUSED:
-						case Loopie::DEACTIVATED:
-						default:
-							break;
-						}
+					switch (mode)
+					{
+					case Loopie::START:
+						script->InvokeOnCreate();
+						break;
+					case Loopie::UPDATING:
+					case Loopie::NEXTFRAME:
+						script->InvokeOnUpdate();
+						break;
+					case Loopie::END:
+						script->DestroyInstance();
+						break;
+					case Loopie::PAUSED:
+					case Loopie::DEACTIVATED:
+					default:
+						break;
 					}
 				}
 			}
@@ -307,7 +305,7 @@ namespace Loopie
 			for (size_t i = 0; i < components.size(); i++)
 			{
 				Component* component = components[i];
-				if (!component->GetIsActive())
+				if (!component->GetLocalIsActive())
 					continue;
 				if (component->GetTypeID() == MeshRenderer::GetTypeIDStatic()) {
 					MeshRenderer* renderer = static_cast<MeshRenderer*>(component);

@@ -106,5 +106,30 @@ namespace Loopie
 
             return new Entity(instanceId);
         }
+
+        public bool Active
+        {
+            get { return IsActive(); }
+        }
+
+        public bool ActiveInHierarchy
+        {
+            get { return IsActiveInHierarchy(); }
+        }
+
+        public void SetActive(bool active)
+        {
+            InternalCalls.Entity_SetActive(ID, active);
+        }
+
+        private bool IsActive()
+        {
+            return InternalCalls.Entity_IsActive(ID);
+        }
+
+        private bool IsActiveInHierarchy()
+        {
+            return InternalCalls.Entity_IsActiveInHierarchy(ID);
+        }
     }
 }
