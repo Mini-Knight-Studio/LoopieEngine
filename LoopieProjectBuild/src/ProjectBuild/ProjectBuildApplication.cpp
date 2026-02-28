@@ -6,10 +6,7 @@ namespace Loopie {
 	class EditorApplication : public Application {
 	public:
 		EditorApplication() : Application() {
-			//// Open first the module -> Project CreationSetUp
-			//// Once the Porject is selected, remove the module and add the EditorModule
 			AddModule(new GameModule());
-			//GetWindow().SetLogo("assets/logo/logo.bmp");
 		}
 	};
 }

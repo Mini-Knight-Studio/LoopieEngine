@@ -44,7 +44,8 @@ namespace Loopie
 
 		JsonData data = Json::ReadFromFile(Application::GetInstance().m_activeProject.GetConfigPath());
 		JsonResult<std::string> result = data.Child("last_scene").GetValue<std::string>();
-		m_currentScene->ReadAndLoadSceneFile(result.Result);
+		std::filesystem::path absolutePath = std::filesystem::absolute(result.Result);
+		m_currentScene->ReadAndLoadSceneFile(absolutePath.string());
 
 		////
 		AssetRegistry::RefreshAssetRegistry();
