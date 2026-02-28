@@ -11,8 +11,10 @@
 #include "Loopie/Components/MeshRenderer.h"
 #include "Loopie/Components/ScriptClass.h"
 #include "Loopie/Components/Canvas.h"
+#include "Loopie/Components/Image.h"
 
 #include "Loopie/Scripting/ScriptingManager.h"
+#include "Loopie/Importers/TextureImporter.h"
 
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Resources/ResourceManager.h"
@@ -46,8 +48,16 @@ namespace Loopie {
 				DrawEntityInspector(HierarchyInterface::s_SelectedEntity.lock());
 				break;
 			case InspectorMode::ImportMode:
-				DrawFileImportSettings(AssetsExplorerInterface::s_SelectedFile);
+			{
+				const std::filesystem::path& path = AssetsExplorerInterface::s_SelectedFile;
+				const bool hasInspectableFile = (!path.empty() && path.has_extension() && path.extension().string() == ".mat");
+				if (hasInspectableFile)
+					DrawFileImportSettings(path);
+				else
+					DrawEntityInspector(HierarchyInterface::s_SelectedEntity.lock());
+
 				break;
+			}
 			default:
 				break;
 			}
@@ -81,6 +91,9 @@ namespace Loopie {
 			}
 			else if (component->GetTypeID() == Canvas::GetTypeIDStatic()) {
 				DrawCanvas(static_cast<Canvas*>(component));
+			}
+			else if (component->GetTypeID() == Image::GetTypeIDStatic()) {
+				DrawImage(static_cast<Image*>(component));
 			}
 		}
 		AddComponent(entity);
@@ -391,6 +404,113 @@ namespace Loopie {
 				//.............
 			}
 		}
+		ImGui::PopID();
+	}
+
+	void InspectorInterface::DrawImage(Image* image)
+	{
+		if (!image)
+			return;
+
+		ImGui::PushID(image);
+
+		bool open = ImGui::CollapsingHeader("Image");
+
+		if (RemoveComponent(image))
+		{
+			ImGui::PopID();
+			return;
+		}
+
+		if (open)
+		{
+			vec4 color = image->GetTint();
+			ImVec4 imColor(color.r, color.g, color.b, color.a);
+
+			ImGui::Text("Tint");
+			ImGui::SameLine();
+
+			if (ImGui::ColorEdit4("##ImageTint", (float*)&imColor))
+			{
+				image->SetTint(vec4(imColor.x, imColor.y, imColor.z, imColor.w));
+			}
+			ImGui::Separator();
+
+			std::shared_ptr<Texture> texture = image->GetTexture();
+			Metadata* meta = texture ? AssetRegistry::GetMetadata(texture->GetUUID()) : nullptr;
+
+			ImGui::Text("Texture: %s", meta ? "Assigned" : "None / Unknown");
+
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_EXPLORER_FILE"))
+				{
+					const char* droppedPath = (const char*)payload->Data;
+					if (droppedPath && TextureImporter::CheckIfIsImage(droppedPath))
+					{
+						Metadata& droppedMeta = AssetRegistry::GetOrCreateMetadata(droppedPath);
+						TextureImporter::ImportImage(droppedPath, droppedMeta);
+
+						std::shared_ptr<Texture> droppedTex = ResourceManager::GetTexture(droppedMeta);
+						if (droppedTex)
+							droppedTex->Load();
+
+						image->SetTexture(droppedTex);
+					}
+				}
+				ImGui::EndDragDropTarget();
+			}
+
+			texture = image->GetTexture();
+			if (texture)
+			{
+				meta = AssetRegistry::GetMetadata(texture->GetUUID());
+
+				if (meta && !meta->CachesPath.empty())
+					ImGui::Text("Path: %s", meta->CachesPath[0].c_str());
+
+				ivec2 texSize = texture->GetSize();
+				ImGui::Text("Size: %d x %d", texSize.x, texSize.y);
+
+				ImGui::Image((ImTextureID)texture->GetRendererId(), ImVec2(64, 64), ImVec2(0, 1), ImVec2(1, 0));
+
+				if (ImGui::BeginDragDropTarget())
+				{
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_EXPLORER_FILE"))
+					{
+						const char* droppedPath = (const char*)payload->Data;
+						if (droppedPath && TextureImporter::CheckIfIsImage(droppedPath))
+						{
+							Metadata& droppedMeta = AssetRegistry::GetOrCreateMetadata(droppedPath);
+							TextureImporter::ImportImage(droppedPath, droppedMeta);
+
+							std::shared_ptr<Texture> droppedTex = ResourceManager::GetTexture(droppedMeta);
+							if (droppedTex)
+								droppedTex->Load();
+
+							image->SetTexture(droppedTex);
+						}
+					}
+					ImGui::EndDragDropTarget();
+				}
+
+				/*ImGui::Separator();
+
+				Metadata* meta = AssetRegistry::GetMetadata(texture->GetUUID());
+				ImGui::Text("Texture: %s", meta ? "Assigned" : "Unknown");
+
+				if (meta && !meta->CachesPath.empty())
+					ImGui::Text("Path: %s", meta->CachesPath[0].c_str());
+
+				ivec2 texSize = texture->GetSize();
+				ImGui::Text("Size: %d x %d", texSize.x, texSize.y);
+
+				ImGui::Image((ImTextureID)texture->GetRendererId(), ImVec2(64, 64), ImVec2(0, 1), ImVec2(1, 0));*/
+			}
+
+			ImGui::TextDisabled("Drag & drop an image from Assets Explorer onto the texture field/preview.");
+		}
+
 		ImGui::PopID();
 	}
 

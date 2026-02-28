@@ -69,8 +69,7 @@ namespace Loopie
 		s_quadVBO.reset();
 		s_quadEBO.reset();
 		
-		if (s_material && s_material->GetTexture())
-			s_material->GetTexture()->DecrementReferenceCount();
+		s_material->~Material();
 		
 		s_material.reset();
 		s_initialized = false;
@@ -102,8 +101,8 @@ namespace Loopie
 		if (!s_quadVAO || !s_material || !texture)
 			return;
 
-		if (s_material->GetTexture() != texture)
-			s_material->GetTexture()->DecrementReferenceCount();
+		//if (s_material->GetTexture() != texture)
+		//	s_material->GetTexture()->DecrementReferenceCount();
 
 		matrix4 model(1.0f);
 		model = glm::translate(model, vec3(posPixels.x, posPixels.y, 0.0f));

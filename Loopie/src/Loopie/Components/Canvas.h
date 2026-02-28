@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Loopie/Components/Component.h"
 #include "Loopie/Events/EventTypes.h"
 #include "Loopie/Events/IObserver.h"

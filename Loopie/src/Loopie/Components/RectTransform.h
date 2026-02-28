@@ -1,3 +1,4 @@
+#pragma once
 #include "Loopie/Components/Component.h"
 #include "Loopie/Components/Transform.h"
 
