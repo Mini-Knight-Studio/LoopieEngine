@@ -32,5 +32,12 @@ uniform sampler2D u_Albedo;
 void main()
 {
     vec4 tex = texture(u_Albedo, v_TexCoord);
-    FragColor = tex * u_Color;
+    vec4 col = tex * u_Color;
+
+    if (col.a <= 0.001)
+    {
+        discard;
+    }
+
+    FragColor = col;
 }

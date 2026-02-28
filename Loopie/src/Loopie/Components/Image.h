@@ -19,6 +19,8 @@ namespace Loopie
 
 		void Init() override;
 
+		void RenderGizmo() override;
+
 		const vec4& GetTint() const { return m_tint; }
 		void SetTint(const vec4& tint) { m_tint = tint; }
 

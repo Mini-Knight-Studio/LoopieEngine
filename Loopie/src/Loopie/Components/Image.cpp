@@ -4,6 +4,7 @@
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Resources/ResourceManager.h"
 #include "Loopie/Components/RectTransform.h"
+#include "Loopie/Render/Gizmo.h"
 #include "Loopie/Resources/Types/Texture.h"
 
 void Loopie::Image::Init()
@@ -13,6 +14,39 @@ void Loopie::Image::Init()
 
 	if (!m_texture)
 		SetTexture(Texture::GetDefault());
+}
+
+void Loopie::Image::RenderGizmo()
+{
+	auto* rt = GetOwner() ? GetOwner()->GetComponent<RectTransform>() : nullptr;
+	if (!rt)
+		return;
+
+	const matrix4& m = rt->GetLocalToWorldMatrix();
+	const vec3 localMin = rt->GetLocalBoundsMin();
+	const vec3 localMax = rt->GetLocalBoundsMax();
+
+	const vec3 corners[8] =
+	{
+		{ localMin.x, localMin.y, 0.0f },
+		{ localMax.x, localMin.y, 0.0f },
+		{ localMin.x, localMax.y, 0.0f },
+		{ localMax.x, localMax.y, 0.0f },
+		{ localMin.x, localMin.y, 0.0f },
+		{ localMax.x, localMin.y, 0.0f },
+		{ localMin.x, localMax.y, 0.0f },
+		{ localMax.x, localMax.y, 0.0f },
+	};
+
+	AABB aabb;
+	aabb.SetNegativeInfinity();
+	for (int i = 0; i < 4; ++i)
+	{
+		const vec3 w = vec3(m * vec4(corners[i], 1.0f));
+		aabb.Enclose(w);
+	}
+
+	Gizmo::DrawCube(aabb, Color::BLUE);
 }
 
 void Loopie::Image::SetTexture(const std::shared_ptr<Texture>& texture)

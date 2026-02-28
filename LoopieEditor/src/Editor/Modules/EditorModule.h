@@ -36,9 +36,14 @@ namespace Loopie {
 		void OnUpdate() override;
 
 		void OnInterfaceRender()override;
+		
+		static Canvas* FindCanvasInParents(const std::shared_ptr<Loopie::Entity>& entity);
+
 	private:
 		void RenderWorld(Camera* camera);
 		void RenderUI();
+
+		void RenderSceneUI(Camera* camera);
 		/// Test
 		void CreateBakerHouse();
 		void CreateCity();

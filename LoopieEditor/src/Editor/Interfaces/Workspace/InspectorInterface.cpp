@@ -472,7 +472,7 @@ namespace Loopie {
 				ivec2 texSize = texture->GetSize();
 				ImGui::Text("Size: %d x %d", texSize.x, texSize.y);
 
-				ImGui::Image((ImTextureID)texture->GetRendererId(), ImVec2(64, 64), ImVec2(0, 1), ImVec2(1, 0));
+				ImGui::Image((ImTextureID)texture->GetRendererId(), ImVec2(64, 64), ImVec2(1, 0), ImVec2(0, 1));
 
 				if (ImGui::BeginDragDropTarget())
 				{
@@ -493,19 +493,6 @@ namespace Loopie {
 					}
 					ImGui::EndDragDropTarget();
 				}
-
-				/*ImGui::Separator();
-
-				Metadata* meta = AssetRegistry::GetMetadata(texture->GetUUID());
-				ImGui::Text("Texture: %s", meta ? "Assigned" : "Unknown");
-
-				if (meta && !meta->CachesPath.empty())
-					ImGui::Text("Path: %s", meta->CachesPath[0].c_str());
-
-				ivec2 texSize = texture->GetSize();
-				ImGui::Text("Size: %d x %d", texSize.x, texSize.y);
-
-				ImGui::Image((ImTextureID)texture->GetRendererId(), ImVec2(64, 64), ImVec2(0, 1), ImVec2(1, 0));*/
 			}
 
 			ImGui::TextDisabled("Drag & drop an image from Assets Explorer onto the texture field/preview.");

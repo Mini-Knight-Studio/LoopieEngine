@@ -26,10 +26,10 @@ namespace Loopie
 		const float vertices[] =
 		{
 			// pos                // uv
-			0.0f, 0.0f, 0.0f,     0.0f, 0.0f,
-			1.0f, 0.0f, 0.0f,     1.0f, 0.0f,
-			1.0f, 1.0f, 0.0f,     1.0f, 1.0f,
-			0.0f, 1.0f, 0.0f,     0.0f, 1.0f,
+			0.0f, 0.0f, 0.0f,     0.0f, 1.0f,
+			1.0f, 0.0f, 0.0f,     1.0f, 1.0f,
+			1.0f, 1.0f, 0.0f,     1.0f, 0.0f,
+			0.0f, 1.0f, 0.0f,     0.0f, 0.0f,
 		};
 
 		const unsigned int indices[] = { 0,1,2,2,3,0 };
@@ -69,7 +69,7 @@ namespace Loopie
 		s_quadVBO.reset();
 		s_quadEBO.reset();
 		
-		s_material->~Material();
+		//s_material->~Material();
 		
 		s_material.reset();
 		s_initialized = false;
@@ -116,6 +116,22 @@ namespace Loopie
 		s_material->SetTexture(texture);
 
 		Renderer::FlushRenderItem(s_quadVAO, s_material, model);
+	}
+
+	void UIRenderer::DrawImageWorld(const matrix4& modelMatrix, const std::shared_ptr<Texture>& texture, const vec4& tint)
+	{
+		EnsureInit();
+		if (!s_quadVAO || !s_material || !texture)
+			return;
+
+		UniformValue c;
+		c.type = UniformType_vec4;
+		c.value = tint;
+		s_material->SetShaderVariable("u_Color", c);
+		
+		s_material->SetTexture(texture);
+		
+		Renderer::FlushRenderItem(s_quadVAO, s_material, modelMatrix);
 	}
 
 	void UIRenderer::EnsureInit()

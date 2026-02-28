@@ -14,6 +14,7 @@ namespace Loopie {
 
 		static void DrawRect(const vec2& posPixels, const vec2& sizePixels, const vec4& color);
 		static void DrawImage(const vec2& posPixels, const vec2& sizePixels, const std::shared_ptr<Texture>& texture, const vec4& tint);
+		static void DrawImageWorld(const matrix4& modelMatrix, const std::shared_ptr<Texture>& texture, const vec4& tint);
 
 	private:
 		static void EnsureInit();

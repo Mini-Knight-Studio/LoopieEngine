@@ -170,7 +170,10 @@ namespace Loopie {
 				SelectEntity(CreateCanvas("Canvas", entity));
 			
 			if (ImGui::MenuItem("Image"))
-				SelectEntity(CreateImage("Image", entity));
+			{
+				if (auto newImage = CreateImage("Image", entity))
+					SelectEntity(newImage);
+			}
 			
 			ImGui::EndMenu();
 		}
@@ -252,6 +255,18 @@ namespace Loopie {
 	}
 	std::shared_ptr<Entity> HierarchyInterface::CreateImage(const std::string& name, const std::shared_ptr<Entity>& parent)
 	{
+		std::shared_ptr<Entity> canvasEntity = parent;
+
+		while (canvasEntity && !canvasEntity->GetComponent<Canvas>())
+		{
+			canvasEntity = canvasEntity->GetParent().lock();
+		}
+
+		if (!canvasEntity)
+		{
+			return nullptr;
+		}
+
 		std::shared_ptr<Entity> newEntity = m_scene->CreateEntity(name, parent);
 		newEntity->ReplaceTransform<RectTransform>();
 		newEntity->AddComponent<Image>();

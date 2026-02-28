@@ -187,4 +187,8 @@ namespace Loopie {
 	{
 		glDisable(GL_BLEND);
 	}
+	void Renderer::SetDepthWrite(bool enable)
+	{
+		glDepthMask(enable ? GL_TRUE : GL_FALSE);
+	}
 }

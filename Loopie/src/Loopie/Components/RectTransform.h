@@ -9,7 +9,7 @@ namespace Loopie
 	public:
 		DEFINE_TYPE(RectTransform)
 
-        RectTransform(float w = 100.f, float h = 100.f);
+        RectTransform(float w = 50, float h = 50);
 
 		bool IsRectTransform() const override { return true; }
         bool HasSize() const override { return true; }
@@ -22,8 +22,8 @@ namespace Loopie
         void SetWidth(float w) override;
 		void SetHeight(float h) override;
 
-        vec3 RectTransform::GetLocalBoundsMin() const override { return { -m_width * 0.5f, -m_height * 0.5f, 0.0f }; }
-        vec3 RectTransform::GetLocalBoundsMax() const override { return { m_width * 0.5f,  m_height * 0.5f, 0.0f }; }
+        vec3 RectTransform::GetLocalBoundsMin() const override { return { 0.0f, 0.0f, 0.0f }; }
+        vec3 RectTransform::GetLocalBoundsMax() const override { return { m_width,  m_height, 0.0f }; }
 
         JsonNode Serialize(JsonNode& parent) const override;
         void Deserialize(const JsonNode& data) override;

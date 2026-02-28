@@ -98,6 +98,8 @@ namespace Loopie {
 		static void EnableBlend();
 		static void DisableBlend();
 
+		static void SetDepthWrite(bool enable);
+
 	private:
 		static void SetRenderUniforms(std::shared_ptr<Material> material, const Transform* transform);
 		static void SetRenderUniforms(std::shared_ptr<Material> material, const matrix4& modelMatrix);
