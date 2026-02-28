@@ -61,8 +61,13 @@ namespace Loopie {
 		m_camera->ProcessEvent(inputEvent);
 		m_camera->Update();
 
-		if (inputEvent.GetMouseButtonStatus(0) == KeyState::DOWN && !m_usingGuizmo)
-			MousePick();
+		if (inputEvent.GetMouseButtonStatus(0) == KeyState::DOWN && !m_usingGuizmo) {
+			if(inputEvent.GetKeyStatus(SDL_SCANCODE_LCTRL) == KeyState::REPEAT)
+				MousePick(true);
+			else
+				MousePick();
+
+		}
 
 		HotKeysBasic(inputEvent);
 		HotKeysSelectedEntiy(inputEvent);
@@ -356,7 +361,7 @@ namespace Loopie {
 			}
 		}
 	}
-	void SceneInterface::MousePick()
+	void SceneInterface::MousePick(bool getParent)
 	{
 		Ray mouseRay = MouseRay();
 		float minDistance = std::numeric_limits<float>::max();
@@ -400,6 +405,13 @@ namespace Loopie {
 				}
 			}
 		}
+		if (selectedEntity && getParent) {
+			std::shared_ptr<Entity> parent = selectedEntity->GetParent().lock();
+			if(parent && parent != Application::GetInstance().GetScene().GetRootEntity())
+				selectedEntity = parent;
+		}
+
+
 		HierarchyInterface::SelectEntity(selectedEntity);
 	}
 }

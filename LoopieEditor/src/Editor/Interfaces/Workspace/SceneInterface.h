@@ -27,7 +27,7 @@ namespace Loopie {
 		void ChargeTexture(const std::string& texturePath);
 		void ChargeMaterial(const std::string& materialPath);
 
-		void MousePick();
+		void MousePick(bool getParent = false);
 
 		bool IsVisible() { return m_visible; }
 
