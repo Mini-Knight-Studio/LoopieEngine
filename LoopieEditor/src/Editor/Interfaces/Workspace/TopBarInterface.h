@@ -26,6 +26,7 @@ namespace Loopie
 		float GetToolbarHeight() const { return m_toolbarHeight; }
 
 		DebugGameMode GetCurrentMode() const { return m_actualMode; }
+		void SetMode(DebugGameMode mode) { m_actualMode = mode; }
 	private:
 		std::shared_ptr<Texture> m_playIcon;
 		std::shared_ptr<Texture> m_pauseIcon;

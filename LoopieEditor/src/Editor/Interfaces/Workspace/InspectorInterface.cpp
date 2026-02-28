@@ -607,6 +607,12 @@ namespace Loopie {
 			/// Get Fields and show (one runtime version, and one editor version) -> For now, this is only editor version
 
 			std::shared_ptr<ScriptingClass> scriptingClass = ScriptingManager::s_Data.ScriptingClasses[scriptClass->GetClassName()];
+			if (!scriptingClass)
+			{
+				ImGui::Text("Script ERROR (Not Found)");
+				ImGui::PopID();
+				return;
+			}
 			const std::map<std::string, ScriptField>& fields = scriptingClass->GetFields();
 			for (const auto& [name, field] : fields)
 			{

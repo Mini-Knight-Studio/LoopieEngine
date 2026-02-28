@@ -44,6 +44,8 @@ namespace Loopie {
 
 			for (const auto& entity : m_scene->GetRootEntity()->GetChildren())
 			{
+				if (!entity)
+					continue;
 				DrawEntitySlot(entity);
 				
 			}
@@ -71,9 +73,6 @@ namespace Loopie {
 
 	void HierarchyInterface::DrawEntitySlot(const std::shared_ptr<Entity>& entity)
 	{
-		if (!entity) {
-			return;
-		}
 		ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
 		const auto& children = entity->GetChildren();
 		bool hasChildren = !children.empty();
@@ -138,11 +137,8 @@ namespace Loopie {
 
 		if (ImGui::MenuItem("Duplicate", nullptr, false, entity != nullptr))
 		{
-			if (s_SelectedEntity.lock() == entity)
-			{
-				std::shared_ptr<Entity> newEntity = m_scene->CloneEntity(s_SelectedEntity.lock());
-				s_SelectedEntity = newEntity;
-			}
+			std::shared_ptr<Entity> newEntity = m_scene->CloneEntity(entity);
+			s_SelectedEntity = newEntity;
 		}
 
 		if (ImGui::MenuItem("Delete",nullptr, false, entity != nullptr))
@@ -197,12 +193,16 @@ namespace Loopie {
 		}
 
 	}
+
 	void HierarchyInterface::Drag(const std::shared_ptr<Entity>& entity)
 	{
 		if (ImGui::BeginDragDropSource())
 		{
-			Entity* rawPtr = entity.get();
-			ImGui::SetDragDropPayload("HIERARCHY_ENTITY_PTR", &rawPtr, sizeof(Entity*));
+			const std::string& uuidStr = entity->GetUUID().Get();
+
+			ImGui::SetDragDropPayload("HIERARCHY_ENTITY_UUID", uuidStr.c_str(), uuidStr.size() + 1);
+
+			ImGui::Text("%s", entity->GetName().c_str());
 			ImGui::EndDragDropSource();
 		}
 	}
@@ -211,12 +211,18 @@ namespace Loopie {
 	{
 		if (ImGui::BeginDragDropTarget())
 		{
-			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY_PTR"))
+			if (const ImGuiPayload* payload =
+				ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY_UUID"))
 			{
-				Entity* draggedRaw = *(Entity**)payload->Data;
+				const char* uuidChars = static_cast<const char*>(payload->Data);
 
-				if(draggedRaw)
-					draggedRaw->SetParent(entity);
+				std::string uuidStr(uuidChars);
+
+				std::shared_ptr<Entity> dragged =
+					m_scene->GetEntity(UUID(uuidStr));
+
+				if (dragged && dragged != entity)
+					dragged->SetParent(entity);
 			}
 
 			ImGui::EndDragDropTarget();

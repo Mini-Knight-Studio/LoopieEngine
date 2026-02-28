@@ -96,7 +96,9 @@ namespace Loopie
 
 		//// Update Components
 		DebugGameMode mode = m_topBar.GetCurrentMode();
-		UpdateComponents(mode);
+		if (!UpdateComponents(mode)) {
+			m_topBar.SetMode(DebugGameMode::END);
+		}
 		//// 
 
 		m_hierarchy.Update(inputEvent);
@@ -206,9 +208,32 @@ namespace Loopie
 		m_textEditor.Render();
 	}
 
-	void EditorModule::UpdateComponents(DebugGameMode mode)
+	bool EditorModule::UpdateComponents(DebugGameMode mode)
 	{
 		if (mode == DebugGameMode::START) {
+
+			bool errors = false;
+			for (const auto& [uuid, entity] : m_currentScene->GetAllEntities()) {
+				const std::vector<Component*>& components = entity->GetComponents();
+				for (size_t i = 0; i < components.size(); i++)
+				{
+					Component* component = components[i];
+					if (component->GetTypeID() == ScriptClass::GetTypeIDStatic())
+					{
+						ScriptClass* script = static_cast<ScriptClass*>(component);
+						if (!script->GetScriptingClass()) {
+							errors = true;
+							Log::Error("Failed to start the game. Check the scripts || Entity: {0}   Component UUID: {1}",script->GetOwner()->GetName(), script->GetUUID().Get());
+						}
+					}
+				}
+			}
+			if (errors)
+			{
+				return false;
+			}
+			
+
 			ScriptingManager::RuntimeStart();
 			Application::GetInstance().GetScene().SaveScene("recoverScene.scene");
 		}
@@ -254,6 +279,8 @@ namespace Loopie
 			ScriptingManager::RuntimeStop();
 			Application::GetInstance().GetScene().ReadAndLoadSceneFile("recoverScene.scene", false);
 		}
+
+		return true;
 	}
 
 	void EditorModule::RenderWorld(Camera* camera)

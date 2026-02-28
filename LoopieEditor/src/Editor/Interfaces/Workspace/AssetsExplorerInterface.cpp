@@ -482,6 +482,8 @@ namespace Loopie {
 		{
 			std::string filePathStr = from;
 			ImGui::SetDragDropPayload("ASSET_EXPLORER_FILE", filePathStr.c_str(), filePathStr.size() + 1);
+			std::filesystem::path path = from;
+			ImGui::Text("%s", path.filename().string().c_str());
 			ImGui::EndDragDropSource();
 		}
 	}

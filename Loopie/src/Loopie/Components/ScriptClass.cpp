@@ -26,6 +26,7 @@ namespace Loopie
 	void ScriptClass::SetUp()
 	{
 		m_scriptingClass = ScriptingManager::GetScriptingClass(m_className);
+
 		m_instance = m_scriptingClass->Instantiate();
 
 		m_OnCreate = m_scriptingClass->GetMethod("OnCreate", 0);
@@ -161,11 +162,12 @@ namespace Loopie
 		JsonNode scriptObj = parent.CreateObjectField("script");
 
 		scriptObj.CreateField("class_id", GetClassName());
-
-		const auto& fields = m_scriptingClass->GetFields();
-
 		JsonNode node = scriptObj.CreateObjectField("fields");
 
+		if (!m_scriptingClass)
+			return scriptObj;
+
+		const auto& fields = m_scriptingClass->GetFields();
 		for (const auto& [name, field] : fields)
 		{
 			switch (field.Type)

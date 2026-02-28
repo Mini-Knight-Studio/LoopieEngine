@@ -88,7 +88,8 @@ namespace Loopie
 			if (!script || !script->GetScriptingClass())
 				continue;
 
-			if (script->IsSameType(Utils::MonoStringToString(componentFullName)))
+			std::string fullName = script->GetScriptingClass()->GetFullName();
+			if (script->IsSameType(fullName))
 			{
 				return script->GetInstance();
 			}
@@ -110,7 +111,8 @@ namespace Loopie
 			ASSERT(parent == nullptr, "Parent not found");
 		}
 
-		std::shared_ptr<Entity> entity = scene->CreateEntity(Utils::MonoStringToString(entityName), parent);
+		std::string name = Utils::MonoStringToString(entityName);
+		std::shared_ptr<Entity> entity = scene->CreateEntity(name, parent);
 		ASSERT(entity == nullptr, "Entity not created");
 
 		return ScriptingManager::CreateString(entity->GetUUID().Get().c_str());
@@ -151,7 +153,8 @@ namespace Loopie
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
 		ASSERT(entity == nullptr, "Entity not found");
 
-		std::shared_ptr<ScriptingClass> scriptingClass = ScriptingManager::GetScriptingClass(Utils::MonoStringToString(componentType));
+		std::string type = Utils::MonoStringToString(componentType);
+		std::shared_ptr<ScriptingClass> scriptingClass = ScriptingManager::GetScriptingClass(type);
 		if (!scriptingClass) {
 			Log::Error("Could not find scripting class {}", Utils::MonoStringToString(componentType));
 			return false;
@@ -396,8 +399,10 @@ namespace Loopie
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
 		Animator* animator = entity->GetComponent<Animator>(componentUUID);
-		if (animator)
-			animator->Play(Utils::MonoStringToString(clipName));
+		if (animator) {
+			std::string name = Utils::MonoStringToString(clipName);
+			animator->Play(name);
+		}
 	}
 
 	static void Animator_Play(MonoString* entityID, MonoString* componentID)
