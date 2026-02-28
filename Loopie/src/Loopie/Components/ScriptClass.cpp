@@ -226,6 +226,8 @@ namespace Loopie
 		m_className = classID;
 		m_scriptingClass = ScriptingManager::GetScriptingClass(m_className);
 
+		if (!m_scriptingClass)
+			return;
 
 		JsonNode node = data.Child("fields");
 		const auto& fields = m_scriptingClass->GetFields();
