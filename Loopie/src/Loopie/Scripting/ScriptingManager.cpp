@@ -48,18 +48,14 @@ namespace Loopie {
 		s_Data.AppDomain = mono_domain_create_appdomain("LoopieAppDomain", nullptr);
 		mono_domain_set(s_Data.AppDomain, true);
 
-		std::string projectDir = Application::GetInstance().m_activeProject.GetGameDLLPath().string();
-
-		s_Data.CoreAssemblyFilepath = "../LoopieScripting/Loopie.Core.dll";
-		s_Data.AppAssemblyFilepath = projectDir;
-		s_Data.CompilerAssemblyFilepath = "../LoopieCompiler/Loopie.ScriptCompiler.dll";
-
 		ScriptGlue::RegisterFunctions();
 
 		LoadCoreAssembly();
-		LoadCompilerAssembly();
 
-		CompileGameAssembly();
+		if (s_Data.EnableRecompile) {
+			LoadCompilerAssembly();
+			CompileGameAssembly();
+		}
 
 		LoadAppAssembly(); 
 
@@ -114,11 +110,14 @@ namespace Loopie {
 		mono_domain_set(s_Data.AppDomain, true);
 
 		LoadCoreAssembly();
-		LoadCompilerAssembly();
 
-		if (!CompileGameAssembly()) {
-			Log::Error("Script compilation failed. Aborting reload.");
-			return;
+		if (s_Data.EnableRecompile) {
+			LoadCompilerAssembly();
+
+			if (!CompileGameAssembly()) {
+				Log::Error("Script compilation failed. Aborting reload.");
+				return;
+			}
 		}
 
 		LoadAppAssembly();

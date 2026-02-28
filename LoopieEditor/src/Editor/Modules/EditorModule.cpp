@@ -31,6 +31,15 @@ namespace Loopie
 	{
 		AssetRegistry::Initialize();
 
+
+		ScriptingContext& context = ScriptingManager::GetContext();
+
+		std::string projectDir = Application::GetInstance().m_activeProject.GetGameDLLPath().string();
+		context.CoreAssemblyFilepath = "../LoopieScripting/Loopie.Core.dll";
+		context.AppAssemblyFilepath = projectDir;
+		context.CompilerAssemblyFilepath = "../LoopieCompiler/Loopie.ScriptCompiler.dll";
+		context.EnableRecompile = true;
+
 		ScriptingManager::Init();
 		Log::Info("Scripting created successfully.");
 
