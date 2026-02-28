@@ -210,7 +210,8 @@ namespace Loopie {
 		if (ImGui::Combo("##mode", &currentMode, m_gizmoModes.data(), (int)m_gizmoModes.size()))
 			m_gizmoMode = (currentMode == 0) ? (int)ImGuizmo::WORLD : (int)ImGuizmo::LOCAL;
 
-
+		ImGui::SameLine();
+		ImGui::Text("	Movement Scale: %.1f", m_camera->GetMovementScale());
 
 		bool haStyle = AddStyleGizmoOperationButton((int)ImGuizmo::TRANSLATE);
 		if (ImGui::ImageButton("move",(ImTextureID)m_moveIcon->GetRendererId(), ImVec2(15, 15)))
