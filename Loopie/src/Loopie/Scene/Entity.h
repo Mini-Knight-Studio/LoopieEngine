@@ -52,14 +52,19 @@ namespace Loopie {
 			glm::quat rotation = oldTransform->GetLocalRotation();
 			glm::vec3 scale = oldTransform->GetLocalScale();
 
-			RemoveComponent(oldTransform);
+			m_components.push_back(std::make_unique<T>());
+			T* newTransform = static_cast<T*>(m_components.back().get());
 
-			T* newTransform = AddComponent<T>();
-			m_transform = newTransform;
+			newTransform->m_owner = weak_from_this();
+			newTransform->Init();
 
 			newTransform->SetLocalPosition(position);
 			newTransform->SetLocalRotation(rotation);
 			newTransform->SetLocalScale(scale);
+
+			m_transform = newTransform;
+
+			RemoveComponent(oldTransform);
 
 			return newTransform;
 		}

@@ -8,6 +8,7 @@
 #include "Loopie/Components/MeshRenderer.h"
 #include "Loopie/Components/ScriptClass.h"
 #include "Loopie/Components/Canvas.h"
+#include "Loopie/Components/Image.h"
 #include "Loopie/Helpers/LoopieHelpers.h"
 #include "Loopie/Resources/AssetRegistry.h"
 
@@ -465,6 +466,15 @@ namespace Loopie {
 						if (canvas)
 						{
 							canvas->Deserialize(node);
+						}
+					}
+					else if (componentNode.Contains("image"))
+					{
+						JsonNode node = componentNode.Child("image");
+						auto image = entity->AddComponent<Image>();
+						if (image)
+						{
+							image->Deserialize(node);
 						}
 					}
 				}

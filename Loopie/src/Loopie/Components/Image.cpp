@@ -91,17 +91,37 @@ Loopie::JsonNode Loopie::Image::Serialize(JsonNode& parent) const
 
 void Loopie::Image::Deserialize(const JsonNode& data)
 {
-	m_tint.r = data.GetValue<float>("r", 1.0f).Result;
-	m_tint.g = data.GetValue<float>("g", 1.0f).Result;
-	m_tint.b = data.GetValue<float>("b", 1.0f).Result;
-	m_tint.a = data.GetValue<float>("a", 1.0f).Result;
+	if (data.Contains("tint"))
+	{
+		JsonNode colorObj = data.Child("tint");
+		if (colorObj.IsValid())
+		{
+			m_tint.r = colorObj.GetValue<float>("r", 1.0f).Result;
+			m_tint.g = colorObj.GetValue<float>("g", 1.0f).Result;
+			m_tint.b = colorObj.GetValue<float>("b", 1.0f).Result;
+			m_tint.a = colorObj.GetValue<float>("a", 1.0f).Result;
+		}
+	}
+	else
+	{
+		m_tint = vec4(1.0f);
+	}
 
 	if (data.Contains("texture_uuid"))
 	{
 		UUID texUUID = data.GetValue<std::string>("texture_uuid").Result;
 		
 		Metadata* meta = AssetRegistry::GetMetadata(texUUID);
-		if (meta)
-			SetTexture(ResourceManager::GetTexture(*meta));
+		if (meta) {
+			auto tex = ResourceManager::GetTexture(*meta);
+			if (!tex || !tex->Load()) {
+				SetTexture(Texture::GetDefault());
+				return;
+			}
+			SetTexture(tex);
+			return;
+		}
 	}
+
+	SetTexture(Texture::GetDefault());
 }

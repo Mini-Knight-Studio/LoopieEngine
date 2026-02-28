@@ -24,6 +24,8 @@ namespace Loopie {
 		for (size_t i = 0; i < m_components.size(); i++)
 		{
 			if (m_components[i].get() == component) {
+				if (component == m_transform)
+					m_transform = nullptr;
 				m_components.erase(m_components.begin() + i);
 				return true;
 			}
