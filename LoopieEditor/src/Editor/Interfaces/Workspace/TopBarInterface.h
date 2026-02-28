@@ -7,9 +7,10 @@ namespace Loopie
 {
 	enum DebugGameMode
 	{
-		PLAY,
-		PAUSE,
-		STOP,
+		START,
+		UPDATING,
+		PAUSED,
+		END,
 		NEXTFRAME,
 		DEACTIVATED,
 	};
@@ -23,6 +24,8 @@ namespace Loopie
 		void Render() override;
 
 		float GetToolbarHeight() const { return m_toolbarHeight; }
+
+		DebugGameMode GetCurrentMode() const { return m_actualMode; }
 	private:
 		std::shared_ptr<Texture> m_playIcon;
 		std::shared_ptr<Texture> m_pauseIcon;

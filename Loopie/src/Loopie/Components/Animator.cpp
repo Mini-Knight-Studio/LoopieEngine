@@ -182,7 +182,7 @@ namespace Loopie {
 		m_currentTime = 0.0f;
 	}
 
-	void Animator::Update()
+	void Animator::OnUpdate()
 	{
 		bool frameSwitch = Application::GetInstance().GetWindow().GetFrameSwitch();
 

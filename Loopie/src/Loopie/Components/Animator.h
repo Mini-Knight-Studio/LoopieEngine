@@ -27,6 +27,7 @@ namespace Loopie {
 		~Animator();
 
 		void Init() override;
+		void OnUpdate() override;
 
 		void AddMeshRenderer(MeshRenderer* renderer);
 		void RemoveMeshRenderer(MeshRenderer* renderer);
@@ -60,7 +61,6 @@ namespace Loopie {
 
 		void Stop();
 
-		void Update();
 
 
 		bool SelectClip(const std::string& clipName);

@@ -34,6 +34,7 @@ namespace Loopie {
 
 		void OnInterfaceRender()override;
 	private:
+		void UpdateComponents(DebugGameMode mode);
 		void RenderWorld(Camera* camera);
 		/// Test
 		void CreateBakerHouse();

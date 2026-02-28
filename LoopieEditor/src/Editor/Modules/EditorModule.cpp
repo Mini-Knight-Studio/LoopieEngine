@@ -19,6 +19,7 @@
 
 #include "Loopie/Components/MeshRenderer.h"
 #include "Loopie/Components/Animator.h"
+#include "Loopie/Components/ScriptClass.h"
 #include "Loopie/Components/Transform.h"
 #include "Loopie/Resources/Types/Material.h"
 ///
@@ -90,16 +91,22 @@ namespace Loopie
 
 	void EditorModule::OnUpdate()
 	{
-
 		Application& app = Application::GetInstance();
 		InputEventManager& inputEvent = app.GetInputEvent();
+
+		//// Update Components
+		DebugGameMode mode = m_topBar.GetCurrentMode();
+		UpdateComponents(mode);
+		//// 
 
 		m_hierarchy.Update(inputEvent);
 		m_assetsExplorer.Update(inputEvent);
 		m_textEditor.Update(inputEvent);
 		m_scene.Update(inputEvent);
 		m_topBar.Update(inputEvent);
+		
 
+		/// RenderToTarget
 		const std::vector<Camera*>& cameras = Renderer::GetRendererCameras();
 		for (const auto cam : cameras)
 		{
@@ -112,7 +119,6 @@ namespace Loopie
 			}
 		}
 
-		/// RenderToTarget
 		for (const auto cam : cameras)
 		{
 			if (!cam->GetIsActive())
@@ -128,10 +134,10 @@ namespace Loopie
 			RenderWorld(cam);
 			Renderer::EndScene();
 
-			if (buffer) {
+			if (buffer)
 				buffer->Unbind();
-			}
 		}
+		///
 
 		/// SceneWindowRender		
 		if (m_scene.IsVisible()) {
@@ -140,7 +146,8 @@ namespace Loopie
 			RenderWorld(m_scene.GetCamera());
 			Renderer::EndScene();
 			m_scene.EndScene();
-		}		
+		}	
+		///
 
 		/// GameWindowRender
 		if (m_game.IsVisible()) {
@@ -152,6 +159,8 @@ namespace Loopie
 			}
 			m_game.EndScene();
 		}
+		///
+
 		m_currentScene->FlushRemovedEntities();
 	}
 
@@ -195,6 +204,56 @@ namespace Loopie
 		m_game.Render();
 		m_scene.Render();
 		m_textEditor.Render();
+	}
+
+	void EditorModule::UpdateComponents(DebugGameMode mode)
+	{
+		if (mode == DebugGameMode::START) {
+			ScriptingManager::RuntimeStart();
+			Application::GetInstance().GetScene().SaveScene("recoverScene.scene");
+		}
+
+		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities()) {
+			if (!entity->GetIsActive())
+				continue;
+			const std::vector<Component*>& components = entity->GetComponents();
+			for (size_t i = 0; i < components.size(); i++)
+			{
+				Component* component = components[i];
+				if (!component->GetIsActive())
+					continue;
+				component->OnUpdate();
+
+				if (component->GetTypeID() == ScriptClass::GetTypeIDStatic())
+				{
+					ScriptClass* script = static_cast<ScriptClass*>(component);
+					if (script->GetIsActive()) {
+						switch (mode)
+						{
+						case Loopie::START:
+							script->InvokeOnCreate();
+							break;
+						case Loopie::UPDATING:
+						case Loopie::NEXTFRAME:
+							script->InvokeOnUpdate();
+							break;
+						case Loopie::END:
+							script->DestroyInstance();
+							break;
+						case Loopie::PAUSED:
+						case Loopie::DEACTIVATED:
+						default:
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		if (mode == DebugGameMode::END) {
+			ScriptingManager::RuntimeStop();
+			Application::GetInstance().GetScene().ReadAndLoadSceneFile("recoverScene.scene", false);
+		}
 	}
 
 	void EditorModule::RenderWorld(Camera* camera)
@@ -244,7 +303,6 @@ namespace Loopie
 				if (data.HasBones) {
 					Animator* animator = renderer->GetLinkedAnimator();
 					if (animator && animator->HasAnimation()) {
-						animator->Update();
 						bones = animator->GetRendererData(renderer->GetUUID()).FinalBoneMatrices;
 					}
 				}

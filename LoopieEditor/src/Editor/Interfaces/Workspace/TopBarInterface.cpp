@@ -37,31 +37,19 @@ namespace Loopie
 
     void TopBarInterface::Update(const InputEventManager& inputEvent)
     {
-        if (m_actualMode == PAUSE || m_actualMode == DEACTIVATED)
+        if (m_actualMode == PAUSED || m_actualMode == DEACTIVATED)
             return;
-        if (m_actualMode == STOP)
+        if (m_actualMode == END)
         {
-            Application::GetInstance().GetScene().ReadAndLoadSceneFile("recoverScene.scene", false);
             m_actualMode = DEACTIVATED;
             return;
         }
-        
-        ////Caching
-        for (auto& [uuid, entity] : Application::GetInstance().GetScene().GetAllEntities())
-        {
-            if (entity == nullptr)
-                continue;
-            if (!entity->HasComponent< ScriptClass>())
-                continue;
-
-            for (auto& component : entity->GetComponents<ScriptClass>())
-            {
-                component->InvokeOnUpdate();
-            }
-        }
 
         if (m_actualMode == NEXTFRAME)
-            m_actualMode = PAUSE;
+            m_actualMode = PAUSED;
+
+        if (m_actualMode == START)
+            m_actualMode = UPDATING;
     }
 
     void TopBarInterface::Render()
@@ -92,74 +80,58 @@ namespace Loopie
         if (m_actualMode == DEACTIVATED)
         {
             if (ImGui::ImageButton("play", (ImTextureID)m_playIcon->GetRendererId(), ImVec2(15, 15)))
-            {
-				ScriptingManager::RuntimeStart();
-                Application::GetInstance().GetScene().SaveScene("recoverScene.scene");
-                m_actualMode = PLAY;
-
-                for (const auto& [uuid, entity] : Application::GetInstance().GetScene().GetAllEntities())
-                {
-                    if (!entity->HasComponent<ScriptClass>())
-                        continue;
-                    for (auto& component : entity->GetComponents<ScriptClass>())
-                    {
-                        component->InvokeOnCreate();
-                    }
-                }
+            {	
+                m_actualMode = START;
             }
         }
         else
         {
             if (ImGui::ImageButton("stop", (ImTextureID)m_stopIcon->GetRendererId(), ImVec2(15, 15)) || !ScriptingManager::IsRunning())
-            {
-
-                for (const auto& [uuid, entity] : Application::GetInstance().GetScene().GetAllEntities())
-                {
-                    if (!entity->HasComponent<ScriptClass>())
-                        continue;
-                    for (auto& component : entity->GetComponents<ScriptClass>())
-                    {
-                        component->DestroyInstance();
-                    }
-                }        
-
-				ScriptingManager::RuntimeStop();
-                m_actualMode = STOP;
+            {    
+                m_actualMode = END;
             }
         }
+
         ImGui::SameLine();
-        if (m_actualMode == PAUSE)
+
+        if (m_actualMode == PAUSED)
         {
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0, 0.5, 0.75, 1.0));
             hasStyle = true;
         }
         if (ImGui::ImageButton("pause", (ImTextureID)m_pauseIcon->GetRendererId(), ImVec2(15, 15)) && m_actualMode != DEACTIVATED)
         {
-            if (m_actualMode == PAUSE)
-                m_actualMode = PLAY;
+            if (m_actualMode == PAUSED)
+                m_actualMode = UPDATING;
             else
-                m_actualMode = PAUSE;
+                m_actualMode = PAUSED;
         }
+
         if (hasStyle)
         {
             ImGui::PopStyleColor();
             hasStyle = false;
         }
+
         ImGui::SameLine();
+
         if (m_actualMode == DEACTIVATED)
         {
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
             hasStyle = true;
         }
-        if (ImGui::ImageButton("nextFrame", (ImTextureID)m_nextFrameIcon->GetRendererId(), ImVec2(15, 15)) && m_actualMode == PAUSE)
+
+        if (ImGui::ImageButton("nextFrame", (ImTextureID)m_nextFrameIcon->GetRendererId(), ImVec2(15, 15)) && m_actualMode == PAUSED)
         {
             m_actualMode = NEXTFRAME;
         }
+
         if (hasStyle)
         {
             ImGui::PopStyleColor();
             hasStyle = false;
         }
+
         ImGui::End();
     }
 
