@@ -1,3 +1,5 @@
+#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
+
 #include "ProjectBuild/Modules/GameModule.h"
 
 #include "Loopie/Core/Application.h"

@@ -222,19 +222,6 @@ namespace Loopie
 		return true;
 	}
 
-	Canvas* GameModule::FindCanvasInParents(const std::shared_ptr<Loopie::Entity>& entity)
-	{
-		auto current = entity;
-		while (current)
-		{
-			if (auto* c = current->GetComponent<Loopie::Canvas>())
-				return c;
-
-			current = current->GetParent().lock();
-		}
-		return nullptr;
-	}
-
 	void GameModule::RenderWorld(Camera* camera)
 	{
 		Renderer::EnableStencil();
@@ -289,9 +276,31 @@ namespace Loopie
 		Renderer::DisableStencil();
 	}
 
+	void GameModule::RenderUIRecursive(const std::shared_ptr<Entity>& entity, vec2& scale)
+	{
+		if (!entity || !entity->GetIsActive())
+			return;
+
+		Image* img = entity->GetComponent<Image>();
+		RectTransform* rt = entity->GetComponent<RectTransform>();
+
+		if (img && img->GetIsActive() && rt)
+		{
+			const vec3 p = rt->GetLocalPosition();
+			const vec2 s(rt->GetWidth(), rt->GetHeight());
+
+			const vec2 pixelSize(s.x * scale.x, s.y * scale.y);
+			const vec2 pixelPos(p.x * scale.x, p.y * scale.y);
+
+			UIRenderer::DrawImage(pixelPos, pixelSize, img->GetTexture(), img->GetTint());
+		}
+
+		for (const auto& child : entity->GetChildren())
+			RenderUIRecursive(child, scale);
+	}
+
 	void GameModule::RenderUI()
 	{
-		Camera* cam = Camera::GetMainCamera();
 		ivec2 size = Application::GetInstance().GetWindow().GetSize();
 		const float w = static_cast<float>(size.x);
 		const float h = static_cast<float>(size.y);
@@ -314,19 +323,14 @@ namespace Loopie
 			if (!entity || !entity->GetIsActive())
 				continue;
 
-			Image* img = entity->GetComponent<Image>();
-			RectTransform* rt = entity->GetComponent<RectTransform>();
-			if (!img || !img->GetIsActive() || !rt)
-				continue;
-
-			Canvas* canvas = FindCanvasInParents(entity);
+			Canvas* canvas = entity->GetComponent<Canvas>();
 			if (!canvas || !canvas->GetIsActive())
 				continue;
 
 			if (canvas->GetRenderMode() != CanvasRenderMode::ScreenSpaceOverlay)
 				continue;
 
-			RectTransform* canvasRt = canvas->GetOwner() ? canvas->GetOwner()->GetComponent<RectTransform>() : nullptr;
+			RectTransform* canvasRt = entity->GetComponent<RectTransform>();
 			if (!canvasRt)
 				continue;
 
@@ -339,45 +343,39 @@ namespace Loopie
 			const float sx = w / cw;
 			const float sy = h / ch;
 
-			const vec3 p = rt->GetLocalPosition();
-			const vec2 s(rt->GetWidth(), rt->GetHeight());
-
-			const vec2 pixelSize(s.x * sx, s.y * sy);
-			const vec2 pixelPos(p.x * sx, p.y * sy);
-
-			UIRenderer::DrawImage(pixelPos, pixelSize, img->GetTexture(), img->GetTint());
+			RenderUIRecursive(entity, vec2(sx, sy));
 		}
-
-		/*for (const auto& [uuid, entity] : m_currentScene->GetAllEntities())
-		{
-			if (!entity || !entity->GetIsActive())
-				continue;
-
-			Image* img = entity->GetComponent<Image>();
-			RectTransform* rt = entity->GetComponent<RectTransform>();
-
-			if (!img || !img->GetIsActive() || !rt)
-				continue;
-
-			Canvas* canvas = FindCanvasInParents(entity);
-			if (!canvas || !canvas->GetIsActive())
-				continue;
-
-			if (canvas->GetRenderMode() != CanvasRenderMode::ScreenSpaceOverlay)
-				continue;
-
-			vec3 p = rt->GetLocalPosition();
-			vec2 size(rt->GetWidth(), rt->GetHeight());
-
-			vec2 topLeft(p.x,p.y);
-
-			UIRenderer::DrawImage(topLeft, size, img->GetTexture(), img->GetTint());
-		}*/
 
 		Renderer::EndScene();
 
 		Renderer::DisableBlend();
 		Renderer::EnableDepth();
+	}
+
+	void GameModule::RenderSceneUIRecursive(const std::shared_ptr<Entity>& entity)
+	{
+		if (!entity || !entity->GetIsActive())
+			return;
+
+		Image* img = entity->GetComponent<Image>();
+		RectTransform* rt = entity->GetComponent<RectTransform>();
+
+		if (img && img->GetIsActive() && rt)
+		{
+			const std::shared_ptr<Texture> tex = img->GetTexture();
+			if (tex)
+			{
+				const float w = rt->GetWidth();
+				const float h = rt->GetHeight();
+
+				matrix4 model = rt->GetLocalToWorldMatrix() * glm::scale(matrix4(1.0f), vec3(w, h, 1.0f));
+
+				UIRenderer::DrawImageWorld(model, tex, img->GetTint());
+			}
+		}
+
+		for (const auto& child : entity->GetChildren())
+			RenderSceneUIRecursive(child);
 	}
 
 	void GameModule::RenderSceneUI(Camera* camera)
@@ -392,36 +390,14 @@ namespace Loopie
 			if (!entity || !entity->GetIsActive())
 				continue;
 
-			Image* img = entity->GetComponent<Image>();
-			RectTransform* rt = entity->GetComponent<RectTransform>();
-
-			if (!img || !img->GetIsActive() || !rt)
-				continue;
-
-			const std::shared_ptr<Texture> tex = img->GetTexture();
-			if (!tex)
-				continue;
-
-			Canvas* canvas = FindCanvasInParents(entity);
+			Canvas* canvas = entity->GetComponent<Canvas>();
 			if (!canvas || !canvas->GetIsActive())
 				continue;
 
 			if (canvas->GetRenderMode() == CanvasRenderMode::ScreenSpaceOverlay)
 				continue;
 
-			const float w = rt->GetWidth();
-			const float h = rt->GetHeight();
-
-			matrix4 model = rt->GetLocalToWorldMatrix();
-			model = model * glm::scale(matrix4(1.0f), vec3(w, h, 1.0f));
-
-			model = rt->GetLocalToWorldMatrix()
-				* glm::scale(matrix4(1.0f), vec3(w, h, 1.0f));
-
-			//model = model * glm::translate(matrix4(1.0f), vec3(0.0f, -h, 0.0f));
-			//model = model * glm::scale(matrix4(1.0f), vec3(1.0f, -1.0f, 1.0f));
-
-			UIRenderer::DrawImageWorld(model, tex, img->GetTint());
+			RenderSceneUIRecursive(entity);
 		}
 
 		Renderer::DisableBlend();
