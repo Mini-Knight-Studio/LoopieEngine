@@ -399,6 +399,29 @@ namespace Loopie
 		}
 	}
 
+	void EditorModule::RenderUIRecursive(const std::shared_ptr<Entity>& entity, vec2& scale)
+	{
+		if (!entity || !entity->GetIsActive())
+			return;
+
+		Image* img = entity->GetComponent<Image>();
+		RectTransform* rt = entity->GetComponent<RectTransform>();
+
+		if (img && img->GetIsActive() && rt)
+		{
+			const vec3 p = rt->GetLocalPosition();
+			const vec2 s(rt->GetWidth(), rt->GetHeight());
+
+			const vec2 pixelSize(s.x * scale.x, s.y * scale.y);
+			const vec2 pixelPos(p.x * scale.x, p.y * scale.y);
+
+			UIRenderer::DrawImage(pixelPos, pixelSize, img->GetTexture(), img->GetTint());
+		}
+
+		for (const auto& child : entity->GetChildren())
+			RenderUIRecursive(child, scale);
+	}
+
 	void EditorModule::RenderUI()
 	{
 		std::shared_ptr<FrameBuffer> buffer = m_game.GetFrameBuffer();
@@ -434,19 +457,14 @@ namespace Loopie
 			if (!entity || !entity->GetIsActive())
 				continue;
 
-			Image* img = entity->GetComponent<Image>();
-			RectTransform* rt = entity->GetComponent<RectTransform>();
-			if (!img || !img->GetIsActive() || !rt)
-				continue;
-
-			Canvas* canvas = FindCanvasInParents(entity);
+			Canvas* canvas = entity->GetComponent<Canvas>();
 			if (!canvas || !canvas->GetIsActive())
 				continue;
 
 			if (canvas->GetRenderMode() != CanvasRenderMode::ScreenSpaceOverlay)
 				continue;
 
-			RectTransform* canvasRt = canvas->GetOwner() ? canvas->GetOwner()->GetComponent<RectTransform>() : nullptr;
+			RectTransform* canvasRt = entity->GetComponent<RectTransform>();
 			if (!canvasRt)
 				continue;
 
@@ -459,40 +477,8 @@ namespace Loopie
 			const float sx = w / cw;
 			const float sy = h / ch;
 
-			const vec3 p = rt->GetLocalPosition();
-			const vec2 s(rt->GetWidth(), rt->GetHeight());
-
-			const vec2 pixelSize(s.x * sx, s.y * sy);
-			const vec2 pixelPos(p.x * sx, p.y * sy);
-
-			UIRenderer::DrawImage(pixelPos, pixelSize, img->GetTexture(), img->GetTint());
+			RenderUIRecursive(entity, vec2(sx, sy));
 		}
-
-		/*for (const auto& [uuid, entity] : m_currentScene->GetAllEntities())
-		{
-			if (!entity || !entity->GetIsActive())
-				continue;
-
-			Image* img = entity->GetComponent<Image>();
-			RectTransform* rt = entity->GetComponent<RectTransform>();
-
-			if (!img || !img->GetIsActive() || !rt)
-				continue;
-
-			Canvas* canvas = FindCanvasInParents(entity);
-			if (!canvas || !canvas->GetIsActive())
-				continue;
-
-			if (canvas->GetRenderMode() != CanvasRenderMode::ScreenSpaceOverlay)
-				continue;
-
-			vec3 p = rt->GetLocalPosition();
-			vec2 size(rt->GetWidth(), rt->GetHeight());
-
-			vec2 topLeft(p.x,p.y);
-
-			UIRenderer::DrawImage(topLeft, size, img->GetTexture(), img->GetTint());
-		}*/
 
 		Renderer::EndScene();
 
@@ -500,6 +486,32 @@ namespace Loopie
 		Renderer::EnableDepth();
 
 		buffer->Unbind();
+	}
+
+	void EditorModule::RenderSceneUIRecursive(const std::shared_ptr<Entity>& entity)
+	{
+		if (!entity || !entity->GetIsActive())
+			return;
+
+		Image* img = entity->GetComponent<Image>();
+		RectTransform* rt = entity->GetComponent<RectTransform>();
+
+		if (img && img->GetIsActive() && rt)
+		{
+			const std::shared_ptr<Texture> tex = img->GetTexture();
+			if (tex)
+			{
+				const float w = rt->GetWidth();
+				const float h = rt->GetHeight();
+
+				matrix4 model = rt->GetLocalToWorldMatrix() * glm::scale(matrix4(1.0f), vec3(w, h, 1.0f));
+
+				UIRenderer::DrawImageWorld(model, tex, img->GetTint());
+			}
+		}
+
+		for (const auto& child : entity->GetChildren())
+			RenderSceneUIRecursive(child);
 	}
 
 	void EditorModule::RenderSceneUI(Camera* camera)
@@ -516,36 +528,14 @@ namespace Loopie
 			if (!entity || !entity->GetIsActive())
 				continue;
 
-			Image* img = entity->GetComponent<Image>();
-			RectTransform* rt = entity->GetComponent<RectTransform>();
-
-			if (!img || !img->GetIsActive() || !rt)
-				continue;
-
-			const std::shared_ptr<Texture> tex = img->GetTexture();
-			if (!tex)
-				continue;
-
-			Canvas* canvas = FindCanvasInParents(entity);
+			Canvas* canvas = entity->GetComponent<Canvas>();
 			if (!canvas || !canvas->GetIsActive())
 				continue;
 
 			if (!isSceneView && canvas->GetRenderMode() == CanvasRenderMode::ScreenSpaceOverlay)
 				continue;
 
-			const float w = rt->GetWidth();
-			const float h = rt->GetHeight();
-
-			matrix4 model = rt->GetLocalToWorldMatrix();
-			model = model * glm::scale(matrix4(1.0f), vec3(w, h, 1.0f));
-
-			model = rt->GetLocalToWorldMatrix()
-				* glm::scale(matrix4(1.0f), vec3(w, h, 1.0f));
-
-			//model = model * glm::translate(matrix4(1.0f), vec3(0.0f, -h, 0.0f));
-			//model = model * glm::scale(matrix4(1.0f), vec3(1.0f, -1.0f, 1.0f));
-
-			UIRenderer::DrawImageWorld(model, tex, img->GetTint());
+			RenderSceneUIRecursive(entity);
 		}
 
 		Renderer::DisableBlend();
@@ -562,46 +552,6 @@ namespace Loopie
 		m_scene.ChargeModel("assets/models/Street environment_V01.fbx");
 		//m_scene.ChargeTexture("assets/textures/Baker_house.png");
 	}
-
-	/*void EditorModule::MousePick(Camera* camera)
-	{
-		Ray ray = Ray{ vec3(0), vec3(1) };
-		float distance = -1;
-		for (auto& [uuid, entity] : scene->GetAllEntities()) {
-			if (!entity->GetIsActive())
-				continue;
-			MeshRenderer* renderer = entity->GetComponent<MeshRenderer>();
-			if (!renderer || !renderer->GetIsActive() || !renderer->GetMesh())
-				continue;
-
-			if (!camera->GetFrustum().Intersects(renderer->GetWorldAABB()))
-				continue;
-
-			const AABB& worldAABB = renderer->GetWorldAABB();
-			vec3 hitPoint;
-			if (!worldAABB.IntersectsRay(ray.StartPoint(), ray.EndPoint(), hitPoint)) {
-				continue;
-			}
-
-			const MeshData& data = renderer->GetMesh()->GetData();
-			for (int i = 0; i < data.IndicesAmount/3; i++)
-			{
-				std::vector<vec3> vertices;
-				Triangle t;
-				if (!renderer->GetTriangle(i, t))continue;
-				vertices[0] = t.v0;
-				vertices[1] = t.v1;
-				vertices[2] = t.v2;
-				vec3 hitPoint;
-				if (ray.Intersects(vertices, true, hitPoint))
-				{
-					if (distance == -1 || distance > (hitPoint - ray.StartPoint()).length())continue;
-					HierarchyInterface::s_SelectedEntity = entity;
-					distance = (hitPoint - ray.StartPoint()).length();
-				}
-			}
-		}
-	}*/
 
 	void EditorModule::OnNotify(const EngineNotification& type)
 	{
