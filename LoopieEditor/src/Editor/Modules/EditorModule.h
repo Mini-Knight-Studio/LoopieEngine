@@ -41,14 +41,16 @@ namespace Loopie {
 	private:
 		bool UpdateComponents(DebugGameMode mode);
 		void RenderWorld(Camera* camera);
+		
+		void RenderUIRecursive(const std::shared_ptr<Entity>& entity, vec2& scale);
 		void RenderUI();
-
+		void RenderSceneUIRecursive(const std::shared_ptr<Entity>& entity);
 		void RenderSceneUI(Camera* camera);
+
 		/// Test
 		void CreateBakerHouse();
 		void CreateCity();
-		//void MousePick(Camera* camera);
-		///
+
 	private:
 		InspectorInterface m_inspector;
 		ConsoleInterface m_console;
