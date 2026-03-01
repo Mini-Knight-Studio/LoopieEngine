@@ -15,7 +15,6 @@
 #include "Editor/Interfaces/Workspace/TextEditorInterface.h"
 
 #include "Loopie/Components/Canvas.h"
-#include "Loopie/Components/RectTransform.h"
 
 namespace Loopie {
 

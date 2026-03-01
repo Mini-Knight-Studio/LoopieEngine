@@ -1,5 +1,5 @@
 {
-	"shader" : "",
+	"shader": "",
 	"properties": {
 		"u_Albedo": {
 			"type": "Sampler2D",

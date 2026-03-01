@@ -4,13 +4,25 @@
 #include "Loopie/Events/IObserver.h"
 #include "Loopie/Events/EventTypes.h"
 
-#include "ProjectBuild/Interfaces/GameLogic.h"
+#include "Loopie/Core/Application.h"
+#include <memory>
 
 namespace Loopie {
 
 	class Camera;
 	class Material;
 	class Shader;
+	class Canvas;
+
+	enum DebugGameMode
+	{
+		START,
+		UPDATING,
+		PAUSED,
+		END,
+		NEXTFRAME,
+		DEACTIVATED,
+	};
 
 	class GameModule : public Module, public IObserver<EngineNotification> {
 	public:
@@ -24,13 +36,18 @@ namespace Loopie {
 
 		void OnUpdate() override;
 
-		void OnInterfaceRender()override;
-	private:
-		void RenderWorld(Camera* camera);
-	private:
 
-		GameLogic m_game;
+		static Canvas* FindCanvasInParents(const std::shared_ptr<Loopie::Entity>& entity);
+	private:
+		bool UpdateComponents(DebugGameMode mode);
+		void RenderWorld(Camera* camera);
+		void RenderUI();
+
+		void RenderSceneUI(Camera* camera);
+	private:
 
 		Scene* m_currentScene = nullptr;
+
+		DebugGameMode mode;
 	};
 }

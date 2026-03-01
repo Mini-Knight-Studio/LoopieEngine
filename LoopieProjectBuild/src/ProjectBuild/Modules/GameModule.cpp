@@ -5,6 +5,7 @@
 //// Test
 #include "Loopie/Core/Log.h"
 #include "Loopie/Render/Renderer.h"
+#include "Loopie/Render/UIRenderer.h"
 #include "Loopie/Render/Gizmo.h"
 #include "Loopie/Render/Colors.h"
 
@@ -18,7 +19,12 @@
 #include "Loopie/Importers/MaterialImporter.h"
 
 #include "Loopie/Components/MeshRenderer.h"
+#include "Loopie/Components/Animator.h"
+#include "Loopie/Components/ScriptClass.h"
 #include "Loopie/Components/Transform.h"
+#include "Loopie/Components/RectTransform.h"
+#include "Loopie/Components/Canvas.h"
+#include "Loopie/Components/Image.h"
 #include "Loopie/Resources/Types/Material.h"
 ///
 
@@ -32,6 +38,14 @@ namespace Loopie
 		Application::GetInstance().m_activeProject.Open(std::filesystem::absolute(gamePath));
 
 		AssetRegistry::Initialize();
+
+
+		ScriptingContext& context = ScriptingManager::GetContext();
+
+		std::string projectDir = Application::GetInstance().m_activeProject.GetGameDLLPath().string();
+		context.CoreAssemblyFilepath = "../Loopie/Loopie.Core.dll";
+		context.AppAssemblyFilepath = projectDir;
+		context.EnableRecompile = false;
 
 		ScriptingManager::Init();
 		Log::Info("Scripting created successfully.");
@@ -50,14 +64,15 @@ namespace Loopie
 		////
 		AssetRegistry::RefreshAssetRegistry();
 
-		m_game.Init();
-
 		Application::GetInstance().m_notifier.AddObserver(this);
+
+		mode = DebugGameMode::START;
 
 	}
 
 	void GameModule::OnUnload()
 	{
+		UIRenderer::Shutdown();
 		AssetRegistry::Shutdown();
 		Application::GetInstance().m_notifier.RemoveObserver(this);
 	}
@@ -68,8 +83,13 @@ namespace Loopie
 		Application& app = Application::GetInstance();
 		InputEventManager& inputEvent = app.GetInputEvent();
 
-		m_game.Update(inputEvent);
+		//// Update Components
+		if (!UpdateComponents(mode)) {
+			mode = DebugGameMode::END;
+		}
+		//// 
 
+		/// RenderToTarget
 		const std::vector<Camera*>& cameras = Renderer::GetRendererCameras();
 		for (const auto cam : cameras)
 		{
@@ -82,7 +102,6 @@ namespace Loopie
 			}
 		}
 
-		/// RenderToTarget
 		for (const auto cam : cameras)
 		{
 			if (!cam->GetIsActive())
@@ -98,27 +117,122 @@ namespace Loopie
 			RenderWorld(cam);
 			Renderer::EndScene();
 
-			if (buffer) {
+			if (buffer)
 				buffer->Unbind();
+		}
+		///
+
+		/// GameWindowRender
+
+		Camera* cam = Camera::GetMainCamera();
+		if (cam) {
+			ivec2 size = Application::GetInstance().GetWindow().GetSize();
+			cam->SetViewport(0, 0, size.x, size.y);
+			Renderer::SetViewport(0, 0, size.x, size.y);
+
+			if (cam && cam->GetIsActive()) {
+				Renderer::BeginScene(cam->GetViewMatrix(), cam->GetProjectionMatrix(), false);
+				RenderWorld(cam);
+				Renderer::EndScene();
+				RenderUI();
 			}
 		}
-		ivec2 size = Application::GetInstance().GetWindow().GetSize();
 		
-		m_game.GetCamera()->SetViewport(0, 0, size.x, size.y);
-		Renderer::SetViewport(0, 0, size.x, size.y);
-
-			if (m_game.GetCamera() && m_game.GetCamera()->GetIsActive()) {
-				Renderer::BeginScene(m_game.GetCamera()->GetViewMatrix(), m_game.GetCamera()->GetProjectionMatrix(), false);
-				RenderWorld(m_game.GetCamera());
-				Renderer::EndScene();
-			}
+		///
 
 		m_currentScene->FlushRemovedEntities();
+
+		if(mode == DebugGameMode::START)
+			mode = DebugGameMode::UPDATING;
+		if(mode == END)
+			mode = DebugGameMode::DEACTIVATED;
 	}
 
-	void GameModule::OnInterfaceRender()
+
+	bool GameModule::UpdateComponents(DebugGameMode mode)
 	{
-		m_game.Render();
+		if (mode == DebugGameMode::START) {
+
+			bool errors = false;
+			for (const auto& [uuid, entity] : m_currentScene->GetAllEntities()) {
+				const std::vector<Component*>& components = entity->GetComponents();
+				for (size_t i = 0; i < components.size(); i++)
+				{
+					Component* component = components[i];
+					if (component->GetTypeID() == ScriptClass::GetTypeIDStatic())
+					{
+						ScriptClass* script = static_cast<ScriptClass*>(component);
+						if (!script->GetScriptingClass()) {
+							errors = true;
+							Log::Error("Failed to start the game. Check the scripts || Entity: {0}   Component UUID: {1}", script->GetOwner()->GetName(), script->GetUUID().Get());
+						}
+					}
+				}
+			}
+			if (errors)
+			{
+				return false;
+			}
+
+
+			ScriptingManager::RuntimeStart();
+			Application::GetInstance().GetScene().SaveScene("recoverScene.scene");
+		}
+
+		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities()) {
+			if (!entity->GetIsActive())
+				continue;
+			const std::vector<Component*>& components = entity->GetComponents();
+			for (size_t i = 0; i < components.size(); i++)
+			{
+				Component* component = components[i];
+				if (!component->GetLocalIsActive())
+					continue;
+				component->OnUpdate();
+
+				if (component->GetTypeID() == ScriptClass::GetTypeIDStatic())
+				{
+					ScriptClass* script = static_cast<ScriptClass*>(component);
+					switch (mode)
+					{
+					case Loopie::START:
+						script->InvokeOnCreate();
+						break;
+					case Loopie::UPDATING:
+					case Loopie::NEXTFRAME:
+						script->InvokeOnUpdate();
+						break;
+					case Loopie::END:
+						script->DestroyInstance();
+						break;
+					case Loopie::PAUSED:
+					case Loopie::DEACTIVATED:
+					default:
+						break;
+					}
+				}
+			}
+		}
+
+		if (mode == DebugGameMode::END) {
+			ScriptingManager::RuntimeStop();
+			Application::GetInstance().GetScene().ReadAndLoadSceneFile("recoverScene.scene", false);
+		}
+
+		return true;
+	}
+
+	Canvas* GameModule::FindCanvasInParents(const std::shared_ptr<Loopie::Entity>& entity)
+	{
+		auto current = entity;
+		while (current)
+		{
+			if (auto* c = current->GetComponent<Loopie::Canvas>())
+				return c;
+
+			current = current->GetParent().lock();
+		}
+		return nullptr;
 	}
 
 	void GameModule::RenderWorld(Camera* camera)
@@ -144,31 +258,173 @@ namespace Loopie
 			for (size_t i = 0; i < components.size(); i++)
 			{
 				Component* component = components[i];
-				if (!component->GetIsActive())
+				if (!component->GetLocalIsActive())
 					continue;
 				if (component->GetTypeID() == MeshRenderer::GetTypeIDStatic()) {
 					MeshRenderer* renderer = static_cast<MeshRenderer*>(component);
 					if (renderer->GetMesh())
 						renderers.push_back(renderer);
 				}
-
-				if (Renderer::IsGizmoActive()) {
-					if (component->GetTypeID() != Camera::GetTypeIDStatic())
-						component->RenderGizmo();
-				}
 			}
 
 			for (size_t i = 0; i < renderers.size(); i++)
 			{
 				MeshRenderer* renderer = renderers[i];
+				const MeshData& data = renderer->GetMesh()->GetData();
 
-				if (!Renderer::IsGizmoActive()) {
-					Renderer::AddRenderItem(renderer->GetMesh()->GetVAO(), renderer->GetMaterial(), entity->GetTransform());
+				std::vector<matrix4> bones = {};
+				if (data.HasBones) {
+					Animator* animator = renderer->GetLinkedAnimator();
+					if (animator && animator->HasAnimation()) {
+						bones = animator->GetRendererData(renderer->GetUUID()).FinalBoneMatrices;
+					}
 				}
+
+				Renderer::AddRenderItem(renderer->GetMesh()->GetVAO(), renderer->GetMaterial(), entity->GetTransform(), bones);
 			}
 		}
-		Renderer::DisableStencil();
 
+		RenderSceneUI(camera);
+
+		Renderer::DisableStencil();
+	}
+
+	void GameModule::RenderUI()
+	{
+		Camera* cam = Camera::GetMainCamera();
+		ivec2 size = Application::GetInstance().GetWindow().GetSize();
+		const float w = static_cast<float>(size.x);
+		const float h = static_cast<float>(size.y);
+
+		Renderer::SetViewport(0, 0, static_cast<unsigned int>(w), static_cast<unsigned int>(h));
+
+		Renderer::DisableDepth();
+		Renderer::DisableStencil();
+		Renderer::DisableCulling();
+
+		Renderer::EnableBlend();
+
+		const matrix4 uiView(1.0f);
+		const matrix4 uiProj = glm::ortho(0.0f, w, 0.0f, h, -1.0f, 1.0f);
+
+		Renderer::BeginScene(uiView, uiProj, false);
+
+		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities())
+		{
+			if (!entity || !entity->GetIsActive())
+				continue;
+
+			Image* img = entity->GetComponent<Image>();
+			RectTransform* rt = entity->GetComponent<RectTransform>();
+			if (!img || !img->GetIsActive() || !rt)
+				continue;
+
+			Canvas* canvas = FindCanvasInParents(entity);
+			if (!canvas || !canvas->GetIsActive())
+				continue;
+
+			if (canvas->GetRenderMode() != CanvasRenderMode::ScreenSpaceOverlay)
+				continue;
+
+			RectTransform* canvasRt = canvas->GetOwner() ? canvas->GetOwner()->GetComponent<RectTransform>() : nullptr;
+			if (!canvasRt)
+				continue;
+
+			const float cw = canvasRt->GetWidth();
+			const float ch = canvasRt->GetHeight();
+
+			if (cw <= 0.0f || ch <= 0.0f)
+				continue;
+
+			const float sx = w / cw;
+			const float sy = h / ch;
+
+			const vec3 p = rt->GetLocalPosition();
+			const vec2 s(rt->GetWidth(), rt->GetHeight());
+
+			const vec2 pixelSize(s.x * sx, s.y * sy);
+			const vec2 pixelPos(p.x * sx, p.y * sy);
+
+			UIRenderer::DrawImage(pixelPos, pixelSize, img->GetTexture(), img->GetTint());
+		}
+
+		/*for (const auto& [uuid, entity] : m_currentScene->GetAllEntities())
+		{
+			if (!entity || !entity->GetIsActive())
+				continue;
+
+			Image* img = entity->GetComponent<Image>();
+			RectTransform* rt = entity->GetComponent<RectTransform>();
+
+			if (!img || !img->GetIsActive() || !rt)
+				continue;
+
+			Canvas* canvas = FindCanvasInParents(entity);
+			if (!canvas || !canvas->GetIsActive())
+				continue;
+
+			if (canvas->GetRenderMode() != CanvasRenderMode::ScreenSpaceOverlay)
+				continue;
+
+			vec3 p = rt->GetLocalPosition();
+			vec2 size(rt->GetWidth(), rt->GetHeight());
+
+			vec2 topLeft(p.x,p.y);
+
+			UIRenderer::DrawImage(topLeft, size, img->GetTexture(), img->GetTint());
+		}*/
+
+		Renderer::EndScene();
+
+		Renderer::DisableBlend();
+		Renderer::EnableDepth();
+	}
+
+	void GameModule::RenderSceneUI(Camera* camera)
+	{
+		Renderer::EnableBlend();
+		Renderer::DisableCulling();
+		Renderer::EnableDepth();
+		Renderer::SetDepthWrite(true);
+
+		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities())
+		{
+			if (!entity || !entity->GetIsActive())
+				continue;
+
+			Image* img = entity->GetComponent<Image>();
+			RectTransform* rt = entity->GetComponent<RectTransform>();
+
+			if (!img || !img->GetIsActive() || !rt)
+				continue;
+
+			const std::shared_ptr<Texture> tex = img->GetTexture();
+			if (!tex)
+				continue;
+
+			Canvas* canvas = FindCanvasInParents(entity);
+			if (!canvas || !canvas->GetIsActive())
+				continue;
+
+			if (canvas->GetRenderMode() == CanvasRenderMode::ScreenSpaceOverlay)
+				continue;
+
+			const float w = rt->GetWidth();
+			const float h = rt->GetHeight();
+
+			matrix4 model = rt->GetLocalToWorldMatrix();
+			model = model * glm::scale(matrix4(1.0f), vec3(w, h, 1.0f));
+
+			model = rt->GetLocalToWorldMatrix()
+				* glm::scale(matrix4(1.0f), vec3(w, h, 1.0f));
+
+			//model = model * glm::translate(matrix4(1.0f), vec3(0.0f, -h, 0.0f));
+			//model = model * glm::scale(matrix4(1.0f), vec3(1.0f, -1.0f, 1.0f));
+
+			UIRenderer::DrawImageWorld(model, tex, img->GetTint());
+		}
+
+		Renderer::DisableBlend();
 	}
 
 	void GameModule::OnNotify(const EngineNotification& type)
