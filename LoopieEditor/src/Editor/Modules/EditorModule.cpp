@@ -5,6 +5,7 @@
 //// Test
 #include "Loopie/Core/Log.h"
 #include "Loopie/Render/Renderer.h"
+#include "Loopie/Render/UIRenderer.h"
 #include "Loopie/Render/Gizmo.h"
 #include "Loopie/Render/Colors.h"
 
@@ -21,6 +22,9 @@
 #include "Loopie/Components/Animator.h"
 #include "Loopie/Components/ScriptClass.h"
 #include "Loopie/Components/Transform.h"
+#include "Loopie/Components/RectTransform.h"
+#include "Loopie/Components/Canvas.h"
+#include "Loopie/Components/Image.h"
 #include "Loopie/Resources/Types/Material.h"
 ///
 
@@ -85,6 +89,7 @@ namespace Loopie
 
 	void EditorModule::OnUnload()
 	{
+		UIRenderer::Shutdown();
 		AssetRegistry::Shutdown();
 		Application::GetInstance().m_notifier.RemoveObserver(this);
 	}
@@ -147,6 +152,12 @@ namespace Loopie
 			Renderer::BeginScene(m_scene.GetCamera()->GetViewMatrix(), m_scene.GetCamera()->GetProjectionMatrix(), true);
 			RenderWorld(m_scene.GetCamera());
 			Renderer::EndScene();
+
+			const float sw = (float)m_scene.GetFrameBuffer()->GetWidth();
+			const float sh = (float)m_scene.GetFrameBuffer()->GetHeight();
+			const matrix4 uiView(1.0f);
+			const matrix4 uiProj = glm::ortho(0.0f, sw, sh, 0.0f, -1.0f, 1.0f);
+
 			m_scene.EndScene();
 		}	
 		///
@@ -158,6 +169,9 @@ namespace Loopie
 				Renderer::BeginScene(m_game.GetCamera()->GetViewMatrix(), m_game.GetCamera()->GetProjectionMatrix(), false);
 				RenderWorld(m_game.GetCamera());
 				Renderer::EndScene();
+
+				// UI pass (ortographic overlay)
+				RenderUI();
 			}
 			m_game.EndScene();
 		}
@@ -281,6 +295,19 @@ namespace Loopie
 		return true;
 	}
 
+	Canvas* EditorModule::FindCanvasInParents(const std::shared_ptr<Loopie::Entity>& entity)
+	{
+		auto current = entity;
+		while (current)
+		{
+			if (auto* c = current->GetComponent<Loopie::Canvas>())
+				return c;
+
+			current = current->GetParent().lock();
+		}
+		return nullptr;
+	}
+
 	void EditorModule::RenderWorld(Camera* camera)
 	{	
 		Renderer::EnableStencil();
@@ -314,8 +341,12 @@ namespace Loopie
 				}
 
 				if (Renderer::IsGizmoActive()) {
-					if(component->GetTypeID() != Camera::GetTypeIDStatic())
-						component->RenderGizmo();
+					if (component->GetTypeID() != Camera::GetTypeIDStatic()) {
+						if (HierarchyInterface::s_SelectedEntity.lock() == entity)
+							component->RenderGizmo();
+						if (entity->HasComponent<Canvas>())
+							component->RenderGizmo();
+					}
 				}
 			}
 
@@ -353,6 +384,9 @@ namespace Loopie
 				}
 			}
 		}
+
+		RenderSceneUI(camera);
+
 		Renderer::DisableStencil();
 		if (Renderer::IsGizmoActive()) {
 			if (selectedEntity)
@@ -363,6 +397,158 @@ namespace Loopie
 			}
 			m_currentScene->GetOctree().DebugDraw(Color::MAGENTA);
 		}
+	}
+
+	void EditorModule::RenderUI()
+	{
+		std::shared_ptr<FrameBuffer> buffer = m_game.GetFrameBuffer();
+		if (!buffer)
+			return;
+
+		buffer->Bind();
+
+		const float w = static_cast<float>(m_game.GetFrameBuffer()->GetWidth());
+		const float h = static_cast<float>(m_game.GetFrameBuffer()->GetHeight());
+
+		if (w <= 0.0f || h <= 0.0f)
+		{
+			buffer->Unbind();
+			return;
+		}
+
+		Renderer::SetViewport(0, 0, static_cast<unsigned int>(w), static_cast<unsigned int>(h));
+
+		Renderer::DisableDepth();
+		Renderer::DisableStencil();
+		Renderer::DisableCulling();
+
+		Renderer::EnableBlend();
+
+		const matrix4 uiView(1.0f);
+		const matrix4 uiProj = glm::ortho(0.0f, w, 0.0f, h, -1.0f, 1.0f);
+
+		Renderer::BeginScene(uiView, uiProj, false);
+
+		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities())
+		{
+			if (!entity || !entity->GetIsActive())
+				continue;
+
+			Image* img = entity->GetComponent<Image>();
+			RectTransform* rt = entity->GetComponent<RectTransform>();
+			if (!img || !img->GetIsActive() || !rt)
+				continue;
+
+			Canvas* canvas = FindCanvasInParents(entity);
+			if (!canvas || !canvas->GetIsActive())
+				continue;
+
+			if (canvas->GetRenderMode() != CanvasRenderMode::ScreenSpaceOverlay)
+				continue;
+
+			RectTransform* canvasRt = canvas->GetOwner() ? canvas->GetOwner()->GetComponent<RectTransform>() : nullptr;
+			if (!canvasRt)
+				continue;
+
+			const float cw = canvasRt->GetWidth();
+			const float ch = canvasRt->GetHeight();
+
+			if (cw <= 0.0f || ch <= 0.0f)
+				continue;
+
+			const float sx = w / cw;
+			const float sy = h / ch;
+
+			const vec3 p = rt->GetLocalPosition();
+			const vec2 s(rt->GetWidth(), rt->GetHeight());
+
+			const vec2 pixelSize(s.x * sx, s.y * sy);
+			const vec2 pixelPos(p.x * sx, p.y * sy);
+
+			UIRenderer::DrawImage(pixelPos, pixelSize, img->GetTexture(), img->GetTint());
+		}
+
+		/*for (const auto& [uuid, entity] : m_currentScene->GetAllEntities())
+		{
+			if (!entity || !entity->GetIsActive())
+				continue;
+
+			Image* img = entity->GetComponent<Image>();
+			RectTransform* rt = entity->GetComponent<RectTransform>();
+
+			if (!img || !img->GetIsActive() || !rt)
+				continue;
+
+			Canvas* canvas = FindCanvasInParents(entity);
+			if (!canvas || !canvas->GetIsActive())
+				continue;
+
+			if (canvas->GetRenderMode() != CanvasRenderMode::ScreenSpaceOverlay)
+				continue;
+
+			vec3 p = rt->GetLocalPosition();
+			vec2 size(rt->GetWidth(), rt->GetHeight());
+
+			vec2 topLeft(p.x,p.y);
+
+			UIRenderer::DrawImage(topLeft, size, img->GetTexture(), img->GetTint());
+		}*/
+
+		Renderer::EndScene();
+
+		Renderer::DisableBlend();
+		Renderer::EnableDepth();
+
+		buffer->Unbind();
+	}
+
+	void EditorModule::RenderSceneUI(Camera* camera)
+	{
+		Renderer::EnableBlend();
+		Renderer::DisableCulling();
+		Renderer::EnableDepth();
+		Renderer::SetDepthWrite(true);
+
+		const bool isSceneView = (camera == m_scene.GetCamera());
+
+		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities())
+		{
+			if (!entity || !entity->GetIsActive())
+				continue;
+
+			Image* img = entity->GetComponent<Image>();
+			RectTransform* rt = entity->GetComponent<RectTransform>();
+
+			if (!img || !img->GetIsActive() || !rt)
+				continue;
+
+			const std::shared_ptr<Texture> tex = img->GetTexture();
+			if (!tex)
+				continue;
+
+			Canvas* canvas = FindCanvasInParents(entity);
+			if (!canvas || !canvas->GetIsActive())
+				continue;
+
+			if (!isSceneView && canvas->GetRenderMode() == CanvasRenderMode::ScreenSpaceOverlay)
+				continue;
+
+			const float w = rt->GetWidth();
+			const float h = rt->GetHeight();
+
+			matrix4 model = rt->GetLocalToWorldMatrix();
+			model = model * glm::scale(matrix4(1.0f), vec3(w, h, 1.0f));
+
+			model = rt->GetLocalToWorldMatrix()
+				* glm::scale(matrix4(1.0f), vec3(w, h, 1.0f));
+
+			//model = model * glm::translate(matrix4(1.0f), vec3(0.0f, -h, 0.0f));
+			//model = model * glm::scale(matrix4(1.0f), vec3(1.0f, -1.0f, 1.0f));
+
+			UIRenderer::DrawImageWorld(model, tex, img->GetTint());
+		}
+
+		Renderer::DisableBlend();
 	}
 
 	void EditorModule::CreateBakerHouse()

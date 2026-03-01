@@ -12,6 +12,9 @@ namespace Loopie {
 	class Material;
 	class Animator;
 
+	class RectTransform;
+	class Canvas;
+	class Image;
 
 	class InspectorInterface : public Interface , public IObserver<OnEntityOrFileNotification>{
 	public:
@@ -38,6 +41,9 @@ namespace Loopie {
 		void DrawMeshRenderer(MeshRenderer* meshRenderer);
 		void DrawAnimator(Animator* animator);
 		void DrawScriptClass(ScriptClass* scriptClass);
+		void DrawCanvas(Canvas* canvas);
+		void DrawImage(Image* image);
+
 		void AddComponent(const std::shared_ptr<Entity>& entity);
 		bool ComponentContextMenu(Component* component, bool canRemove = true);
 

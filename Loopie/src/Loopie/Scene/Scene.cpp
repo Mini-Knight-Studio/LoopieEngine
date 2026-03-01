@@ -3,10 +3,13 @@
 #include "Loopie/Core/Application.h"
 #include "Loopie/Core/Log.h"
 #include "Loopie/Components/Transform.h"
+#include "Loopie/Components/RectTransform.h"
 #include "Loopie/Components/Camera.h"
 #include "Loopie/Components/MeshRenderer.h"
 #include "Loopie/Components/Animator.h"
 #include "Loopie/Components/ScriptClass.h"
+#include "Loopie/Components/Canvas.h"
+#include "Loopie/Components/Image.h"
 #include "Loopie/Helpers/LoopieHelpers.h"
 #include "Loopie/Resources/AssetRegistry.h"
 
@@ -253,6 +256,18 @@ namespace Loopie {
 				auto animator = clone->AddComponent<Animator>();
 				animator->Deserialize(componentData.Child("animator"));
 			}
+			 // Canvas
+			else if (componentData.Child("canvas").IsValid())
+			{
+				auto canvas = clone->AddComponent<Canvas>();
+				canvas->Deserialize(componentData.Child("canvas"));
+			}
+			/// Image
+			else if (componentData.Child("image").IsValid())
+			{
+				auto image = clone->AddComponent<Image>();
+				image->Deserialize(componentData.Child("image"));
+			}
 		}
 
 		// ---- Clone children ----
@@ -431,6 +446,11 @@ namespace Loopie {
 						entity->GetTransform()->Deserialize(node);
 						entity->GetTransform()->SetUUID(componentUUID.Get());
 					}
+					else if (componentNode.Contains("recttransform"))
+					{
+						JsonNode node = componentNode.Child("recttransform");
+						entity->ReplaceTransform<RectTransform>()->Deserialize(node);
+					}
 					else if (componentNode.Contains("camera"))
 					{
 						JsonNode node = componentNode.Child("camera");
@@ -469,6 +489,24 @@ namespace Loopie {
 						{
 							animatorClass->Deserialize(node);
 							animatorClass->SetUUID(componentUUID.Get());
+						}
+					}
+					else if (componentNode.Contains("canvas"))
+					{
+						JsonNode node = componentNode.Child("canvas");
+						auto canvas = entity->AddComponent<Canvas>();
+						if (canvas)
+						{
+							canvas->Deserialize(node);
+						}
+					}
+					else if (componentNode.Contains("image"))
+					{
+						JsonNode node = componentNode.Child("image");
+						auto image = entity->AddComponent<Image>();
+						if (image)
+						{
+							image->Deserialize(node);
 						}
 					}
 				}

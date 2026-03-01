@@ -88,7 +88,8 @@ namespace Loopie {
 	void Renderer::EndScene()
 	{
 		FlushRenderQueue();
-		Gizmo::EndGizmo();
+		if(s_UseGizmos)
+			Gizmo::EndGizmo();
 	}
 
 	void Renderer::AddRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones)
@@ -187,5 +188,18 @@ namespace Loopie {
 	void Renderer::CullFace(CullFaceMode mode)
 	{
 		glCullFace((unsigned int)mode);
+	}
+	void Renderer::EnableBlend()
+	{
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	}
+	void Renderer::DisableBlend()
+	{
+		glDisable(GL_BLEND);
+	}
+	void Renderer::SetDepthWrite(bool enable)
+	{
+		glDepthMask(enable ? GL_TRUE : GL_FALSE);
 	}
 }

@@ -7,12 +7,16 @@
 #include "Loopie/Math/MathTypes.h"
 
 #include "Loopie/Components/Transform.h"
+#include "Loopie/Components/RectTransform.h"
 #include "Loopie/Components/Camera.h"
 #include "Loopie/Components/MeshRenderer.h"
 #include "Loopie/Components/ScriptClass.h"
 #include "Loopie/Components/Animator.h"
+#include "Loopie/Components/Canvas.h"
+#include "Loopie/Components/Image.h"
 
 #include "Loopie/Scripting/ScriptingManager.h"
+#include "Loopie/Importers/TextureImporter.h"
 
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Resources/ResourceManager.h"
@@ -46,8 +50,16 @@ namespace Loopie {
 				DrawEntityInspector(HierarchyInterface::s_SelectedEntity.lock());
 				break;
 			case InspectorMode::ImportMode:
-				DrawFileImportSettings(AssetsExplorerInterface::s_SelectedFile);
+			{
+				const std::filesystem::path& path = AssetsExplorerInterface::s_SelectedFile;
+				const bool hasInspectableFile = (!path.empty() && path.has_extension() && path.extension().string() == ".mat");
+				if (hasInspectableFile)
+					DrawFileImportSettings(path);
+				else
+					DrawEntityInspector(HierarchyInterface::s_SelectedEntity.lock());
+
 				break;
+			}
 			default:
 				break;
 			}
@@ -67,6 +79,9 @@ namespace Loopie {
 			if (component->GetTypeID() == Transform::GetTypeIDStatic()) {
 				DrawTransform(static_cast<Transform*>(component));
 			}
+			else if (component->GetTypeID() == RectTransform::GetTypeIDStatic()) {
+				DrawTransform(static_cast<RectTransform*>(component));
+			}
 			else if (component->GetTypeID() == Camera::GetTypeIDStatic()) {
 				DrawCamera(static_cast<Camera*>(component));
 			}
@@ -79,7 +94,12 @@ namespace Loopie {
 			else if (component->GetTypeID() == ScriptClass::GetTypeIDStatic()) {
 				DrawScriptClass(static_cast<ScriptClass*>(component));
 			}
-
+			else if (component->GetTypeID() == Canvas::GetTypeIDStatic()) {
+				DrawCanvas(static_cast<Canvas*>(component));
+			}
+			else if (component->GetTypeID() == Image::GetTypeIDStatic()) {
+				DrawImage(static_cast<Image*>(component));
+			}
 		}
 		AddComponent(entity);
 	}
@@ -137,7 +157,8 @@ namespace Loopie {
 	{
 		ImGui::PushID(transform);
 
-		bool open = ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen);
+		const char* label = transform->IsRectTransform() ? "Rect Transform" : "Transform";
+		bool open = ImGui::CollapsingHeader(label, ImGuiTreeNodeFlags_DefaultOpen);
 		bool modified = false;
 		
 		ComponentContextMenu(transform, false);
@@ -158,6 +179,17 @@ namespace Loopie {
 			if (ImGui::DragFloat3("Scale", &scale.x, 0.1f)) {
 				modified = true;
 				transform->SetLocalScale(scale);
+			}
+			if (transform->IsRectTransform())
+			{
+				float w = transform->GetWidth();
+				float h = transform->GetHeight();
+
+				if (ImGui::DragFloat("Width", &w, 1.f))
+					transform->SetWidth(w);
+
+				if (ImGui::DragFloat("Height", &h, 1.f))
+					transform->SetHeight(h);
 			}
 		}
 		ImGui::PopID();
@@ -183,8 +215,25 @@ namespace Loopie {
 			float farPlane = camera->GetFarPlane();
 			bool isMainCamera = Camera::GetMainCamera() == camera;
 
-			if (ImGui::DragFloat("Fov", &fov, 1.0f, 1.0f, 179.0f))
-				camera->SetFov(fov);
+			CameraProjection projection = camera->GetProjection();
+			int projIndex = (int)projection;
+			const char* projectionLabels[] = { "Perspective", "Orthographic" };
+
+			if (ImGui::Combo("Projection", &projIndex, projectionLabels, IM_ARRAYSIZE(projectionLabels))) {
+				camera->SetProjection((CameraProjection)projIndex);
+			}
+
+			if (camera->GetProjection() == CameraProjection::Perspective)
+			{
+				if (ImGui::DragFloat("Fov", &fov, 1.0f, 1.0f, 179.0f))
+					camera->SetFov(fov);
+			}
+			else
+			{
+				float orthoSize = camera->GetOrthoSize();
+				if (ImGui::DragFloat("Ortho Size", &orthoSize, 0.1f, 0.1f, 100000.0f))
+					camera->SetOrthoSize(orthoSize);
+			}
 
 			if (ImGui::DragFloat("Near Plane", &nearPlane, 0.01f, 0.01f, farPlane - 0.01f))
 				camera->SetNearPlane(nearPlane);
@@ -192,6 +241,7 @@ namespace Loopie {
 			if (ImGui::DragFloat("Far Plane", &farPlane, 1.0f, nearPlane + 0.1f, 10000.0f))
 				camera->SetFarPlane(farPlane);
 
+			ImGui::Separator();
 			if (ImGui::Checkbox("Main Camera", &isMainCamera)) {
 				if(isMainCamera)
 					camera->SetAsMainCamera();
@@ -695,6 +745,123 @@ namespace Loopie {
 				}
 			}
 		}
+		ImGui::PopID();
+	}
+
+	void InspectorInterface::DrawCanvas(Canvas* canvas)
+	{
+		ImGui::PushID(canvas);
+		bool open = ImGui::CollapsingHeader("Canvas");
+		if (RemoveComponent(canvas)) {
+			ImGui::PopID();
+			return;
+		}
+		if (open) {
+			CanvasRenderMode renderMode = canvas->GetRenderMode();
+			int modeIndex = (int)renderMode;
+			const char* modeLabels[] = { "World", "Overlay" };
+			if (ImGui::Combo("Render Mode", &modeIndex, modeLabels, IM_ARRAYSIZE(modeLabels))) {
+				canvas->SetRenderMode((CanvasRenderMode)modeIndex);
+			}
+			if (canvas->GetRenderMode() == CanvasRenderMode::ScreenSpaceOverlay)
+			{
+				//.............
+			}
+		}
+		ImGui::PopID();
+	}
+
+	void InspectorInterface::DrawImage(Image* image)
+	{
+		if (!image)
+			return;
+
+		ImGui::PushID(image);
+
+		bool open = ImGui::CollapsingHeader("Image");
+
+		if (RemoveComponent(image))
+		{
+			ImGui::PopID();
+			return;
+		}
+
+		if (open)
+		{
+			vec4 color = image->GetTint();
+			ImVec4 imColor(color.r, color.g, color.b, color.a);
+
+			ImGui::Text("Tint");
+			ImGui::SameLine();
+
+			if (ImGui::ColorEdit4("##ImageTint", (float*)&imColor))
+			{
+				image->SetTint(vec4(imColor.x, imColor.y, imColor.z, imColor.w));
+			}
+			ImGui::Separator();
+
+			std::shared_ptr<Texture> texture = image->GetTexture();
+			Metadata* meta = texture ? AssetRegistry::GetMetadata(texture->GetUUID()) : nullptr;
+
+			ImGui::Text("Texture: %s", meta ? "Assigned" : "None / Unknown");
+
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_EXPLORER_FILE"))
+				{
+					const char* droppedPath = (const char*)payload->Data;
+					if (droppedPath && TextureImporter::CheckIfIsImage(droppedPath))
+					{
+						Metadata& droppedMeta = AssetRegistry::GetOrCreateMetadata(droppedPath);
+						TextureImporter::ImportImage(droppedPath, droppedMeta);
+
+						std::shared_ptr<Texture> droppedTex = ResourceManager::GetTexture(droppedMeta);
+						if (droppedTex)
+							droppedTex->Load();
+
+						image->SetTexture(droppedTex);
+					}
+				}
+				ImGui::EndDragDropTarget();
+			}
+
+			texture = image->GetTexture();
+			if (texture)
+			{
+				meta = AssetRegistry::GetMetadata(texture->GetUUID());
+
+				if (meta && !meta->CachesPath.empty())
+					ImGui::Text("Path: %s", meta->CachesPath[0].c_str());
+
+				ivec2 texSize = texture->GetSize();
+				ImGui::Text("Size: %d x %d", texSize.x, texSize.y);
+
+				ImGui::Image((ImTextureID)texture->GetRendererId(), ImVec2(64, 64), ImVec2(1, 0), ImVec2(0, 1));
+
+				if (ImGui::BeginDragDropTarget())
+				{
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_EXPLORER_FILE"))
+					{
+						const char* droppedPath = (const char*)payload->Data;
+						if (droppedPath && TextureImporter::CheckIfIsImage(droppedPath))
+						{
+							Metadata& droppedMeta = AssetRegistry::GetOrCreateMetadata(droppedPath);
+							TextureImporter::ImportImage(droppedPath, droppedMeta);
+
+							std::shared_ptr<Texture> droppedTex = ResourceManager::GetTexture(droppedMeta);
+							if (droppedTex)
+								droppedTex->Load();
+
+							image->SetTexture(droppedTex);
+						}
+					}
+					ImGui::EndDragDropTarget();
+				}
+			}
+
+			ImGui::TextDisabled("Drag & drop an image from Assets Explorer onto the texture field/preview.");
+		}
+
 		ImGui::PopID();
 	}
 
