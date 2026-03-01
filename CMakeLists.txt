@@ -31,5 +31,6 @@ add_subdirectory("Loopie")
 add_subdirectory("LoopieEditor")
 add_subdirectory("LoopieScripting")
 add_subdirectory("LoopieCompiler")
+add_subdirectory("LoopieProjectBuild")
 
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT LoopieEditor)    

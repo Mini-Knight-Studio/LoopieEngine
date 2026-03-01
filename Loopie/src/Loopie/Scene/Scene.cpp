@@ -541,12 +541,9 @@ namespace Loopie {
 				if (!result.Found) {
 					configData.CreateField<std::string>("last_scene", "");
 				}
-				configData.SetValue<std::string>("last_scene", filePath);
+				std::filesystem::path relativePath = std::filesystem::relative(filePath, Application::GetInstance().m_activeProject.GetProjectPath().parent_path());
+				configData.SetValue<std::string>("last_scene", relativePath.string());
 				configData.ToFile(config.string());
-
-				/*Metadata* metadata = AssetRegistry::GetMetadata(filePath); /// Swap to UUID
-				if (metadata)
-					configData.SetValue<std::string>("last_scene", metadata->UUID.Get());*/
 			}
 		}
 

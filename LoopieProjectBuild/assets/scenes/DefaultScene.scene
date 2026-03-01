@@ -1,0 +1,45 @@
+{
+    "entities": [
+        {
+            "active": true,
+            "components": [
+                {
+                    "transform": {
+                        "euler_angles": {
+                            "x": 0.0,
+                            "y": -0.0,
+                            "z": 0.0
+                        },
+                        "position": {
+                            "x": 0.0,
+                            "y": 1.0,
+                            "z": -10.0
+                        },
+                        "rotation": {
+                            "w": 1.0,
+                            "x": 0.0,
+                            "y": 0.0,
+                            "z": 0.0
+                        },
+                        "scale": {
+                            "x": 1.0,
+                            "y": 1.0,
+                            "z": 1.0
+                        }
+                    }
+                },
+                {
+                    "camera": {
+                        "far_plane": 200.0,
+                        "fov": 60.0,
+                        "is_main_camera": true,
+                        "near_plane": 0.30000001192092896
+                    }
+                }
+            ],
+            "name": "MainCamera",
+            "parent_uuid": "8a75929e-d66a-185e-2413-586a815b6d70",
+            "uuid": "7be8bed2-1395-f0d2-b4ad-90234ff2a278"
+        }
+    ]
+}

@@ -56,7 +56,8 @@ namespace Loopie
 
 		JsonData data = Json::ReadFromFile(Application::GetInstance().m_activeProject.GetConfigPath());
 		JsonResult<std::string> result = data.Child("last_scene").GetValue<std::string>();
-		if (!result.Found || !m_currentScene->ReadAndLoadSceneFile(result.Result))
+		std::filesystem::path absolutePath = Application::GetInstance().m_activeProject.GetProjectPath().parent_path()/(result.Result);
+		if (!result.Found || !m_currentScene->ReadAndLoadSceneFile(absolutePath.string()))
 		{
 			CreateCity();
 			m_currentScene->CreateEntity({ 0,1,-10 }, { 1,0,0,0 }, { 1,1,1 }, nullptr, "MainCamera")->AddComponent<Camera>();
