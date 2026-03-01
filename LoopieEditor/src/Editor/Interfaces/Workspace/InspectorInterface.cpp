@@ -160,7 +160,7 @@ namespace Loopie {
 		const char* label = transform->IsRectTransform() ? "Rect Transform" : "Transform";
 		bool open = ImGui::CollapsingHeader(label, ImGuiTreeNodeFlags_DefaultOpen);
 		bool modified = false;
-		
+		ImGui::SetItemTooltip(transform->GetUUID().Get().c_str());
 		ComponentContextMenu(transform, false);
 
 		if (open) {
@@ -203,7 +203,7 @@ namespace Loopie {
 		ImGui::PushID(camera);
 
 		bool open = ImGui::CollapsingHeader("Camera");
-
+		ImGui::SetItemTooltip(camera->GetUUID().Get().c_str());
 		if (ComponentContextMenu(camera)) {
 			ImGui::PopID();
 			return;
@@ -255,7 +255,7 @@ namespace Loopie {
 		ImGui::PushID(meshRenderer);
 
 		bool open = ImGui::CollapsingHeader("Mesh Renderer");
-
+		ImGui::SetItemTooltip(meshRenderer->GetUUID().Get().c_str());
 		if (ComponentContextMenu(meshRenderer)) {
 			ImGui::PopID();
 			return;
@@ -352,7 +352,7 @@ namespace Loopie {
 		ImGui::PushID(animator);
 
 		bool open = ImGui::CollapsingHeader("Animator");
-
+		ImGui::SetItemTooltip(animator->GetUUID().Get().c_str());
 		if (ComponentContextMenu(animator)) {
 			ImGui::PopID();
 			return;
@@ -645,7 +645,7 @@ namespace Loopie {
 		ImGui::PushID(scriptClass);
 
 		bool open = ImGui::CollapsingHeader(scriptClass->GetClassName().c_str());
-
+		ImGui::SetItemTooltip(scriptClass->GetUUID().Get().c_str());
 		if (ComponentContextMenu(scriptClass)) {
 			ImGui::PopID();
 			return;
@@ -752,7 +752,8 @@ namespace Loopie {
 	{
 		ImGui::PushID(canvas);
 		bool open = ImGui::CollapsingHeader("Canvas");
-		if (RemoveComponent(canvas)) {
+		ImGui::SetItemTooltip(canvas->GetUUID().Get().c_str());
+		if (ComponentContextMenu(canvas)) {
 			ImGui::PopID();
 			return;
 		}
@@ -779,8 +780,8 @@ namespace Loopie {
 		ImGui::PushID(image);
 
 		bool open = ImGui::CollapsingHeader("Image");
-
-		if (RemoveComponent(image))
+		ImGui::SetItemTooltip(image->GetUUID().Get().c_str());
+		if (ComponentContextMenu(image))
 		{
 			ImGui::PopID();
 			return;
@@ -872,59 +873,136 @@ namespace Loopie {
 
 		ImGui::Separator();
 
-		static const char* previewLabel = "Add Component...";
-		static int selectedIndex = -1;
+		static ImGuiTextFilter filter;
+		static bool isOpen = false;
 
-		if (ImGui::BeginCombo("##AddComponentCombo", previewLabel))
+		bool forceClose = false;
+
+
+
+		ImGui::SetNextWindowSizeConstraints(ImVec2(350, 300),ImVec2(350, 600));
+
+		if (ImGui::BeginCombo("##AddComponentCombo", "Add Component..."))
 		{
-			if (!entity->HasComponent<Camera>())
+			ImGui::Text("Search");
+			ImGui::SameLine();
+			filter.Draw("Search", -1.0f);
+			ImGui::Separator();
+
+			ImVec4 windowBg = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
+			ImGui::PushStyleColor(ImGuiCol_ChildBg, windowBg);
+			ImGui::BeginChild("ComponentScrollRegion", ImVec2(0, 0), false);
+
+			bool searching = strlen(filter.InputBuf) > 0;
+
+			if (searching)
+				ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+			if(!isOpen)
+				ImGui::SetNextItemOpen(false, ImGuiCond_Always);
+			if (ImGui::CollapsingHeader("General"))
 			{
-				if (ImGui::Selectable("Camera"))
+				ImGui::Indent(8.0f);
+
+
+				if (filter.PassFilter("Animator"))
 				{
-					entity->AddComponent<Camera>();
-					ImGui::EndCombo();
-					return;
+					if (ImGui::Selectable("Animator"))
+					{
+						entity->AddComponent<Animator>();
+						forceClose = true;
+					}
 				}
-			}
 
-			if (ImGui::Selectable("Mesh Renderer"))
-			{
-				entity->AddComponent<MeshRenderer>();
-				ImGui::EndCombo();
-				return;
-			}
-
-			if (ImGui::Selectable("Animator"))
-			{
-				entity->AddComponent<Animator>();
-				ImGui::EndCombo();
-				return;
-			}
-
-
-			///// How To Add More Components
-			// 
-			//if (ImGui::Selectable(""))
-			//{
-			//    entity->AddComponent<>();
-			//    ImGui::EndCombo();
-			//    return;
-			//}
-
-			const std::unordered_map<std::string, std::shared_ptr<ScriptingClass>>& scriptingClasses = ScriptingManager::s_Data.ScriptingClasses;
-			for(const auto& scriptClass : scriptingClasses)
-			{
-				if (ImGui::Selectable(scriptClass.second->GetClassName().c_str()))
+				if (!entity->HasComponent<Camera>() && filter.PassFilter("Camera"))
 				{
-					entity->AddComponent<ScriptClass>(scriptClass.first);
-					ImGui::EndCombo();
-					return;
+					if (ImGui::Selectable("Camera"))
+					{
+						entity->AddComponent<Camera>();
+						forceClose = true;
+					}
 				}
+
+				if (filter.PassFilter("Mesh Renderer"))
+				{
+					if (ImGui::Selectable("Mesh Renderer"))
+					{
+						entity->AddComponent<MeshRenderer>();
+						forceClose = true;
+					}
+				}
+
+				ImGui::Unindent(8.0f);
 			}
 
-			
+			if (searching)
+				ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+			if (!isOpen)
+				ImGui::SetNextItemOpen(false, ImGuiCond_Always);
+			if (ImGui::CollapsingHeader("UI"))
+			{
+				ImGui::Indent(8.0f);
+				if (filter.PassFilter("Canvas"))
+				{
+					if (ImGui::Selectable("Canvas"))
+					{
+						entity->AddComponent<Canvas>();
+						forceClose = true;
+					}
+				}
 
-			ImGui::EndCombo();
+				if (filter.PassFilter("Image"))
+				{
+					if (ImGui::Selectable("Image"))
+					{
+						entity->AddComponent<Image>();
+						forceClose = true;
+					}
+				}
+				ImGui::Unindent(8.0f);
+			}
+
+			if (searching)
+				ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+			if (!isOpen)
+				ImGui::SetNextItemOpen(false, ImGuiCond_Always);
+			if (ImGui::CollapsingHeader("Scripts"))
+			{
+				ImGui::Indent(8.0f);
+				const auto& scriptingClasses = ScriptingManager::s_Data.ScriptingClasses;
+
+				for (const auto& scriptClass : scriptingClasses)
+				{
+					if (!scriptClass.second)
+						continue;
+
+					const std::string& className = scriptClass.second->GetClassName();
+
+					if (!filter.PassFilter(className.c_str()))
+						continue;
+
+					if (ImGui::Selectable(className.c_str()))
+					{
+						entity->AddComponent<ScriptClass>(scriptClass.first);
+						forceClose = true;
+					}
+				}
+				ImGui::Unindent(8.0f);
+			}
+
+			if (forceClose) {
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::EndChild();
+			ImGui::PopStyleColor();
+			ImGui::EndCombo();	
+
+			isOpen = true;
+		}
+		else
+		{
+			filter.InputBuf[0] = '\0';
+			isOpen = false;
 		}
 	}
 

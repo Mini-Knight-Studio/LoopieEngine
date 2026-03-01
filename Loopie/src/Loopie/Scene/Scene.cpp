@@ -498,6 +498,7 @@ namespace Loopie {
 						if (canvas)
 						{
 							canvas->Deserialize(node);
+							canvas->SetUUID(componentUUID.Get());
 						}
 					}
 					else if (componentNode.Contains("image"))
@@ -507,6 +508,7 @@ namespace Loopie {
 						if (image)
 						{
 							image->Deserialize(node);
+							image->SetUUID(componentUUID.Get());
 						}
 					}
 				}
