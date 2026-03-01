@@ -74,10 +74,10 @@ namespace Loopie {
 		s_OnEntitySelected.Notify(OnEntityOrFileNotification::OnEntitySelect);
 	}
 
-	void HierarchyInterface::DrawEntitySlot(const std::shared_ptr<Entity>& entity, bool active)
+	void HierarchyInterface::DrawEntitySlot(const std::shared_ptr<Entity> entity, bool active)
 	{
 		ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-		const auto& children = entity->GetChildren();
+		const auto children = entity->GetChildren();
 		bool hasChildren = !children.empty();
 
 		if (!hasChildren)
@@ -123,7 +123,7 @@ namespace Loopie {
 		}
 	}
 
-	void HierarchyInterface::DrawContextMenu(const std::shared_ptr<Entity>& entity)
+	void HierarchyInterface::DrawContextMenu(const std::shared_ptr<Entity> entity)
 	{
 
 		//// EXPAND MAYBE WITH A CUSTOM CREATOR -> MenuItem class (contains an Execute function, label, active Condition)???
@@ -221,7 +221,7 @@ namespace Loopie {
 
 	}
 
-	void HierarchyInterface::Drag(const std::shared_ptr<Entity>& entity)
+	void HierarchyInterface::Drag(const std::shared_ptr<Entity> entity)
 	{
 		if (ImGui::BeginDragDropSource())
 		{
@@ -234,7 +234,7 @@ namespace Loopie {
 		}
 	}
 
-	void HierarchyInterface::Drop(const std::shared_ptr<Entity>& entity)
+	void HierarchyInterface::Drop(const std::shared_ptr<Entity> entity)
 	{
 		if (ImGui::BeginDragDropTarget())
 		{
@@ -257,7 +257,7 @@ namespace Loopie {
 	}
 
 
-	std::shared_ptr<Entity> HierarchyInterface::CreatePrimitiveModel(const std::string& modelPath, const std::string& name, const std::shared_ptr<Entity>& parent)
+	std::shared_ptr<Entity> HierarchyInterface::CreatePrimitiveModel(const std::string& modelPath, const std::string& name, const std::shared_ptr<Entity> parent)
 	{
 		std::shared_ptr<Entity> newEntity = m_scene->CreateEntity(name, parent);
 		MeshRenderer* renderer = newEntity->AddComponent<MeshRenderer>();
@@ -271,7 +271,7 @@ namespace Loopie {
 		return newEntity;
 	}
 	
-	std::shared_ptr<Entity> HierarchyInterface::CreateCanvas(const std::string& name, const std::shared_ptr<Entity>& parent)
+	std::shared_ptr<Entity> HierarchyInterface::CreateCanvas(const std::string& name, const std::shared_ptr<Entity> parent)
 	{
 		std::shared_ptr<Entity> newEntity = m_scene->CreateEntity(name, parent);
 		newEntity->ReplaceTransform<RectTransform>();
@@ -279,7 +279,7 @@ namespace Loopie {
 
 		return newEntity;
 	}
-	std::shared_ptr<Entity> HierarchyInterface::CreateImage(const std::string& name, const std::shared_ptr<Entity>& parent)
+	std::shared_ptr<Entity> HierarchyInterface::CreateImage(const std::string& name, const std::shared_ptr<Entity> parent)
 	{
 		std::shared_ptr<Entity> canvasEntity = parent;
 
