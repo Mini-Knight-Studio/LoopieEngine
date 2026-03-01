@@ -42,7 +42,7 @@ namespace Loopie
         float m_moveSpeed = 10.f;
 		float m_faastMoveSpeed = 30.f;
 		float m_movementScale = 1.f;
-        float m_movementScaleIncrement = 0.1;
+        float m_movementScaleIncrement = 0.1f;
 
         float m_speedAccumulation = 0;
         float m_speedIncrementalPercentage = 15.f;

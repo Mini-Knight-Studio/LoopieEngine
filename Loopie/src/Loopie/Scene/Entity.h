@@ -25,7 +25,7 @@ namespace Loopie {
 		T* AddComponent(Args&&... args)
 		{
 			if constexpr (std::is_same_v<T, Transform>) {
-				if (m_transform && typeid(*m_transform) == typeid(T))
+				if (m_transform && m_transform->GetTypeID() == T::GetTypeIDStatic())
 					return static_cast<T*>(m_transform);
 			}
 

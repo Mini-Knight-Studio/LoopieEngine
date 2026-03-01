@@ -40,9 +40,9 @@ namespace Loopie
 		ScriptingContext& context = ScriptingManager::GetContext();
 
 		std::string projectDir = Application::GetInstance().m_activeProject.GetGameDLLPath().string();
-		context.CoreAssemblyFilepath = "../LoopieScripting/Loopie.Core.dll";
+		context.CoreAssemblyFilepath = "../Loopie/Loopie.Core.dll";
 		context.AppAssemblyFilepath = projectDir;
-		context.CompilerAssemblyFilepath = "../LoopieCompiler/Loopie.ScriptCompiler.dll";
+		context.CompilerAssemblyFilepath = "../Loopie/Loopie.ScriptCompiler.dll";
 		context.EnableRecompile = true;
 
 		ScriptingManager::Init();

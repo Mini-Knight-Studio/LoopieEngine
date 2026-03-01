@@ -79,6 +79,8 @@ namespace Loopie {
 		{
 			return it->second;
 		}
+
+		return RendererData();
 	}
 
 	void Animator::ClearRenderers()
@@ -194,7 +196,7 @@ namespace Loopie {
 		if (!m_currentClip || !m_isPlaying)
 			return;
 
-		m_currentTime += m_playbackSpeed * Time::GetDeltaTime();
+		m_currentTime += m_playbackSpeed * (float)Time::GetDeltaTime();
 
 		float clipDuration = m_currentClip->Duration;
 

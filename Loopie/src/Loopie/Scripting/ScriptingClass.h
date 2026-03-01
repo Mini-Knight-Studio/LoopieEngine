@@ -51,10 +51,10 @@ namespace Loopie {
 
 	struct ScriptField
 	{
-		ScriptFieldType Type;
+		ScriptFieldType Type = ScriptFieldType::Byte;
 		std::string Name;
 
-		_MonoClassField* ClassField;
+		_MonoClassField* ClassField = nullptr;
 	};
 
 	class ScriptingClass {

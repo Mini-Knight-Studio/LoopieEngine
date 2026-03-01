@@ -111,7 +111,7 @@ namespace Loopie
 
         if (m_isCameraMoving) {
             float increaseAmount = (moveSpeed * m_speedIncrementalPercentage) / 100.f;
-            m_speedAccumulation += increaseAmount * Time::GetDeltaTime();
+            m_speedAccumulation += increaseAmount * (float)Time::GetDeltaTime();
         }
         else {
             m_speedAccumulation = 0;

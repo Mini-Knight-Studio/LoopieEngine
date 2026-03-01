@@ -33,7 +33,7 @@ namespace Loopie {
 		static double GetExecutionTimeMs() { return s_ExecutionTime * 1000.f; }
 
 		static int GetFrameCount() { return s_FrameCount; }
-		static double GetTimeScale() { return s_TimeScale; }
+		static float GetTimeScale() { return s_TimeScale; }
 
 	private:
 		static double s_LastFrameTime;
@@ -44,7 +44,7 @@ namespace Loopie {
 
 		// Game Clock
 		static double s_DeltaTime;
-		static double s_TimeScale;
+		static float s_TimeScale;
 		static double s_RunTime;
 
 		//Real Time Clock

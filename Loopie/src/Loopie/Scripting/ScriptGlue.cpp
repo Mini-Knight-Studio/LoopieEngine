@@ -799,12 +799,12 @@ namespace Loopie
 #pragma region Time
 	static float Time_GetDeltaTime()
 	{
-		return Time::GetDeltaTime();
+		return (float)Time::GetDeltaTime();
 	}
 
 	static float Time_GetFixedDeltaTime()
 	{
-		return Time::GetFixedDeltaTime();
+		return (float)Time::GetFixedDeltaTime();
 	}
 
 	static float Time_GetTimeScale()

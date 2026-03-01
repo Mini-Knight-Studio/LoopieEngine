@@ -143,7 +143,7 @@ namespace Loopie {
 		if (!bones.empty())
 		{
 
-			size_t count = std::min(bones.size(), size_t(100));
+			int count = std::min((int)bones.size(), 100);
 			material->GetShader().SetUniformMat4Array("lp_Bones", bones.data(), count);
 			
 		}

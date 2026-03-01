@@ -282,7 +282,7 @@ namespace Loopie {
 				Metadata* data = AssetRegistry::GetMetadata(mesh->GetUUID());
 				if (data && data->Type == ResourceType::MESH)
 				{
-					int maxIndex = data->CachesPath.size();
+					int maxIndex = (int)data->CachesPath.size();
 					if (meshIndex >= maxIndex)
 						meshIndex = maxIndex - 1;
 					std::shared_ptr<Mesh> newMesh = ResourceManager::GetMesh(*data, meshIndex);
@@ -301,7 +301,7 @@ namespace Loopie {
 					Metadata* data = AssetRegistry::GetMetadata(UUID(uuid));
 					if (data && data->Type == ResourceType::MESH)
 					{
-						int maxIndex = data->CachesPath.size();
+						int maxIndex = (int)data->CachesPath.size();
 						if (meshIndex >= maxIndex)
 							meshIndex = maxIndex - 1;
 						std::shared_ptr<Mesh> newMesh = ResourceManager::GetMesh(*data, meshIndex);
@@ -378,7 +378,7 @@ namespace Loopie {
 					std::shared_ptr<Entity> owner = renderer->GetOwner();
 					auto allRenderersInEntity = owner->GetComponents<MeshRenderer>();
 					int rendererIndex = 0;
-					for (size_t i = 0; i < allRenderersInEntity.size(); i++) {
+					for (int i = 0; i < allRenderersInEntity.size(); i++) {
 						if (allRenderersInEntity[i] == renderer) {
 							rendererIndex = i;
 							break;
@@ -547,7 +547,7 @@ namespace Loopie {
 					std::string targetLabel = owner->GetName();
 					if (allRenderersInEntity.size() > 1) {
 						int idx = 0;
-						for (size_t i = 0; i < allRenderersInEntity.size(); i++) {
+						for (int i = 0; i < allRenderersInEntity.size(); i++) {
 							if (allRenderersInEntity[i] == targetRenderer) {
 								idx = i;
 								break;
@@ -571,7 +571,7 @@ namespace Loopie {
 							std::string displayName = rOwner->GetName();
 							if (rRenderers.size() > 1) {
 								int idx = 0;
-								for (size_t i = 0; i < rRenderers.size(); i++) {
+								for (int i = 0; i < rRenderers.size(); i++) {
 									if (rRenderers[i] == renderer) {
 										idx = i;
 										break;
@@ -678,7 +678,7 @@ namespace Loopie {
 				case ScriptFieldType::Double:
 				{
 					double v = isRuntime ? scriptClass->GetRuntimeFieldValue<double>(name) : scriptClass->GetFieldValue<double>(name);
-					if (ImGui::DragScalar(name.c_str(), ImGuiDataType_Double, &v, 0.1))
+					if (ImGui::DragScalar(name.c_str(), ImGuiDataType_Double, &v, 0.1f))
 						isRuntime ? scriptClass->SetRuntimeFieldValue(name, v) : scriptClass->SetFieldValue(name, v);
 					break;
 				}

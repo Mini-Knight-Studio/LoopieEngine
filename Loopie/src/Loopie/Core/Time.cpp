@@ -5,7 +5,7 @@ namespace Loopie
 	double Time::s_LastFrameTime = 0;
 	int Time::s_FrameCount = 0;
 	double Time::s_FixedDeltaTime = 0.2f;
-	double Time::s_TimeScale = 1;
+	float Time::s_TimeScale = 1;
 	double Time::s_DeltaTime = 0;
 	double Time::s_RunTime = 0;
 	double Time::s_ExecutionTime = 0;
