@@ -14,7 +14,7 @@
 #include "Loopie/Components/Animator.h"
 #include "Loopie/Components/Canvas.h"
 #include "Loopie/Components/Image.h"
-
+#include "Loopie/Components/BoxCollider.h"
 #include "Loopie/Scripting/ScriptingManager.h"
 #include "Loopie/Importers/TextureImporter.h"
 
@@ -99,6 +99,9 @@ namespace Loopie {
 			}
 			else if (component->GetTypeID() == Image::GetTypeIDStatic()) {
 				DrawImage(static_cast<Image*>(component));
+			}
+			else if (component->GetTypeID() == BoxCollider::GetTypeIDStatic()) {
+				DrawBoxCollider(static_cast<BoxCollider*>(component));
 			}
 		}
 		AddComponent(entity);
@@ -931,6 +934,13 @@ namespace Loopie {
 					}
 				}
 
+				if (filter.PassFilter("Box Collider")) {
+					if (ImGui::Selectable("Box Collider")) {
+						entity->AddComponent<BoxCollider>();
+						forceClose = true;
+					}
+				}
+
 				ImGui::Unindent(8.0f);
 			}
 
@@ -1200,5 +1210,25 @@ namespace Loopie {
 			ImGui::EndPopup();
 		}
 		return false;
+	}
+	void InspectorInterface::DrawBoxCollider(BoxCollider* boxCollider) {
+		ImGui::PushID(boxCollider);
+		if (ImGui::CollapsingHeader("Box Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
+			ComponentContextMenu(boxCollider);
+
+			vec3 center = boxCollider->GetLocalCenter();
+			vec3 extents = boxCollider->GetLocalExtents();
+			bool draw = boxCollider->GetDrawGizmo();
+
+			if (ImGui::DragFloat3("Center", &center.x, 0.01f))
+				boxCollider->SetLocalCenter(center);
+
+			if (ImGui::DragFloat3("Extents", &extents.x, 0.01f))
+				boxCollider->SetLocalExtents(extents);
+
+			if (ImGui::Checkbox("Visible Lines", &draw))
+				boxCollider->SetDrawGizmo(draw);
+		}
+		ImGui::PopID();
 	}
 }
