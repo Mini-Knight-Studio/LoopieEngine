@@ -102,7 +102,7 @@ namespace Loopie {
 			return;
 		}
 
-		std::filesystem::path relative = "../LoopieScripting/Loopie.Core.dll";
+		std::filesystem::path relative = "../Loopie/Loopie.Core.dll";
 
 		csProjString = ReplaceAll(csProjString, "ENGINE_DLL_PATH", std::filesystem::absolute(relative).string());
 

@@ -8,22 +8,22 @@ namespace Loopie
     {
         #region Log
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void NativeLog(string parameter);
+        internal extern static void NativeLog(string parameter, int mode);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void NativeLog_Int(int parameter);
+        internal extern static void NativeLog_Int(int parameter, int mode);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void NativeLog_Float(float parameter);
+        internal extern static void NativeLog_Float(float parameter, int mode);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void NativeLog_Vector2(Vector2 parameter);
+        internal extern static void NativeLog_Vector2(Vector2 parameter, int mode);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void NativeLog_Vector3(Vector3 parameter);
+        internal extern static void NativeLog_Vector3(Vector3 parameter, int mode);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void NativeLog_Vector4(Vector4 parameter);
+        internal extern static void NativeLog_Vector4(Vector4 parameter, int mode);
         #endregion
         #region Transform
             [MethodImplAttribute(MethodImplOptions.InternalCall)]

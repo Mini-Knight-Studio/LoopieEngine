@@ -40,35 +40,35 @@ namespace Loopie
 	#define ADD_INTERNAL_CALL(Name) mono_add_internal_call("Loopie.InternalCalls::" #Name, Name)
 
 #pragma region Log
-	static void NativeLog(MonoString* parameter)
+	static void NativeLog(MonoString* parameter, int mode)
 	{
 		std::string str = Utils::MonoStringToString(parameter);
-		Log::Warn("{0}", str);
+		Log::ByType(mode,"{0}", str);
 	}
 
-	static void NativeLog_Int(int parameter)
+	static void NativeLog_Int(int parameter, int mode)
 	{
-		Log::Warn("{0}", parameter);
+		Log::ByType(mode, "{0}", parameter);
 	}
 
-	static void NativeLog_Float(float parameter)
+	static void NativeLog_Float(float parameter, int mode)
 	{
-		Log::Warn("{0}", parameter);
+		Log::ByType(mode, "{0}", parameter);
 	}
 
-	static void NativeLog_Vector2(vec2* parameter)
+	static void NativeLog_Vector2(vec2* parameter, int mode)
 	{
-		Log::Warn("{0} {1}", parameter->x, parameter->y);
+		Log::ByType(mode, "{0} {1}", parameter->x, parameter->y);
 	}
 
-	static void NativeLog_Vector3(vec3* parameter)
+	static void NativeLog_Vector3(vec3* parameter, int mode)
 	{
-		Log::Warn("{0} {1} {2}", parameter->x, parameter->y, parameter->z);
+		Log::ByType(mode, "{0} {1} {2}", parameter->x, parameter->y, parameter->z);
 	}
 
-	static void NativeLog_Vector4(vec4* parameter)
+	static void NativeLog_Vector4(vec4* parameter, int mode)
 	{
-		Log::Warn("{0} {1} {2} {3}", parameter->x, parameter->y, parameter->z, parameter->w);
+		Log::ByType(mode, "{0} {1} {2} {3}", parameter->x, parameter->y, parameter->z, parameter->w);
 	}
 #pragma endregion
 

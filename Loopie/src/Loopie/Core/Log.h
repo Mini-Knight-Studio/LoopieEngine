@@ -50,6 +50,11 @@ namespace Loopie {
             LogMessage(spdlog::level::critical, fmt::format(msg, std::forward<Args>(args)...));
         }
 
+        template <typename... Args>
+        static void ByType(int level, const char* msg, Args&&... args) {
+            LogMessage((spdlog::level::level_enum)level, fmt::format(msg, std::forward<Args>(args)...));
+        }
+
 		static const std::vector<LogEntry>& GetLogEntries() { return s_LogEntries; }
 		static void Clear() { s_LogEntries.clear(); }
 
