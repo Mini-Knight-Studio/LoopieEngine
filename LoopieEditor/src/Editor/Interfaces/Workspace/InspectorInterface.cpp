@@ -118,7 +118,6 @@ namespace Loopie {
 		if (ImGui::Button("UUID"))
 		{
 			Application::GetInstance().m_clipboard.Copy(entity->GetUUID().Get());
-			Log::Warn("{0}", Application::GetInstance().m_clipboard.Paste());
 		}
 		
 		ImGui::Separator();
@@ -240,7 +239,7 @@ namespace Loopie {
 			}
 			if (ImGui::Button("Paste"))
 			{
-				std::string uuid = Application::GetInstance().m_clipboard.Paste();
+				std::string uuid = Application::GetInstance().m_clipboard.Paste()[0];
 				if (UUID::IsValid(uuid))
 				{
 					Metadata* data = AssetRegistry::GetMetadata(UUID(uuid));
@@ -631,7 +630,6 @@ namespace Loopie {
 			if (ImGui::MenuItem("Copy UUID"))
 			{
 				Application::GetInstance().m_clipboard.Copy(component->GetUUID().Get());
-				Log::Warn("{0}", Application::GetInstance().m_clipboard.Paste());
 			}
 			if (canRemove && ImGui::MenuItem("Remove Component"))
 			{
