@@ -17,10 +17,16 @@ namespace Loopie
             m_data.reserve(sizeof...(args));
             (m_data.emplace_back(std::forward<Args>(args)), ...);
         };
-        std::vector<T> Paste()
+        const std::vector<T>& Paste()
         {
             return m_data;
         };
+
+        const T& PasteFirst()
+        {
+            return m_data.front();
+        };
+
     private:
         std::vector<T> m_data;
     };
