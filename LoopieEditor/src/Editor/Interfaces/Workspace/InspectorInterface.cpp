@@ -934,6 +934,19 @@ namespace Loopie {
 					}
 				}
 
+				ImGui::Unindent(8.0f);
+			}
+
+
+
+			if (searching)
+				ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+			if (!isOpen)
+				ImGui::SetNextItemOpen(false, ImGuiCond_Always);
+			if (ImGui::CollapsingHeader("Collisions"))
+			{
+				ImGui::Indent(8.0f);
+
 				if (filter.PassFilter("Box Collider")) {
 					if (ImGui::Selectable("Box Collider")) {
 						entity->AddComponent<BoxCollider>();
@@ -943,6 +956,8 @@ namespace Loopie {
 
 				ImGui::Unindent(8.0f);
 			}
+
+
 
 			if (searching)
 				ImGui::SetNextItemOpen(true, ImGuiCond_Always);
@@ -970,6 +985,8 @@ namespace Loopie {
 				}
 				ImGui::Unindent(8.0f);
 			}
+
+
 
 			if (searching)
 				ImGui::SetNextItemOpen(true, ImGuiCond_Always);

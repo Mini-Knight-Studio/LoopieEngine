@@ -1,22 +1,33 @@
 #include "BoxCollider.h"
+
+#include "Loopie/Collisions/CollisionProcessor.h"
+
+#include "Loopie/Components/MeshRenderer.h"
 #include "Loopie/Components/Transform.h"
 #include "Loopie/Render/Gizmo.h"
 #include "Loopie/Core/Log.h"
 #include "Loopie/Core/Application.h"
+
 namespace Loopie {
 
     BoxCollider::BoxCollider() {}
 
     BoxCollider::~BoxCollider() {
-        if (GetOwner() && GetOwner()->HasComponent<Transform>()) {
-            Transform* t = GetTransform();
-            if (t) {
-                t->m_transformNotifier.RemoveObserver(this);
-            }
-        }
+        GetTransform()->m_transformNotifier.RemoveObserver(this);
+        CollisionProcessor::Unregister(this);
     }
     void BoxCollider::Init() {
         GetTransform()->m_transformNotifier.AddObserver(this);
+        CollisionProcessor::Register(this);
+        if (GetOwner()->HasComponent<MeshRenderer>()) {
+			MeshRenderer* meshRenderer = GetOwner()->GetComponent<MeshRenderer>();
+            if (meshRenderer->GetMesh()) {
+                m_worldOBB = meshRenderer->GetMesh()->GetData().BoundingBox.ToOBB();
+                m_localCenter = m_worldOBB.Center;
+                m_localExtents = m_worldOBB.Extents;
+            }
+        }
+
         RecalculateOBB();
     }
 
@@ -28,7 +39,7 @@ namespace Loopie {
 
     void BoxCollider::RenderGizmo() {
         if (m_drawGizmo) {
-            vec4 color = m_wasCollidingLastFrame ? vec4(1.0f, 0.0f, 0.0f, 1.0f) : vec4(0.0f, 1.0f, 0.0f, 1.0f);
+            vec4 color = m_colliding ? vec4(1.0f, 0.0f, 0.0f, 1.0f) : vec4(0.0f, 1.0f, 0.0f, 1.0f);
 
             Gizmo::DrawCube(GetWorldOBB().GetCorners(), color);
         }
@@ -37,6 +48,11 @@ namespace Loopie {
     const OBB& BoxCollider::GetWorldOBB() const {
         RecalculateOBB();
         return m_worldOBB;
+    }
+
+    const AABB& BoxCollider::GetWorldAABB() const {
+        RecalculateOBB();
+        return m_cachedAABB;
     }
 
     void BoxCollider::RecalculateOBB() const {
@@ -49,6 +65,9 @@ namespace Loopie {
         m_worldOBB.Axes[2] = vec3(0, 0, 1);
 
         m_worldOBB.ApplyTransform(GetTransform()->GetLocalToWorldMatrix());
+
+        m_cachedAABB = m_worldOBB.ToAABB();
+
         m_obbDirty = false;
     }
 
@@ -56,40 +75,7 @@ namespace Loopie {
         if (!other) return false;
         return GetWorldOBB().Intersects(other->GetWorldOBB());
     }
-    void BoxCollider::OnUpdate()
-    {
-        if (!GetIsActive()) return;
 
-        auto& scene = Application::GetInstance().GetScene();
-        const auto& entities = scene.GetAllEntities();
-
-        bool isCurrentlyColliding = false;
-
-        for (const auto& [uuid, entity] : entities)
-        {
-            if (entity == GetOwner() || !entity->GetIsActive()) continue;
-
-            if (entity->HasComponent<BoxCollider>())
-            {
-                auto* other = entity->GetComponent<BoxCollider>();
-
-                if (other && other->GetIsActive() && this->Intersects(other))
-                {
-                    isCurrentlyColliding = true;
-
-                    if (!m_wasCollidingLastFrame)
-                    {
-                        Log::Info("DEBUG COLLISION: [{0}] touching [{1}]",
-                            GetOwner()->GetName(),
-                            entity->GetName());
-                    }
-                    break;
-                }
-            }
-        }
-
-        m_wasCollidingLastFrame = isCurrentlyColliding;
-    }
     JsonNode BoxCollider::Serialize(JsonNode& parent) const {
         JsonNode node = parent.CreateObjectField("boxcollider");
 
