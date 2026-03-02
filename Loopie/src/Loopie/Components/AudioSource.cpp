@@ -1,5 +1,5 @@
 #include "AudioSource.h"
-#include "Loopie/Core/AudioManager.h"
+#include "Loopie/Audio/AudioManager.h"
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Resources/ResourceManager.h"
 
@@ -18,12 +18,12 @@ namespace Loopie {
     }
 
 	void AudioSource::LoadResource() {
-        if (audioClips.empty()) 
+        if (m_audioClips.empty())
             return;
-        if (currentClipIndex < 0 || currentClipIndex >= audioClips.size()) 
+        if (m_currentClipIndex < 0 || m_currentClipIndex >= m_audioClips.size())
             return;
 
-        auto clip = audioClips[currentClipIndex];
+        auto clip = m_audioClips[m_currentClipIndex];
         if (!clip) 
             return;
 
@@ -56,7 +56,7 @@ namespace Loopie {
             m_channel->isPlaying(&isPlaying);
             if (isPlaying) m_channel->set3DAttributes(&pos, &vel);
 
-            if (usePlaylist && m_hasStarted)
+            if (m_usePlaylist && m_hasStarted)
             {
 
                 if (!isPlaying) {
@@ -67,31 +67,31 @@ namespace Loopie {
 	}
 
     void AudioSource::NextTrack() {
-        if (audioClips.empty()) return;
+        if (m_audioClips.empty()) return;
 
-        currentClipIndex = (currentClipIndex + 1) % audioClips.size();
+        m_currentClipIndex = (m_currentClipIndex + 1) % m_audioClips.size();
 
-        SetCurrentClip(currentClipIndex);
+        SetCurrentClip(m_currentClipIndex);
 
         Play();
     }
 
     void AudioSource::AddClip(std::shared_ptr<AudioClip> path) {
-        audioClips.push_back(path);
+        m_audioClips.push_back(path);
     }
 
     void AudioSource::SetCurrentClip(int index) {
-        if (index >= 0 && index < audioClips.size()) {
-            currentClipIndex = index;
+        if (index >= 0 && index < m_audioClips.size()) {
+            m_currentClipIndex = index;
             LoadResource();
         }
     }
 
     void AudioSource::Play() {
-        if (audioClips.empty() || currentClipIndex < 0 || currentClipIndex >= audioClips.size())
+        if (m_audioClips.empty() || m_currentClipIndex < 0 || m_currentClipIndex >= m_audioClips.size())
             return;
 
-        auto clip = audioClips[currentClipIndex];
+        auto clip = m_audioClips[m_currentClipIndex];
         if (!clip)
             return;
 
@@ -109,7 +109,7 @@ namespace Loopie {
             m_channel = newChannel;
             if (m_channel) {
                 FMOD_MODE mode = FMOD_3D | FMOD_3D_LINEARROLLOFF;
-                mode |= loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF;
+                mode |= m_loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF;
 
                 m_channel->setMode(mode);
                 m_channel->set3DMinMaxDistance(m_minDistance, m_maxDistance);
@@ -137,10 +137,10 @@ namespace Loopie {
     }
 
     void AudioSource::SetLoop(bool active) {
-        loop = active;
+        m_loop = active;
 
         if (!m_isEvent && m_channel) {
-            FMOD_MODE mode = loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF;
+            FMOD_MODE mode = m_loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF;
             m_channel->setMode(mode);
         }
     }
@@ -183,14 +183,19 @@ namespace Loopie {
     }
 
     JsonNode AudioSource::Serialize(JsonNode& parent) const {
-        JsonNode transformObj = parent.CreateObjectField("AudioSource");
-        transformObj.CreateField("loop", loop);
-        transformObj.CreateField("playOnAwake", playOnAwake);
-        transformObj.CreateField("usePlaylist", usePlaylist);
-        transformObj.CreateField("currentClipIndex", currentClipIndex);
+        JsonNode transformObj = parent.CreateObjectField("audiosource");
+        transformObj.CreateField("loop", m_loop);
+        transformObj.CreateField("pitch", m_pitch);
+        transformObj.CreateField("volume", m_volume);
+        transformObj.CreateField("pan", m_pan);
+        transformObj.CreateField("minDistance", m_minDistance);
+        transformObj.CreateField("maxDistance", m_maxDistance);
+        transformObj.CreateField("playOnAwake", m_playOnAwake);
+        transformObj.CreateField("usePlaylist", m_usePlaylist);
+        transformObj.CreateField("currentClipIndex", m_currentClipIndex);
         JsonNode clipsArray = transformObj.CreateObjectField("audioClips");
         int arrayIndex = 0;
-        for (const auto& clip : audioClips) {
+        for (const auto& clip : m_audioClips) {
 
             clipsArray.CreateField(std::to_string(arrayIndex), clip->GetUUID().Get());
             arrayIndex++;
@@ -200,11 +205,16 @@ namespace Loopie {
     }
 
     void AudioSource::Deserialize(const JsonNode& data) {
-        data.GetValue<bool>("loop", loop);
-        data.GetValue<bool>("playOnAwake", playOnAwake);
-        data.GetValue<bool>("usePlaylist", usePlaylist);
-        data.GetValue<int>("currentClipIndex", currentClipIndex);
-        audioClips.clear();
+        m_loop = data.GetValue<bool>("loop", false).Result;
+        m_pitch = data.GetValue<float>("pitch", 1).Result;
+        m_volume = data.GetValue<float>("volume", 1).Result;
+        m_pan = data.GetValue<float>("pan", 0).Result;
+        m_minDistance = data.GetValue<float>("minDistance", 2).Result;
+        m_maxDistance = data.GetValue<float>("maxDistance", 30).Result;
+        m_playOnAwake = data.GetValue<bool>("playOnAwake", true).Result;
+        m_usePlaylist = data.GetValue<bool>("usePlaylist", false).Result;
+        m_currentClipIndex = data.GetValue<int>("currentClipIndex", 0).Result;
+        m_audioClips.clear();
 
         JsonNode clipsArray = data.Child("audioClips");
         int arrayAmount = clipsArray.Size();

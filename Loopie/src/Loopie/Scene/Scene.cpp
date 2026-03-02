@@ -550,15 +550,17 @@ namespace Loopie {
 						if (audioSource)
 						{
 							audioSource->Deserialize(node);
+							audioSource->SetUUID(componentUUID.Get());
 						}
 					}
 					else if (componentNode.Contains("audiolistener"))
 					{
 						JsonNode node = componentNode.Child("audiolistener");
-						auto audioSource = entity->AddComponent<AudioListener>();
-						if (audioSource)
+						auto audioListener = entity->AddComponent<AudioListener>();
+						if (audioListener)
 						{
-							audioSource->Deserialize(node);
+							audioListener->Deserialize(node);
+							audioListener->SetUUID(componentUUID.Get());
 						}
 					}
 				}

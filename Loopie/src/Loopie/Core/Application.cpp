@@ -5,7 +5,7 @@
 #include "Loopie/Core/Time.h"
 #include "Loopie/Render/Renderer.h"
 #include "Loopie/Scripting/ScriptingManager.h"
-#include "Loopie/Core/AudioManager.h"
+#include "Loopie/Audio/AudioManager.h"
 
 namespace Loopie {
 	Application* Application::s_Instance = nullptr;

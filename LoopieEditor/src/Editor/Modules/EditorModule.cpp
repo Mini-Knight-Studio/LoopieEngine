@@ -12,6 +12,8 @@
 #include "Loopie/Math/MathTypes.h"
 
 #include "Loopie/Scripting/ScriptingManager.h"
+#include "Loopie/Collisions/CollisionProcessor.h"
+#include "Loopie/Audio/AudioManager.h"
 
 #include "Loopie/Resources/ResourceManager.h"
 #include "Loopie/Importers/TextureImporter.h"
@@ -25,13 +27,15 @@
 #include "Loopie/Components/Transform.h"
 #include "Loopie/Components/RectTransform.h"
 #include "Loopie/Components/Canvas.h"
-#include "Loopie/Components/Image.h"
-#include "Loopie/Collisions/CollisionProcessor.h"
 #include "Loopie/Components/AudioListener.h"
 #include "Loopie/Components/AudioSource.h"
+#include "Loopie/Components/Image.h"
 
-#include "Loopie/Core/AudioManager.h"
+
+
+
 #include <memory>
+
 ///
 
 #include <glad/glad.h>
@@ -105,20 +109,6 @@ namespace Loopie
 		Application& app = Application::GetInstance();
 		InputEventManager& inputEvent = app.GetInputEvent();
 		AudioManager::Update();
-
-		for (auto& [uuid, entity] : Application::GetInstance().GetScene().GetAllEntities())
-		{
-			if (!entity->GetIsActive())
-				continue;
-			std::vector<Component*> components = entity->GetComponents();
-			for (Component* component : components)
-			{
-				if (!component->GetIsActive())
-					continue;
-				component->OnUpdate();
-			}
-
-		}
 
 		//// Update Components
 		DebugGameMode mode = m_topBar.GetCurrentMode();
@@ -271,6 +261,7 @@ namespace Loopie
 			
 
 			ScriptingManager::RuntimeStart();
+			AudioManager::StartSceneAudio(&Application::GetInstance().GetScene());
 			Application::GetInstance().GetScene().SaveScene("recoverScene.scene");
 		}
 

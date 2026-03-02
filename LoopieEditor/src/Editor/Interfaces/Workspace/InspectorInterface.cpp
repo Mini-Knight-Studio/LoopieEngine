@@ -908,6 +908,189 @@ namespace Loopie {
 		ImGui::PopID();
 	}
 
+	void InspectorInterface::DrawAudioSource(AudioSource* source)
+	{
+		ImGui::PushID(source);
+		bool open = ImGui::CollapsingHeader("Audio Source");
+		ImGui::SetItemTooltip(source->GetUUID().Get().c_str());
+		if (ComponentContextMenu(source)) {
+			ImGui::PopID();
+			return;
+		}
+		if (open) {
+			ImGui::Text("Playlist");
+
+			std::string previewValue = "None";
+
+			std::vector<std::shared_ptr<AudioClip>>& clips = source->GetClips();
+			int currentClipIndex = source->GetCurrentClipIndex();
+
+			if (currentClipIndex >= 0 &&
+				currentClipIndex < (int)clips.size())
+			{
+				auto clip = clips[currentClipIndex];
+				if (clip)
+				{
+					Metadata* meta = AssetRegistry::GetMetadata(clip->GetUUID());
+					if (meta && meta->HasCache)
+					{
+						std::filesystem::path p(meta->CachesPath[0]);
+						previewValue = p.filename().string();
+					}
+				}
+			}
+
+			if (ImGui::BeginCombo("Current Clip", previewValue.c_str()))
+			{
+				for (int i = 0; i < (int)clips.size(); i++)
+				{
+					auto clip = clips[i];
+
+					std::string name = "Invalid";
+					if (clip)
+					{
+						Metadata* meta = AssetRegistry::GetMetadata(clip->GetUUID());
+						if (meta && meta->HasCache)
+						{
+							std::filesystem::path p(meta->CachesPath[0]);
+							name = p.filename().string();
+						}
+					}
+
+					bool isSelected = (currentClipIndex == i);
+					if (ImGui::Selectable(name.c_str(), isSelected))
+						source->SetCurrentClip(i);
+
+					if (isSelected)
+						ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+			}
+
+			ImGui::TextDisabled("Audio Library:");
+			for (int i = 0; i < (int)clips.size(); i++)
+			{
+				ImGui::PushID(i);
+
+				if (ImGui::Button("X"))
+				{
+					clips.erase(clips.begin() + i);
+
+					if (currentClipIndex >= i && currentClipIndex > 0) {
+						currentClipIndex--;
+						source->SetCurrentClipIndex(currentClipIndex);
+					}
+
+					ImGui::PopID();
+					continue;
+				}
+
+				ImGui::SameLine();
+
+				auto clip = clips[i];
+				std::string name = "Invalid";
+
+				if (clip)
+				{
+					Metadata* meta = AssetRegistry::GetMetadata(clip->GetUUID());
+					if (meta && meta->HasCache)
+					{
+						std::filesystem::path p(meta->CachesPath[0]);
+						name = p.filename().string();
+					}
+				}
+
+				ImGui::Text("%d: %s", i, name.c_str());
+				ImGui::PopID();
+			}
+
+			ImGui::Button(" [ Drop Audio Here ] ", ImVec2(ImGui::GetContentRegionAvail().x, 30));
+
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_EXPLORER_FILE"))
+				{
+					const char* path = (const char*)payload->Data;
+
+					Metadata* meta = AssetRegistry::GetMetadata(path);
+					if (meta && meta->Type == ResourceType::AUDIO)
+					{
+						auto clip = ResourceManager::GetAudioClip(*meta);
+						if (clip)
+						{
+							clips.push_back(clip);
+
+							if (clips.size() == 1)
+								source->SetCurrentClip(0);
+						}
+					}
+				}
+				ImGui::EndDragDropTarget();
+			}
+
+			ImGui::Separator();
+
+
+			bool loop = source->IsLooping();
+			if (ImGui::Checkbox("Loop Audio", &loop))
+				source->SetLoop(loop);
+
+			float pitch = source->GetPitch();
+			if (ImGui::SliderFloat("Pitch", &pitch, 0.1f, 3.0f))
+				source->SetPitch(pitch);
+
+			float volume = source->GetVolume();
+			if (ImGui::SliderFloat("Volume", &volume, 0.0f, 1.0f))
+				source->SetVolume(volume);
+
+			float pan = source->GetPan();
+			if (ImGui::SliderFloat("Pan", &pan, -1.0f, 1.0f))
+				source->SetPan(pan);
+
+			vec2 distanceRange;
+			source->Get3DMinMaxDistance(distanceRange.x, distanceRange.y);
+			if (ImGui::DragFloat2("3D Min/Max Distance", &distanceRange.x, 0.1f, 0.0f))
+				source->Set3DMinMaxDistance(distanceRange.x, distanceRange.y);
+
+			bool playOnAwake = source->GetIfPlayOnAwake();
+			if (ImGui::Checkbox("Play On Awake", &playOnAwake)) {
+				source->SetIfPlayOnAwake(playOnAwake);
+			}
+
+			ImGui::Separator();
+
+			if (ImGui::Button("Play"))
+				source->Play();
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Stop"))
+				source->Stop();
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Preload"))
+				source->LoadResource();
+		}
+		ImGui::PopID();
+	}
+
+	void InspectorInterface::DrawAudioListener(AudioListener* listener)
+	{
+		ImGui::PushID(listener);
+		bool open = ImGui::CollapsingHeader("Audio Listener");
+		ImGui::SetItemTooltip(listener->GetUUID().Get().c_str());
+		if (ComponentContextMenu(listener)) {
+			ImGui::PopID();
+			return;
+		}
+		if (open) {
+			ImGui::Text("Audio Listener Active");
+			ImGui::TextDisabled("(No editable properties)");
+		}
+		ImGui::PopID();
+	}
+
 	void InspectorInterface::AddComponent(const std::shared_ptr<Entity>& entity)
 	{
 		if (!entity)
@@ -1022,6 +1205,32 @@ namespace Loopie {
 						forceClose = true;
 					}
 				}
+				ImGui::Unindent(8.0f);
+			}
+
+
+			if (searching)
+				ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+			if (!isOpen)
+				ImGui::SetNextItemOpen(false, ImGuiCond_Always);
+			if (ImGui::CollapsingHeader("Audio"))
+			{
+				ImGui::Indent(8.0f);
+
+				if (filter.PassFilter("Audio Listenr")) {
+					if (ImGui::Selectable("Audio Listener")) {
+						entity->AddComponent<AudioListener>();
+						forceClose = true;
+					}
+				}
+
+				if (filter.PassFilter("Audio Source")) {
+					if (ImGui::Selectable("Audio Source")) {
+						entity->AddComponent<AudioSource>();
+						forceClose = true;
+					}
+				}
+
 				ImGui::Unindent(8.0f);
 			}
 

@@ -37,7 +37,7 @@ namespace Loopie {
         static FMOD_VECTOR VectorToFmod(const glm::vec3& v);
         static void SetGlobalParameter(const std::string& name, float value);
 
-        static FMOD::Studio::System* s_studioSystem;
-        static FMOD::System* s_coreSystem;
+        static FMOD::Studio::System* s_StudioSystem;
+        static FMOD::System* s_CoreSystem;
     };
 }

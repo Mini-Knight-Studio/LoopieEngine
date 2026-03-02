@@ -12,6 +12,9 @@
 #include "Loopie/Math/MathTypes.h"
 
 #include "Loopie/Scripting/ScriptingManager.h"
+#include "Loopie/Collisions/CollisionProcessor.h"
+#include "Loopie/Audio/AudioManager.h"
+#include "Loopie/Resources/Types/Material.h"
 
 #include "Loopie/Resources/ResourceManager.h"
 #include "Loopie/Importers/TextureImporter.h"
@@ -24,8 +27,9 @@
 #include "Loopie/Components/Transform.h"
 #include "Loopie/Components/RectTransform.h"
 #include "Loopie/Components/Canvas.h"
+#include "Loopie/Components/AudioListener.h"
+#include "Loopie/Components/AudioSource.h"
 #include "Loopie/Components/Image.h"
-#include "Loopie/Resources/Types/Material.h"
 ///
 
 #include <glad/glad.h>
@@ -82,11 +86,13 @@ namespace Loopie
 
 		Application& app = Application::GetInstance();
 		InputEventManager& inputEvent = app.GetInputEvent();
+		AudioManager::Update();
 
 		//// Update Components
 		if (!UpdateComponents(mode)) {
 			mode = DebugGameMode::END;
 		}
+		CollisionProcessor::Process();
 		//// 
 
 		/// RenderToTarget
@@ -174,8 +180,8 @@ namespace Loopie
 				return false;
 			}
 
-
 			ScriptingManager::RuntimeStart();
+			AudioManager::StartSceneAudio(&Application::GetInstance().GetScene());
 			Application::GetInstance().GetScene().SaveScene("recoverScene.scene");
 		}
 

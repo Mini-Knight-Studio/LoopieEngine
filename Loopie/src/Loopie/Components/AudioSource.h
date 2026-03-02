@@ -38,6 +38,10 @@ namespace Loopie {
 
         void NextTrack();
         void AddClip(std::shared_ptr<AudioClip> path);
+        std::vector<std::shared_ptr<AudioClip>>& GetClips() { return m_audioClips; }
+
+        int GetCurrentClipIndex() const { return m_currentClipIndex; }
+        void SetCurrentClipIndex(int index) { m_currentClipIndex = index; }
 
         void SetCurrentClip(int index);
         void Play();
@@ -54,20 +58,17 @@ namespace Loopie {
         float GetPitch() const { return m_pitch; }
         float GetVolume() const { return m_volume; }
         float GetPan() const { return m_pan; }
-        bool IsLooping() const { return loop; }
-		bool GetIfPlayOnAwake() const { return playOnAwake; }
+        bool IsLooping() const { return m_loop; }
+		bool GetIfPlayOnAwake() const { return m_playOnAwake; }
         void Get3DMinMaxDistance(float& minDist, float& maxDist) const { minDist = m_minDistance; maxDist = m_maxDistance; }
+
+
 
         JsonNode Serialize(JsonNode& parent) const override;
 
         void Deserialize(const JsonNode& data) override;
 
     private:
-
-    public:
-        std::vector<std::shared_ptr<AudioClip>> audioClips;
-        int currentClipIndex = 0;
-
 
     private:
         friend class AudioManager;
@@ -85,8 +86,11 @@ namespace Loopie {
         float m_minDistance = 2.0f;
         float m_maxDistance = 25.0f;
 
-        bool loop = false;
-        bool playOnAwake = true;
-        bool usePlaylist = false;
+        bool m_loop = false;
+        bool m_playOnAwake = true;
+        bool m_usePlaylist = false;
+
+        std::vector<std::shared_ptr<AudioClip>> m_audioClips;
+        int m_currentClipIndex = 0;
     };
 }

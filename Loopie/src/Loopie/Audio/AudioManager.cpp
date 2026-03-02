@@ -15,19 +15,19 @@
 
 namespace Loopie {
 
-    FMOD::Studio::System* AudioManager::s_studioSystem = nullptr;
-    FMOD::System* AudioManager::s_coreSystem = nullptr;
+    FMOD::Studio::System* AudioManager::s_StudioSystem = nullptr;
+    FMOD::System* AudioManager::s_CoreSystem = nullptr;
 
     void AudioManager::Init() {
-        FMOD_RESULT result = FMOD::Studio::System::create(&s_studioSystem);
+        FMOD_RESULT result = FMOD::Studio::System::create(&s_StudioSystem);
         if (result != FMOD_OK) {
             Log::Critical("FMOD Create Error: {0}", FMOD_ErrorString(result));
             return;
         }
 
-        s_studioSystem->getCoreSystem(&s_coreSystem);
+        s_StudioSystem->getCoreSystem(&s_CoreSystem);
 
-        result = s_studioSystem->initialize(512, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_NORMAL, nullptr);
+        result = s_StudioSystem->initialize(512, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_NORMAL, nullptr);
         if (result != FMOD_OK) {
             Log::Critical("FMOD Init Error: {0}", FMOD_ErrorString(result));
             return;
@@ -39,13 +39,13 @@ namespace Loopie {
     }
 
     void AudioManager::Update() {
-        if (s_studioSystem) s_studioSystem->update();
+        if (s_StudioSystem) s_StudioSystem->update();
     }
 
     void AudioManager::Shutdown() {
-        if (s_studioSystem) {
-            s_studioSystem->unloadAll();
-            s_studioSystem->release();
+        if (s_StudioSystem) {
+            s_StudioSystem->unloadAll();
+            s_StudioSystem->release();
         }
     }
 
@@ -62,9 +62,9 @@ namespace Loopie {
             if (entity->GetIsActive())
             {
                 auto source = entity->GetComponent<AudioSource>();
-                if (source && source->playOnAwake) {
-                    if (!source->audioClips.empty()) {
-                        source->SetCurrentClip(source->currentClipIndex);
+                if (source && source->GetIfPlayOnAwake()) {
+                    if (!source->m_audioClips.empty()) {
+                        source->SetCurrentClip(source->m_currentClipIndex);
                     }
                     source->Play();
                 }
@@ -74,7 +74,7 @@ namespace Loopie {
 
     FMOD::Studio::EventInstance* AudioManager::CreateEventInstance(const std::string& eventPath) {
         FMOD::Studio::EventDescription* eventDesc = nullptr;
-        FMOD_RESULT result = s_studioSystem->getEvent(eventPath.c_str(), &eventDesc);
+        FMOD_RESULT result = s_StudioSystem->getEvent(eventPath.c_str(), &eventDesc);
         if (result != FMOD_OK) {
             Log::Error("FMOD Event not found: {0}", eventPath);
             return nullptr;
@@ -92,7 +92,7 @@ namespace Loopie {
         mode |= stream ? FMOD_CREATESTREAM : FMOD_CREATESAMPLE;
         mode |= loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF;
 
-        FMOD_RESULT result = s_coreSystem->createSound(path.c_str(), mode, nullptr, &sound);
+        FMOD_RESULT result = s_CoreSystem->createSound(path.c_str(), mode, nullptr, &sound);
         if (result != FMOD_OK) {
             Log::Error("Failed to load sound: {0}", path);
             return nullptr;
@@ -101,11 +101,11 @@ namespace Loopie {
     }
 
     void AudioManager::PlaySound(FMOD::Sound* sound, FMOD::Channel** outChannel, bool paused) {
-        if (!s_coreSystem || !sound)
+        if (!s_CoreSystem || !sound)
             return;
 
         FMOD::Channel* channel = nullptr;
-        FMOD_RESULT result = s_coreSystem->playSound(sound, nullptr, paused, &channel);
+        FMOD_RESULT result = s_CoreSystem->playSound(sound, nullptr, paused, &channel);
 
         if (result != FMOD_OK) {
             Log::Error("FMOD failed to play sound: {0}", FMOD_ErrorString(result));
@@ -121,11 +121,11 @@ namespace Loopie {
         attributes.position = VectorToFmod(pos);
         attributes.forward = VectorToFmod(forward);
         attributes.up = VectorToFmod(up);
-        if (s_studioSystem) s_studioSystem->setListenerAttributes(0, &attributes);
+        if (s_StudioSystem) s_StudioSystem->setListenerAttributes(0, &attributes);
     }
 
     void AudioManager::SetGlobalParameter(const std::string& name, float value) {
-        if (s_studioSystem) s_studioSystem->setParameterByName(name.c_str(), value);
+        if (s_StudioSystem) s_StudioSystem->setParameterByName(name.c_str(), value);
     }
 
     FMOD_VECTOR AudioManager::VectorToFmod(const glm::vec3& v) {

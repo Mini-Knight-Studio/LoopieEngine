@@ -3,6 +3,7 @@
 #include "Loopie/Core/Log.h"
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Importers/AudioImporter.h"
+#include "Loopie/Audio/AudioManager.h"
 
 #include <fmod_studio.hpp>
 #include <fmod.hpp>
@@ -30,7 +31,7 @@ namespace Loopie {
 
 	void AudioClip::Unload()
 	{
-		if (m_sound)
+		if (m_sound && AudioManager::s_CoreSystem)
 		{
 			m_sound->release();
 			m_sound = nullptr;
