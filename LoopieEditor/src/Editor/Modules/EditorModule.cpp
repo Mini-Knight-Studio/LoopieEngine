@@ -61,7 +61,6 @@ namespace Loopie
 		std::filesystem::path absolutePath = Application::GetInstance().m_activeProject.GetProjectPath().parent_path()/(result.Result);
 		if (!result.Found || !m_currentScene->ReadAndLoadSceneFile(absolutePath.string()))
 		{
-			CreateCity();
 			m_currentScene->CreateEntity({ 0,1,-10 }, { 1,0,0,0 }, { 1,1,1 }, nullptr, "MainCamera")->AddComponent<Camera>();
 		}
 		
@@ -543,18 +542,6 @@ namespace Loopie
 		}
 
 		Renderer::DisableBlend();
-	}
-
-	void EditorModule::CreateBakerHouse()
-	{
-		m_scene.ChargeModel("assets/models/BakerHouse.fbx");
-		m_scene.ChargeTexture("assets/textures/Baker_house.png");
-	}
-
-	void EditorModule::CreateCity()
-	{
-		m_scene.ChargeModel("assets/models/Street environment_V01.fbx");
-		//m_scene.ChargeTexture("assets/textures/Baker_house.png");
 	}
 
 	void EditorModule::OnNotify(const EngineNotification& type)

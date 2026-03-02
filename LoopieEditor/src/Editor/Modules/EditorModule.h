@@ -47,10 +47,6 @@ namespace Loopie {
 		void RenderSceneUIRecursive(const std::shared_ptr<Entity>& entity);
 		void RenderSceneUI(Camera* camera);
 
-		/// Test
-		void CreateBakerHouse();
-		void CreateCity();
-
 	private:
 		InspectorInterface m_inspector;
 		ConsoleInterface m_console;
