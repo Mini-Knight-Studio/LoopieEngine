@@ -353,86 +353,156 @@ namespace Loopie {
 
 		if (open)
 		{
-			bool loop = source->loop;
-			if (ImGui::Checkbox("Loop Audio", &loop)) {
-				source->SetLoop(loop);
-			}
-
-			ImGui::Separator();
 			ImGui::Text("Playlist");
 
 			std::string previewValue = "None";
-			if (source->currentClipIndex >= 0 && source->currentClipIndex < source->audioClips.size()) {
-				std::filesystem::path p(source->audioClips[source->currentClipIndex]);
-				previewValue = p.filename().string();
-				if (previewValue.empty()) previewValue = "Empty Slot";
+
+			if (source->currentClipIndex >= 0 &&
+				source->currentClipIndex < (int)source->audioClips.size())
+			{
+				auto clip = source->audioClips[source->currentClipIndex];
+				if (clip)
+				{
+					Metadata* meta = AssetRegistry::GetMetadata(clip->GetUUID());
+					if (meta && meta->HasCache)
+					{
+						std::filesystem::path p(meta->CachesPath[0]);
+						previewValue = p.filename().string();
+					}
+				}
 			}
 
 			if (ImGui::BeginCombo("Current Clip", previewValue.c_str()))
 			{
-				for (int i = 0; i < source->audioClips.size(); i++)
+				for (int i = 0; i < (int)source->audioClips.size(); i++)
 				{
-					std::filesystem::path p(source->audioClips[i]);
-					std::string name = p.filename().string();
-					if (name.empty()) name = "Slot " + std::to_string(i);
+					auto clip = source->audioClips[i];
 
-					const bool is_selected = (source->currentClipIndex == i);
-					if (ImGui::Selectable(name.c_str(), is_selected))
+					std::string name = "Invalid";
+					if (clip)
 					{
-						source->SetCurrentClip(i);
+						Metadata* meta = AssetRegistry::GetMetadata(clip->GetUUID());
+						if (meta && meta->HasCache)
+						{
+							std::filesystem::path p(meta->CachesPath[0]);
+							name = p.filename().string();
+						}
 					}
 
-					if (is_selected)
+					bool isSelected = (source->currentClipIndex == i);
+					if (ImGui::Selectable(name.c_str(), isSelected))
+						source->SetCurrentClip(i);
+
+					if (isSelected)
 						ImGui::SetItemDefaultFocus();
 				}
 				ImGui::EndCombo();
 			}
 
 			ImGui::TextDisabled("Audio Library:");
-			for (int i = 0; i < source->audioClips.size(); i++)
+			for (int i = 0; i < (int)source->audioClips.size(); i++)
 			{
 				ImGui::PushID(i);
 
-				if (ImGui::Button("X")) {
+				if (ImGui::Button("X"))
+				{
 					source->audioClips.erase(source->audioClips.begin() + i);
-					if (source->currentClipIndex >= i && source->currentClipIndex > 0) source->currentClipIndex--;
+
+					if (source->currentClipIndex >= i && source->currentClipIndex > 0)
+						source->currentClipIndex--;
+
 					ImGui::PopID();
 					continue;
 				}
 
 				ImGui::SameLine();
-				ImGui::Text("%d: %s", i, source->audioClips[i].c_str());
+
+				auto clip = source->audioClips[i];
+				std::string name = "Invalid";
+
+				if (clip)
+				{
+					Metadata* meta = AssetRegistry::GetMetadata(clip->GetUUID());
+					if (meta && meta->HasCache)
+					{
+						std::filesystem::path p(meta->CachesPath[0]);
+						name = p.filename().string();
+					}
+				}
+
+				ImGui::Text("%d: %s", i, name.c_str());
 				ImGui::PopID();
 			}
 
-			ImGui::Button(" [ Drop New Audio Here ] ", ImVec2(ImGui::GetContentRegionAvail().x, 30));
+			ImGui::Button(" [ Drop Audio Here ] ", ImVec2(ImGui::GetContentRegionAvail().x, 30));
 
 			if (ImGui::BeginDragDropTarget())
 			{
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_EXPLORER_FILE"))
 				{
 					const char* path = (const char*)payload->Data;
-					std::filesystem::path resourcePath(path);
 
-					std::string finalPath = resourcePath.string();
-					size_t pos = finalPath.find("assets");
-					if (pos != std::string::npos) finalPath = finalPath.substr(pos);
-					std::replace(finalPath.begin(), finalPath.end(), '\\', '/');
+					Metadata* meta = AssetRegistry::GetMetadata(path);
+					if (meta && meta->Type == ResourceType::AUDIO)
+					{
+						auto clip = ResourceManager::GetAudioClip(*meta);
+						if (clip)
+						{
+							source->audioClips.push_back(clip);
 
-					source->AddClip(finalPath);
-
-					if (source->audioClips.size() == 1) source->SetCurrentClip(0);
+							if (source->audioClips.size() == 1)
+								source->SetCurrentClip(0);
+						}
+					}
 				}
 				ImGui::EndDragDropTarget();
 			}
 
 			ImGui::Separator();
 
-			ImGui::Checkbox("Play On Awake", &source->playOnAwake);
-			if (ImGui::Button("Play")) source->Play();
+
+			bool loop = source->IsLooping();
+			if (ImGui::Checkbox("Loop Audio", &loop))
+				source->SetLoop(loop);
+
+			float pitch = source->GetPitch();
+			if (ImGui::SliderFloat("Pitch", &pitch, 0.1f, 3.0f))
+				source->SetPitch(pitch);
+
+			float volume = source->GetVolume();
+			if (ImGui::SliderFloat("Volume", &volume, 0.0f, 1.0f))
+				source->SetVolume(volume);
+
+			float pan = source->GetPan();
+			if (ImGui::SliderFloat("Pan", &pan, -1.0f, 1.0f))
+				source->SetPan(pan);
+
+			vec2 distanceRange;
+			source->Get3DMinMaxDistance(distanceRange.x, distanceRange.y);
+			if (ImGui::DragFloat2("3D Min/Max Distance", &distanceRange.x, 0.1f, 0.0f))
+				source->Set3DMinMaxDistance(distanceRange.x, distanceRange.y);
+
+			bool playOnAwake = source->GetIfPlayOnAwake();
+			if (ImGui::Checkbox("Play On Awake", &playOnAwake)) {
+				source->SetIfPlayOnAwake(playOnAwake);
+			}
+
+			ImGui::Separator();
+
+			if (ImGui::Button("Play"))
+				source->Play();
+
 			ImGui::SameLine();
-			if (ImGui::Button("Stop")) source->Stop();
+
+			if (ImGui::Button("Stop"))
+				source->Stop();
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Preload"))
+				source->LoadResource();
 		}
+
 		ImGui::PopID();
 	}
 

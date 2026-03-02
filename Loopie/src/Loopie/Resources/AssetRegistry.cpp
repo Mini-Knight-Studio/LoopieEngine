@@ -9,6 +9,7 @@
 #include "Loopie/Importers/MeshImporter.h"
 #include "Loopie/Importers/MaterialImporter.h"
 #include "Loopie/Importers/ScriptImporter.h"
+#include "Loopie/Importers/AudioImporter.h"
 
 #include <filesystem>
 #include <unordered_set>
@@ -18,14 +19,6 @@ namespace Loopie {
 	std::unordered_map<UUID, Metadata> AssetRegistry::s_Assets;
 	std::unordered_map<std::string, UUID> AssetRegistry::s_PathToUUID;
 	std::unordered_map<UUID, std::string> AssetRegistry::s_UUIDToPath;
-
-	static bool IsAudioFile(const std::string& path) {
-		std::filesystem::path p(path);
-		if (!p.has_extension()) return false;
-
-		std::string ext = p.extension().string();
-		return ext == ".wav" || ext == ".mp3" || ext == ".ogg" || ext == ".bank";
-	}
 
 	void AssetRegistry::Initialize() {
 	
@@ -83,9 +76,9 @@ namespace Loopie {
 				}
 				scriptFiles++;
 			}
-			else if (metadata.Type == ResourceType::AUDIO || IsAudioFile(pathString)) {
-				if (metadata.Type != ResourceType::AUDIO) {
-					metadata.Type = ResourceType::AUDIO;
+			else if (metadata.Type == ResourceType::AUDIO || AudioImporter::CheckIfIsAudio(pathString.c_str())) {
+				if (metadata.IsOutdated || metadata.CachesPath.size() == 0) {
+					AudioImporter::ImportAudio(pathString, metadata);
 					updated = true; 
 				}
 			}

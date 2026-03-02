@@ -23,6 +23,7 @@
 
 #include "Loopie/Components/AudioListener.h"
 #include "Loopie/Components/AudioSource.h"
+#include "Loopie/Core/AudioManager.h"
 #include <memory>
 ///
 
@@ -87,7 +88,21 @@ namespace Loopie
 
 		Application& app = Application::GetInstance();
 		InputEventManager& inputEvent = app.GetInputEvent();
-		AudioManager::UpdateSceneAudio(m_currentScene);
+		AudioManager::Update();
+
+		for (auto& [uuid, entity] : Application::GetInstance().GetScene().GetAllEntities())
+		{
+			if (!entity->GetIsActive())
+				continue;
+			std::vector<Component*> components = entity->GetComponents();
+			for (Component* component : components)
+			{
+				if (!component->GetIsActive())
+					continue;
+				component->OnUpdate();
+			}
+
+		}
 
 		m_hierarchy.Update(inputEvent);
 		m_assetsExplorer.Update(inputEvent);
