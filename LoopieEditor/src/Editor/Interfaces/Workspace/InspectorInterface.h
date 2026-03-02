@@ -15,6 +15,9 @@ namespace Loopie {
 	class RectTransform;
 	class Canvas;
 	class Image;
+	class AudioSource;
+	class AudioListener;
+
 
 	class InspectorInterface : public Interface , public IObserver<OnEntityOrFileNotification>{
 	public:
@@ -44,6 +47,8 @@ namespace Loopie {
 		void DrawCanvas(Canvas* canvas);
 		void DrawImage(Image* image);
 		void DrawBoxCollider(BoxCollider* boxCollider);
+		void DrawAudioSource(AudioSource* source);
+		void DrawAudioListener(AudioListener* listener);
 
 		void AddComponent(const std::shared_ptr<Entity>& entity);
 		bool ComponentContextMenu(Component* component, bool canRemove = true);
@@ -57,5 +62,6 @@ namespace Loopie {
 	private:
 
 		InspectorMode m_mode = InspectorMode::None;
+		bool m_locked = false;
 	};
 }

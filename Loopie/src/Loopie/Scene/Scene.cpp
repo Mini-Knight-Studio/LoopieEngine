@@ -13,6 +13,10 @@
 #include "Loopie/Helpers/LoopieHelpers.h"
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Components/BoxCollider.h"
+
+#include "Loopie/Components/AudioSource.h"
+#include "Loopie/Components/AudioListener.h"
+
 #include <unordered_set>
 
 
@@ -274,6 +278,18 @@ namespace Loopie {
 				auto bc = clone->AddComponent<BoxCollider>();
 				bc->Deserialize(componentData.Child("boxcollider"));
 			}
+			//AudioSource
+			else if (componentData.Child("audiosource").IsValid())
+			{
+				auto audioSource = clone->AddComponent<AudioSource>();
+				audioSource->Deserialize(componentData.Child("audiosource"));
+			}
+			//AudioListener
+			else if (componentData.Child("audiolistener").IsValid())
+			{
+				auto audioListener = clone->AddComponent<AudioListener>();
+				audioListener->Deserialize(componentData.Child("audiolistener"));
+			}
 		}
 
 		// ---- Clone children ----
@@ -525,6 +541,24 @@ namespace Loopie {
 						{
 							boxCollider->Deserialize(node);
 							boxCollider->SetUUID(componentUUID.Get());
+						}
+					}
+					else if (componentNode.Contains("audiosource"))
+					{
+						JsonNode node = componentNode.Child("audiosource");
+						auto audioSource = entity->AddComponent<AudioSource>();
+						if (audioSource)
+						{
+							audioSource->Deserialize(node);
+						}
+					}
+					else if (componentNode.Contains("audiolistener"))
+					{
+						JsonNode node = componentNode.Child("audiolistener");
+						auto audioSource = entity->AddComponent<AudioListener>();
+						if (audioSource)
+						{
+							audioSource->Deserialize(node);
 						}
 					}
 				}

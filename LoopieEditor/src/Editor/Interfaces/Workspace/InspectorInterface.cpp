@@ -21,6 +21,9 @@
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Resources/ResourceManager.h"
 
+#include "Loopie/Components/AudioSource.h"
+#include "Loopie/Components/AudioListener.h"
+
 #include <imgui.h>
 #include <unordered_map>
 
@@ -43,6 +46,9 @@ namespace Loopie {
 
 	void InspectorInterface::Render() {
 		if (ImGui::Begin("Inspector")) {
+
+			ImGui::Checkbox("Lock Inspector", &m_locked);
+			ImGui::Separator();
 
 			switch (m_mode)
 			{
@@ -102,6 +108,12 @@ namespace Loopie {
 			}
 			else if (component->GetTypeID() == BoxCollider::GetTypeIDStatic()) {
 				DrawBoxCollider(static_cast<BoxCollider*>(component));
+			}
+			else if (component->GetTypeID() == AudioSource::GetTypeIDStatic()) {
+				DrawAudioSource(static_cast<AudioSource*>(component));
+			}
+			else if (component->GetTypeID() == AudioListener::GetTypeIDStatic()) {
+				DrawAudioListener(static_cast<AudioListener*>(component));
 			}
 		}
 		AddComponent(entity);
@@ -1228,6 +1240,8 @@ namespace Loopie {
 
 	void InspectorInterface::OnNotify(const OnEntityOrFileNotification& id)
 	{
+		if (m_locked) return;
+
 		if (id == OnEntityOrFileNotification::OnEntitySelect) {
 			m_mode = InspectorMode::EntityMode;
 		}

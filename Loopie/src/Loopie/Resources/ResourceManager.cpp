@@ -39,6 +39,18 @@ namespace Loopie {
         return material;
     }
 
+    std::shared_ptr<AudioClip> ResourceManager::GetAudioClip(const Metadata& metadata)
+    {
+        ResourceKey key{ metadata, 0 };
+        auto resource = GetResource(key);
+        if (resource) {
+            return std::static_pointer_cast<AudioClip>(resource);
+        }
+        auto audioClip = std::make_shared<AudioClip>(metadata.UUID);
+        m_Resources[key] = audioClip;
+        return audioClip;
+    }
+
     std::shared_ptr<Resource> ResourceManager::GetResource(const ResourceKey& key) {
         auto it = m_Resources.find(key);
         if (it != m_Resources.end()) {

@@ -30,6 +30,7 @@ namespace Loopie {
 		// Default Calls
 		virtual void OnUpdate() {};
 		virtual void RenderGizmo() {};
+		virtual void OnUpdate() {};
 
 		// Setters
 		void SetIsActive(bool active);
