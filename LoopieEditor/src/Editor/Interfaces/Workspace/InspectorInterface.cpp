@@ -1276,7 +1276,8 @@ namespace Loopie {
 		}
 		else
 		{
-			filter.InputBuf[0] = '\0';
+			if(isOpen)
+				filter.Clear();
 			isOpen = false;
 		}
 	}

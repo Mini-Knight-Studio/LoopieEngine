@@ -53,7 +53,7 @@ namespace Loopie {
         void SetVolume(float volume);
         void SetPan(float pan);
         void Set3DMinMaxDistance(float minDist, float maxDist);
-		void SetIfPlayOnAwake(bool playOnAwake) { playOnAwake = playOnAwake; }
+		void SetIfPlayOnAwake(bool playOnAwake) { m_playOnAwake = playOnAwake; }
 
         float GetPitch() const { return m_pitch; }
         float GetVolume() const { return m_volume; }
