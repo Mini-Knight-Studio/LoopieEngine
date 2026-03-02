@@ -22,6 +22,7 @@ namespace Loopie {
 
         bool Contains(const vec3& point) const;
         bool ContainsRay(const vec3& rayStart, const vec3& rayEnd) const;
+        bool Intersects(const OBB& other) const;
 
         bool IntersectsRay(const vec3& rayStart, const vec3& rayEnd) const;
         bool IntersectsRay(const vec3& rayOrigin, const vec3& rayDirection, vec3& hitPoint) const;

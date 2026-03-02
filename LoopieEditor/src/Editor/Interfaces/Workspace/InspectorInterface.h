@@ -11,7 +11,7 @@ namespace Loopie {
 	class ScriptClass;
 	class Material;
 	class Animator;
-
+	class BoxCollider;
 	class RectTransform;
 	class Canvas;
 	class Image;
@@ -43,7 +43,7 @@ namespace Loopie {
 		void DrawScriptClass(ScriptClass* scriptClass);
 		void DrawCanvas(Canvas* canvas);
 		void DrawImage(Image* image);
-
+		void DrawBoxCollider(BoxCollider* boxCollider);
 		void AddComponent(const std::shared_ptr<Entity>& entity);
 		bool ComponentContextMenu(Component* component, bool canRemove = true);
 

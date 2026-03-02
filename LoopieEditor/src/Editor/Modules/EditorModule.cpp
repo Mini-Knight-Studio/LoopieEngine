@@ -26,6 +26,8 @@
 #include "Loopie/Components/Canvas.h"
 #include "Loopie/Components/Image.h"
 #include "Loopie/Resources/Types/Material.h"
+
+#include "Loopie/Collisions/CollisionProcessor.h"
 ///
 
 #include <glad/glad.h>
@@ -105,6 +107,7 @@ namespace Loopie
 		if (!UpdateComponents(mode)) {
 			m_topBar.SetMode(DebugGameMode::END);
 		}
+		CollisionProcessor::Process();
 		//// 
 
 		m_hierarchy.Update(inputEvent);

@@ -12,7 +12,7 @@
 #include "Loopie/Components/Image.h"
 #include "Loopie/Helpers/LoopieHelpers.h"
 #include "Loopie/Resources/AssetRegistry.h"
-
+#include "Loopie/Components/BoxCollider.h"
 #include <unordered_set>
 
 
@@ -268,6 +268,12 @@ namespace Loopie {
 				auto image = clone->AddComponent<Image>();
 				image->Deserialize(componentData.Child("image"));
 			}
+			/// BoxCollider
+			else if (componentData.Child("boxcollider").IsValid())
+			{
+				auto bc = clone->AddComponent<BoxCollider>();
+				bc->Deserialize(componentData.Child("boxcollider"));
+			}
 		}
 
 		// ---- Clone children ----
@@ -509,6 +515,16 @@ namespace Loopie {
 						{
 							image->Deserialize(node);
 							image->SetUUID(componentUUID.Get());
+						}
+					}
+					else if (componentNode.Contains("boxcollider"))
+					{
+						JsonNode node = componentNode.Child("boxcollider");
+						auto boxCollider = entity->AddComponent<BoxCollider>();
+						if (boxCollider)
+						{
+							boxCollider->Deserialize(node);
+							boxCollider->SetUUID(componentUUID.Get());
 						}
 					}
 				}
