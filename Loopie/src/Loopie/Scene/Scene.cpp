@@ -235,6 +235,11 @@ namespace Loopie {
 				clone->GetTransform()->Deserialize(componentData.Child("transform"));
 				continue;
 			}
+			if (componentData.Child("recttransform").IsValid())
+			{
+				clone->ReplaceTransform<RectTransform>();
+				clone->GetTransform()->Deserialize(componentData.Child("recttransform"));
+			}
 			// Camera
 			if (componentData.Child("camera").IsValid())
 			{
@@ -471,7 +476,9 @@ namespace Loopie {
 					else if (componentNode.Contains("recttransform"))
 					{
 						JsonNode node = componentNode.Child("recttransform");
-						entity->ReplaceTransform<RectTransform>()->Deserialize(node);
+						entity->ReplaceTransform<RectTransform>();
+						entity->GetTransform()->Deserialize(node);
+						entity->GetTransform()->SetUUID(componentUUID.Get());
 					}
 					else if (componentNode.Contains("camera"))
 					{
