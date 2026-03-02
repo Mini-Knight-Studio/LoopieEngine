@@ -149,7 +149,7 @@ namespace Loopie
 			const float halfHeight = m_orthoSize;
 			const float halfWidth = halfHeight * aspect;
 
-			m_projectionMatrix = glm::ortho(-halfWidth, halfWidth, -halfHeight, halfHeight, m_nearPlane, m_farPlane);
+			m_projectionMatrix = glm::orthoLH(-halfWidth, halfWidth, -halfHeight, halfHeight, m_nearPlane, m_farPlane);
 		}
 
 		m_viewProjectionMatrix = m_projectionMatrix * m_viewMatrix;
@@ -208,7 +208,7 @@ namespace Loopie
 		m_farPlane = data.GetValue<float>("far_plane", 100.0f).Result;
 		m_isMainCamera = data.GetValue<bool>("is_main_camera", false).Result;
 		m_projectionType = (CameraProjection)data.GetValue<int>("projection", (int)CameraProjection::Perspective).Result;
-		m_orthoSize = data.GetValue<float>("ortho_size", 10.0f).Result;
+		m_orthoSize = data.GetValue<float>("ortho_size", 20.0f).Result;
 			
 		if (m_isMainCamera)
 		{

@@ -89,6 +89,6 @@ namespace Loopie
 		CameraProjection m_projectionType = CameraProjection::Perspective;
 		
 		// For orthographic projection
-		float m_orthoSize = 10.0f;
+		float m_orthoSize = 20.0f;
 	};
 }
