@@ -13,7 +13,8 @@ namespace Loopie {
     BoxCollider::BoxCollider() {}
 
     BoxCollider::~BoxCollider() {
-        GetTransform()->m_transformNotifier.RemoveObserver(this);
+        if(GetOwner() && GetTransform())
+            GetTransform()->m_transformNotifier.RemoveObserver(this);
         CollisionProcessor::Unregister(this);
     }
     void BoxCollider::Init() {

@@ -26,62 +26,84 @@ namespace Loopie
         internal extern static void NativeLog_Vector4(Vector4 parameter, int mode);
         #endregion
         #region Transform
-            [MethodImplAttribute(MethodImplOptions.InternalCall)]
-            internal extern static void Transform_GetPosition(string id, out Vector3 position);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Transform_GetPosition(string id, out Vector3 position);
 
-            [MethodImplAttribute(MethodImplOptions.InternalCall)]
-            internal extern static void Transform_SetPosition(string id, Vector3 position);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Transform_SetPosition(string id, Vector3 position);
 
-            [MethodImplAttribute(MethodImplOptions.InternalCall)]
-            internal extern static void Transform_GetLocalPosition(string id, out Vector3 position);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Transform_GetLocalPosition(string id, out Vector3 position);
 
-            [MethodImplAttribute(MethodImplOptions.InternalCall)]
-            internal extern static void Transform_SetLocalPosition(string id, Vector3 position);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Transform_SetLocalPosition(string id, Vector3 position);
 
-            [MethodImplAttribute(MethodImplOptions.InternalCall)]
-            internal extern static void Transform_GetRotation(string id, out Vector3 rotation);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Transform_GetRotation(string id, out Vector3 rotation);
 
-            [MethodImplAttribute(MethodImplOptions.InternalCall)]
-            internal extern static void Transform_SetRotation(string id, Vector3 rotation);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Transform_SetRotation(string id, Vector3 rotation);
 
-            [MethodImplAttribute(MethodImplOptions.InternalCall)]
-            internal extern static void Transform_GetLocalRotation(string id, out Vector3 rotation);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Transform_GetLocalRotation(string id, out Vector3 rotation);
 
-            [MethodImplAttribute(MethodImplOptions.InternalCall)]
-            internal extern static void Transform_SetLocalRotation(string id, Vector3 rotation);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Transform_SetLocalRotation(string id, Vector3 rotation);
 
-            [MethodImplAttribute(MethodImplOptions.InternalCall)]
-            internal extern static void Transform_GetLocalScale(string id, out Vector3 scale);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Transform_GetLocalScale(string id, out Vector3 scale);
 
-            [MethodImplAttribute(MethodImplOptions.InternalCall)]
-            internal extern static void Transform_SetLocalScale(string id, Vector3 scale);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Transform_SetLocalScale(string id, Vector3 scale);
 
-            [MethodImplAttribute(MethodImplOptions.InternalCall)]
-            internal extern static void Transform_Translate(string id, Vector3 translation, Transform.Space objectSpace);
-            
-            [MethodImplAttribute(MethodImplOptions.InternalCall)]
-            internal extern static void Transform_Rotate(string id, Vector3 eulerAngles, Transform.Space objectSpace);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Transform_Translate(string id, Vector3 translation, Transform.Space objectSpace);
+        
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Transform_Rotate(string id, Vector3 eulerAngles, Transform.Space objectSpace);
 
-            [MethodImplAttribute(MethodImplOptions.InternalCall)]
-            internal extern static void Transform_LookAt(string id, Vector3 target, Vector3 worldUp);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Transform_LookAt(string id, Vector3 target, Vector3 worldUp);
 
-            [MethodImplAttribute(MethodImplOptions.InternalCall)]
-            internal extern static void Transform_Forward(string id, out Vector3 forward);
-            
-            [MethodImplAttribute(MethodImplOptions.InternalCall)]
-            internal extern static void Transform_Back(string id, out Vector3 back);
-            
-            [MethodImplAttribute(MethodImplOptions.InternalCall)]
-            internal extern static void Transform_Up(string id, out Vector3 up);
-            
-            [MethodImplAttribute(MethodImplOptions.InternalCall)]
-            internal extern static void Transform_Down(string id, out Vector3 down);
-            
-            [MethodImplAttribute(MethodImplOptions.InternalCall)]
-            internal extern static void Transform_Left(string id, out Vector3 left);
-            
-            [MethodImplAttribute(MethodImplOptions.InternalCall)]
-            internal extern static void Transform_Right(string id, out Vector3 right);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Transform_Forward(string id, out Vector3 forward);
+        
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Transform_Back(string id, out Vector3 back);
+        
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Transform_Up(string id, out Vector3 up);
+        
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Transform_Down(string id, out Vector3 down);
+        
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Transform_Left(string id, out Vector3 left);
+        
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Transform_Right(string id, out Vector3 right);
+        #endregion
+        #region BoxCollider
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_GetLocalCenter(string id, out Vector3 center);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_SetLocalCenter(string id,Vector3 center);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_GetLocalExtents(string id, out Vector3 extends);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_SetLocalExtents(string id,Vector3 extents);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool BoxCollider_IsColliding(string id);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool BoxCollider_HasCollided(string id);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool BoxCollider_HasEndedCollision(string id);
         #endregion
         #region Animator
         [MethodImplAttribute(MethodImplOptions.InternalCall)]

@@ -44,6 +44,7 @@ namespace Loopie {
 		void DrawCanvas(Canvas* canvas);
 		void DrawImage(Image* image);
 		void DrawBoxCollider(BoxCollider* boxCollider);
+
 		void AddComponent(const std::shared_ptr<Entity>& entity);
 		bool ComponentContextMenu(Component* component, bool canRemove = true);
 

@@ -7,6 +7,7 @@
 #include "Loopie/Components/Camera.h"
 #include "Loopie/Components/MeshRenderer.h"
 #include "Loopie/Components/Animator.h"
+#include "Loopie/Components/BoxCollider.h"
 
 #include "Loopie/Core/UUID.h"
 #include "Loopie/Core/InputEventManager.h"
@@ -818,6 +819,102 @@ namespace Loopie
 	}
 #pragma endregion
 
+#pragma region BoxCollider
+	static void BoxCollider_SetLocalCenter(MonoString* entityID, vec3* center)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		if (entity)
+		{
+			BoxCollider* collider = entity->GetComponent<BoxCollider>();
+			if (collider)
+				collider->SetLocalCenter(*center);
+		}
+	}
+
+	static void BoxCollider_GetLocalCenter(MonoString* entityID, vec3* outCenter)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		if (entity)
+		{
+			BoxCollider* collider = entity->GetComponent<BoxCollider>();
+			if (collider)
+				*outCenter = collider->GetLocalCenter();
+		}
+	}
+
+	static void BoxCollider_SetLocalExtents(MonoString* entityID, vec3* extents)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		if (entity)
+		{
+			BoxCollider* collider = entity->GetComponent<BoxCollider>();
+			if (collider)
+				collider->SetLocalExtents(*extents);
+		}
+	}
+
+	static void BoxCollider_GetLocalExtents(MonoString* entityID, vec3* outExtents)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		if (entity)
+		{
+			BoxCollider* collider = entity->GetComponent<BoxCollider>();
+			if (collider)
+				*outExtents = collider->GetLocalExtents();
+		}
+	}
+
+	static bool BoxCollider_IsColliding(MonoString* entityID)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		if (entity)
+		{
+			BoxCollider* collider = entity->GetComponent<BoxCollider>();
+			if (collider)
+				return collider->IsColliding();
+		}
+		return false;
+	}
+
+	static bool BoxCollider_HasCollided(MonoString* entityID)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		if (entity)
+		{
+			BoxCollider* collider = entity->GetComponent<BoxCollider>();
+			if (collider)
+				return collider->CollidedThisFrame();
+		}
+		return false;
+	}	
+	
+	static bool BoxCollider_HasEndedCollision(MonoString* entityID)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		if (entity)
+		{
+			BoxCollider* collider = entity->GetComponent<BoxCollider>();
+			if (collider)
+				return collider->StoppedColliding();
+		}
+		return false;
+	}
+#pragma endregion
+
 	template<typename Comp, typename = std::enable_if_t<std::is_base_of_v<Component, Comp>>>
 	static void RegisterComponent()
 	{
@@ -846,6 +943,7 @@ namespace Loopie
 		RegisterComponent<Animator>();
 		RegisterComponent<Camera>();
 		RegisterComponent<MeshRenderer>();
+		RegisterComponent<BoxCollider>();
 	}
 
 
@@ -944,5 +1042,14 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Time_GetFixedDeltaTime);
 		ADD_INTERNAL_CALL(Time_GetTimeScale);
 		ADD_INTERNAL_CALL(Time_SetTimeScale);
+
+
+		ADD_INTERNAL_CALL(BoxCollider_GetLocalCenter);
+		ADD_INTERNAL_CALL(BoxCollider_SetLocalCenter);
+		ADD_INTERNAL_CALL(BoxCollider_GetLocalExtents);
+		ADD_INTERNAL_CALL(BoxCollider_SetLocalExtents);
+		ADD_INTERNAL_CALL(BoxCollider_IsColliding);
+		ADD_INTERNAL_CALL(BoxCollider_HasCollided);
+		ADD_INTERNAL_CALL(BoxCollider_HasEndedCollision);
 	}
 }

@@ -869,6 +869,33 @@ namespace Loopie {
 		ImGui::PopID();
 	}
 
+	void InspectorInterface::DrawBoxCollider(BoxCollider* boxCollider) 
+	{
+
+		ImGui::PushID(boxCollider);
+		bool open = ImGui::CollapsingHeader("Box Collider");
+		ImGui::SetItemTooltip(boxCollider->GetUUID().Get().c_str());
+		if (ComponentContextMenu(boxCollider)) {
+			ImGui::PopID();
+			return;
+		}
+		if (open) {
+			vec3 center = boxCollider->GetLocalCenter();
+			vec3 extents = boxCollider->GetLocalExtents();
+			bool draw = boxCollider->GetDrawGizmo();
+
+			if (ImGui::DragFloat3("Center", &center.x, 0.01f))
+				boxCollider->SetLocalCenter(center);
+
+			if (ImGui::DragFloat3("Extents", &extents.x, 0.01f))
+				boxCollider->SetLocalExtents(extents);
+
+			//if (ImGui::Checkbox("Visible Lines", &draw))
+			//	boxCollider->SetDrawGizmo(draw);
+		}
+		ImGui::PopID();
+	}
+
 	void InspectorInterface::AddComponent(const std::shared_ptr<Entity>& entity)
 	{
 		if (!entity)
@@ -1227,25 +1254,5 @@ namespace Loopie {
 			ImGui::EndPopup();
 		}
 		return false;
-	}
-	void InspectorInterface::DrawBoxCollider(BoxCollider* boxCollider) {
-		ImGui::PushID(boxCollider);
-		if (ImGui::CollapsingHeader("Box Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
-			ComponentContextMenu(boxCollider);
-
-			vec3 center = boxCollider->GetLocalCenter();
-			vec3 extents = boxCollider->GetLocalExtents();
-			bool draw = boxCollider->GetDrawGizmo();
-
-			if (ImGui::DragFloat3("Center", &center.x, 0.01f))
-				boxCollider->SetLocalCenter(center);
-
-			if (ImGui::DragFloat3("Extents", &extents.x, 0.01f))
-				boxCollider->SetLocalExtents(extents);
-
-			if (ImGui::Checkbox("Visible Lines", &draw))
-				boxCollider->SetDrawGizmo(draw);
-		}
-		ImGui::PopID();
 	}
 }
