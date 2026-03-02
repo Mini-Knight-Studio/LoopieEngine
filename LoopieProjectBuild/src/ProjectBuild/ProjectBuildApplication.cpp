@@ -7,6 +7,7 @@ namespace Loopie {
 	public:
 		EditorApplication() : Application() {
 			AddModule(new GameModule());
+			GetWindow().SetLogo("assets/logo/logo.bmp");
 		}
 	};
 }
