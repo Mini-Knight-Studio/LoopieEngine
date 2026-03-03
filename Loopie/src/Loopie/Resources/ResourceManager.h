@@ -3,6 +3,8 @@
 #include "Loopie/Resources/Types/Texture.h"
 #include "Loopie/Resources/Types/Mesh.h"
 #include "Loopie/Resources/Types/Material.h"
+#include "Loopie/Resources/Types/AudioClip.h"
+#include "Loopie/Resources/Types/Font.h"
 #include "Loopie/Resources/Resource.h"
 #include "Loopie/Resources/AssetRegistry.h"
 
@@ -31,6 +33,9 @@ namespace Loopie {
         static std::shared_ptr<Texture> GetTexture(const Metadata& metadata);
         static std::shared_ptr<Mesh> GetMesh(const Metadata& metadata, int index);
         static std::shared_ptr<Material> GetMaterial(const Metadata& metadata);
+        static std::shared_ptr<AudioClip> GetAudioClip(const Metadata& metadata);
+		static std::shared_ptr<Font> GetFont(const Metadata& metadata);
+
         static void RemoveResource(Resource& resource);
 
     private:
