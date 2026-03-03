@@ -94,7 +94,7 @@ namespace Loopie {
 	private:
 		std::unique_ptr<OctreeNode> m_rootNode;
 		AABB m_rootBounds; // Stored so Clear() can recreate the root node
-		bool m_shouldDraw = true;
+		bool m_shouldDraw = false;
 
 		// *** Entity-to-Node Lookup *** - PSS 22/02/2026
 		// Maps each entity to the node it's stored in.

@@ -3,6 +3,7 @@
 #include "Loopie/Core/Log.h"
 #include "Loopie/Core/Application.h"
 #include "Loopie/Render/Renderer.h"
+#include "Loopie/Render/Gizmo.h"
 #include "Loopie/Components/Transform.h"
 
 #include "Loopie/Resources/AssetRegistry.h"
@@ -31,7 +32,9 @@ namespace Loopie {
 			"assets/icons/icon_move.png",
 			"assets/icons/icon_rotate.png",
 			"assets/icons/icon_scale.png",
-			"assets/icons/icon_trs.png"
+			"assets/icons/icon_trs.png",
+			"assets/icons/icon_grid.png",
+			"assets/icons/icon_octree.png"
 		};
 
 		std::vector<Metadata> iconsToLoadMetadatas;
@@ -46,6 +49,8 @@ namespace Loopie {
 		m_rotateIcon = ResourceManager::GetTexture(iconsToLoadMetadatas[1]);
 		m_scaleIcon = ResourceManager::GetTexture(iconsToLoadMetadatas[2]);
 		m_trsIcon = ResourceManager::GetTexture(iconsToLoadMetadatas[3]);
+		m_gridIcon = ResourceManager::GetTexture(iconsToLoadMetadatas[4]);
+		m_octreeIcon = ResourceManager::GetTexture(iconsToLoadMetadatas[5]);
 
 
 		m_gizmoOperation = ImGuizmo::TRANSLATE;
@@ -206,9 +211,13 @@ namespace Loopie {
 	}
 	void SceneInterface::DrawHelperBar()
 	{
+		ImVec2 buttonsSize = ImVec2(15, 15);
+		ImVec2 framePadding = ImVec2(4, 4);
+		ImVec2 itemSpacing = ImVec2(15, 8);
 		
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 8));
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 4));
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, itemSpacing);
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, framePadding);
+
 
 		int currentMode = (m_gizmoMode == ImGuizmo::WORLD) ? 0 : 1;
 		ImGui::SetNextItemWidth(65);
@@ -216,27 +225,47 @@ namespace Loopie {
 			m_gizmoMode = (currentMode == 0) ? (int)ImGuizmo::WORLD : (int)ImGuizmo::LOCAL;
 
 		ImGui::SameLine();
-		ImGui::Text("	Movement Scale: %.1f", m_camera->GetMovementScale());
+		ImGui::Text("Movement Scale: %.1f", m_camera->GetMovementScale());
+		ImGui::SameLine();
 
-		bool haStyle = AddStyleGizmoOperationButton((int)ImGuizmo::TRANSLATE);
-		if (ImGui::ImageButton("move",(ImTextureID)m_moveIcon->GetRendererId(), ImVec2(15, 15)))
+		float availableWidth = ImGui::GetContentRegionAvail().x - buttonsSize.x - framePadding.x*2;
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + availableWidth);
+		bool haStyle = AddStyleButton(Gizmo::GetGridVisibility());
+		if (ImGui::ImageButton("grid", (ImTextureID)m_gridIcon->GetRendererId(), buttonsSize)) {
+			Gizmo::SetGridVisibility(!Gizmo::GetGridVisibility());
+		}
+		RemoveStyleButton(haStyle);
+
+		haStyle = AddStyleButton(m_gizmoOperation == (int)ImGuizmo::TRANSLATE);
+		if (ImGui::ImageButton("move",(ImTextureID)m_moveIcon->GetRendererId(), buttonsSize))
 			m_gizmoOperation = (int)ImGuizmo::TRANSLATE;
-		RemoveStyleGizmoOperationButton(haStyle);
+		RemoveStyleButton(haStyle);
 
-		haStyle = AddStyleGizmoOperationButton((int)ImGuizmo::ROTATE);
-		if (ImGui::ImageButton("rotate", (ImTextureID)m_rotateIcon->GetRendererId(), ImVec2(15, 15)))
+		ImGui::SameLine();
+		availableWidth = ImGui::GetContentRegionAvail().x - buttonsSize.x - framePadding.x * 2;
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + availableWidth);
+
+		Octree& octree = Application::GetInstance().GetScene().GetOctree();
+		haStyle = AddStyleButton(octree.GetShouldDraw());
+		if (ImGui::ImageButton("octree", (ImTextureID)m_octreeIcon->GetRendererId(), buttonsSize)) {
+			octree.SetShouldDraw(!octree.GetShouldDraw());
+		}
+		RemoveStyleButton(haStyle);
+
+		haStyle = AddStyleButton(m_gizmoOperation == (int)ImGuizmo::ROTATE);
+		if (ImGui::ImageButton("rotate", (ImTextureID)m_rotateIcon->GetRendererId(), buttonsSize))
 			m_gizmoOperation = (int)ImGuizmo::ROTATE;
-		RemoveStyleGizmoOperationButton(haStyle);
+		RemoveStyleButton(haStyle);
 		
-		haStyle = AddStyleGizmoOperationButton((int)ImGuizmo::SCALE);
-		if (ImGui::ImageButton("scale", (ImTextureID)m_scaleIcon->GetRendererId(), ImVec2(15, 15)))
+		haStyle = AddStyleButton(m_gizmoOperation == (int)ImGuizmo::SCALE);
+		if (ImGui::ImageButton("scale", (ImTextureID)m_scaleIcon->GetRendererId(), buttonsSize))
 			m_gizmoOperation = (int)ImGuizmo::SCALE;
-		RemoveStyleGizmoOperationButton(haStyle);
+		RemoveStyleButton(haStyle);
 		
-		haStyle = AddStyleGizmoOperationButton((int)ImGuizmo::UNIVERSAL);
-		if (ImGui::ImageButton("all", (ImTextureID)m_trsIcon->GetRendererId(), ImVec2(15, 15)))
+		haStyle = AddStyleButton(m_gizmoOperation == (int)ImGuizmo::UNIVERSAL);
+		if (ImGui::ImageButton("all", (ImTextureID)m_trsIcon->GetRendererId(), buttonsSize))
 			m_gizmoOperation = (int)ImGuizmo::UNIVERSAL;
-		RemoveStyleGizmoOperationButton(haStyle);
+		RemoveStyleButton(haStyle);
 
 		if(!m_usingGuizmo)
 			m_usingGuizmo = ImGui::IsAnyItemHovered();
@@ -266,19 +295,17 @@ namespace Loopie {
 		return Ray{ origin, normalize(end - origin), std::numeric_limits<float>::max()};
 	}
 
-	void SceneInterface::RemoveStyleGizmoOperationButton(bool hasStyle)
+	void SceneInterface::RemoveStyleButton(bool hasStyle)
 	{
 		if (hasStyle)
 			ImGui::PopStyleColor();
 	}
 
-	bool SceneInterface::AddStyleGizmoOperationButton(int operationType)
+	bool SceneInterface::AddStyleButton(bool add)
 	{
-		if (m_gizmoOperation == operationType) {
+		if(add)
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0, 0.5, 0.75, 1.0));
-			return true;
-		}
-		return false;
+		return add;
 	}
 
 	void SceneInterface::ChargeModel(const std::string& modelPath)

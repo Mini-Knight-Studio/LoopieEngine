@@ -43,6 +43,10 @@ namespace Loopie {
 		s_Data.LineRender.ShaderProg->Bind();
 
 		StartBatch();
+
+		Gizmo::DrawLine({ 0.0f, 0.0f, 0.0f }, { 0.0f,s_Data.GridHalfSize * s_Data.GridSpacing, 0.0f }, Color::GREEN);
+		Gizmo::DrawLine({ 0.0f, 0.0f, 0.0f }, { s_Data.GridHalfSize * s_Data.GridSpacing, 0.0f, 0.0f }, Color::RED);
+		Gizmo::DrawLine({ 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f,  s_Data.GridHalfSize * s_Data.GridSpacing }, Color::BLUE);
 		DrawGrid();
 	}
 
@@ -153,6 +157,16 @@ namespace Loopie {
 		s_Data.GridColor = color;
 	}
 
+	void Gizmo::SetGridVisibility(bool show)
+	{
+		s_Data.DrawGrid = show;
+	}
+
+	bool Gizmo::GetGridVisibility()
+	{
+		return s_Data.DrawGrid;
+	}
+
 	void Gizmo::Flush() {
 		if (s_Data.LineCount == 0)
 			return;
@@ -190,10 +204,6 @@ namespace Loopie {
 					Gizmo::DrawLine({ -s_Data.GridHalfSize * s_Data.GridSpacing, 0.0f, position }, { s_Data.GridHalfSize * s_Data.GridSpacing, 0.0f, position }, s_Data.GridColor);
 				}	
 			}
-
-			Gizmo::DrawLine({ 0.0f, 0.0f, 0.0f }, { 0.0f,s_Data.GridHalfSize * s_Data.GridSpacing, 0.0f }, Color::GREEN);
-			Gizmo::DrawLine({ 0.0f, 0.0f, 0.0f }, { s_Data.GridHalfSize * s_Data.GridSpacing, 0.0f, 0.0f }, Color::RED);
-			Gizmo::DrawLine({ 0.0f, 0.0f, 0.0f }, {0.0f, 0.0f,  s_Data.GridHalfSize * s_Data.GridSpacing }, Color::BLUE);
 		}
 	}
 }

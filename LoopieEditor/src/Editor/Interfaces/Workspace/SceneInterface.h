@@ -42,8 +42,8 @@ namespace Loopie {
 		void DrawHelperBar();
 		Ray MouseRay();
 
-		bool AddStyleGizmoOperationButton(int operationType);
-		void RemoveStyleGizmoOperationButton(bool hasStyle);
+		bool AddStyleButton(bool add);
+		void RemoveStyleButton(bool hasStyle);
 
 
 	private:
@@ -66,5 +66,8 @@ namespace Loopie {
 		std::shared_ptr<Texture> m_scaleIcon;
 		std::shared_ptr<Texture> m_rotateIcon;
 		std::shared_ptr<Texture> m_trsIcon;
+
+		std::shared_ptr<Texture> m_octreeIcon;
+		std::shared_ptr<Texture> m_gridIcon;
 	};
 }
