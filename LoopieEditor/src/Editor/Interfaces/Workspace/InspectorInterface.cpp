@@ -12,16 +12,18 @@
 
 #include "Loopie/Components/ParticleComponent.h"
 
+
 #include "Loopie/Scripting/ScriptingManager.h"
 
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Resources/ResourceManager.h"
 
 #include <imgui.h>
+#include <imgui_stdlib.h>
 #include <unordered_map>
 
-namespace Loopie {
 
+namespace Loopie {
 	InspectorInterface::InspectorInterface() {
 		
 	}
@@ -72,6 +74,9 @@ namespace Loopie {
 			}
 			else if (component->GetTypeID() == MeshRenderer::GetTypeIDStatic()) {
 				DrawMeshRenderer(static_cast<MeshRenderer*>(component));
+			}
+			else if (component->GetTypeID() == ParticleComponent::GetTypeIDStatic()) {
+				DrawParticleSystem(static_cast<ParticleComponent*>(component));
 			}
 			else if (component->GetTypeID() == ScriptClass::GetTypeIDStatic()) {
 				DrawScriptClass(static_cast<ScriptClass*>(component));
@@ -233,6 +238,17 @@ namespace Loopie {
 		ImGui::PopID();
 	}
 
+	void InspectorInterface::DrawEmitterInspector(Emitter* emitter)
+	{
+		std::string name = emitter->GetName();
+		if (ImGui::InputText("Name", &name))
+		{
+			emitter->SetName(name);
+		}
+		//Add more properties here
+	}
+
+
 	void InspectorInterface::DrawParticleSystem(ParticleComponent* partComponent)
 	{
 		ImGui::PushID(partComponent);
@@ -245,25 +261,44 @@ namespace Loopie {
 		}
 		if (open)
 		{
+			//Modifiable Particlesystem Values
 			bool active = partComponent->GetIsActive();
 			if (ImGui::Checkbox("Active", &active))
 			{
 				if (active) { partComponent->SetIsActive(true); }
+				else { partComponent->SetIsActive(false); }
 			}
-			//Modifiable Particlesystem Values
-			/*if (ImGui::DragFloat("Name", &fov, 1.0f, 1.0f, 179.0f))
-				camera->SetFov(fov);
+			
+			//Attempt at selecting type
+			ParticleType type = ParticleType::SMOKE;
+			int current = static_cast<int>(type);
+			const char* particleTypeNames[] = {
+				"Smoke",
+				"Firework"
+			};
 
-			if (ImGui::DragFloat("", &nearPlane, 0.01f, 0.01f, farPlane - 0.01f))
-				camera->SetNearPlane(nearPlane);
+			if (ImGui::Combo("Type", &current, particleTypeNames, IM_ARRAYSIZE(particleTypeNames)))
+			{
+				for (size_t i = 0; i < partComponent->GetEmittersVector().size(); i++)
+				{
+				
+					
+				}
+			}
+			///Until here
 
-			if (ImGui::DragFloat("Far Plane", &farPlane, 1.0f, nearPlane + 0.1f, 10000.0f))
-				camera->SetFarPlane(farPlane);
+			std::vector <Emitter*> emitters = partComponent->GetEmittersVector();
+			for (size_t i = 0; i < emitters.size(); i++)
+			{
+				std::string label = "Emitter " + std::to_string(i);
 
-			if (ImGui::Checkbox("Main Camera", &isMainCamera)) {
-				if (isMainCamera)
-					camera->SetAsMainCamera();
-			}*/
+				if (ImGui::TreeNode(label.c_str()))
+				{
+					DrawEmitterInspector(emitters[i]);
+					ImGui::TreePop();
+				}
+			}
+
 		}
 
 		ImGui::PopID();
