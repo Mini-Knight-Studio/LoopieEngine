@@ -10,6 +10,7 @@
 #include "Loopie/Importers/MaterialImporter.h"
 #include "Loopie/Importers/ScriptImporter.h"
 #include "Loopie/Importers/AudioImporter.h"
+#include "Loopie/Importers/FontImporter.h"
 
 #include <filesystem>
 #include <unordered_set>
@@ -84,6 +85,12 @@ namespace Loopie {
 				if (metadata.IsOutdated || metadata.CachesPath.size() == 0) {
 					AudioImporter::ImportAudio(pathString, metadata);
 					updated = true; 
+				}
+			}
+			else if (metadata.Type == ResourceType::FONT || FontImporter::CheckIfIsFont(pathString.c_str())) {
+				if (metadata.IsOutdated || metadata.CachesPath.size() == 0) {
+					FontImporter::ImportFont(pathString, metadata);
+					updated = true;
 				}
 			}
 
