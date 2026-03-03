@@ -104,6 +104,8 @@ namespace Loopie {
 
         }
         else if (!m_isEvent && clip->GetSound()) {
+
+            Stop();
             FMOD::Channel* newChannel = nullptr;
             AudioManager::PlaySound(clip->GetSound(), &newChannel, true);
             m_channel = newChannel;
