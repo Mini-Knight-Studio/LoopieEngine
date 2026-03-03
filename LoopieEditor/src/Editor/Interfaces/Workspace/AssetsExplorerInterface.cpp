@@ -697,6 +697,7 @@ namespace Loopie {
 			if (data)
 			{
 				Application::GetInstance().m_clipboard.Copy(data->UUID.Get());
+				Log::Warn("{0}", Application::GetInstance().m_clipboard.Paste());
 			}
 		}
 

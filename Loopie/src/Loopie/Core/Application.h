@@ -44,7 +44,7 @@ namespace Loopie {
 	public:
 		Project m_activeProject;
 		Event<EngineNotification> m_notifier;
-		Clipboard<std::string> m_clipboard;
+		Clipboard m_clipboard;
 	private:
 		static Application* s_Instance;
 		Scene* m_scene = nullptr;

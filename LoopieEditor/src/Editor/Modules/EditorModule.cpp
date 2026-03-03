@@ -12,14 +12,11 @@
 #include "Loopie/Math/MathTypes.h"
 
 #include "Loopie/Scripting/ScriptingManager.h"
-#include "Loopie/Collisions/CollisionProcessor.h"
-#include "Loopie/Audio/AudioManager.h"
 
 #include "Loopie/Resources/ResourceManager.h"
 #include "Loopie/Importers/TextureImporter.h"
 #include "Loopie/Math/Ray.h"
 #include "Loopie/Importers/MaterialImporter.h"
-#include "Loopie/Resources/Types/Material.h"
 
 #include "Loopie/Components/MeshRenderer.h"
 #include "Loopie/Components/Animator.h"
@@ -27,15 +24,10 @@
 #include "Loopie/Components/Transform.h"
 #include "Loopie/Components/RectTransform.h"
 #include "Loopie/Components/Canvas.h"
-#include "Loopie/Components/AudioListener.h"
-#include "Loopie/Components/AudioSource.h"
 #include "Loopie/Components/Image.h"
+#include "Loopie/Resources/Types/Material.h"
 
-
-
-
-#include <memory>
-
+#include "Loopie/Collisions/CollisionProcessor.h"
 ///
 
 #include <glad/glad.h>
@@ -108,7 +100,6 @@ namespace Loopie
 	{
 		Application& app = Application::GetInstance();
 		InputEventManager& inputEvent = app.GetInputEvent();
-		AudioManager::Update();
 
 		//// Update Components
 		DebugGameMode mode = m_topBar.GetCurrentMode();
@@ -261,7 +252,6 @@ namespace Loopie
 			
 
 			ScriptingManager::RuntimeStart();
-			AudioManager::StartSceneAudio(&Application::GetInstance().GetScene());
 			Application::GetInstance().GetScene().SaveScene("recoverScene.scene");
 		}
 

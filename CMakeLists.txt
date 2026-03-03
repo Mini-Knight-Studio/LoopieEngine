@@ -21,8 +21,6 @@ set(MONO_INCLUDE_DIR "${MONO_ROOT}/include/mono-2.0")
 set(MONO_LIB_DIR "${MONO_ROOT}/lib")
 set(MONO_BIN_DIR "${MONO_ROOT}/bin")
 
-set(FMOD_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/vendor/fmod")
-
 find_library(MONO_LIBRARY NAMES mono-2.0-sgen PATHS "${MONO_LIB_DIR}" NO_DEFAULT_PATH)
 
 add_library(Mono::Runtime SHARED IMPORTED GLOBAL)

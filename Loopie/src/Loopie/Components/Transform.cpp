@@ -376,7 +376,6 @@ namespace Loopie
             m_localRotation.x = node.GetValue<float>("x", 0.0f).Result;
             m_localRotation.y = node.GetValue<float>("y", 0.0f).Result;
             m_localRotation.z = node.GetValue<float>("z", 0.0f).Result;
-            m_localRotation.w = node.GetValue<float>("w", 0.0f).Result;
         }
 
         node = data.Child("scale");
@@ -390,7 +389,7 @@ namespace Loopie
         node = data.Child("euler_angles");
         if (node.IsValid() && node.IsObject())
         {
-            SetLocalEulerAngles({node.GetValue<float>("x", 0.0f).Result,
+            SetEulerAngles({node.GetValue<float>("x", 0.0f).Result,
                             node.GetValue<float>("y", 0.0f).Result,
                             node.GetValue<float>("z", 0.0f).Result });
         }
