@@ -11,6 +11,7 @@ namespace Loopie {
 
 	struct TextureImportSettigns : public ImportSettings {
 
+
 		enum class Format {
 			RGB,
 			RGBA
