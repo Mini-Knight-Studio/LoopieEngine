@@ -52,13 +52,5 @@ namespace Loopie
             rotation = Math::ToQuaternion(rotationMatrix);
         }
 
-        static int nextPow2(int v)
-        {
-            int p = 1;
-            while (p < v) {
-                p <<= 1;
-            }
-            return p;
-        }
     }
 }
