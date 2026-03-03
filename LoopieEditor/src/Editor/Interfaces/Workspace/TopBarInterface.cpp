@@ -7,6 +7,9 @@
 #include "Loopie/Components/Component.h"
 #include "Loopie/Core/Log.h"
 
+#include "Loopie/Audio/AudioManager.h"
+#include "Loopie/Core/Application.h" 
+
 #include <imgui.h>
 #include <imgui_stdlib.h>
 

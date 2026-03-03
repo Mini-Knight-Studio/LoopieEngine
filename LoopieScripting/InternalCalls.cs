@@ -135,6 +135,43 @@ namespace Loopie
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static float Animator_GetCurrentTime(string entityID, string componentID);
         #endregion
+        #region AudioSource
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void AudioSource_Play(string id);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void AudioSource_Stop(string id);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void AudioSource_SetLoop(string id, bool value);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void AudioSource_SetPitch(string id, float pitch);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void AudioSource_SetVolume(string id, float volume);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void AudioSource_SetPan(string id, float pan);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void AudioSource_SetSet3DMinMaxDistance(string id, float min, float max);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool AudioSource_IsLooping(string id);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static float AudioSource_GetPitch(string id);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static float AudioSource_GetVolume(string id);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static float AudioSource_GetPan(string id);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void AudioSource_GetSet3DMinMaxDistance(string id, out float min, out float max);
+        #endregion
         #region Camera
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Camera_SetFov(string entityID, string componentID, float fov);

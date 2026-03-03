@@ -12,6 +12,7 @@ namespace Loopie {
 		MATERIAL,
 		SHADER,
 		SCENE,
+		AUDIO,
 		SCRIPT
 		AUDIO,
 		SCRIPT,

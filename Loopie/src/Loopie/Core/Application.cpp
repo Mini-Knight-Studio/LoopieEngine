@@ -5,6 +5,7 @@
 #include "Loopie/Core/Time.h"
 #include "Loopie/Render/Renderer.h"
 #include "Loopie/Scripting/ScriptingManager.h"
+#include "Loopie/Audio/AudioManager.h"
 
 namespace Loopie {
 	Application* Application::s_Instance = nullptr;
@@ -26,6 +27,8 @@ namespace Loopie {
 		m_window = new Window();
 		Log::Info("Window created successfully.");
 
+		AudioManager::Init();
+
 		m_imguiManager.Init();
 
 		m_notifier.AddObserver(this);
@@ -42,6 +45,8 @@ namespace Loopie {
 			delete(module);
 		}
 		m_modules.clear();
+
+		AudioManager::Shutdown();
 
 		ScriptingManager::Shutdown();
 
@@ -105,6 +110,8 @@ namespace Loopie {
 			Renderer::Clear();
 
 			Time::CalculateFrame();
+
+			AudioManager::Update();
 
 			m_imguiManager.StartFrame();
 

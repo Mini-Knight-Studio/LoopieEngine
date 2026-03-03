@@ -8,6 +8,8 @@
 #include "Loopie/Components/MeshRenderer.h"
 #include "Loopie/Components/Animator.h"
 #include "Loopie/Components/BoxCollider.h"
+#include "Loopie/Components/AudioSource.h"
+#include "Loopie/Components/AudioListener.h"
 
 #include "Loopie/Core/UUID.h"
 #include "Loopie/Core/InputEventManager.h"
@@ -915,6 +917,178 @@ namespace Loopie
 	}
 #pragma endregion
 
+#pragma region AudioSource
+	static void AudioSource_Play(MonoString* entityID)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		if (entity)
+		{
+			AudioSource* audioSource = entity->GetComponent<AudioSource>();
+			if (audioSource)
+				audioSource->Play();
+		}
+	}
+
+	static void AudioSource_Stop(MonoString* entityID)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		if (entity)
+		{
+			AudioSource* audioSource = entity->GetComponent<AudioSource>();
+			if (audioSource)
+				audioSource->Stop();
+		}
+	}
+
+	static void AudioSource_SetLoop(MonoString* entityID, MonoBoolean loop)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		if (entity)
+		{
+			AudioSource* audioSource = entity->GetComponent<AudioSource>();
+			if (audioSource)
+				audioSource->SetLoop(loop != 0);
+		}
+	}
+
+	static void AudioSource_SetPitch(MonoString* entityID, float pitch)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		if (entity)
+		{
+			AudioSource* audioSource = entity->GetComponent<AudioSource>();
+			if (audioSource)
+				audioSource->SetPitch(pitch);
+		}
+	}
+
+	static void AudioSource_SetVolume(MonoString* entityID, float volume)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		if (entity)
+		{
+			AudioSource* audioSource = entity->GetComponent<AudioSource>();
+			if (audioSource)
+				audioSource->SetVolume(volume);
+		}
+	}
+
+	static void AudioSource_SetPan(MonoString* entityID, float pan)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		if (entity)
+		{
+			AudioSource* audioSource = entity->GetComponent<AudioSource>();
+			if (audioSource)
+				audioSource->SetPan(pan);
+		}
+	}
+
+	static void AudioSource_SetSet3DMinMaxDistance(MonoString* entityID, float min, float max)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		if (entity)
+		{
+			AudioSource* audioSource = entity->GetComponent<AudioSource>();
+			if (audioSource)
+				audioSource->Set3DMinMaxDistance(min, max);
+		}
+	}
+
+	static MonoBoolean AudioSource_IsLooping(MonoString* entityID)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		if (entity)
+		{
+			AudioSource* audioSource = entity->GetComponent<AudioSource>();
+			if (audioSource)
+				return audioSource->IsLooping();
+		}
+		return false;
+	}
+
+	static float AudioSource_GetPitch(MonoString* entityID)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		if (entity)
+		{
+			AudioSource* audioSource = entity->GetComponent<AudioSource>();
+			if (audioSource)
+				return audioSource->GetPitch();
+		}
+		return 0;
+	}
+
+	static float AudioSource_GetVolume(MonoString* entityID)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		if (entity)
+		{
+			AudioSource* audioSource = entity->GetComponent<AudioSource>();
+			if (audioSource)
+				return audioSource->GetVolume();
+		}
+		return 0;
+	}
+
+	static float AudioSource_GetPan(MonoString* entityID)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		if (entity)
+		{
+			AudioSource* audioSource = entity->GetComponent<AudioSource>();
+			if (audioSource)
+				return audioSource->GetPan();
+		}
+		return 0;
+	}
+
+	static void AudioSource_GetSet3DMinMaxDistance(MonoString* entityID, float* min, float* max)
+	{
+		UUID uuid(Utils::MonoStringToString(entityID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		if (entity)
+		{
+			AudioSource* audioSource = entity->GetComponent<AudioSource>();
+			if (audioSource) {
+				float minVal = 0;
+				float maxVal = 0;
+				audioSource->Get3DMinMaxDistance(minVal, maxVal);
+				*min = minVal;
+				*max = maxVal;
+				return;
+			}
+		}
+		*min = 0;
+		*max = 0;
+	}
+
+#pragma endregion
+
+
 	template<typename Comp, typename = std::enable_if_t<std::is_base_of_v<Component, Comp>>>
 	static void RegisterComponent()
 	{
@@ -944,6 +1118,8 @@ namespace Loopie
 		RegisterComponent<Camera>();
 		RegisterComponent<MeshRenderer>();
 		RegisterComponent<BoxCollider>();
+		RegisterComponent<AudioSource>();
+		RegisterComponent<AudioListener>();
 	}
 
 
@@ -1051,5 +1227,19 @@ namespace Loopie
 		ADD_INTERNAL_CALL(BoxCollider_IsColliding);
 		ADD_INTERNAL_CALL(BoxCollider_HasCollided);
 		ADD_INTERNAL_CALL(BoxCollider_HasEndedCollision);
+
+		ADD_INTERNAL_CALL(AudioSource_Play);
+		ADD_INTERNAL_CALL(AudioSource_Stop);
+		ADD_INTERNAL_CALL(AudioSource_SetLoop);
+		ADD_INTERNAL_CALL(AudioSource_SetPitch);
+		ADD_INTERNAL_CALL(AudioSource_SetVolume);
+		ADD_INTERNAL_CALL(AudioSource_SetPan);
+		ADD_INTERNAL_CALL(AudioSource_SetSet3DMinMaxDistance);
+
+		ADD_INTERNAL_CALL(AudioSource_IsLooping);
+		ADD_INTERNAL_CALL(AudioSource_GetPitch);
+		ADD_INTERNAL_CALL(AudioSource_GetVolume);
+		ADD_INTERNAL_CALL(AudioSource_GetPan);
+		ADD_INTERNAL_CALL(AudioSource_GetSet3DMinMaxDistance);
 	}
 }
