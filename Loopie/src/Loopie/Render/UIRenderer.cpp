@@ -9,6 +9,8 @@
 #include "Loopie/Importers/MaterialImporter.h"
 #include "Loopie/Core/Log.h"
 
+#include "glad/glad.h"
+
 namespace Loopie
 {
 	bool UIRenderer::s_initialized = false;
@@ -69,8 +71,6 @@ namespace Loopie
 		s_quadVBO.reset();
 		s_quadEBO.reset();
 		
-		//s_material->~Material();
-		
 		s_material.reset();
 		s_initialized = false;
 	}
@@ -101,9 +101,6 @@ namespace Loopie
 		if (!s_quadVAO || !s_material || !texture)
 			return;
 
-		//if (s_material->GetTexture() != texture)
-		//	s_material->GetTexture()->DecrementReferenceCount();
-
 		matrix4 model(1.0f);
 		model = glm::translate(model, vec3(posPixels.x, posPixels.y, 0.0f));
 		model = glm::scale(model, vec3(sizePixels.x, sizePixels.y, 1.0f));
@@ -132,6 +129,126 @@ namespace Loopie
 		s_material->SetTexture(texture);
 		
 		Renderer::FlushRenderItem(s_quadVAO, s_material, modelMatrix);
+	}
+
+	void UIRenderer::DrawText(const vec2& posPixels, const std::string& text, const std::shared_ptr<Font>& font, const vec4& color, float scale)
+	{
+		EnsureInit();
+
+		if (!s_quadVAO || !s_material || !font || font->GetRendererId() == 0 || text.empty())
+			return;
+
+		UniformValue c;
+		c.type = UniformType_vec4;
+		c.value = color;
+		s_material->SetShaderVariable("u_Color", c);
+		s_material->SetTextureBufferOverride(font->GetAtlasTextureBuffer());
+
+		float x = posPixels.x;
+		float y = posPixels.y;
+
+		const float fontScale = (scale <= 0.0f) ? 1.0f : scale;
+
+		for (size_t i = 0; i < text.size(); i++)
+		{
+			const unsigned char ch = (unsigned char)text[i];
+
+			if (ch == '\n')
+			{
+				x = posPixels.x;
+				y += (float)font->GetLineHeight() * fontScale;
+				continue;
+			}
+
+			const FontGlyph* g = font->GetGlyph((int)ch);
+			if (!g)
+				continue;
+
+			const float xpos = x + (float)g->bearing.x * fontScale;
+			const float ypos = y + (float)(font->GetAscender() - g->bearing.y) * fontScale;
+			const float w = (float)g->size.x * fontScale;
+			const float h = (float)g->size.y * fontScale;
+
+			UniformValue uv;
+			uv.type = UniformType_vec4;
+			uv.value = vec4(g->uvMin.x, g->uvMin.y, g->uvMax.x, g->uvMax.y);
+			s_material->SetShaderVariable("u_UVRect", uv);
+
+			matrix4 model(1.0f);
+			model = glm::translate(model, vec3(xpos, ypos, 0.0f));
+			model = glm::scale(model, vec3(w, h, 1.0f));
+
+			Renderer::FlushRenderItem(s_quadVAO, s_material, model);
+
+			x += ((float)g->advance / 64.0f) * fontScale;
+		}
+
+		UniformValue uvReset;
+		uvReset.type = UniformType_vec4;
+		uvReset.value = vec4(0.0f, 0.0f, 1.0f, 1.0f);
+		s_material->SetShaderVariable("u_UVRect", uvReset);
+		s_material->ClearTextureBufferOverride();
+	}
+
+	void UIRenderer::DrawTextWorld(const matrix4& modelMatrix, const std::string& text, const std::shared_ptr<Font>& font, const vec4& color, float scale)
+	{
+		EnsureInit();
+
+		if (!s_quadVAO || !s_material || !font || font->GetRendererId() == 0 || text.empty())
+			return;
+
+		UniformValue c;
+		c.type = UniformType_vec4;
+		c.value = color;
+		s_material->SetShaderVariable("u_Color", c);
+		s_material->SetTextureBufferOverride(font->GetAtlasTextureBuffer());
+
+		float x = 0.0f;
+		float y = 0.0f;
+
+		const float fontScale = (scale <= 0.0f) ? 1.0f : scale;
+
+		for (size_t i = 0; i < text.size(); i++)
+		{
+			const unsigned char ch = (unsigned char)text[i];
+
+			if (ch == '\n')
+			{
+				x = 0.0f;
+				y += (float)font->GetLineHeight() * fontScale;
+				continue;
+			}
+
+			const FontGlyph* g = font->GetGlyph((int)ch);
+			if (!g)
+				continue;
+
+			const float xpos = x + (float)g->bearing.x * fontScale;
+			const float ypos = y + (float)(font->GetAscender() - g->bearing.y) * fontScale;
+			const float w = (float)g->size.x * fontScale;
+			const float h = (float)g->size.y * fontScale;
+
+			UniformValue uv;
+			uv.type = UniformType_vec4;
+			uv.value = vec4(g->uvMin.x, g->uvMin.y, g->uvMax.x, g->uvMax.y);
+			s_material->SetShaderVariable("u_UVRect", uv);
+
+			matrix4 glyphLocal(1.0f);
+			glyphLocal = glm::translate(glyphLocal, vec3(xpos, ypos, 0.0f));
+			glyphLocal = glm::scale(glyphLocal, vec3(w, h, 1.0f));
+
+			const matrix4 finalModel = modelMatrix * glyphLocal;
+
+			Renderer::FlushRenderItem(s_quadVAO, s_material, finalModel);
+
+			x += ((float)g->advance / 64.0f) * fontScale;
+		}
+
+		UniformValue uvReset;
+		uvReset.type = UniformType_vec4;
+		uvReset.value = vec4(0.0f, 0.0f, 1.0f, 1.0f);
+		s_material->SetShaderVariable("u_UVRect", uvReset);
+		s_material->ClearTextureBufferOverride();
 	}
 
 	void UIRenderer::EnsureInit()

@@ -14,10 +14,11 @@
 #include "Loopie/Components/Animator.h"
 #include "Loopie/Components/Canvas.h"
 #include "Loopie/Components/Image.h"
+#include "Loopie/Components/Text.h"
 #include "Loopie/Components/BoxCollider.h"
 #include "Loopie/Scripting/ScriptingManager.h"
 #include "Loopie/Importers/TextureImporter.h"
-
+#include "Loopie/Importers/FontImporter.h"
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Resources/ResourceManager.h"
 
@@ -114,6 +115,9 @@ namespace Loopie {
 			}
 			else if (component->GetTypeID() == AudioListener::GetTypeIDStatic()) {
 				DrawAudioListener(static_cast<AudioListener*>(component));
+			}
+			else if (component->GetTypeID() == Text::GetTypeIDStatic()) {
+				DrawText(static_cast<Text*>(component));
 			}
 		}
 		AddComponent(entity);
@@ -875,6 +879,79 @@ namespace Loopie {
 			}
 
 			ImGui::TextDisabled("Drag & drop an image from Assets Explorer onto the texture field/preview.");
+		}
+
+		ImGui::PopID();
+	}
+
+	void InspectorInterface::DrawText(Text* text)
+	{
+		if (!text)
+			return;
+
+		ImGui::PushID(text);
+
+		bool open = ImGui::CollapsingHeader("Text");
+		ImGui::SetItemTooltip(text->GetUUID().Get().c_str());
+		if (ComponentContextMenu(text))
+		{
+			ImGui::PopID();
+			return;
+		}
+
+		if (open)
+		{
+			std::string value = text->GetText();
+			char buffer[512];
+			memset(buffer, 0, sizeof(buffer));
+			strncpy_s(buffer, value.c_str(), sizeof(buffer) - 1);
+
+			if (ImGui::InputTextMultiline("Value", buffer, sizeof(buffer), ImVec2(0, 60)))
+				text->SetText(std::string(buffer));
+
+			ImGui::Separator();
+
+			vec4 c = text->GetColor();
+			ImVec4 imColor(c.r, c.g, c.b, c.a);
+			if (ImGui::ColorEdit4("Color", (float*)&imColor))
+				text->SetColor(vec4(imColor.x, imColor.y, imColor.z, imColor.w));
+
+			float s = text->GetScale();
+			if (ImGui::DragFloat("Scale", &s, 0.01f, 0.01f, 100.0f))
+				text->SetScale(s);
+
+			ImGui::Separator();
+
+			std::shared_ptr<Font> font = text->GetFont();
+			Metadata* meta = font ? AssetRegistry::GetMetadata(font->GetUUID()) : nullptr;
+
+			ImGui::Text("Font: %s", meta ? "Assigned" : "None / Unknown");
+			if (meta && meta->HasCache && !meta->CachesPath.empty())
+				ImGui::TextDisabled("Cache: %s", meta->CachesPath[0].c_str());
+
+			ImGui::Button("[ Drop Font Here ]", ImVec2(ImGui::GetContentRegionAvail().x, 30));
+
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_EXPLORER_FILE"))
+				{
+					const char* droppedPath = (const char*)payload->Data;
+					if (droppedPath && FontImporter::CheckIfIsFont(droppedPath))
+					{
+						Metadata& droppedMeta = AssetRegistry::GetOrCreateMetadata(droppedPath);
+						FontImporter::ImportFont(droppedPath, droppedMeta);
+
+						std::shared_ptr<Font> droppedFont = ResourceManager::GetFont(droppedMeta);
+						if (droppedFont)
+							droppedFont->Load();
+
+						text->SetFont(droppedFont);
+					}
+				}
+				ImGui::EndDragDropTarget();
+			}
+
+			ImGui::TextDisabled("Drag & drop a .ttf/.otf from Assets Explorer.");
 		}
 
 		ImGui::PopID();

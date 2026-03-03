@@ -6,6 +6,7 @@
 #include "Loopie/Components/RectTransform.h"
 #include "Loopie/Components/Canvas.h"
 #include "Loopie/Components/Image.h"
+#include "Loopie/Components/Text.h"
 
 #include "Editor/Interfaces/Workspace/SceneInterface.h"
 #include <imgui.h>
@@ -190,6 +191,12 @@ namespace Loopie {
 				if (auto newImage = CreateImage("Image", entity))
 					SelectEntity(newImage);
 			}
+
+			if (ImGui::MenuItem("Text"))
+			{
+				if (auto newText = CreateText("Text", entity))
+					SelectEntity(newText);
+			}
 			
 			ImGui::EndMenu();
 		}
@@ -296,6 +303,26 @@ namespace Loopie {
 		std::shared_ptr<Entity> newEntity = m_scene->CreateEntity(name, parent);
 		newEntity->ReplaceTransform<RectTransform>();
 		newEntity->AddComponent<Image>();
+
+		return newEntity;
+	}
+	std::shared_ptr<Entity> HierarchyInterface::CreateText(const std::string& name, const std::shared_ptr<Entity> parent)
+	{
+		std::shared_ptr<Entity> canvasEntity = parent;
+
+		while (canvasEntity && !canvasEntity->GetComponent<Canvas>())
+		{
+			canvasEntity = canvasEntity->GetParent().lock();
+		}
+
+		if (!canvasEntity)
+		{
+			return nullptr;
+		}
+
+		std::shared_ptr<Entity> newEntity = m_scene->CreateEntity(name, parent);
+		newEntity->ReplaceTransform<RectTransform>();
+		newEntity->AddComponent<Text>();
 
 		return newEntity;
 	}

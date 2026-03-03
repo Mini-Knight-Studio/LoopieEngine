@@ -30,9 +30,7 @@
 #include "Loopie/Components/AudioListener.h"
 #include "Loopie/Components/AudioSource.h"
 #include "Loopie/Components/Image.h"
-
-
-
+#include "Loopie/Components/Text.h"
 
 #include <memory>
 
@@ -418,6 +416,7 @@ namespace Loopie
 			return;
 
 		Image* img = entity->GetComponent<Image>();
+		Text* text = entity->GetComponent<Text>();
 		RectTransform* rt = entity->GetComponent<RectTransform>();
 
 		if (img && img->GetIsActive() && rt)
@@ -429,6 +428,14 @@ namespace Loopie
 			const vec2 pixelPos(p.x * scale.x, p.y * scale.y);
 
 			UIRenderer::DrawImage(pixelPos, pixelSize, img->GetTexture(), img->GetTint());
+		}
+
+		if (text && text->GetIsActive() && rt)
+		{
+			const vec3 p = rt->GetLocalPosition();
+			const vec2 pixelPos(p.x * scale.x, p.y * scale.y);
+
+			UIRenderer::DrawText(pixelPos, text->GetText(), text->GetFont(), text->GetColor(), text->GetScale());
 		}
 
 		for (const auto& child : entity->GetChildren())
@@ -507,6 +514,7 @@ namespace Loopie
 			return;
 
 		Image* img = entity->GetComponent<Image>();
+		Text* text = entity->GetComponent<Text>();
 		RectTransform* rt = entity->GetComponent<RectTransform>();
 
 		if (img && img->GetIsActive() && rt)
@@ -521,6 +529,13 @@ namespace Loopie
 
 				UIRenderer::DrawImageWorld(model, tex, img->GetTint());
 			}
+		}
+
+		if (text && text->GetIsActive() && rt)
+		{
+			const matrix4 model = rt->GetLocalToWorldMatrix();
+
+			UIRenderer::DrawTextWorld(model, text->GetText(), text->GetFont(), text->GetColor(), text->GetScale());
 		}
 
 		for (const auto& child : entity->GetChildren())

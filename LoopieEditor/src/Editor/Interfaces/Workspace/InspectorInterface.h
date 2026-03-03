@@ -15,6 +15,7 @@ namespace Loopie {
 	class RectTransform;
 	class Canvas;
 	class Image;
+	class Text;
 	class AudioSource;
 	class AudioListener;
 
@@ -46,6 +47,7 @@ namespace Loopie {
 		void DrawScriptClass(ScriptClass* scriptClass);
 		void DrawCanvas(Canvas* canvas);
 		void DrawImage(Image* image);
+		void DrawText(Text* text);
 		void DrawBoxCollider(BoxCollider* boxCollider);
 		void DrawAudioSource(AudioSource* source);
 		void DrawAudioListener(AudioListener* listener);

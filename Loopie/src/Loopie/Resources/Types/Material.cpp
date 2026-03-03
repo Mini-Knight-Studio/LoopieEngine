@@ -23,6 +23,16 @@ namespace Loopie
 			m_texture->DecrementReferenceCount();
 	}
 
+	void Material::SetTextureBufferOverride(const std::shared_ptr<TextureBuffer>& textureBuffer)
+	{
+		m_textureBufferOverride = textureBuffer;
+	}
+
+	void Material::ClearTextureBufferOverride()
+	{
+		m_textureBufferOverride.reset();
+	}
+
 	std::shared_ptr<Material> Material::GetDefault()
 	{
 		if (s_Material)
@@ -47,7 +57,11 @@ namespace Loopie
 
 		m_shader.Bind();
 
-		if (m_texture)
+		if (m_textureBufferOverride)
+		{
+			m_textureBufferOverride->Bind();
+		}
+		else if (m_texture)
 		{
 			m_texture->m_tb->Bind();
 		}

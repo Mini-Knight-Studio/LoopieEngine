@@ -27,7 +27,7 @@ namespace Loopie
 	public:
 		DEFINE_TYPE(Font)
 
-			Font(const UUID& id);
+		Font(const UUID& id);
 		~Font() = default;
 
 		bool Load() override;
@@ -41,6 +41,8 @@ namespace Loopie
 		int GetAscender() const { return m_ascender; }
 		int GetDescender() const { return m_descender; }
 		int GetLineHeight() const { return m_lineHeight; }
+
+		std::shared_ptr<TextureBuffer> GetAtlasTextureBuffer() const { return m_tb; }
 
 	private:
 		int m_atlasWidth = 0;

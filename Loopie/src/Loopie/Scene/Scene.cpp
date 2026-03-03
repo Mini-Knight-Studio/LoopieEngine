@@ -16,6 +16,7 @@
 
 #include "Loopie/Components/AudioSource.h"
 #include "Loopie/Components/AudioListener.h"
+#include "Loopie/Components/Text.h"
 
 #include <unordered_set>
 
@@ -295,6 +296,12 @@ namespace Loopie {
 				auto audioListener = clone->AddComponent<AudioListener>();
 				audioListener->Deserialize(componentData.Child("audiolistener"));
 			}
+			// Text
+			else if (componentData.Child("text").IsValid())
+			{
+				auto text = clone->AddComponent<Text>();
+				text->Deserialize(componentData.Child("text"));
+			}
 		}
 
 		// ---- Clone children ----
@@ -568,6 +575,16 @@ namespace Loopie {
 						{
 							audioListener->Deserialize(node);
 							audioListener->SetUUID(componentUUID.Get());
+						}
+					}
+					else if (componentNode.Contains("text"))
+					{
+						JsonNode node = componentNode.Child("text");
+						auto text = entity->AddComponent<Text>();
+						if (text)
+						{
+							text->Deserialize(node);
+							text->SetUUID(componentUUID.Get());
 						}
 					}
 				}
