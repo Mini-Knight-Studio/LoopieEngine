@@ -1010,7 +1010,24 @@ namespace Loopie {
 			ImGui::Separator();
 
 			std::shared_ptr<Texture> texture = image->GetTexture();
+
+			ImGui::Button(" [ Drop Texture Here ] ", ImVec2(ImGui::GetContentRegionAvail().x, 30));
+			if (ImGui::BeginPopupContextItem())
+			{
+				if (ImGui::MenuItem("Paste"))
+				{
+					std::shared_ptr<Resource> resource = GetPastedResource(ResourceType::TEXTURE);
+					if (resource) {
+						image->SetTexture(std::static_pointer_cast<Texture>(resource));
+					}
+				}
+				ImGui::EndPopup();
+			}
+
+			std::shared_ptr<Resource> resource = GetDragDropResource(ResourceType::TEXTURE);
 			Metadata* meta = texture ? AssetRegistry::GetMetadata(texture->GetUUID()) : nullptr;
+			if (resource)
+				image->SetTexture(std::static_pointer_cast<Texture>(resource));
 
 			ImGui::Text("Texture: %s", meta ? "Assigned" : "None / Unknown");
 
@@ -1032,27 +1049,11 @@ namespace Loopie {
 
 				float maxWidth = isWide ? maxSizeWide : maxSizeNormal;
 				float maxHeight = maxSizeNormal;
-				float scale = std::min(maxWidth / static_cast<float>(texSize.x),maxHeight / static_cast<float>(texSize.y));
-				ImVec2 previewSize(texSize.x * scale,texSize.y * scale);
+				float scale = std::min(maxWidth / static_cast<float>(texSize.x), maxHeight / static_cast<float>(texSize.y));
+				ImVec2 previewSize(texSize.x * scale, texSize.y * scale);
 
-
-				ImGui::Image((ImTextureID)texture->GetRendererId(), previewSize, ImVec2(0,0), ImVec2(1,1));
-
-				if (ImGui::BeginPopupContextItem())
-				{
-					if (ImGui::MenuItem("Paste"))
-					{
-						std::shared_ptr<Resource> resource = GetPastedResource(ResourceType::TEXTURE);
-						if (resource) {
-							image->SetTexture(std::static_pointer_cast<Texture>(resource));
-						}
-					}
-					ImGui::EndPopup();
-				}
-
-				std::shared_ptr<Resource> resource = GetDragDropResource(ResourceType::TEXTURE);
-				if (resource)
-					image->SetTexture(std::static_pointer_cast<Texture>(resource));
+				ImGui::Text("Preview:");
+				ImGui::Image((ImTextureID)texture->GetRendererId(), previewSize, ImVec2(0, 0), ImVec2(1, 1));
 			}
 
 			ImGui::TextDisabled("Drag & drop an image from Assets Explorer onto the texture field/preview.");
@@ -1092,10 +1093,6 @@ namespace Loopie {
 			ImVec4 imColor(c.r, c.g, c.b, c.a);
 			if (ImGui::ColorEdit4("Color", (float*)&imColor))
 				text->SetColor(vec4(imColor.x, imColor.y, imColor.z, imColor.w));
-
-			float s = text->GetScale();
-			if (ImGui::DragFloat("Scale", &s, 0.01f, 0.01f, 100.0f))
-				text->SetScale(s);
 
 			ImGui::Separator();
 
