@@ -4,6 +4,8 @@
 #include "Loopie/Events/IObserver.h"
 #include "Editor/Events/EditorEventTypes.h"
 
+#include <memory>
+
 namespace Loopie {
 	class Transform;
 	class Camera;
@@ -58,6 +60,7 @@ namespace Loopie {
 
 		// Inherited via IObserver
 		void OnNotify(const OnEntityOrFileNotification& id) override;
+
 
 	private:
 

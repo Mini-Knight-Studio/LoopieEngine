@@ -76,8 +76,18 @@ namespace Loopie {
         Play();
     }
 
-    void AudioSource::AddClip(std::shared_ptr<AudioClip> path) {
-        m_audioClips.push_back(path);
+    void AudioSource::AddClip(std::shared_ptr<AudioClip> audio) {
+		audio->IncrementReferenceCount();
+        m_audioClips.push_back(audio);
+    }
+
+    void AudioSource::RemoveClip(std::shared_ptr<AudioClip> clip)
+    {
+        auto it = std::find(m_audioClips.begin(), m_audioClips.end(), clip);
+        if (it != m_audioClips.end()) {
+            (*it)->DecrementReferenceCount();
+            m_audioClips.erase(it);
+		}
     }
 
     void AudioSource::SetCurrentClip(int index) {
@@ -216,6 +226,10 @@ namespace Loopie {
         m_playOnAwake = data.GetValue<bool>("playOnAwake", true).Result;
         m_usePlaylist = data.GetValue<bool>("usePlaylist", false).Result;
         m_currentClipIndex = data.GetValue<int>("currentClipIndex", 0).Result;
+
+        for (size_t i = 0; i < m_audioClips.size(); i++)
+			m_audioClips[i]->DecrementReferenceCount();
+
         m_audioClips.clear();
 
         JsonNode clipsArray = data.Child("audioClips");

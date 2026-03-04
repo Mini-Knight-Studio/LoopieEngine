@@ -37,8 +37,10 @@ namespace Loopie {
         void OnUpdate() override;
 
         void NextTrack();
-        void AddClip(std::shared_ptr<AudioClip> path);
-        std::vector<std::shared_ptr<AudioClip>>& GetClips() { return m_audioClips; }
+        void AddClip(std::shared_ptr<AudioClip> clip);
+        void RemoveClip(std::shared_ptr<AudioClip> clip);
+
+        const std::vector<std::shared_ptr<AudioClip>>& GetClips() { return m_audioClips; }
 
         int GetCurrentClipIndex() const { return m_currentClipIndex; }
         void SetCurrentClipIndex(int index) { m_currentClipIndex = index; }
