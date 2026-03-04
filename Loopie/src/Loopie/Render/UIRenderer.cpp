@@ -164,7 +164,7 @@ namespace Loopie
 				continue;
 
 			const float xpos = x + (float)g->bearing.x * fontScale;
-			const float ypos = y + (float)(font->GetAscender() - g->bearing.y) * fontScale;
+			const float ypos = y - ((float)g->size.y - (float)g->bearing.y) * fontScale;
 			const float w = (float)g->size.x * fontScale;
 			const float h = (float)g->size.y * fontScale;
 
@@ -215,7 +215,7 @@ namespace Loopie
 				continue;
 
 			const float xpos = posPixels.x + (x + (float)g->bearing.x * fontScale) * fitScale + ox;
-			const float ypos = posPixels.y + (y + (float)(font->GetAscender() - g->bearing.y) * fontScale) * fitScale + oy;
+			const float ypos = posPixels.y + (y - ((float)g->size.y - (float)g->bearing.y) * fontScale) * fitScale + oy;
 
 			const float w = (float)g->size.x * fontScale * fitScale;
 			const float h = (float)g->size.y * fontScale * fitScale;
@@ -274,7 +274,7 @@ namespace Loopie
 				continue;
 
 			const float xpos = x + (float)g->bearing.x * fontScale;
-			const float ypos = y + (float)(font->GetAscender() - g->bearing.y) * fontScale;
+			const float ypos = y - ((float)g->size.y - (float)g->bearing.y) * fontScale;
 			const float w = (float)g->size.x * fontScale;
 			const float h = (float)g->size.y * fontScale;
 
@@ -321,7 +321,7 @@ namespace Loopie
 				continue;
 
 			const float xpos = (x + (float)g->bearing.x * fontScale) * uniformS + rx;
-			const float ypos = (y + (float)(font->GetAscender() - g->bearing.y) * fontScale) * uniformS + ry;
+			const float ypos = (y - ((float)g->size.y - (float)g->bearing.y) * fontScale) * uniformS + ry;
 			const float w = (float)g->size.x * fontScale * uniformS;
 			const float h = (float)g->size.y * fontScale * uniformS;
 
