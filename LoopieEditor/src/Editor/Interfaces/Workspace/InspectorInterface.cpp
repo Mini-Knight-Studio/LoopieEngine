@@ -143,6 +143,26 @@ namespace Loopie {
 		return nullptr;
 	}
 
+	std::shared_ptr<Resource> GetPastedResource(ResourceType type) {
+
+
+		std::string uuid = Application::GetInstance().m_clipboard.PasteFirst();
+		if (UUID::IsValid(uuid))
+		{
+			Metadata* data = AssetRegistry::GetMetadata(UUID(uuid));
+			if (data && data->Type == type)
+			{
+				std::shared_ptr<Resource> resource = GetResourceByType(type, *data);
+				if (resource)
+				{
+					return resource;
+				}
+			}
+		}
+
+		return nullptr;
+	}
+
 	InspectorInterface::InspectorInterface() {
 		
 	}
@@ -404,7 +424,6 @@ namespace Loopie {
 			ImGui::InputInt("", &meshIndex,1,0);
 			if (meshIndex < 0)
 				meshIndex = 0;
-			ImGui::SameLine();
 			if (meshIndex != prevMeshIndex && mesh)
 			{
 				Metadata* data = AssetRegistry::GetMetadata(mesh->GetUUID());
@@ -421,35 +440,27 @@ namespace Loopie {
 					}
 				}
 			}
-			if (ImGui::Button("Paste"))
-			{
-				std::string uuid = Application::GetInstance().m_clipboard.PasteFirst();
-				if (UUID::IsValid(uuid))
-				{
-					Metadata* data = AssetRegistry::GetMetadata(UUID(uuid));
-					if (data && data->Type == ResourceType::MESH)
-					{
-						int maxIndex = (int)data->CachesPath.size();
-						if (meshIndex >= maxIndex)
-							meshIndex = maxIndex - 1;
-						std::shared_ptr<Mesh> newMesh = ResourceManager::GetMesh(*data, meshIndex);
-						if (newMesh)
-						{
-							mesh = newMesh;
-							meshRenderer->SetMesh(mesh);
-						}
-					}
-				}
-			}
 
 			ImGui::Button(" [ Drop Mesh Here ] ", ImVec2(ImGui::GetContentRegionAvail().x, 30));
+
+			if (ImGui::BeginPopupContextItem())
+			{
+				if (ImGui::MenuItem("Paste"))
+				{
+					std::shared_ptr<Resource> resource = GetPastedResource(ResourceType::MESH);
+					if (resource) {
+						mesh = (std::static_pointer_cast<Mesh>(resource));
+						meshRenderer->SetMesh(mesh);
+					}
+				}
+				ImGui::EndPopup();
+			}
+
 			std::shared_ptr<Resource> resource = GetDragDropResource(ResourceType::MESH);
 			if (resource) {
 				mesh = (std::static_pointer_cast<Mesh>(resource));
 				meshRenderer->SetMesh(mesh);
 			}
-
-
 
 			if (!mesh) {
 				ImGui::PopID();
@@ -491,9 +502,23 @@ namespace Loopie {
 
 			if (ImGui::TreeNode("Material")) {
 				ImGui::Button(" [ Drop Material Here ] ", ImVec2(ImGui::GetContentRegionAvail().x, 30));
+
+				if (ImGui::BeginPopupContextItem())
+				{
+					if (ImGui::MenuItem("Paste"))
+					{
+						resource = GetPastedResource(ResourceType::MATERIAL);
+						if (resource) {
+							material = std::static_pointer_cast<Material>(resource);
+							meshRenderer->SetMaterial(material);
+						}
+					}
+					ImGui::EndPopup();
+				}
+
 				resource = GetDragDropResource(ResourceType::MATERIAL);
 				if (resource) {
-					material = (std::static_pointer_cast<Material>(resource));
+					material = std::static_pointer_cast<Material>(resource);
 					meshRenderer->SetMaterial(material);
 				}
 
@@ -907,8 +932,18 @@ namespace Loopie {
 					break;
 				}
 
+				case ScriptFieldType::Entity:
+				{
+					ImGui::Text("Entity Field (Not working)");
+					break;
+				}
+				case ScriptFieldType::Component:
+				{
+					ImGui::Text("Component Field (Not working)");
+					break;
+				}
 				default:
-					//ImGui::Text("Unsupported Field: %s", name.c_str());
+					ImGui::Text("Unsupported Field: %s", name.c_str());
 					break;
 				}
 			}
@@ -997,6 +1032,18 @@ namespace Loopie {
 
 
 				ImGui::Image((ImTextureID)texture->GetRendererId(), previewSize, ImVec2(0,0), ImVec2(1,1));
+
+				if (ImGui::BeginPopupContextItem())
+				{
+					if (ImGui::MenuItem("Paste"))
+					{
+						std::shared_ptr<Resource> resource = GetPastedResource(ResourceType::TEXTURE);
+						if (resource) {
+							image->SetTexture(std::static_pointer_cast<Texture>(resource));
+						}
+					}
+					ImGui::EndPopup();
+				}
 
 				std::shared_ptr<Resource> resource = GetDragDropResource(ResourceType::TEXTURE);
 				if (resource)
@@ -1128,6 +1175,24 @@ namespace Loopie {
 			}
 
 			ImGui::Button(" [ Drop Audio Here ] ", ImVec2(ImGui::GetContentRegionAvail().x, 30));
+
+			if (ImGui::BeginPopupContextItem())
+			{
+				if (ImGui::MenuItem("Paste"))
+				{
+					std::shared_ptr<Resource> resource = GetPastedResource(ResourceType::AUDIO);
+					if (resource) {
+						auto clip = std::static_pointer_cast<AudioClip>(resource);
+						if (clip)
+						{
+							source->AddClip(clip);
+							if (clips.size() == 1)
+								source->SetCurrentClip(0);
+						}
+					}
+				}
+				ImGui::EndPopup();
+			}
 
 			std::shared_ptr<Resource> resource = GetDragDropResource(ResourceType::AUDIO);
 			if (resource) {
