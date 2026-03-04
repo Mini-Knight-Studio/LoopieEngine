@@ -19,6 +19,10 @@
 #include "Loopie/Scripting/ScriptingManager.h"
 #include "Loopie/Importers/TextureImporter.h"
 #include "Loopie/Importers/FontImporter.h"
+#include "Loopie/Importers/AudioImporter.h"
+#include "Loopie/Importers/MeshImporter.h"
+#include "Loopie/Importers/MaterialImporter.h"
+
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Resources/ResourceManager.h"
 
@@ -29,6 +33,117 @@
 #include <unordered_map>
 
 namespace Loopie {
+
+	bool CheckIfResourceTypeMatchesFileExtension(ResourceType type, const std::string& filepath) {
+		switch (type)
+		{
+		case ResourceType::TEXTURE:
+			return TextureImporter::CheckIfIsImage(filepath.c_str());
+		case ResourceType::MESH:
+			return MeshImporter::CheckIfIsModel(filepath.c_str());
+			break;
+		case ResourceType::MATERIAL:
+			return MaterialImporter::CheckIfIsMaterial(filepath.c_str());
+			break;
+		case ResourceType::SHADER:
+			// Check if it's a shader file
+			break;
+		case ResourceType::SCENE:
+			// Check if it's a scene file
+			break;
+		case ResourceType::AUDIO:
+			return AudioImporter::CheckIfIsAudio(filepath.c_str());
+			break;
+		case ResourceType::SCRIPT:
+			// Check if it's a script file
+			break;
+		default:
+			return false;
+		}
+		return false;
+	}
+
+	void ImportResourceByType(ResourceType type, const std::string& filepath, Metadata& metadata) {
+		switch (type)
+		{
+			case ResourceType::TEXTURE:
+				TextureImporter::ImportImage(filepath, metadata);
+				break;
+			case ResourceType::MESH:
+				MeshImporter::ImportModel(filepath, metadata);
+				break;
+			case ResourceType::MATERIAL:
+				MaterialImporter::ImportMaterial(filepath, metadata);
+				break;
+			case ResourceType::SHADER:
+				// Handle shader import
+				break;
+			case ResourceType::SCENE:
+				// Handle scene import
+				break;
+			case ResourceType::AUDIO:
+				AudioImporter::ImportAudio(filepath, metadata);
+				break;
+			case ResourceType::SCRIPT:
+				// Handle script import
+				break;
+		default:
+			break;
+		}
+	}
+
+	std::shared_ptr<Resource> GetResourceByType(ResourceType type,Metadata& metadata) {
+		std::shared_ptr<Resource> resource;
+		switch (type)
+		{
+		case ResourceType::TEXTURE:
+			resource = ResourceManager::GetTexture(metadata);
+			break;
+		case ResourceType::MESH:
+			resource = ResourceManager::GetMesh(metadata,0);
+			break;
+		case ResourceType::MATERIAL:
+			resource = ResourceManager::GetMaterial(metadata);
+			break;
+		case ResourceType::SHADER:
+			// Handle shader import
+			break;
+		case ResourceType::SCENE:
+			// Handle scene import
+			break;
+		case ResourceType::AUDIO:
+			resource = ResourceManager::GetAudioClip(metadata);
+			break;
+		case ResourceType::SCRIPT:
+			// Handle script import
+			break;
+		default:
+			break;
+		}
+
+		if (resource)
+			resource->Load();
+		return resource;
+	}
+
+	std::shared_ptr<Resource> GetDragDropResource(ResourceType type) {
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_EXPLORER_FILE"))
+			{
+				const char* droppedPath = (const char*)payload->Data;
+				if (droppedPath && CheckIfResourceTypeMatchesFileExtension(type, droppedPath))
+				{
+					Metadata& droppedMeta = AssetRegistry::GetOrCreateMetadata(droppedPath);
+					ImportResourceByType(type,droppedPath, droppedMeta);
+
+					return GetResourceByType(type, droppedMeta);
+				}
+			}
+			ImGui::EndDragDropTarget();
+		}
+		return nullptr;
+	}
 
 	InspectorInterface::InspectorInterface() {
 		
@@ -331,34 +446,67 @@ namespace Loopie {
 					}
 				}
 			}
+
+			ImGui::Button(" [ Drop Mesh Here ] ", ImVec2(ImGui::GetContentRegionAvail().x, 30));
+			std::shared_ptr<Resource> resource = GetDragDropResource(ResourceType::MESH);
+			if (resource) {
+				mesh = (std::static_pointer_cast<Mesh>(resource));
+				meshRenderer->SetMesh(mesh);
+			}
+
+
+
 			if (!mesh) {
 				ImGui::PopID();
 				return;
 			}
-			ImGui::Text("Mesh Resource Count: %u", mesh->GetReferenceCount());
-			ImGui::Text("Mesh Vertices: %d", mesh->GetData().VerticesAmount);
-			ImGui::Text("Has Bones: %s", mesh->GetData().HasBones ? "True" : "False");
 
 			ImGui::Separator();
 
-			bool drawFN = meshRenderer->GetDrawNormalsPerFace();
-			bool drawTN = meshRenderer->GetDrawNormalsPerTriangle();
-			bool drawAABB = meshRenderer->GetDrawAABB();
-			bool drawOBB = meshRenderer->GetDrawOBB();
-			if (ImGui::Checkbox("Draw Face Normals", &drawFN))
-				meshRenderer->SetDrawNormalsPerFace(drawFN);
-			if (ImGui::Checkbox("Draw Triangle Normals", &drawTN))
-				meshRenderer->SetDrawNormalsPerTriangle(drawTN);
-			if (ImGui::Checkbox("Draw AABB", &drawAABB))
+			if (ImGui::TreeNode("Mesh Info")) {
+				ImGui::Text("Mesh Resource Count: %u", mesh->GetReferenceCount());
+				ImGui::Text("Mesh Vertices: %d", mesh->GetData().VerticesAmount);
+				ImGui::Text("Has Bones: %s", mesh->GetData().HasBones ? "True" : "False");
+
+				ImGui::TreePop();
+			}
+
+			ImGui::Separator();
+
+			if (ImGui::TreeNode("Mesh Options")) {
+				bool drawFN = meshRenderer->GetDrawNormalsPerFace();
+				bool drawTN = meshRenderer->GetDrawNormalsPerTriangle();
+				bool drawAABB = meshRenderer->GetDrawAABB();
+				bool drawOBB = meshRenderer->GetDrawOBB();
+				if (ImGui::Checkbox("Draw Face Normals", &drawFN))
+					meshRenderer->SetDrawNormalsPerFace(drawFN);
+				if (ImGui::Checkbox("Draw Triangle Normals", &drawTN))
+					meshRenderer->SetDrawNormalsPerTriangle(drawTN);
+				if (ImGui::Checkbox("Draw AABB", &drawAABB))
 					meshRenderer->SetDrawAABB(drawAABB);
-			if (ImGui::Checkbox("Draw OBB", &drawOBB))
-				meshRenderer->SetDrawOBB(drawOBB);
-			//ImGui::Text("Shader: %s", meshRenderer->GetShader().GetName().c_str()); ????
+				if (ImGui::Checkbox("Draw OBB", &drawOBB))
+					meshRenderer->SetDrawOBB(drawOBB);
+				//ImGui::Text("Shader: %s", meshRenderer->GetShader().GetName().c_str()); ????
 
-			ImGui::Separator();
+				ImGui::TreePop();
+			}
+
 			ImGui::Separator();
 			std::shared_ptr<Material> material = meshRenderer->GetMaterial();
-			DrawMaterial(material);
+
+			if (ImGui::TreeNode("Material")) {
+				ImGui::Button(" [ Drop Material Here ] ", ImVec2(ImGui::GetContentRegionAvail().x, 30));
+				resource = GetDragDropResource(ResourceType::MATERIAL);
+				if (resource) {
+					material = (std::static_pointer_cast<Material>(resource));
+					meshRenderer->SetMaterial(material);
+				}
+
+				DrawMaterial(material);
+
+				ImGui::TreePop();
+			}
+			
 			
 		}
 
@@ -377,75 +525,11 @@ namespace Loopie {
 		}
 
 		if (open) {
-			ImGui::Text("Linked MeshRenderers:");
+
+
 			const auto& renderers = animator->GetRenderers();
 
-			if (renderers.empty())
-			{
-				ImGui::TextColored(ImVec4(1, 1, 0, 1), "None");
-			}
-			else
-			{
-				int index = 0;
-				for (const auto& [uuid, data] : renderers)
-				{
-					MeshRenderer* renderer = data.Renderer;
-					if (!renderer) continue;
-
-					ImGui::PushID(index++);
-					std::shared_ptr<Entity> owner = renderer->GetOwner();
-					auto allRenderersInEntity = owner->GetComponents<MeshRenderer>();
-					int rendererIndex = 0;
-					for (int i = 0; i < allRenderersInEntity.size(); i++) {
-						if (allRenderersInEntity[i] == renderer) {
-							rendererIndex = i;
-							break;
-						}
-					}
-
-					if (ImGui::SmallButton("X"))
-					{
-						animator->RemoveMeshRenderer(renderer);
-						ImGui::PopID();
-						break;
-					}
-					ImGui::SameLine();
-
-					bool isTarget = (animator->GetTargetRenderer() == renderer);
-					std::string label;
-					if (allRenderersInEntity.size() > 1) {
-						label = fmt::format("{} [{}] : {}...", owner->GetName(), rendererIndex, renderer->GetUUID().Get().substr(0, 8));
-					}
-					else {
-						label = fmt::format("{} : {}...", owner->GetName(), renderer->GetUUID().Get().substr(0, 8));
-					}
-
-					if (isTarget)
-						ImGui::TextColored(ImVec4(0, 1, 0, 1), "%s (Target)", label.c_str());
-					else
-						ImGui::Text("%s", label.c_str());
-
-					ImGui::SameLine();
-
-					if (!isTarget && ImGui::SmallButton("Set Target"))
-					{
-						animator->SetTargetRenderer(renderer);
-					}
-					if (!isTarget) 
-						ImGui::SameLine();
-
-					if (ImGui::SmallButton("Copy UUID"))
-					{
-						Application::GetInstance().m_clipboard.Copy(renderer->GetOwner()->GetUUID().Get(), renderer->GetUUID().Get());
-					}
-					ImGui::PopID();
-				}
-			}
-
-
-			ImGui::Separator();
-
-			ImGui::Text("Add MeshRenderer:");
+			ImGui::Text("Add Renderer");
 			static Entity* selectedEntity = nullptr;
 			static MeshRenderer* selectedRenderer = nullptr;
 
@@ -467,7 +551,7 @@ namespace Loopie {
 				for (Entity* entity : candidates)
 				{
 					std::vector<MeshRenderer*> renderersInEntity = entity->GetComponents<MeshRenderer>();
-					if (renderersInEntity.empty()) 
+					if (renderersInEntity.empty())
 						continue;
 
 					int index = 0;
@@ -490,12 +574,13 @@ namespace Loopie {
 						}
 						index++;
 					}
-					
+
 				}
 				ImGui::EndCombo();
 			}
 
 			ImGui::SameLine();
+
 			if (ImGui::Button("Add") && selectedRenderer)
 			{
 				animator->AddMeshRenderer(selectedRenderer);
@@ -506,7 +591,7 @@ namespace Loopie {
 				if (ImGui::Button("Get Self"))
 				{
 					std::vector<MeshRenderer*> renderersInEntity = animator->GetOwner()->GetComponents<MeshRenderer>();
-					for(const auto renderer : renderersInEntity)
+					for (const auto renderer : renderersInEntity)
 						animator->AddMeshRenderer(renderer);
 				}
 				ImGui::SameLine();
@@ -523,7 +608,7 @@ namespace Loopie {
 
 					for (auto& child : entity->GetChildren())
 						addFrom(child.get());
-				};
+					};
 
 				addFrom(owner.get());
 			}
@@ -532,6 +617,76 @@ namespace Loopie {
 			{
 				animator->ClearRenderers();
 			}
+
+			ImGui::Separator();
+			if (ImGui::TreeNode("Linked Renderers")) {
+
+				if (renderers.empty())
+				{
+					ImGui::TextColored(ImVec4(1, 1, 0, 1), "None");
+				}
+				else
+				{
+					int index = 0;
+					for (const auto& [uuid, data] : renderers)
+					{
+						MeshRenderer* renderer = data.Renderer;
+						if (!renderer) continue;
+
+						ImGui::PushID(index++);
+						std::shared_ptr<Entity> owner = renderer->GetOwner();
+						auto allRenderersInEntity = owner->GetComponents<MeshRenderer>();
+						int rendererIndex = 0;
+						for (int i = 0; i < allRenderersInEntity.size(); i++) {
+							if (allRenderersInEntity[i] == renderer) {
+								rendererIndex = i;
+								break;
+							}
+						}
+
+						if (ImGui::SmallButton("X"))
+						{
+							animator->RemoveMeshRenderer(renderer);
+							ImGui::PopID();
+							break;
+						}
+						ImGui::SameLine();
+
+						bool isTarget = (animator->GetTargetRenderer() == renderer);
+						std::string label;
+						if (allRenderersInEntity.size() > 1) {
+							label = fmt::format("{} [{}] : {}...", owner->GetName(), rendererIndex, renderer->GetUUID().Get().substr(0, 8));
+						}
+						else {
+							label = fmt::format("{} : {}...", owner->GetName(), renderer->GetUUID().Get().substr(0, 8));
+						}
+
+						if (isTarget)
+							ImGui::TextColored(ImVec4(0, 1, 0, 1), "%s", label.c_str());
+						else
+							ImGui::Text("%s", label.c_str());
+
+						ImGui::SameLine();
+
+						if (!isTarget && ImGui::SmallButton("Select"))
+						{
+							animator->SetTargetRenderer(renderer);
+						}
+						if (!isTarget)
+							ImGui::SameLine();
+
+						if (ImGui::SmallButton("Copy"))
+						{
+							Application::GetInstance().m_clipboard.Copy(renderer->GetOwner()->GetUUID().Get(), renderer->GetUUID().Get());
+						}
+						ImGui::PopID();
+					}
+				}
+
+				ImGui::TreePop();
+			}
+
+
 
 			static std::unordered_map<Animator*, std::string> s_selectedTargetUUID;
 
@@ -758,7 +913,7 @@ namespace Loopie {
 				}
 
 				default:
-					ImGui::Text("Unsupported Field: %s", name.c_str());
+					//ImGui::Text("Unsupported Field: %s", name.c_str());
 					break;
 				}
 			}
@@ -824,26 +979,6 @@ namespace Loopie {
 
 			ImGui::Text("Texture: %s", meta ? "Assigned" : "None / Unknown");
 
-			if (ImGui::BeginDragDropTarget())
-			{
-				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_EXPLORER_FILE"))
-				{
-					const char* droppedPath = (const char*)payload->Data;
-					if (droppedPath && TextureImporter::CheckIfIsImage(droppedPath))
-					{
-						Metadata& droppedMeta = AssetRegistry::GetOrCreateMetadata(droppedPath);
-						TextureImporter::ImportImage(droppedPath, droppedMeta);
-
-						std::shared_ptr<Texture> droppedTex = ResourceManager::GetTexture(droppedMeta);
-						if (droppedTex)
-							droppedTex->Load();
-
-						image->SetTexture(droppedTex);
-					}
-				}
-				ImGui::EndDragDropTarget();
-			}
-
 			texture = image->GetTexture();
 			if (texture)
 			{
@@ -855,27 +990,22 @@ namespace Loopie {
 				ivec2 texSize = texture->GetSize();
 				ImGui::Text("Size: %d x %d", texSize.x, texSize.y);
 
-				ImGui::Image((ImTextureID)texture->GetRendererId(), ImVec2(64, 64), ImVec2(1, 0), ImVec2(0, 1));
+				const float maxSizeNormal = 64.0f;
+				const float maxSizeWide = 128.0f;
 
-				if (ImGui::BeginDragDropTarget())
-				{
-					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_EXPLORER_FILE"))
-					{
-						const char* droppedPath = (const char*)payload->Data;
-						if (droppedPath && TextureImporter::CheckIfIsImage(droppedPath))
-						{
-							Metadata& droppedMeta = AssetRegistry::GetOrCreateMetadata(droppedPath);
-							TextureImporter::ImportImage(droppedPath, droppedMeta);
+				bool isWide = texSize.x > texSize.y * 1.5f;
 
-							std::shared_ptr<Texture> droppedTex = ResourceManager::GetTexture(droppedMeta);
-							if (droppedTex)
-								droppedTex->Load();
+				float maxWidth = isWide ? maxSizeWide : maxSizeNormal;
+				float maxHeight = maxSizeNormal;
+				float scale = std::min(maxWidth / static_cast<float>(texSize.x),maxHeight / static_cast<float>(texSize.y));
+				ImVec2 previewSize(texSize.x * scale,texSize.y * scale);
 
-							image->SetTexture(droppedTex);
-						}
-					}
-					ImGui::EndDragDropTarget();
-				}
+
+				ImGui::Image((ImTextureID)texture->GetRendererId(), previewSize, ImVec2(0,0), ImVec2(1,1));
+
+				std::shared_ptr<Resource> resource = GetDragDropResource(ResourceType::TEXTURE);
+				if (resource)
+					image->SetTexture(std::static_pointer_cast<Texture>(resource));
 			}
 
 			ImGui::TextDisabled("Drag & drop an image from Assets Explorer onto the texture field/preview.");
@@ -998,7 +1128,7 @@ namespace Loopie {
 
 			std::string previewValue = "None";
 
-			std::vector<std::shared_ptr<AudioClip>>& clips = source->GetClips();
+			const std::vector<std::shared_ptr<AudioClip>>& clips = source->GetClips();
 			int currentClipIndex = source->GetCurrentClipIndex();
 
 			if (currentClipIndex >= 0 &&
@@ -1007,12 +1137,7 @@ namespace Loopie {
 				auto clip = clips[currentClipIndex];
 				if (clip)
 				{
-					Metadata* meta = AssetRegistry::GetMetadata(clip->GetUUID());
-					if (meta && meta->HasCache)
-					{
-						std::filesystem::path p(meta->CachesPath[0]);
-						previewValue = p.filename().string();
-					}
+					previewValue = clip->GetUUID().Get();
 				}
 			}
 
@@ -1050,7 +1175,7 @@ namespace Loopie {
 
 				if (ImGui::Button("X"))
 				{
-					clips.erase(clips.begin() + i);
+					source->RemoveClip(clips[i]);
 
 					if (currentClipIndex >= i && currentClipIndex > 0) {
 						currentClipIndex--;
@@ -1082,55 +1207,48 @@ namespace Loopie {
 
 			ImGui::Button(" [ Drop Audio Here ] ", ImVec2(ImGui::GetContentRegionAvail().x, 30));
 
-			if (ImGui::BeginDragDropTarget())
-			{
-				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_EXPLORER_FILE"))
+			std::shared_ptr<Resource> resource = GetDragDropResource(ResourceType::AUDIO);
+			if (resource) {
+				auto clip = std::static_pointer_cast<AudioClip>(resource);
+				if (clip)
 				{
-					const char* path = (const char*)payload->Data;
+					source->AddClip(clip);
 
-					Metadata* meta = AssetRegistry::GetMetadata(path);
-					if (meta && meta->Type == ResourceType::AUDIO)
-					{
-						auto clip = ResourceManager::GetAudioClip(*meta);
-						if (clip)
-						{
-							clips.push_back(clip);
-
-							if (clips.size() == 1)
-								source->SetCurrentClip(0);
-						}
-					}
+					if (clips.size() == 1)
+						source->SetCurrentClip(0);
 				}
-				ImGui::EndDragDropTarget();
 			}
 
 			ImGui::Separator();
 
+			if (ImGui::TreeNode("Configuration")) {
+				bool loop = source->IsLooping();
+				if (ImGui::Checkbox("Loop Audio", &loop))
+					source->SetLoop(loop);
 
-			bool loop = source->IsLooping();
-			if (ImGui::Checkbox("Loop Audio", &loop))
-				source->SetLoop(loop);
+				float pitch = source->GetPitch();
+				if (ImGui::SliderFloat("Pitch", &pitch, 0.1f, 3.0f))
+					source->SetPitch(pitch);
 
-			float pitch = source->GetPitch();
-			if (ImGui::SliderFloat("Pitch", &pitch, 0.1f, 3.0f))
-				source->SetPitch(pitch);
+				float volume = source->GetVolume();
+				if (ImGui::SliderFloat("Volume", &volume, 0.0f, 1.0f))
+					source->SetVolume(volume);
 
-			float volume = source->GetVolume();
-			if (ImGui::SliderFloat("Volume", &volume, 0.0f, 1.0f))
-				source->SetVolume(volume);
+				float pan = source->GetPan();
+				if (ImGui::SliderFloat("Pan", &pan, -1.0f, 1.0f))
+					source->SetPan(pan);
 
-			float pan = source->GetPan();
-			if (ImGui::SliderFloat("Pan", &pan, -1.0f, 1.0f))
-				source->SetPan(pan);
+				vec2 distanceRange;
+				source->Get3DMinMaxDistance(distanceRange.x, distanceRange.y);
+				if (ImGui::DragFloat2("3D Min/Max Distance", &distanceRange.x, 0.1f, 0.0f))
+					source->Set3DMinMaxDistance(distanceRange.x, distanceRange.y);
 
-			vec2 distanceRange;
-			source->Get3DMinMaxDistance(distanceRange.x, distanceRange.y);
-			if (ImGui::DragFloat2("3D Min/Max Distance", &distanceRange.x, 0.1f, 0.0f))
-				source->Set3DMinMaxDistance(distanceRange.x, distanceRange.y);
+				bool playOnAwake = source->GetIfPlayOnAwake();
+				if (ImGui::Checkbox("Play On Awake", &playOnAwake)) {
+					source->SetIfPlayOnAwake(playOnAwake);
+				}
 
-			bool playOnAwake = source->GetIfPlayOnAwake();
-			if (ImGui::Checkbox("Play On Awake", &playOnAwake)) {
-				source->SetIfPlayOnAwake(playOnAwake);
+				ImGui::TreePop();
 			}
 
 			ImGui::Separator();
@@ -1293,7 +1411,7 @@ namespace Loopie {
 			{
 				ImGui::Indent(8.0f);
 
-				if (filter.PassFilter("Audio Listenr")) {
+				if (filter.PassFilter("Audio Listener")) {
 					if (ImGui::Selectable("Audio Listener")) {
 						entity->AddComponent<AudioListener>();
 						forceClose = true;
@@ -1365,7 +1483,7 @@ namespace Loopie {
 		std::string materialName = "Material";
 		if (!isEditable)
 			materialName += " (Read-Only -> EngineDefault)";
-		ImGui::Text(materialName.c_str());
+		//ImGui::Text(materialName.c_str());
 		ImGui::Text("Material Resource Count: %u", material->GetReferenceCount());
 		const std::unordered_map<std::string, UniformValue> properties = material->GetUniforms();
 

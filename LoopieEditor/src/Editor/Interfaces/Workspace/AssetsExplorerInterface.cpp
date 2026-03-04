@@ -7,6 +7,7 @@
 #include "Loopie/Files/FileDialog.h"
 #include "Loopie/Resources/ResourceManager.h"
 #include "Loopie/Resources/Types/Texture.h"
+#include "Loopie/Project/ProjectConfig.h"
 
 #include "Loopie/Importers/TextureImporter.h"
 
@@ -705,6 +706,19 @@ namespace Loopie {
 		if(ImGui::MenuItem("Show in Explorer"))
 		{
 			FileDialog::OpenInExplorer(file);
+		}
+
+		
+		if (file.extension() == ".scene") {
+			ImGui::Separator();
+
+			if (ImGui::MenuItem("Set As Build Initial Scene"))
+			{
+				JsonData data = ProjectConfig::GetData();
+				std::filesystem::path relativePath = std::filesystem::relative(file, Application::GetInstance().m_activeProject.GetProjectPath());
+				data.SetValue("build_scene", ("Game" / relativePath).string());
+				ProjectConfig::Save(data);
+			}
 		}
 	}
 

@@ -6,6 +6,7 @@
 #include "Loopie/Files/FileDialog.h"
 #include "Loopie/Files/DirectoryManager.h"
 #include "Loopie/Resources/AssetRegistry.h"
+#include "Loopie/Project/ProjectConfig.h"
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -248,6 +249,14 @@ namespace Loopie {
 				if (ImGui::SliderInt("FrameRate", &frameRate, minFrameRate, maxFrameRate,"%d", ImGuiSliderFlags_Logarithmic)) {
 					window.SetFramerateLimit(frameRate);
 				}
+			}
+
+			if (ImGui::Button("Save Changes")) {
+				JsonData data = ProjectConfig::GetData();
+				data.SetValue("engine_config.vsync", window.IsVsyncEnabled());
+				data.SetValue("engine_config.target_framerate", window.GetFramerateLimit());
+				data.SetValue("engine_config.fullscreen", window.IsFullscreen());
+				ProjectConfig::Save(data);
 			}
 
 

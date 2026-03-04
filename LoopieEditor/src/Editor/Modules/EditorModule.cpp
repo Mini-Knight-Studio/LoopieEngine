@@ -1,6 +1,7 @@
 #include "EditorModule.h"
 
 #include "Loopie/Core/Application.h"
+#include "Loopie/Project/ProjectConfig.h"
 
 //// Test
 #include "Loopie/Core/Log.h"
@@ -62,9 +63,9 @@ namespace Loopie
 		Application::GetInstance().CreateScene(""); /// Maybe default One
 		m_currentScene = &Application::GetInstance().GetScene();
 
-		JsonData data = Json::ReadFromFile(Application::GetInstance().m_activeProject.GetConfigPath());
-		JsonResult<std::string> result = data.Child("last_scene").GetValue<std::string>();
-		std::filesystem::path absolutePath = Application::GetInstance().m_activeProject.GetProjectPath().parent_path()/(result.Result);
+		JsonData data = ProjectConfig::GetData();
+		JsonResult result = data.Child("last_scene").GetValue<std::string>();
+		std::filesystem::path absolutePath = Application::GetInstance().m_activeProject.GetProjectPath().parent_path() / (result.Result);
 		if (!result.Found || !m_currentScene->ReadAndLoadSceneFile(absolutePath.string()))
 		{
 			m_currentScene->CreateEntity({ 0,1,-10 }, { 1,0,0,0 }, { 1,1,1 }, nullptr, "MainCamera")->AddComponent<Camera>();

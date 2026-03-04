@@ -6,6 +6,7 @@
 #include "Loopie/Render/Renderer.h"
 #include "Loopie/Scripting/ScriptingManager.h"
 #include "Loopie/Audio/AudioManager.h"
+#include "Loopie/Project/ProjectConfig.h"
 
 namespace Loopie {
 	Application* Application::s_Instance = nullptr;
@@ -19,6 +20,7 @@ namespace Loopie {
 		s_Instance = this;
 
 		Log::Info("Application Started");
+		ProjectConfig::SetProject(m_activeProject);
 
 		//ScriptingManager::Init();
 		//Log::Info("Scripting created successfully.");
@@ -30,6 +32,7 @@ namespace Loopie {
 		AudioManager::Init();
 
 		m_imguiManager.Init();
+
 
 		m_notifier.AddObserver(this);
 

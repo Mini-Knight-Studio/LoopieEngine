@@ -1,7 +1,7 @@
 #include "GameModule.h"
 
 #include "Loopie/Core/Application.h"
-
+#include "Loopie/Project/ProjectConfig.h"
 //// Test
 #include "Loopie/Core/Log.h"
 #include "Loopie/Render/Renderer.h"
@@ -40,6 +40,7 @@ namespace Loopie
 	{
 		std::filesystem::path gamePath = "Game";	
 		Application::GetInstance().m_activeProject.Open(std::filesystem::absolute(gamePath));
+		Application::GetInstance().GetWindow().SetTitle(Application::GetInstance().m_activeProject.GetNameFromConfig().c_str());
 
 		AssetRegistry::Initialize();
 
@@ -60,8 +61,8 @@ namespace Loopie
 		Application::GetInstance().CreateScene(""); /// Maybe default One
 		m_currentScene = &Application::GetInstance().GetScene();
 
-		JsonData data = Json::ReadFromFile(Application::GetInstance().m_activeProject.GetConfigPath());
-		JsonResult<std::string> result = data.Child("last_scene").GetValue<std::string>();
+		JsonData data = ProjectConfig::GetData();
+		JsonResult result = data.Child("build_scene").GetValue<std::string>();
 		std::filesystem::path absolutePath = std::filesystem::absolute(result.Result);
 		m_currentScene->ReadAndLoadSceneFile(absolutePath.string());
 

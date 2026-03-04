@@ -31,7 +31,7 @@ namespace Loopie {
 
 	void AudioClip::Unload()
 	{
-		if (m_sound && AudioManager::s_CoreSystem)
+		if (m_sound && AudioManager::s_CoreSystem && AudioManager::s_StudioSystem)
 		{
 			m_sound->release();
 			m_sound = nullptr;
