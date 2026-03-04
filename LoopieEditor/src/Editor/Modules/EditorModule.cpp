@@ -422,7 +422,7 @@ namespace Loopie
 
 		if (img && img->GetIsActive() && rt)
 		{
-			const vec3 p = rt->GetLocalPosition();
+			const vec3 p = rt->GetWorldPosition();
 			const vec2 s(rt->GetWidth(), rt->GetHeight());
 
 			const vec2 pixelSize(s.x * scale.x, s.y * scale.y);
@@ -433,10 +433,13 @@ namespace Loopie
 
 		if (text && text->GetIsActive() && rt)
 		{
-			const vec3 p = rt->GetLocalPosition();
-			const vec2 pixelPos(p.x * scale.x, p.y * scale.y);
+			const vec3 p = rt->GetWorldPosition();
+			const vec2 s(rt->GetWidth(), rt->GetHeight());
 
-			UIRenderer::DrawText(pixelPos, text->GetText(), text->GetFont(), text->GetColor(), text->GetScale());
+			const vec2 pixelPos(p.x * scale.x, p.y * scale.y);
+			const vec2 pixelSize(s.x * scale.x, s.y * scale.y);
+
+			UIRenderer::DrawText(pixelPos, pixelSize, text->GetText(), text->GetFont(), text->GetColor(), text->GetScale());
 		}
 
 		for (const auto& child : entity->GetChildren())
@@ -534,9 +537,12 @@ namespace Loopie
 
 		if (text && text->GetIsActive() && rt)
 		{
+			const float w = rt->GetWidth();
+			const float h = rt->GetHeight();
+
 			const matrix4 model = rt->GetLocalToWorldMatrix();
 
-			UIRenderer::DrawTextWorld(model, text->GetText(), text->GetFont(), text->GetColor(), text->GetScale());
+			UIRenderer::DrawTextWorld(model, vec2(w,h), text->GetText(), text->GetFont(), text->GetColor(), text->GetScale());
 		}
 
 		for (const auto& child : entity->GetChildren())

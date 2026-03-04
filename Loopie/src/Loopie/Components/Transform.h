@@ -79,11 +79,11 @@ namespace Loopie
         virtual vec3 GetLocalBoundsMin() const { return vec3(0); }
         virtual vec3 GetLocalBoundsMax() const { return vec3(0); }
 
-    protected:
         vec3 GetWorldPosition() const;
         quaternion GetWorldRotation() const;
         vec3 GetWorldScale() const;
 
+    protected:
         void RefreshMatrices() const;
 
     public:

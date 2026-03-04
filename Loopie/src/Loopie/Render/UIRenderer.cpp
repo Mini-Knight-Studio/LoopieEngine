@@ -131,80 +131,21 @@ namespace Loopie
 		Renderer::FlushRenderItem(s_quadVAO, s_material, modelMatrix);
 	}
 
-	void UIRenderer::DrawText(const vec2& posPixels, const std::string& text, const std::shared_ptr<Font>& font, const vec4& color, float scale)
+	void UIRenderer::DrawText(const vec2& posPixels, const vec2& sizePixels, const std::string& text, const std::shared_ptr<Font>& font, const vec4& color, float scale)
 	{
 		EnsureInit();
 
 		if (!s_quadVAO || !s_material || !font || font->GetRendererId() == 0 || text.empty())
 			return;
 
-		UniformValue c;
-		c.type = UniformType_vec4;
-		c.value = color;
-		s_material->SetShaderVariable("u_Color", c);
-		s_material->SetTextureBufferOverride(font->GetAtlasTextureBuffer());
-
-		float x = posPixels.x;
-		float y = posPixels.y;
-
-		const float fontScale = (scale <= 0.0f) ? 1.0f : scale;
-
-		for (size_t i = 0; i < text.size(); i++)
-		{
-			const unsigned char ch = (unsigned char)text[i];
-
-			if (ch == '\n')
-			{
-				x = posPixels.x;
-				y += (float)font->GetLineHeight() * fontScale;
-				continue;
-			}
-
-			const FontGlyph* g = font->GetGlyph((int)ch);
-			if (!g)
-				continue;
-
-			const float xpos = x + (float)g->bearing.x * fontScale;
-			const float ypos = y + (float)(font->GetAscender() - g->bearing.y) * fontScale;
-			const float w = (float)g->size.x * fontScale;
-			const float h = (float)g->size.y * fontScale;
-
-			UniformValue uv;
-			uv.type = UniformType_vec4;
-			uv.value = vec4(g->uvMin.x, g->uvMin.y, g->uvMax.x, g->uvMax.y);
-			s_material->SetShaderVariable("u_UVRect", uv);
-
-			matrix4 model(1.0f);
-			model = glm::translate(model, vec3(xpos, ypos, 0.0f));
-			model = glm::scale(model, vec3(w, h, 1.0f));
-
-			Renderer::FlushRenderItem(s_quadVAO, s_material, model);
-
-			x += ((float)g->advance / 64.0f) * fontScale;
-		}
-
-		UniformValue uvReset;
-		uvReset.type = UniformType_vec4;
-		uvReset.value = vec4(0.0f, 0.0f, 1.0f, 1.0f);
-		s_material->SetShaderVariable("u_UVRect", uvReset);
-		s_material->ClearTextureBufferOverride();
-	}
-
-	void UIRenderer::DrawTextWorld(const matrix4& modelMatrix, const std::string& text, const std::shared_ptr<Font>& font, const vec4& color, float scale)
-	{
-		EnsureInit();
-
-		if (!s_quadVAO || !s_material || !font || font->GetRendererId() == 0 || text.empty())
-			return;
-
-		UniformValue c;
-		c.type = UniformType_vec4;
-		c.value = color;
-		s_material->SetShaderVariable("u_Color", c);
-		s_material->SetTextureBufferOverride(font->GetAtlasTextureBuffer());
-
+		// 1) Medir bounds del texto en "pixeles de fuente"
 		float x = 0.0f;
 		float y = 0.0f;
+
+		float minX = 0.0f;
+		float minY = 0.0f;
+		float maxX = 0.0f;
+		float maxY = 0.0f;
 
 		const float fontScale = (scale <= 0.0f) ? 1.0f : scale;
 
@@ -228,6 +169,169 @@ namespace Loopie
 			const float w = (float)g->size.x * fontScale;
 			const float h = (float)g->size.y * fontScale;
 
+			minX = std::min(minX, xpos);
+			minY = std::min(minY, ypos);
+			maxX = std::max(maxX, xpos + w);
+			maxY = std::max(maxY, ypos + h);
+
+			x += ((float)g->advance / 64.0f) * fontScale;
+		}
+
+		const float textW = std::max(1.0f, maxX - minX);
+		const float textH = std::max(1.0f, maxY - minY);
+
+		// 2) Calcular escala para encajar en el rect (sizePixels)
+		float fitScale = 1.0f;
+		if (sizePixels.x > 0.0f && sizePixels.y > 0.0f)
+		{
+			const float sx = sizePixels.x / textW;
+			const float sy = sizePixels.y / textH;
+			fitScale = std::min(sx, sy); // uniform scale (mantiene aspect ratio)
+		}
+
+		// 3) Setup material
+		UniformValue c;
+		c.type = UniformType_vec4;
+		c.value = color;
+		s_material->SetShaderVariable("u_Color", c);
+		s_material->SetTextureBufferOverride(font->GetAtlasTextureBuffer());
+
+		// Offset para que el texto empiece en (0,0) del rect
+		const float ox = -minX * fitScale;
+		const float oy = -minY * fitScale;
+
+		// 4) Render real
+		x = 0.0f;
+		y = 0.0f;
+
+		for (size_t i = 0; i < text.size(); i++)
+		{
+			const unsigned char ch = (unsigned char)text[i];
+
+			if (ch == '\n')
+			{
+				x = 0.0f;
+				y += (float)font->GetLineHeight() * fontScale;
+				continue;
+			}
+
+			const FontGlyph* g = font->GetGlyph((int)ch);
+			if (!g)
+				continue;
+
+			const float xpos = posPixels.x + (x + (float)g->bearing.x * fontScale) * fitScale + ox;
+			const float ypos = posPixels.y + (y + (float)(font->GetAscender() - g->bearing.y) * fontScale) * fitScale + oy;
+
+			const float w = (float)g->size.x * fontScale * fitScale;
+			const float h = (float)g->size.y * fontScale * fitScale;
+
+			UniformValue uv;
+			uv.type = UniformType_vec4;
+			uv.value = vec4(g->uvMin.x, g->uvMin.y, g->uvMax.x, g->uvMax.y);
+			s_material->SetShaderVariable("u_UVRect", uv);
+
+			matrix4 model(1.0f);
+			model = glm::translate(model, vec3(xpos, ypos, 0.0f));
+			model = glm::scale(model, vec3(w, h, 1.0f));
+
+			Renderer::FlushRenderItem(s_quadVAO, s_material, model);
+
+			x += ((float)g->advance / 64.0f) * fontScale;
+		}
+
+		UniformValue uvReset;
+		uvReset.type = UniformType_vec4;
+		uvReset.value = vec4(0.0f, 0.0f, 1.0f, 1.0f);
+		s_material->SetShaderVariable("u_UVRect", uvReset);
+		s_material->ClearTextureBufferOverride();
+	}
+
+	void UIRenderer::DrawTextWorld(const matrix4& modelMatrix, const vec2& sizePixels, const std::string& text, const std::shared_ptr<Font>& font, const vec4& color, float scale)
+	{
+		EnsureInit();
+
+		if (!s_quadVAO || !s_material || !font || font->GetRendererId() == 0 || text.empty())
+			return;
+
+		float x = 0.0f;
+		float y = 0.0f;
+
+		float minX = 0.0f;
+		float minY = 0.0f;
+		float maxX = 0.0f;
+		float maxY = 0.0f;
+
+		const float fontScale = (scale <= 0.0f) ? 1.0f : scale;
+
+		for (size_t i = 0; i < text.size(); i++)
+		{
+			const unsigned char ch = (unsigned char)text[i];
+
+			if (ch == '\n')
+			{
+				x = 0.0f;
+				y += (float)font->GetLineHeight() * fontScale;
+				continue;
+			}
+
+			const FontGlyph* g = font->GetGlyph((int)ch);
+			if (!g)
+				continue;
+
+			const float xpos = x + (float)g->bearing.x * fontScale;
+			const float ypos = y + (float)(font->GetAscender() - g->bearing.y) * fontScale;
+			const float w = (float)g->size.x * fontScale;
+			const float h = (float)g->size.y * fontScale;
+
+			minX = std::min(minX, xpos);
+			minY = std::min(minY, ypos);
+			maxX = std::max(maxX, xpos + w);
+			maxY = std::max(maxY, ypos + h);
+
+			x += ((float)g->advance / 64.0f) * fontScale;
+		}
+
+		const float textW = std::max(1.0f, maxX - minX);
+		const float textH = std::max(1.0f, maxY - minY);
+
+		// Scale from text pixel-bounds into requested world rect size.
+		const float sx = sizePixels.x / textW;
+		const float sy = sizePixels.y / textH;
+		const float uniformS = std::min(sx, sy);
+
+		UniformValue c;
+		c.type = UniformType_vec4;
+		c.value = color;
+		s_material->SetShaderVariable("u_Color", c);
+		s_material->SetTextureBufferOverride(font->GetAtlasTextureBuffer());
+
+		// Render with extra fitting scale and offset so it starts at (0,0) in the rect.
+		float rx = -minX * uniformS;
+		float ry = -minY * uniformS;
+
+		x = 0.0f;
+		y = 0.0f;
+
+		for (size_t i = 0; i < text.size(); i++)
+		{
+			const unsigned char ch = (unsigned char)text[i];
+
+			if (ch == '\n')
+			{
+				x = 0.0f;
+				y += (float)font->GetLineHeight() * fontScale;
+				continue;
+			}
+
+			const FontGlyph* g = font->GetGlyph((int)ch);
+			if (!g)
+				continue;
+
+			const float xpos = (x + (float)g->bearing.x * fontScale) * uniformS + rx;
+			const float ypos = (y + (float)(font->GetAscender() - g->bearing.y) * fontScale) * uniformS + ry;
+			const float w = (float)g->size.x * fontScale * uniformS;
+			const float h = (float)g->size.y * fontScale * uniformS;
+
 			UniformValue uv;
 			uv.type = UniformType_vec4;
 			uv.value = vec4(g->uvMin.x, g->uvMin.y, g->uvMax.x, g->uvMax.y);
@@ -237,9 +341,7 @@ namespace Loopie
 			glyphLocal = glm::translate(glyphLocal, vec3(xpos, ypos, 0.0f));
 			glyphLocal = glm::scale(glyphLocal, vec3(w, h, 1.0f));
 
-			const matrix4 finalModel = modelMatrix * glyphLocal;
-
-			Renderer::FlushRenderItem(s_quadVAO, s_material, finalModel);
+			Renderer::FlushRenderItem(s_quadVAO, s_material, modelMatrix * glyphLocal);
 
 			x += ((float)g->advance / 64.0f) * fontScale;
 		}
