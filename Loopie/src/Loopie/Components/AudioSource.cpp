@@ -1,5 +1,5 @@
 #include "AudioSource.h"
-#include "Loopie/Core/AudioManager.h"
+#include "Loopie/Audio/AudioManager.h"
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Resources/ResourceManager.h"
 
@@ -190,11 +190,7 @@ namespace Loopie {
 
     void AudioSource::SetLoop(bool active) {
         isLooping = active;
-
-        if (!m_isEvent && m_channel) {
-            FMOD_MODE mode = isLooping ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF;
-            m_channel->setMode(mode);
-        }
+        UpdateChannelMode();
     }
 
     void AudioSource::SetPitch(float pitch) {
@@ -232,6 +228,38 @@ namespace Loopie {
         if (!m_isEvent && m_channel) {
             m_channel->set3DMinMaxDistance(minDist, maxDist);
         }
+    }
+
+    void AudioSource::UpdateChannelMode() {
+        if (!m_isEvent && m_channel) {
+
+            FMOD_MODE mode = isSpatial ? (FMOD_3D | FMOD_3D_LINEARROLLOFF) : FMOD_2D;
+
+            if (isLooping && loopStrategy == AudioLoopStrategy::Repetitive) {
+                mode |= FMOD_LOOP_NORMAL;
+            }
+            else {
+                mode |= FMOD_LOOP_OFF;
+            }
+
+            m_channel->setMode(mode);
+        }
+    }
+
+
+    void AudioSource::SetSpatial(bool active) {
+        isSpatial = active;
+        UpdateChannelMode();
+    }
+
+    void AudioSource::SetLoopStrategy(AudioLoopStrategy strategy) {
+        loopStrategy = strategy;
+        UpdateChannelMode();
+    }
+
+    void AudioSource::SetNoLoopStrategy(AudioNoLoopStrategy strategy) {
+        noLoopStrategy = strategy;
+        
     }
 
     JsonNode AudioSource::Serialize(JsonNode& parent) const {

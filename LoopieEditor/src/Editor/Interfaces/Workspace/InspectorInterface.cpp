@@ -1087,38 +1087,48 @@ namespace Loopie {
 	{
 		ImGui::PushID(source);
 		bool open = ImGui::CollapsingHeader("Audio Source", ImGuiTreeNodeFlags_DefaultOpen);
-		if (RemoveComponent(source)) { ImGui::PopID(); return; }
+		ImGui::SetItemTooltip(source->GetUUID().Get().c_str());
+		if (ComponentContextMenu(source)) {
+			ImGui::PopID();
+			return;
+		}
 
 		if (open)
 		{
-			ImGui::Checkbox("Is Spatial (3D)", &source->isSpatial);
+			// --- 1. Espacialidad ---
+			bool spatial = source->isSpatial;
+			if (ImGui::Checkbox("Is Spatial (3D)", &spatial)) {
+				source->SetSpatial(spatial);
+			}
 			if (ImGui::IsItemHovered()) {
 				ImGui::SetTooltip("Si se desactiva, el audio sera 2D.");
 			}
 
-			bool loop = source->IsLooping();
+			// --- 2. Bucle ---
+			bool loop = source->isLooping; 
 			if (ImGui::Checkbox("Loop Audio", &loop)) {
 				source->SetLoop(loop);
-				source->isLooping = loop;
 			}
 
+			// --- 3. Estrategias ---
 			if (loop) {
 				const char* loopStrategyNames[] = { "Repetitive", "Sequential", "Random", "Random No Repetitive" };
 				int currentLoopItem = static_cast<int>(source->loopStrategy);
 				if (ImGui::Combo("Loop Strategy", &currentLoopItem, loopStrategyNames, IM_ARRAYSIZE(loopStrategyNames))) {
-					source->loopStrategy = static_cast<Loopie::AudioLoopStrategy>(currentLoopItem);
+					source->SetLoopStrategy(static_cast<Loopie::AudioLoopStrategy>(currentLoopItem));
 				}
 			}
 			else {
 				const char* noLoopStrategyNames[] = { "First", "Random" };
 				int currentNoLoopItem = static_cast<int>(source->noLoopStrategy);
 				if (ImGui::Combo("No-Loop Strategy", &currentNoLoopItem, noLoopStrategyNames, IM_ARRAYSIZE(noLoopStrategyNames))) {
-					source->noLoopStrategy = static_cast<Loopie::AudioNoLoopStrategy>(currentNoLoopItem);
+					source->SetNoLoopStrategy(static_cast<Loopie::AudioNoLoopStrategy>(currentNoLoopItem));
 				}
 			}
 
 			ImGui::Separator();
 
+			// --- 4. Propiedades Generales ---
 			bool playOnAwake = source->GetIfPlayOnAwake();
 			if (ImGui::Checkbox("Play On Awake", &playOnAwake)) {
 				source->SetIfPlayOnAwake(playOnAwake);
@@ -1136,7 +1146,6 @@ namespace Loopie {
 			if (ImGui::SliderFloat("Pan", &pan, -1.0f, 1.0f))
 				source->SetPan(pan);
 
-			// Ocultar la distancia 3D si el audio es 2D (no espacial)
 			if (source->isSpatial) {
 				vec2 distanceRange;
 				source->Get3DMinMaxDistance(distanceRange.x, distanceRange.y);
@@ -1144,6 +1153,9 @@ namespace Loopie {
 					source->Set3DMinMaxDistance(distanceRange.x, distanceRange.y);
 			}
 
+			ImGui::Separator();
+
+			// --- 5. Playlist ---
 			ImGui::Text("Playlist");
 
 			std::string previewValue = "None";
@@ -1251,6 +1263,7 @@ namespace Loopie {
 
 			ImGui::Separator();
 
+			// --- 6. Controles Rápidos ---
 			if (ImGui::Button("Play"))
 				source->Play();
 

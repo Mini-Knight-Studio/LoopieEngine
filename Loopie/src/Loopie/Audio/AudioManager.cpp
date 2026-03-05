@@ -63,8 +63,8 @@ namespace Loopie {
             {
                 auto source = entity->GetComponent<AudioSource>();
                 if (source && source->GetIfPlayOnAwake()) {
-                    if (!source->m_audioClips.empty()) {
-                        source->SetCurrentClip(source->m_currentClipIndex);
+                    if (!source->audioClips.empty()) {
+                        source->SetCurrentClip(source->currentClipIndex);
                     }
                     source->Play();
                 }

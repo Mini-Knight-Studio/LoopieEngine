@@ -70,6 +70,11 @@ namespace Loopie {
 		bool GetIfPlayOnAwake() const { return playOnAwake; }
         void Get3DMinMaxDistance(float& minDist, float& maxDist) const { minDist = m_minDistance; maxDist = m_maxDistance; }
 
+        void UpdateChannelMode();
+        void SetSpatial(bool active);
+        void SetLoopStrategy(AudioLoopStrategy strategy);
+        void SetNoLoopStrategy(AudioNoLoopStrategy strategy);
+
         JsonNode Serialize(JsonNode& parent) const override;
 
         void Deserialize(const JsonNode& data) override;
