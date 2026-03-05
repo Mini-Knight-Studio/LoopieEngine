@@ -156,7 +156,7 @@ namespace Loopie {
 
             if (m_channel) {
                 FMOD_MODE mode = isSpatial ? (FMOD_3D | FMOD_3D_LINEARROLLOFF) : FMOD_2D;
-                mode |= FMOD_LOOP_NORMAL;
+                mode |= FMOD_LOOP_OFF;
                
 
                 m_channel->setMode(mode);
