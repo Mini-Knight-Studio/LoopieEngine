@@ -88,24 +88,25 @@ namespace Loopie {
 	void Renderer::EndScene()
 	{
 		FlushRenderQueue();
-		Gizmo::EndGizmo();
+		if(s_UseGizmos)
+			Gizmo::EndGizmo();
 	}
 
-	void Renderer::AddRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const Transform* transform)
+	void Renderer::AddRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones)
 	{
-		s_RenderQueue.emplace_back(RenderItem{ vao, vao->GetIndexBuffer().GetCount(), material, transform});
+		s_RenderQueue.emplace_back(RenderItem{ vao, vao->GetIndexBuffer().GetCount(), material, transform, bones});
 	}
 
-	void Renderer::FlushRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const Transform* transform)
+	void Renderer::FlushRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones)
 	{
-		FlushRenderItem(vao, material, transform->GetLocalToWorldMatrix());
+		FlushRenderItem(vao, material, transform->GetLocalToWorldMatrix(), bones);
 	}
 
-	void Renderer::FlushRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const matrix4& modelMatrix)
+	void Renderer::FlushRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const matrix4& modelMatrix, const std::vector<matrix4>& bones)
 	{
 		vao->Bind();
 		material->Bind();
-		SetRenderUniforms(material, modelMatrix);
+		SetRenderUniforms(material, modelMatrix, bones);
 		glDrawElements(GL_TRIANGLES, vao->GetIndexBuffer().GetCount(), GL_UNSIGNED_INT, nullptr);
 		vao->Unbind();
 	}
@@ -121,7 +122,7 @@ namespace Loopie {
 			
 			item.VAO->Bind();
 			item.Material->Bind();
-			SetRenderUniforms(item.Material, item.Transform);
+			SetRenderUniforms(item.Material, item.Transform, item.Bones);
 			glDrawElements(GL_TRIANGLES, item.IndexCount, GL_UNSIGNED_INT, nullptr);
 			item.VAO->Unbind();
 		}
@@ -129,21 +130,32 @@ namespace Loopie {
 		s_RenderQueue.clear();
 	}
 
-	void Renderer::SetRenderUniforms(std::shared_ptr<Material> material, const Transform* transform)
+	void Renderer::SetRenderUniforms(std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones)
 	{
-		SetRenderUniforms(material, transform->GetLocalToWorldMatrix());
+		SetRenderUniforms(material, transform->GetLocalToWorldMatrix(), bones);
 	}
-	void Renderer::SetRenderUniforms(std::shared_ptr<Material> material, const matrix4& modelMatrix)
+	void Renderer::SetRenderUniforms(std::shared_ptr<Material> material, const matrix4& modelMatrix, const std::vector<matrix4>& bones)
 	{
 		material->GetShader().SetUniformMat4("lp_Transform", modelMatrix);
+
+		material->GetShader().SetUniformInt("lp_Skinned", !bones.empty() ? 1 : 0);
+
+		if (!bones.empty())
+		{
+
+			int count = std::min((int)bones.size(), 100);
+			material->GetShader().SetUniformMat4Array("lp_Bones", bones.data(), count);
+			
+		}
+
 	}
 	void Renderer::EnableDepth()
 	{
-			glEnable(GL_DEPTH_TEST);
+		glEnable(GL_DEPTH_TEST);
 	}
 	void Renderer::DisableDepth()
 	{
-			glDisable(GL_DEPTH_TEST);
+		glDisable(GL_DEPTH_TEST);
 	}
 	void Renderer::EnableStencil()
 	{
@@ -176,5 +188,18 @@ namespace Loopie {
 	void Renderer::CullFace(CullFaceMode mode)
 	{
 		glCullFace((unsigned int)mode);
+	}
+	void Renderer::EnableBlend()
+	{
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	}
+	void Renderer::DisableBlend()
+	{
+		glDisable(GL_BLEND);
+	}
+	void Renderer::SetDepthWrite(bool enable)
+	{
+		glDepthMask(enable ? GL_TRUE : GL_FALSE);
 	}
 }

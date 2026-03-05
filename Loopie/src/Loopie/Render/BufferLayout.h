@@ -19,9 +19,8 @@ namespace Loopie {
 		switch (type) {
 			case GLVariableType::INT:
 			case GLVariableType::FLOAT:
-				return 4;
 			case GLVariableType::BOOL:
-				return 1;
+				return 4;
 			case GLVariableType::MATRIX2:
 				return 16;
 			case GLVariableType::MATRIX3:

@@ -1,3 +1,5 @@
+using System.Collections.Specialized;
+
 namespace Loopie
 {
     public class Input
@@ -46,11 +48,11 @@ namespace Loopie
         {
             return InternalCalls.Input_IsGamepadButtonPressed(gamepadButton);
         }
-        public static Vector2 mousePosition
+        public static Vector2 MousePosition
         {get { return GetMousePosition(); }}
-        public static Vector2 mouseDelta
+        public static Vector2 MouseDelta
         {get { return GetMouseDelta(); } }
-        public static Vector2 scrollDelta
+        public static Vector2 ScrollDelta
         {get { return GetScrollDelta(); } }
 
         private static Vector2 GetMousePosition()
@@ -70,6 +72,65 @@ namespace Loopie
             Vector2 scrollDelta = Vector2.Zero;
             InternalCalls.Input_GetScrollDelta(out scrollDelta);
             return scrollDelta;
+        }
+
+        public static bool AnyKey
+        { get { return IsAnyKeyDown(); } }
+        public static bool AnyButton
+        { get { return IsAnyButtonDown(); } }
+        public static bool AnyMouseButton
+        { get { return IsAnyMouseButtonDown(); } }
+        public static bool Any
+        { get { return IsAnyDown(); } }
+
+        private static bool IsAnyKeyDown()
+        {
+            return InternalCalls.Input_IsAnyKeyDown();
+        }
+        private static bool IsAnyButtonDown()
+        {
+            return InternalCalls.Input_IsAnyButtonDown();
+        }
+        private static bool IsAnyMouseButtonDown()
+        {
+            return InternalCalls.Input_IsAnyMouseButtonDown();
+        }
+        private static bool IsAnyDown()
+        {
+            return InternalCalls.Input_IsAnyDown();
+        }
+
+        public static Vector2 LeftAxis
+        { get { return GetLeftAxis(); } }
+
+        public static Vector2 RightAxis
+        { get { return GetRightAxis(); } }
+
+        private static Vector2 GetLeftAxis()
+        {
+            Vector2 axis = Vector2.Zero;
+            InternalCalls.Input_GetLeftAxis(out axis);
+            axis.y *= -1;
+            return axis;
+        }
+        private static Vector2 GetRightAxis()
+        {
+            Vector2 axis = Vector2.Zero;
+            InternalCalls.Input_GetRightAxis(out axis);
+            axis.y *= -1;
+            return axis;
+        }
+
+        public static float AxisDeadzone
+        { get { return GetAxisDeadzone(); } set { SetAxisDeadzone(value); } }
+
+        private static void SetAxisDeadzone(float deadzone)
+        {       
+            InternalCalls.Input_SetAxisDeadzone(deadzone);
+        }
+        private static float GetAxisDeadzone()
+        {
+            return InternalCalls.Input_GetAxisDeadzone();
         }
     }
 }

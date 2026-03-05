@@ -40,7 +40,7 @@ namespace Loopie {
 		void RemoveEntityDeferred(UUID uuid);
 		void FlushRemovedEntities();
 
-		std::shared_ptr<Entity> CloneEntity(const std::shared_ptr<Entity>& source, std::shared_ptr<Entity> newParent = nullptr, bool cloneChildren = true);
+		std::shared_ptr<Entity> CloneEntity(const std::shared_ptr<Entity> source, std::shared_ptr<Entity> newParent = nullptr, bool cloneChildren = true);
 
 		void SetFilePath(std::string filePath);
 

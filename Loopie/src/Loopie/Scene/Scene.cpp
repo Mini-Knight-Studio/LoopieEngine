@@ -3,11 +3,16 @@
 #include "Loopie/Core/Application.h"
 #include "Loopie/Core/Log.h"
 #include "Loopie/Components/Transform.h"
+#include "Loopie/Components/RectTransform.h"
 #include "Loopie/Components/Camera.h"
 #include "Loopie/Components/MeshRenderer.h"
+#include "Loopie/Components/Animator.h"
 #include "Loopie/Components/ScriptClass.h"
+#include "Loopie/Components/Canvas.h"
+#include "Loopie/Components/Image.h"
 #include "Loopie/Helpers/LoopieHelpers.h"
 #include "Loopie/Resources/AssetRegistry.h"
+#include "Loopie/Components/BoxCollider.h"
 
 #include "Loopie/Components/AudioSource.h"
 #include "Loopie/Components/AudioListener.h"
@@ -45,7 +50,7 @@ namespace Loopie {
 			
 			entityObj.CreateField<std::string>("uuid", id.Get());
 			entityObj.CreateField<std::string>("name", entity->GetName());
-			entityObj.CreateField<bool>("active", entity->GetIsActive());
+			entityObj.CreateField<bool>("active", entity->GetIsActiveInHierarchy());
 
 
 			if (std::shared_ptr<Entity> parentEntity = entity->GetParent().lock())
@@ -58,6 +63,7 @@ namespace Loopie {
 			{
 				JsonData componentObj = JsonData();
 				component->Serialize(componentObj.Node());
+				componentObj.CreateField<std::string>("uuid", component->GetUUID().Get());
 				componentsObj.AddArrayElement(componentObj.GetRoot());
 			}
 
@@ -201,7 +207,7 @@ namespace Loopie {
 		m_octree->Rebuild();
 	}
 
-	std::shared_ptr<Entity> Scene::CloneEntity(const std::shared_ptr<Entity>& source, std::shared_ptr<Entity> newParent, bool cloneChildren)
+	std::shared_ptr<Entity> Scene::CloneEntity(const std::shared_ptr<Entity> source, std::shared_ptr<Entity> newParent, bool cloneChildren)
 	{
 		if (!source)
 			return nullptr;
@@ -215,7 +221,7 @@ namespace Loopie {
 			newParent
 		);
 
-		clone->SetIsActive(source->GetIsActive());
+		clone->SetIsActive(source->GetIsActiveInHierarchy());
 
 		// ---- Clone components ----
 		for (Component* component : source->GetComponents())
@@ -226,12 +232,14 @@ namespace Loopie {
 			// Transform already exists
 			if (componentData.Child("transform").IsValid())
 			{
-				clone->GetTransform()->Deserialize(
-					componentData.Child("transform")
-				);
+				clone->GetTransform()->Deserialize(componentData.Child("transform"));
 				continue;
 			}
-
+			if (componentData.Child("recttransform").IsValid())
+			{
+				clone->ReplaceTransform<RectTransform>();
+				clone->GetTransform()->Deserialize(componentData.Child("recttransform"));
+			}
 			// Camera
 			if (componentData.Child("camera").IsValid())
 			{
@@ -251,17 +259,41 @@ namespace Loopie {
 				ScriptClass* scriptClass = clone->AddComponent<ScriptClass>(classID);
 				scriptClass->Deserialize(componentData.Child("script"));
 			}
+			/// Animator
+			else if (componentData.Child("animator").IsValid())
+			{
+				auto animator = clone->AddComponent<Animator>();
+				animator->Deserialize(componentData.Child("animator"));
+			}
+			 // Canvas
+			else if (componentData.Child("canvas").IsValid())
+			{
+				auto canvas = clone->AddComponent<Canvas>();
+				canvas->Deserialize(componentData.Child("canvas"));
+			}
+			/// Image
+			else if (componentData.Child("image").IsValid())
+			{
+				auto image = clone->AddComponent<Image>();
+				image->Deserialize(componentData.Child("image"));
+			}
+			/// BoxCollider
+			else if (componentData.Child("boxcollider").IsValid())
+			{
+				auto bc = clone->AddComponent<BoxCollider>();
+				bc->Deserialize(componentData.Child("boxcollider"));
+			}
 			//AudioSource
-			else if (componentData.Child("AudioSource").IsValid())
+			else if (componentData.Child("audiosource").IsValid())
 			{
 				auto audioSource = clone->AddComponent<AudioSource>();
-				audioSource->Deserialize(componentData.Child("AudioSource"));
+				audioSource->Deserialize(componentData.Child("audiosource"));
 			}
 			//AudioListener
-			else if (componentData.Child("AudioListener").IsValid())
+			else if (componentData.Child("audiolistener").IsValid())
 			{
 				auto audioListener = clone->AddComponent<AudioListener>();
-				audioListener->Deserialize(componentData.Child("AudioListener"));
+				audioListener->Deserialize(componentData.Child("audiolistener"));
 			}
 		}
 
@@ -419,11 +451,17 @@ namespace Loopie {
 			JsonNode componentsObj = entityNode.Child("components");
 			if (componentsObj.IsValid() && componentsObj.IsArray())
 			{
-
 				for (size_t j = 0; j < componentsObj.Size(); ++j)
 				{
 					JsonResult<json> componentJson = componentsObj.GetArrayElement<json>(uint32_t(j));
 					JsonNode componentNode = JsonNode(&componentJson.Result);
+
+					JsonResult<std::string> componentUUIDResult = componentNode.GetValue<std::string>("uuid");
+					UUID componentUUID = UUID();
+					if(componentUUIDResult.Found)
+					{
+						componentUUID = UUID(componentUUIDResult.Result);
+					}
 
 					// *** Component Checking *** - PSS 08/12/25
 					// This checks manually which component type it is.
@@ -433,6 +471,14 @@ namespace Loopie {
 					{
 						JsonNode node = componentNode.Child("transform");
 						entity->GetTransform()->Deserialize(node);
+						entity->GetTransform()->SetUUID(componentUUID.Get());
+					}
+					else if (componentNode.Contains("recttransform"))
+					{
+						JsonNode node = componentNode.Child("recttransform");
+						entity->ReplaceTransform<RectTransform>();
+						entity->GetTransform()->Deserialize(node);
+						entity->GetTransform()->SetUUID(componentUUID.Get());
 					}
 					else if (componentNode.Contains("camera"))
 					{
@@ -441,6 +487,7 @@ namespace Loopie {
 						if (camera)
 						{
 							camera->Deserialize(node);
+							camera->SetUUID(componentUUID.Get());
 						}
 					}
 					else if (componentNode.Contains("meshrenderer"))
@@ -450,6 +497,7 @@ namespace Loopie {
 						if (meshRenderer)
 						{
 							meshRenderer->Deserialize(node);
+							meshRenderer->SetUUID(componentUUID.Get());
 						}
 					}
 					else if (componentNode.Contains("script"))
@@ -459,29 +507,87 @@ namespace Loopie {
 						if (scriptClass)
 						{
 							scriptClass->Deserialize(node);
+							scriptClass->SetUUID(componentUUID.Get());
 						}
 					}
-					else if (componentNode.Contains("AudioSource"))
+					else if (componentNode.Contains("animator"))
 					{
-						JsonNode node = componentNode.Child("AudioSource");
+						JsonNode node = componentNode.Child("animator");
+						auto animatorClass = entity->AddComponent<Animator>();
+						if (animatorClass)
+						{
+							animatorClass->Deserialize(node);
+							animatorClass->SetUUID(componentUUID.Get());
+						}
+					}
+					else if (componentNode.Contains("canvas"))
+					{
+						JsonNode node = componentNode.Child("canvas");
+						auto canvas = entity->AddComponent<Canvas>();
+						if (canvas)
+						{
+							canvas->Deserialize(node);
+							canvas->SetUUID(componentUUID.Get());
+						}
+					}
+					else if (componentNode.Contains("image"))
+					{
+						JsonNode node = componentNode.Child("image");
+						auto image = entity->AddComponent<Image>();
+						if (image)
+						{
+							image->Deserialize(node);
+							image->SetUUID(componentUUID.Get());
+						}
+					}
+					else if (componentNode.Contains("boxcollider"))
+					{
+						JsonNode node = componentNode.Child("boxcollider");
+						auto boxCollider = entity->AddComponent<BoxCollider>();
+						if (boxCollider)
+						{
+							boxCollider->Deserialize(node);
+							boxCollider->SetUUID(componentUUID.Get());
+						}
+					}
+					else if (componentNode.Contains("audiosource"))
+					{
+						JsonNode node = componentNode.Child("audiosource");
 						auto audioSource = entity->AddComponent<AudioSource>();
 						if (audioSource)
 						{
 							audioSource->Deserialize(node);
+							audioSource->SetUUID(componentUUID.Get());
 						}
 					}
-					else if (componentNode.Contains("AudioListener"))
+					else if (componentNode.Contains("audiolistener"))
 					{
-						JsonNode node = componentNode.Child("AudioListener");
-						auto audioSource = entity->AddComponent<AudioListener>();
-						if (audioSource)
+						JsonNode node = componentNode.Child("audiolistener");
+						auto audioListener = entity->AddComponent<AudioListener>();
+						if (audioListener)
 						{
-							audioSource->Deserialize(node);
+							audioListener->Deserialize(node);
+							audioListener->SetUUID(componentUUID.Get());
 						}
 					}
 				}
 			}
 		}
+
+		for (auto& [uuid, entity] : m_entities)
+		{
+			if (!entity)
+				continue;
+
+			auto& components = entity->GetComponents();
+			for (auto& component : components)
+			{
+				if (component)
+					component->OnSceneDeserialized();
+			}
+		}
+
+
 		Log::Info("Scene loaded successfully");
 
 		if (safeSceneAsLastLoaded) {
@@ -494,12 +600,9 @@ namespace Loopie {
 				if (!result.Found) {
 					configData.CreateField<std::string>("last_scene", "");
 				}
-				configData.SetValue<std::string>("last_scene", filePath);
+				std::filesystem::path relativePath = std::filesystem::relative(filePath, Application::GetInstance().m_activeProject.GetProjectPath().parent_path());
+				configData.SetValue<std::string>("last_scene", relativePath.string());
 				configData.ToFile(config.string());
-
-				/*Metadata* metadata = AssetRegistry::GetMetadata(filePath); /// Swap to UUID
-				if (metadata)
-					configData.SetValue<std::string>("last_scene", metadata->UUID.Get());*/
 			}
 		}
 

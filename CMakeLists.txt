@@ -21,6 +21,8 @@ set(MONO_INCLUDE_DIR "${MONO_ROOT}/include/mono-2.0")
 set(MONO_LIB_DIR "${MONO_ROOT}/lib")
 set(MONO_BIN_DIR "${MONO_ROOT}/bin")
 
+set(FMOD_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/vendor/fmod")
+
 find_library(MONO_LIBRARY NAMES mono-2.0-sgen PATHS "${MONO_LIB_DIR}" NO_DEFAULT_PATH)
 
 add_library(Mono::Runtime SHARED IMPORTED GLOBAL)
@@ -31,5 +33,6 @@ add_subdirectory("Loopie")
 add_subdirectory("LoopieEditor")
 add_subdirectory("LoopieScripting")
 add_subdirectory("LoopieCompiler")
+add_subdirectory("LoopieProjectBuild")
 
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT LoopieEditor)    

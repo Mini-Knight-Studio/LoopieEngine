@@ -29,18 +29,24 @@ namespace Loopie
         m_panDirection = vec3(0);
         m_zoomInput = 0;
 
+        m_isCameraMoving = false;
+
         vec2 mouseScroll = inputEvent.GetScrollDelta();
         vec2 mouseDelta = inputEvent.GetMouseDelta();
+
+        float moveSpeed = 0;
+
+		
 
         if (inputEvent.GetKeyStatus(SDL_SCANCODE_LALT) == KeyState::REPEAT && m_entity != m_entityToPivot)
         {
             if (inputEvent.GetMouseButtonStatus(0) == KeyState::REPEAT)
             {
-                m_inputRotation = vec3(mouseDelta.x, mouseDelta.y, 0);
+                m_inputRotation = vec3(mouseDelta.x, mouseDelta.y, 0) * m_rotationSpeed;
             }
             if (inputEvent.GetMouseButtonStatus(2) == KeyState::REPEAT)
             {
-                m_orbitOffset.z += mouseDelta.y * m_cameraOrbitalZoomSpeed;
+                m_orbitOffset.z += mouseDelta.y * m_pivotZoomSpeed;
             }
         }
         else
@@ -50,21 +56,40 @@ namespace Loopie
                 m_entityToPivot = m_entity;
                 m_panDirection = vec3(-mouseDelta.x, mouseDelta.y, 0);
             }
+
             if (inputEvent.GetMouseButtonStatus(2) == KeyState::REPEAT)
             {
                 m_entityToPivot = m_entity;
-                m_inputRotation = vec3(mouseDelta.x, mouseDelta.y, 0);
+                m_inputRotation = vec3(mouseDelta.x, mouseDelta.y, 0) * m_rotationSpeed;
 
-                if (inputEvent.GetKeyStatus(SDL_SCANCODE_LSHIFT) == KeyState::REPEAT)
-                    m_speedMultiplier = 2.0f;
-                else
-                    m_speedMultiplier = 1.0f;  
+                if (mouseScroll.y != 0) {
+					m_movementScale += mouseScroll.y * m_movementScaleIncrement;
+                    if (m_movementScale < 0)
+                        m_movementScale = 0.f;
+                }
+
+                bool shiftPressed = inputEvent.GetKeyStatus(SDL_SCANCODE_LSHIFT) == KeyState::REPEAT;
+                moveSpeed = shiftPressed ? m_faastMoveSpeed : m_moveSpeed;
+                moveSpeed += m_speedAccumulation;
+
+                if (inputEvent.GetKeyStatus(SDL_SCANCODE_W) == KeyState::REPEAT) m_inputDirection.z += moveSpeed * m_movementScale;
+                if (inputEvent.GetKeyStatus(SDL_SCANCODE_S) == KeyState::REPEAT) m_inputDirection.z -= moveSpeed * m_movementScale;
+                if (inputEvent.GetKeyStatus(SDL_SCANCODE_A) == KeyState::REPEAT) m_inputDirection.x -= moveSpeed * m_movementScale;
+                if (inputEvent.GetKeyStatus(SDL_SCANCODE_D) == KeyState::REPEAT) m_inputDirection.x += moveSpeed * m_movementScale;
+
+
+                if (m_inputDirection != vec3(0))
+                    m_isCameraMoving = true;
+
             }
-            if (inputEvent.GetKeyStatus(SDL_SCANCODE_W) == KeyState::REPEAT) m_inputDirection.z += m_cameraMovementSpeed;
-            if (inputEvent.GetKeyStatus(SDL_SCANCODE_S) == KeyState::REPEAT) m_inputDirection.z -= m_cameraMovementSpeed;
-            if (inputEvent.GetKeyStatus(SDL_SCANCODE_A) == KeyState::REPEAT) m_inputDirection.x -= m_cameraMovementSpeed;
-            if (inputEvent.GetKeyStatus(SDL_SCANCODE_D) == KeyState::REPEAT) m_inputDirection.x += m_cameraMovementSpeed;
+            else
+            {
+                if (mouseScroll.y != 0)
+                    m_zoomInput = mouseScroll.y * m_zoomSpeed;
+            }
+            
         }
+
         if (inputEvent.GetKeyStatus(SDL_SCANCODE_F) == KeyState::DOWN)
         {
 			auto selectedEntity = HierarchyInterface::s_SelectedEntity.lock();
@@ -78,16 +103,20 @@ namespace Loopie
                     float maxScaleValue = objectScale.x;
                     maxScaleValue = objectScale.y > maxScaleValue ? objectScale.y : maxScaleValue;
                     maxScaleValue = objectScale.z > maxScaleValue ? objectScale.z : maxScaleValue;
-                    m_orbitOffset.z = 5 * maxScaleValue;
+                    m_orbitOffset.z = -5 * maxScaleValue;
                 }
             }
         }
 
-        if (mouseScroll.y != 0)
-            m_zoomInput = mouseScroll.y * m_cameraZoomSpeed;
 
-        m_inputDirection *= m_speedMultiplier;
-        m_inputRotation *= m_cameraRotationSpeed;
+        if (m_isCameraMoving) {
+            float increaseAmount = (moveSpeed * m_speedIncrementalPercentage) / 100.f;
+            m_speedAccumulation += increaseAmount * (float)Time::GetDeltaTime();
+        }
+        else {
+            m_speedAccumulation = 0;
+        }
+
     }
 
     void OrbitalCamera::Update()

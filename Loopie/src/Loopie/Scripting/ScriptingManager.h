@@ -37,6 +37,8 @@ namespace Loopie {
 		std::unordered_map<std::string, std::shared_ptr<ScriptingClass>> ScriptingClasses;
 
 		bool Dirty = false;
+
+		bool EnableRecompile = true;
 	};	
 
 
@@ -65,6 +67,8 @@ namespace Loopie {
 
 		const static bool IsRunning() { return s_IsRunning; }
 		static _MonoString* CreateString(const char* string);
+
+		static ScriptingContext& GetContext() { return s_Data; }	
 
 	public:
 		static ScriptingContext s_Data;

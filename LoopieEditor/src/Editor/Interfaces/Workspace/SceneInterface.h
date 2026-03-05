@@ -23,21 +23,27 @@ namespace Loopie {
 
    		Camera* GetCamera() { return m_camera->GetCamera(); }
 
+		std::shared_ptr<FrameBuffer> GetFrameBuffer() { return m_buffer; }
+
 		void ChargeModel(const std::string& modelPath);
 		void ChargeTexture(const std::string& texturePath);
 		void ChargeMaterial(const std::string& materialPath);
 
-		void MousePick();
+		void MousePick(bool getParent = false);
 
 		bool IsVisible() { return m_visible; }
 
 	private:
 
+		void HotKeysBasic(const InputEventManager& inputEvent);
 		void HotKeysSelectedEntiy(const InputEventManager& inputEvent);
 
 		void Drop();
 		void DrawHelperBar();
 		Ray MouseRay();
+
+		bool AddStyleButton(bool add);
+		void RemoveStyleButton(bool hasStyle);
 
 
 	private:
@@ -60,5 +66,8 @@ namespace Loopie {
 		std::shared_ptr<Texture> m_scaleIcon;
 		std::shared_ptr<Texture> m_rotateIcon;
 		std::shared_ptr<Texture> m_trsIcon;
+
+		std::shared_ptr<Texture> m_octreeIcon;
+		std::shared_ptr<Texture> m_gridIcon;
 	};
 }

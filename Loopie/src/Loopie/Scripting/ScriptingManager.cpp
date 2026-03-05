@@ -30,6 +30,7 @@ namespace Loopie {
 
 		return it->second;
 	}
+
 	MonoString* ScriptingManager::CreateString(const char* string)
 	{
 		return mono_string_new(s_Data.AppDomain, string);
@@ -48,18 +49,14 @@ namespace Loopie {
 		s_Data.AppDomain = mono_domain_create_appdomain("LoopieAppDomain", nullptr);
 		mono_domain_set(s_Data.AppDomain, true);
 
-		std::string projectDir = Application::GetInstance().m_activeProject.GetGameDLLPath().string();
-
-		s_Data.CoreAssemblyFilepath = "../LoopieScripting/Loopie.Core.dll";
-		s_Data.AppAssemblyFilepath = projectDir;
-		s_Data.CompilerAssemblyFilepath = "../LoopieCompiler/Loopie.ScriptCompiler.dll";
-
 		ScriptGlue::RegisterFunctions();
 
 		LoadCoreAssembly();
-		LoadCompilerAssembly();
 
-		CompileGameAssembly();
+		if (s_Data.EnableRecompile) {
+			LoadCompilerAssembly();
+			CompileGameAssembly();
+		}
 
 		LoadAppAssembly(); 
 
@@ -114,11 +111,14 @@ namespace Loopie {
 		mono_domain_set(s_Data.AppDomain, true);
 
 		LoadCoreAssembly();
-		LoadCompilerAssembly();
 
-		if (!CompileGameAssembly()) {
-			Log::Error("Script compilation failed. Aborting reload.");
-			return;
+		if (s_Data.EnableRecompile) {
+			LoadCompilerAssembly();
+
+			if (!CompileGameAssembly()) {
+				Log::Error("Script compilation failed. Aborting reload.");
+				return;
+			}
 		}
 
 		LoadAppAssembly();
@@ -218,10 +218,20 @@ namespace Loopie {
 				if (flags & MONO_FIELD_ATTR_PUBLIC)
 				{
 					MonoType* type = mono_field_get_type(field);
+					std::string typeName = mono_type_get_name(type);
 					ScriptFieldType fieldType = MonoTypeToScriptFieldType(type);
-					scriptClass->GetFields()[fieldName] = { fieldType, fieldName, field };
 
-					Log::Warn("   {}", fieldName);
+					MonoClass* fieldClass = mono_class_from_mono_type(type);
+
+					if (fieldClass)
+					{
+						isComponent = mono_class_is_subclass_of(fieldClass, component, false);
+						if (isComponent)
+							fieldType = ScriptFieldType::Component;
+					}
+
+					scriptClass->GetFields()[fieldName] = { fieldType, fieldName, field };
+					Log::Warn("   {0} -> {1}", fieldName, typeName);
 				}
 			}
 		}

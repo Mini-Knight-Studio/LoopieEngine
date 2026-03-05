@@ -30,6 +30,8 @@ namespace Loopie {
 		static void SetGridSize(int size);
 		static void SetGridSpacing(float spacing);
 		static void SetGridColor(vec4 color);
+		static void SetGridVisibility(bool show);
+		static bool GetGridVisibility();
 
 	private:
 
@@ -73,7 +75,7 @@ namespace Loopie {
 			int GridHalfSize=50;
 			float GridSpacing = 10;
 			bool DrawGrid = true;
-			vec4 GridColor = Color::GREY;
+			vec4 GridColor = Color::BLACK;
 			///
 		};
 

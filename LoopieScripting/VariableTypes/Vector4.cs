@@ -47,10 +47,10 @@ namespace Loopie
         {
             return new Vector4(v.x / scalar, v.y / scalar, v.z / scalar, v.w / scalar);
         }
-        
-        public static bool operator ==(Vector4 a, Vector4 b)
+
+        public static bool operator == (Vector4 a, Vector4 b)
         {
-            return (Math.Sqrt(a.x - b.x + a.y - b.y + a.z - b.z + a.w - b.w) < 1e-10f) ? true : false; ;
+            return Math.Abs(a.x - b.x) < 1e-10f && Math.Abs(a.y - b.y) < 1e-10f && Math.Abs(a.z - b.z) < 1e-10f && Math.Abs(a.w - b.w) < 1e-10f;
         }
 
         public static bool operator !=(Vector4 a, Vector4 b)
@@ -61,6 +61,11 @@ namespace Loopie
         public override bool Equals(object obj)
         {
             return obj is Vector4 v && this == v;
+        }
+
+        public override int GetHashCode()
+        {
+            return x.GetHashCode() ^ y.GetHashCode() ^ z.GetHashCode() ^ w.GetHashCode();
         }
 
         public static double Distance(Vector4 a, Vector4 b)

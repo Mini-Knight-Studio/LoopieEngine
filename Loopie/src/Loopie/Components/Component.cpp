@@ -21,6 +21,11 @@ namespace Loopie {
 		return m_isActive && m_owner.lock()->GetIsActive();
 	}
 
+	bool Component::GetLocalIsActive() const
+	{
+		return m_isActive;
+	}
+
 	void Component::SetIsActive(bool active)
 	{
 		m_isActive = active;
@@ -28,7 +33,9 @@ namespace Loopie {
 
 	void Component::SetUUID(const std::string uuid)
 	{
+		UUID old = m_uuid;
 		m_uuid = UUID(uuid);
+		m_owner.lock()->OnComponentUUIDChange(this, old);
 	}
 
 	JsonNode Component::Serialize(JsonNode& parent) const

@@ -8,6 +8,9 @@
 #include <memory>
 
 namespace Loopie {
+
+	class Animator;
+
 	struct Triangle
 	{
 		vec3 v0, v1, v2;
@@ -51,6 +54,9 @@ namespace Loopie {
 
 		bool GetTriangle(int triangleIndex, Triangle& triangle);
 
+		void SetLinkedAnimator(Animator* animator) { m_linkedAnimator = animator; }
+		Animator* GetLinkedAnimator() { return m_linkedAnimator; }
+
 	private:
 		void RecalculateBoundingBoxes() const;
 
@@ -71,5 +77,7 @@ namespace Loopie {
 		mutable AABB m_worldAABB = AABB();
 		mutable OBB m_worldOBB = OBB();
 		mutable bool m_boundingBoxesDirty = true;
+
+		Animator* m_linkedAnimator = nullptr;
 	};
 }

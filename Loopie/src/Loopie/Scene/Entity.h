@@ -5,6 +5,7 @@
 
 #include <string>
 #include <vector>
+#include <unordered_map>
 #include <memory>
 
 namespace Loopie {
@@ -24,8 +25,8 @@ namespace Loopie {
 		T* AddComponent(Args&&... args)
 		{
 			if constexpr (std::is_same_v<T, Transform>) {
-				if (m_transform)
-					return GetTransform();
+				if (m_transform && m_transform->GetTypeID() == T::GetTypeIDStatic())
+					return static_cast<T*>(m_transform);
 			}
 
 			m_components.push_back(std::make_unique<T>(std::forward<Args>(args)...));
@@ -38,9 +39,37 @@ namespace Loopie {
 				m_transform = componentPtr;
 			}
 
+			m_componentsByUUID[componentPtr->GetUUID()] = componentPtr;
 			return componentPtr;
 		}
 
+		template<typename T, typename = std::enable_if_t<std::is_base_of_v<Transform, T>>>
+		T* ReplaceTransform()
+		{
+			Transform* oldTransform = m_transform;
+			if (!oldTransform)
+				return AddComponent<T>();
+
+			glm::vec3 position = oldTransform->GetLocalPosition();
+			glm::quat rotation = oldTransform->GetLocalRotation();
+			glm::vec3 scale = oldTransform->GetLocalScale();
+
+			m_components.push_back(std::make_unique<T>());
+			T* newTransform = static_cast<T*>(m_components.back().get());
+
+			newTransform->m_owner = weak_from_this();
+			newTransform->Init();
+
+			newTransform->SetLocalPosition(position);
+			newTransform->SetLocalRotation(rotation);
+			newTransform->SetLocalScale(scale);
+
+			m_transform = newTransform;
+
+			RemoveComponent(oldTransform);
+
+			return newTransform;
+		}
 
 		template<typename T, typename = std::enable_if_t<std::is_base_of_v<Component, T>>>
 		T* GetComponent() const
@@ -52,6 +81,19 @@ namespace Loopie {
 			
 			return nullptr;
 		}
+
+
+		template<typename T, typename = std::enable_if_t<std::is_base_of_v<Component, T>>>
+		T* GetComponent(UUID uuid) {
+			auto it = m_componentsByUUID.find(uuid);
+			if (it != m_componentsByUUID.end())
+				return static_cast<T*>(it->second);
+			return nullptr;
+		}
+
+		Component* GetComponent(UUID uuid);
+
+		void OnComponentUUIDChange(Component* component, UUID oldUUID);
 
 		template<typename T, typename = std::enable_if_t<std::is_base_of_v<Component, T>>>
 		std::vector<T*> GetComponents() const
@@ -81,6 +123,7 @@ namespace Loopie {
 			for (size_t i = 0; i < m_components.size(); i++)
 			{
 				if (m_components[i]->GetTypeID() == T::GetTypeIDStatic()){
+					m_componentsByUUID.erase(m_components[i]->GetUUID());
 					m_components.erase(m_components.begin() + i);
 					return true;
 				}
@@ -98,6 +141,7 @@ namespace Loopie {
 		const UUID& GetUUID() const;
 		const std::string& GetName() const;
 		bool GetIsActive() const;
+		bool GetIsActiveInHierarchy() const;
 		std::shared_ptr<Entity> GetChild(UUID uuid) const;
 		const std::vector<std::shared_ptr<Entity>>& GetChildren() const;
 		std::weak_ptr<Entity> GetParent() const;
@@ -117,6 +161,7 @@ namespace Loopie {
 		std::weak_ptr<Entity> m_parentEntity;
 		std::vector<std::shared_ptr<Entity>> m_childrenEntities;
 		std::vector<std::unique_ptr<Component>> m_components; // Might want to re-do this to a map for optimization
+		std::unordered_map<UUID, Component*> m_componentsByUUID;
 		Transform* m_transform = nullptr;
 
 		UUID m_uuid;

@@ -14,6 +14,8 @@
 #include "Editor/Interfaces/Workspace/TopBarInterface.h"
 #include "Editor/Interfaces/Workspace/TextEditorInterface.h"
 
+#include "Loopie/Components/Canvas.h"
+
 namespace Loopie {
 
 	class Camera;
@@ -33,13 +35,18 @@ namespace Loopie {
 		void OnUpdate() override;
 
 		void OnInterfaceRender()override;
+		
+		static Canvas* FindCanvasInParents(const std::shared_ptr<Loopie::Entity>& entity);
+
 	private:
+		bool UpdateComponents(DebugGameMode mode);
 		void RenderWorld(Camera* camera);
-		/// Test
-		void CreateBakerHouse();
-		void CreateCity();
-		//void MousePick(Camera* camera);
-		///
+		
+		void RenderUIRecursive(const std::shared_ptr<Entity>& entity, vec2& scale);
+		void RenderUI();
+		void RenderSceneUIRecursive(const std::shared_ptr<Entity>& entity);
+		void RenderSceneUI(Camera* camera);
+
 	private:
 		InspectorInterface m_inspector;
 		ConsoleInterface m_console;

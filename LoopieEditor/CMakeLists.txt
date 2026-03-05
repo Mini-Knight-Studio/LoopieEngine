@@ -44,7 +44,6 @@ add_custom_command(TARGET LoopieEditor POST_BUILD
 )
 
 #Copy fmod dlls
-set(FMOD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../vendor/fmod")
 if (CMAKE_SIZEOF_VOID_P EQUAL 8)
     set(FMOD_ARCH_DIR "x64")
 else()
@@ -53,13 +52,13 @@ endif()
 
 add_custom_command(TARGET LoopieEditor POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    "${FMOD_DIR}/api/core/lib/${FMOD_ARCH_DIR}/fmod.dll"
+    "${FMOD_ROOT}/api/core/lib/${FMOD_ARCH_DIR}/fmod.dll"
     $<TARGET_FILE_DIR:LoopieEditor>
 )
 
 add_custom_command(TARGET LoopieEditor POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    "${FMOD_DIR}/api/studio/lib/${FMOD_ARCH_DIR}/fmodstudio.dll"
+    "${FMOD_ROOT}/api/studio/lib/${FMOD_ARCH_DIR}/fmodstudio.dll"
     $<TARGET_FILE_DIR:LoopieEditor>
 )
 

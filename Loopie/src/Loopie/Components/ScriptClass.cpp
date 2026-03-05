@@ -26,6 +26,7 @@ namespace Loopie
 	void ScriptClass::SetUp()
 	{
 		m_scriptingClass = ScriptingManager::GetScriptingClass(m_className);
+
 		m_instance = m_scriptingClass->Instantiate();
 
 		m_OnCreate = m_scriptingClass->GetMethod("OnCreate", 0);
@@ -34,10 +35,18 @@ namespace Loopie
 		MonoProperty* entityProperty =
 			mono_class_get_property_from_name(ScriptingManager::s_Data.ComponentClass->GetMonoClass() , "entity");
 
-		MonoObject* entityInstance = ScriptingManager::CreateManagedEntity(GetOwner()->GetUUID());
+		MonoProperty* idProperty =
+			mono_class_get_property_from_name(ScriptingManager::s_Data.ComponentClass->GetMonoClass(), "ID");
 
-		void* args[1] = { entityInstance };
+		MonoObject* entityInstance = ScriptingManager::CreateManagedEntity(GetOwner()->GetUUID());
+		MonoObject* componentInstance = ScriptingManager::CreateManagedEntity(GetUUID());
+
+		void* args[1] = { nullptr };
+		args[0] = entityInstance;
 		mono_property_set_value(entityProperty, m_instance, args, nullptr);
+
+		args[0] = componentInstance;
+		mono_property_set_value(idProperty, m_instance, args, nullptr);
 
 		// Restore fields
 		for (const auto& [name, field] : m_scriptingClass->GetFields())
@@ -153,11 +162,12 @@ namespace Loopie
 		JsonNode scriptObj = parent.CreateObjectField("script");
 
 		scriptObj.CreateField("class_id", GetClassName());
-
-		const auto& fields = m_scriptingClass->GetFields();
-
 		JsonNode node = scriptObj.CreateObjectField("fields");
 
+		if (!m_scriptingClass)
+			return scriptObj;
+
+		const auto& fields = m_scriptingClass->GetFields();
 		for (const auto& [name, field] : fields)
 		{
 			switch (field.Type)
@@ -218,6 +228,8 @@ namespace Loopie
 		m_className = classID;
 		m_scriptingClass = ScriptingManager::GetScriptingClass(m_className);
 
+		if (!m_scriptingClass)
+			return;
 
 		JsonNode node = data.Child("fields");
 		const auto& fields = m_scriptingClass->GetFields();

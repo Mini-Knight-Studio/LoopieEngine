@@ -4,12 +4,19 @@
 #include "Loopie/Events/IObserver.h"
 #include "Editor/Events/EditorEventTypes.h"
 
+#include <memory>
+
 namespace Loopie {
 	class Transform;
 	class Camera;
 	class MeshRenderer;
 	class ScriptClass;
 	class Material;
+	class Animator;
+	class BoxCollider;
+	class RectTransform;
+	class Canvas;
+	class Image;
 	class AudioSource;
 	class AudioListener;
 
@@ -37,17 +44,23 @@ namespace Loopie {
 		void DrawTransform(Transform* transform);
 		void DrawCamera(Camera* camera);
 		void DrawMeshRenderer(MeshRenderer* meshRenderer);
+		void DrawAnimator(Animator* animator);
 		void DrawScriptClass(ScriptClass* scriptClass);
+		void DrawCanvas(Canvas* canvas);
+		void DrawImage(Image* image);
+		void DrawBoxCollider(BoxCollider* boxCollider);
 		void DrawAudioSource(AudioSource* source);
 		void DrawAudioListener(AudioListener* listener);
+
 		void AddComponent(const std::shared_ptr<Entity>& entity);
-		bool RemoveComponent(Component* component);
+		bool ComponentContextMenu(Component* component, bool canRemove = true);
 
 		///FilesRelated
 		void DrawMaterial(std::shared_ptr<Material> material);
 
 		// Inherited via IObserver
 		void OnNotify(const OnEntityOrFileNotification& id) override;
+
 
 	private:
 

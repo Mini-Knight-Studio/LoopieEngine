@@ -44,6 +44,10 @@ namespace Loopie {
 			
 			const std::string& pathString = s_UUIDToPath[metadata.UUID];
 			bool updated = false;
+
+			if(std::filesystem::is_directory(pathString))
+				continue;
+
 			if (metadata.IsOutdated) {
 				metadata.LastModified = MetadataRegistry::GetLastModifiedFromPath(pathString);			
 				updated = true;

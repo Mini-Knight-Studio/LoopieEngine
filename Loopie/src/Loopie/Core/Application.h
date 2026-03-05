@@ -9,6 +9,7 @@
 #include "Loopie/Project/Project.h"
 #include "Loopie/ImGui/ImGuiManager.h"
 #include "Loopie/Scene/Scene.h"
+#include "Loopie/Core/Clipboard.h"
 
 #include <vector>
 
@@ -43,6 +44,7 @@ namespace Loopie {
 	public:
 		Project m_activeProject;
 		Event<EngineNotification> m_notifier;
+		Clipboard<std::string> m_clipboard;
 	private:
 		static Application* s_Instance;
 		Scene* m_scene = nullptr;

@@ -45,15 +45,24 @@ namespace Loopie
         {
             return new Vector3(v.x / scalar, v.y / scalar, v.z / scalar);
         }
-        
-        public static bool operator ==(Vector3 a, Vector3 b)
-        {
-            return (Math.Sqrt(a.x - b.x + a.y - b.y + a.z - b.z) < 1e-10f) ? true : false; ;
-        }
 
+        public static bool operator == (Vector3 a, Vector3 b)
+        {
+            return Math.Abs(a.x - b.x) < 1e-10f && Math.Abs(a.y - b.y) < 1e-10f && Math.Abs(a.z - b.z) < 1e-10f;
+        }
         public static bool operator !=(Vector3 a, Vector3 b)
         {
             return !(a == b);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is Vector3 v && this == v;
+        }
+
+        public override int GetHashCode()
+        {
+            return x.GetHashCode() ^ y.GetHashCode() ^ z.GetHashCode();
         }
 
         public static double Distance(Vector3 a, Vector3 b)

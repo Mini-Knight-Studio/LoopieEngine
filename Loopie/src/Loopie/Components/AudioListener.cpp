@@ -2,7 +2,7 @@
 
 #include "Loopie/Core/Log.h"
 #include "Loopie/Components/Transform.h"
-#include "Loopie/Core/AudioManager.h"
+#include "Loopie/Audio/AudioManager.h"
 
 namespace Loopie {
 	void AudioListener::Init() {
@@ -18,7 +18,7 @@ namespace Loopie {
 
 	JsonNode AudioListener::Serialize(JsonNode& parent) const
 	{
-		JsonNode transformObj = parent.CreateObjectField("AudioListener");
+		JsonNode transformObj = parent.CreateObjectField("audiolistener");
 		return transformObj;
 	}
 

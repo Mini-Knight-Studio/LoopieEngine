@@ -7,6 +7,7 @@
 #include "Loopie/Files/FileDialog.h"
 #include "Loopie/Resources/ResourceManager.h"
 #include "Loopie/Resources/Types/Texture.h"
+#include "Loopie/Project/ProjectConfig.h"
 
 #include "Loopie/Importers/TextureImporter.h"
 
@@ -482,6 +483,8 @@ namespace Loopie {
 		{
 			std::string filePathStr = from;
 			ImGui::SetDragDropPayload("ASSET_EXPLORER_FILE", filePathStr.c_str(), filePathStr.size() + 1);
+			std::filesystem::path path = from;
+			ImGui::Text("%s", path.filename().string().c_str());
 			ImGui::EndDragDropSource();
 		}
 	}
@@ -687,12 +690,35 @@ namespace Loopie {
 						newPath.string() + file.extension().string() + ".meta");
 				};
 		}
+		ImGui::Separator();
+
+		if (ImGui::MenuItem("Copy UUID"))
+		{
+			Metadata* data = AssetRegistry::GetMetadata(file.string());
+			if (data)
+			{
+				Application::GetInstance().m_clipboard.Copy(data->UUID.Get());
+			}
+		}
 
 		ImGui::Separator();
 
 		if(ImGui::MenuItem("Show in Explorer"))
 		{
 			FileDialog::OpenInExplorer(file);
+		}
+
+		
+		if (file.extension() == ".scene") {
+			ImGui::Separator();
+
+			if (ImGui::MenuItem("Set As Build Initial Scene"))
+			{
+				JsonData data = ProjectConfig::GetData();
+				std::filesystem::path relativePath = std::filesystem::relative(file, Application::GetInstance().m_activeProject.GetProjectPath());
+				data.SetValue("build_scene", ("Game" / relativePath).string());
+				ProjectConfig::Save(data);
+			}
 		}
 	}
 

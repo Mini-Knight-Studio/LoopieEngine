@@ -2,7 +2,7 @@
 
 #include "Loopie/Core/Log.h"
 #include "Loopie/Core/Application.h"
-#include "Loopie/Core/AudioManager.h"
+#include "Loopie/Audio/AudioManager.h"
 
 #include <fmod_studio.hpp>
 #include <fmod.hpp>

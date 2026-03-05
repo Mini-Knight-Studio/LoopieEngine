@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Loopie/Components/Component.h"
 #include "Loopie/Scene/Entity.h"
 #include "Loopie/Math/MathTypes.h"
@@ -39,6 +38,7 @@ namespace Loopie
 		void SetWorldMatrix(const matrix4& worldMatrix);
         const matrix4& GetLocalToWorldMatrix() const;
         const matrix4& GetWorldToLocalMatrix() const;
+        const matrix4& GetLocalMatrix() const;
 
         void SetWorldPosition(const vec3& position);
         void SetWorldRotation(const quaternion& quat);
@@ -66,7 +66,21 @@ namespace Loopie
         JsonNode Serialize(JsonNode& parent) const override;
         void Deserialize(const JsonNode& data) override;    
 
-    private:
+		virtual bool IsRectTransform() const { return false; }
+        virtual bool HasSize() const { return false; }
+
+        virtual vec2 GetSize() const { return vec2(0.0f); }
+
+        virtual float GetWidth() const { return 0.0f; }
+		virtual float GetHeight() const { return 0.0f; }
+
+        virtual void SetWidth(float) {}
+		virtual void SetHeight(float) {}
+
+        virtual vec3 GetLocalBoundsMin() const { return vec3(0); }
+        virtual vec3 GetLocalBoundsMax() const { return vec3(0); }
+
+    protected:
         vec3 GetWorldPosition() const;
         quaternion GetWorldRotation() const;
         vec3 GetWorldScale() const;
@@ -76,7 +90,7 @@ namespace Loopie
     public:
         Event<TransformNotification> m_transformNotifier;
 
-    private:
+    protected:
         vec3 m_localPosition = vec3(0);
         quaternion m_localRotation = quaternion(1, 0, 0, 0);
         vec3 m_localScale = vec3(1);
@@ -86,6 +100,8 @@ namespace Loopie
 
         mutable matrix4 m_localToWorld = matrix4(1);
         mutable matrix4 m_worldToLocal = matrix4(1);
+        mutable matrix4 m_localMatrix = matrix4(1);
+
 
         mutable bool m_localDirty = true;
         mutable bool m_worldDirty = true;

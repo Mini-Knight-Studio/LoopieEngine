@@ -18,15 +18,17 @@ namespace Loopie {
 		static void SelectEntity(std::shared_ptr<Entity> entity);
 
 	private:
-		void DrawEntitySlot(const std::shared_ptr<Entity>& entity);
+		void DrawEntitySlot(const std::shared_ptr<Entity> entity, bool active);
 
-		void DrawContextMenu(const std::shared_ptr<Entity>& entity);
+		void DrawContextMenu(const std::shared_ptr<Entity> entity);
 		void HotKeysSelectedEntiy(const InputEventManager& inputEvent);
 
-		void Drag(const std::shared_ptr<Entity>& entity);
-		void Drop(const std::shared_ptr<Entity>& entity);
+		void Drag(const std::shared_ptr<Entity> entity);
+		void Drop(const std::shared_ptr<Entity> entity);
 
-		std::shared_ptr<Entity> CreatePrimitiveModel(const std::string& modelPath, const std::string& name, const std::shared_ptr<Entity>& parent);
+		std::shared_ptr<Entity> CreatePrimitiveModel(const std::string& modelPath, const std::string& name, const std::shared_ptr<Entity> parent);
+		std::shared_ptr<Entity> CreateCanvas(const std::string& name, const std::shared_ptr<Entity> parent);
+		std::shared_ptr<Entity> CreateImage(const std::string& name, const std::shared_ptr<Entity> parent);
 
 	public:
 
