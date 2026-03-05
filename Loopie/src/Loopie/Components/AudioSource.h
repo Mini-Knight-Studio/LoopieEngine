@@ -66,7 +66,7 @@ namespace Loopie {
         float GetPitch() const { return m_pitch; }
         float GetVolume() const { return m_volume; }
         float GetPan() const { return m_pan; }
-        bool IsLooping() const { return loop; }
+        bool IsLooping() const { return isLooping; }
 		bool GetIfPlayOnAwake() const { return playOnAwake; }
         void Get3DMinMaxDistance(float& minDist, float& maxDist) const { minDist = m_minDistance; maxDist = m_maxDistance; }
 
@@ -96,7 +96,6 @@ namespace Loopie {
         bool m_isEvent = false;
         bool m_hasStarted = false;
 
-
         // Audio configuration
         float m_pitch = 1.0f;  
         float m_volume = 1.0f;   
@@ -104,7 +103,6 @@ namespace Loopie {
         float m_minDistance = 2.0f;
         float m_maxDistance = 25.0f;
 
-        bool loop = false;
         bool playOnAwake = true;
         bool usePlaylist = false;
     };
