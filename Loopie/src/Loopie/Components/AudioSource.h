@@ -24,6 +24,18 @@ struct FMOD_VECTOR;
 
 namespace Loopie {
 
+    enum class AudioLoopStrategy {
+        Repetitive,
+        Sequential,
+        Random,
+        RandomNoRepetitive
+    };
+
+    enum class AudioNoLoopStrategy {
+        First,
+        Random
+    };
+
     class AudioSource : public Component {
     public:
         DEFINE_TYPE(AudioSource)
@@ -65,11 +77,18 @@ namespace Loopie {
     private:
 
     public:
+
         std::vector<std::shared_ptr<AudioClip>> audioClips;
         int currentClipIndex = 0;
 
+        bool isSpatial = true;
+        bool isLooping = false;
+
+        AudioLoopStrategy loopStrategy = AudioLoopStrategy::Repetitive;
+        AudioNoLoopStrategy noLoopStrategy = AudioNoLoopStrategy::First;
 
     private:
+
         friend class AudioManager;
         FMOD::Studio::EventInstance* m_eventInstance = nullptr;
 

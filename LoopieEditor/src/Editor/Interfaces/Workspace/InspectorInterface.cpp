@@ -353,6 +353,59 @@ namespace Loopie {
 
 		if (open)
 		{
+			ImGui::Checkbox("Is Spatial (3D)", &source->isSpatial);
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("Si se desactiva, el audio será 2D.");
+			}
+
+			bool loop = source->IsLooping();
+			if (ImGui::Checkbox("Loop Audio", &loop)) {
+				source->SetLoop(loop);
+				source->isLooping = loop;
+			}
+
+			if (loop) {
+				const char* loopStrategyNames[] = { "Repetitive", "Sequential", "Random", "Random No Repetitive" };
+				int currentLoopItem = static_cast<int>(source->loopStrategy);
+				if (ImGui::Combo("Loop Strategy", &currentLoopItem, loopStrategyNames, IM_ARRAYSIZE(loopStrategyNames))) {
+					source->loopStrategy = static_cast<Loopie::AudioLoopStrategy>(currentLoopItem);
+				}
+			}
+			else {
+				const char* noLoopStrategyNames[] = { "First", "Random" };
+				int currentNoLoopItem = static_cast<int>(source->noLoopStrategy);
+				if (ImGui::Combo("No-Loop Strategy", &currentNoLoopItem, noLoopStrategyNames, IM_ARRAYSIZE(noLoopStrategyNames))) {
+					source->noLoopStrategy = static_cast<Loopie::AudioNoLoopStrategy>(currentNoLoopItem);
+				}
+			}
+
+			ImGui::Separator();
+
+			bool playOnAwake = source->GetIfPlayOnAwake();
+			if (ImGui::Checkbox("Play On Awake", &playOnAwake)) {
+				source->SetIfPlayOnAwake(playOnAwake);
+			}
+
+			float pitch = source->GetPitch();
+			if (ImGui::SliderFloat("Pitch", &pitch, 0.1f, 3.0f))
+				source->SetPitch(pitch);
+
+			float volume = source->GetVolume();
+			if (ImGui::SliderFloat("Volume", &volume, 0.0f, 1.0f))
+				source->SetVolume(volume);
+
+			float pan = source->GetPan();
+			if (ImGui::SliderFloat("Pan", &pan, -1.0f, 1.0f))
+				source->SetPan(pan);
+
+			// Ocultar la distancia 3D si el audio es 2D (no espacial)
+			if (source->isSpatial) {
+				vec2 distanceRange;
+				source->Get3DMinMaxDistance(distanceRange.x, distanceRange.y);
+				if (ImGui::DragFloat2("3D Min/Max Distance", &distanceRange.x, 0.1f, 0.0f))
+					source->Set3DMinMaxDistance(distanceRange.x, distanceRange.y);
+			}
+
 			ImGui::Text("Playlist");
 
 			std::string previewValue = "None";
@@ -456,35 +509,6 @@ namespace Loopie {
 					}
 				}
 				ImGui::EndDragDropTarget();
-			}
-
-			ImGui::Separator();
-
-
-			bool loop = source->IsLooping();
-			if (ImGui::Checkbox("Loop Audio", &loop))
-				source->SetLoop(loop);
-
-			float pitch = source->GetPitch();
-			if (ImGui::SliderFloat("Pitch", &pitch, 0.1f, 3.0f))
-				source->SetPitch(pitch);
-
-			float volume = source->GetVolume();
-			if (ImGui::SliderFloat("Volume", &volume, 0.0f, 1.0f))
-				source->SetVolume(volume);
-
-			float pan = source->GetPan();
-			if (ImGui::SliderFloat("Pan", &pan, -1.0f, 1.0f))
-				source->SetPan(pan);
-
-			vec2 distanceRange;
-			source->Get3DMinMaxDistance(distanceRange.x, distanceRange.y);
-			if (ImGui::DragFloat2("3D Min/Max Distance", &distanceRange.x, 0.1f, 0.0f))
-				source->Set3DMinMaxDistance(distanceRange.x, distanceRange.y);
-
-			bool playOnAwake = source->GetIfPlayOnAwake();
-			if (ImGui::Checkbox("Play On Awake", &playOnAwake)) {
-				source->SetIfPlayOnAwake(playOnAwake);
 			}
 
 			ImGui::Separator();
