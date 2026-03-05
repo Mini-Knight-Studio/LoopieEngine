@@ -65,7 +65,7 @@ namespace Loopie {
                 }
             }
             else if (m_hasStarted) {
-                if (isLooping && loopStrategy != AudioLoopStrategy::Repetitive) {
+                if (isLooping) {
                     NextTrack();
                 }
                 else {
@@ -149,20 +149,15 @@ namespace Loopie {
             m_eventInstance->setVolume(m_volume);
         }
         else if (!m_isEvent && clip->GetSound()) {
+            Stop();
             FMOD::Channel* newChannel = nullptr;
             AudioManager::PlaySound(clip->GetSound(), &newChannel, true);
             m_channel = newChannel;
 
             if (m_channel) {
                 FMOD_MODE mode = isSpatial ? (FMOD_3D | FMOD_3D_LINEARROLLOFF) : FMOD_2D;
-
-                
-                if (isLooping && loopStrategy == AudioLoopStrategy::Repetitive) {
-                    mode |= FMOD_LOOP_NORMAL;
-                }
-                else {
-                    mode |= FMOD_LOOP_OFF;
-                }
+                mode |= FMOD_LOOP_NORMAL;
+               
 
                 m_channel->setMode(mode);
 
