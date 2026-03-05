@@ -8,12 +8,12 @@ namespace Loopie
 
         public void Play()
         {
-            InternalCalls.AudioSource_Play(entity.ID);
+            InternalCalls.AudioSource_Play(entity.ID, ID);
         }
 
         public void Stop()
         {
-            InternalCalls.AudioSource_Stop(entity.ID);
+            InternalCalls.AudioSource_Stop(entity.ID, ID);
         }
 
         public bool Looping
@@ -21,12 +21,12 @@ namespace Loopie
 
         private bool IsLooping()
         {
-            return InternalCalls.AudioSource_IsLooping(entity.ID);
+            return InternalCalls.AudioSource_IsLooping(entity.ID, ID);
         }
 
         private void SetLoop(bool value)
         {
-            InternalCalls.AudioSource_SetLoop(entity.ID, value);
+            InternalCalls.AudioSource_SetLoop(entity.ID, ID, value);
         }
 
         public float Pitch
@@ -34,12 +34,12 @@ namespace Loopie
 
         private float GetPitch()
         {
-            return InternalCalls.AudioSource_GetPitch(entity.ID);
+            return InternalCalls.AudioSource_GetPitch(entity.ID, ID);
         }
 
         private void SetPitch(float value)
         {
-            InternalCalls.AudioSource_SetPitch(entity.ID, value);
+            InternalCalls.AudioSource_SetPitch(entity.ID, ID, value);
         }
 
 
@@ -48,12 +48,12 @@ namespace Loopie
 
         private float GetVolume()
         {
-            return InternalCalls.AudioSource_GetVolume(entity.ID);
+            return InternalCalls.AudioSource_GetVolume(entity.ID, ID);
         }
 
         private void SetVolume(float value)
         {
-            InternalCalls.AudioSource_SetVolume(entity.ID, value);
+            InternalCalls.AudioSource_SetVolume(entity.ID, ID, value);
         }
 
 
@@ -62,22 +62,22 @@ namespace Loopie
 
         private float GetPan()
         {
-            return InternalCalls.AudioSource_GetPan(entity.ID);
+            return InternalCalls.AudioSource_GetPan(entity.ID, ID);
         }
 
         private void SetPan(float value)
         {
-            InternalCalls.AudioSource_SetPan(entity.ID, value);
+            InternalCalls.AudioSource_SetPan(entity.ID, ID, value);
         }
 
         public void Set3DMinMaxDistance(float min, float max)
         {
-            InternalCalls.AudioSource_SetSet3DMinMaxDistance(entity.ID, min, max);
+            InternalCalls.AudioSource_SetSet3DMinMaxDistance(entity.ID, ID, min, max);
         }
 
         public void Get3DMinMaxDistance(out float min, out float max)
         {
-            InternalCalls.AudioSource_GetSet3DMinMaxDistance(entity.ID, out min, out max);
+            InternalCalls.AudioSource_GetSet3DMinMaxDistance(entity.ID, ID, out min, out max);
         }
     }
 

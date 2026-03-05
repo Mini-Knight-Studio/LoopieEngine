@@ -27,83 +27,83 @@ namespace Loopie
         #endregion
         #region Transform
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Transform_GetPosition(string id, out Vector3 position);
+        internal extern static void Transform_GetPosition(string entityID, out Vector3 position);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Transform_SetPosition(string id, Vector3 position);
+        internal extern static void Transform_SetPosition(string entityID, Vector3 position);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Transform_GetLocalPosition(string id, out Vector3 position);
+        internal extern static void Transform_GetLocalPosition(string entityID, out Vector3 position);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Transform_SetLocalPosition(string id, Vector3 position);
+        internal extern static void Transform_SetLocalPosition(string entityID, Vector3 position);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Transform_GetRotation(string id, out Vector3 rotation);
+        internal extern static void Transform_GetRotation(string entityID, out Vector3 rotation);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Transform_SetRotation(string id, Vector3 rotation);
+        internal extern static void Transform_SetRotation(string entityID, Vector3 rotation);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Transform_GetLocalRotation(string id, out Vector3 rotation);
+        internal extern static void Transform_GetLocalRotation(string entityID, out Vector3 rotation);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Transform_SetLocalRotation(string id, Vector3 rotation);
+        internal extern static void Transform_SetLocalRotation(string entityID, Vector3 rotation);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Transform_GetLocalScale(string id, out Vector3 scale);
+        internal extern static void Transform_GetLocalScale(string entityID, out Vector3 scale);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Transform_SetLocalScale(string id, Vector3 scale);
+        internal extern static void Transform_SetLocalScale(string entityID, Vector3 scale);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Transform_Translate(string id, Vector3 translation, Transform.Space objectSpace);
+        internal extern static void Transform_Translate(string entityID, Vector3 translation, Transform.Space objectSpace);
         
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Transform_Rotate(string id, Vector3 eulerAngles, Transform.Space objectSpace);
+        internal extern static void Transform_Rotate(string entityID, Vector3 eulerAngles, Transform.Space objectSpace);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Transform_LookAt(string id, Vector3 target, Vector3 worldUp);
+        internal extern static void Transform_LookAt(string entityID, Vector3 target, Vector3 worldUp);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Transform_Forward(string id, out Vector3 forward);
+        internal extern static void Transform_Forward(string entityID, out Vector3 forward);
         
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Transform_Back(string id, out Vector3 back);
+        internal extern static void Transform_Back(string entityID, out Vector3 back);
         
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Transform_Up(string id, out Vector3 up);
+        internal extern static void Transform_Up(string entityID, out Vector3 up);
         
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Transform_Down(string id, out Vector3 down);
+        internal extern static void Transform_Down(string entityID, out Vector3 down);
         
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Transform_Left(string id, out Vector3 left);
+        internal extern static void Transform_Left(string entityID, out Vector3 left);
         
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Transform_Right(string id, out Vector3 right);
+        internal extern static void Transform_Right(string entityID, out Vector3 right);
         #endregion
         #region BoxCollider
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void BoxCollider_GetLocalCenter(string id, out Vector3 center);
+        internal extern static void BoxCollider_GetLocalCenter(string entityID, string componentID, out Vector3 center);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void BoxCollider_SetLocalCenter(string id,Vector3 center);
+        internal extern static void BoxCollider_SetLocalCenter(string entityID, string componentID, Vector3 center);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void BoxCollider_GetLocalExtents(string id, out Vector3 extends);
+        internal extern static void BoxCollider_GetLocalExtents(string entityID, string componentID, out Vector3 extends);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void BoxCollider_SetLocalExtents(string id,Vector3 extents);
+        internal extern static void BoxCollider_SetLocalExtents(string entityID, string componentID, Vector3 extents);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static bool BoxCollider_IsColliding(string id);
+        internal extern static bool BoxCollider_IsColliding(string entityID, string componentID);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static bool BoxCollider_HasCollided(string id);
+        internal extern static bool BoxCollider_HasCollided(string entityID, string componentID);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static bool BoxCollider_HasEndedCollision(string id);
+        internal extern static bool BoxCollider_HasEndedCollision(string entityID, string componentID);
         #endregion
         #region Animator
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
@@ -137,40 +137,40 @@ namespace Loopie
         #endregion
         #region AudioSource
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void AudioSource_Play(string id);
+        internal extern static void AudioSource_Play(string entityID, string componentID);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void AudioSource_Stop(string id);
+        internal extern static void AudioSource_Stop(string entityID, string componentID);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void AudioSource_SetLoop(string id, bool value);
+        internal extern static void AudioSource_SetLoop(string entityID, string componentID, bool value);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void AudioSource_SetPitch(string id, float pitch);
+        internal extern static void AudioSource_SetPitch(string entityID, string componentID, float pitch);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void AudioSource_SetVolume(string id, float volume);
+        internal extern static void AudioSource_SetVolume(string entityID, string componentID, float volume);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void AudioSource_SetPan(string id, float pan);
+        internal extern static void AudioSource_SetPan(string entityID, string componentID, float pan);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void AudioSource_SetSet3DMinMaxDistance(string id, float min, float max);
+        internal extern static void AudioSource_SetSet3DMinMaxDistance(string entityID, string componentID, float min, float max);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static bool AudioSource_IsLooping(string id);
+        internal extern static bool AudioSource_IsLooping(string entityID, string componentID);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static float AudioSource_GetPitch(string id);
+        internal extern static float AudioSource_GetPitch(string entityID, string componentID);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static float AudioSource_GetVolume(string id);
+        internal extern static float AudioSource_GetVolume(string entityID, string componentID);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static float AudioSource_GetPan(string id);
+        internal extern static float AudioSource_GetPan(string entityID, string componentID);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void AudioSource_GetSet3DMinMaxDistance(string id, out float min, out float max);
+        internal extern static void AudioSource_GetSet3DMinMaxDistance(string id, string componentID, out float min, out float max);
         #endregion
         #region Camera
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
