@@ -372,7 +372,7 @@ namespace Loopie
 				std::vector<matrix4> bones = {};
 				if (data.HasBones) {
 					Animator* animator = renderer->GetLinkedAnimator();
-					if (animator && animator->HasAnimation()) {
+					if (animator) {
 						bones = animator->GetRendererData(renderer->GetUUID()).FinalBoneMatrices;
 					}
 				}

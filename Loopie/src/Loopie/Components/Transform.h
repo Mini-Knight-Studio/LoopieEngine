@@ -38,6 +38,7 @@ namespace Loopie
 		void SetWorldMatrix(const matrix4& worldMatrix);
         const matrix4& GetLocalToWorldMatrix() const;
         const matrix4& GetWorldToLocalMatrix() const;
+        const matrix4& GetLocalMatrix() const;
 
         void SetWorldPosition(const vec3& position);
         void SetWorldRotation(const quaternion& quat);
@@ -99,6 +100,8 @@ namespace Loopie
 
         mutable matrix4 m_localToWorld = matrix4(1);
         mutable matrix4 m_worldToLocal = matrix4(1);
+        mutable matrix4 m_localMatrix = matrix4(1);
+
 
         mutable bool m_localDirty = true;
         mutable bool m_worldDirty = true;
