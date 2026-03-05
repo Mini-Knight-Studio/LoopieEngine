@@ -175,24 +175,45 @@ namespace Loopie
         #region Camera
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Camera_SetFov(string entityID, string componentID, float fov);
+
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static float Camera_GetFov(string entityID, string componentID);
+
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Camera_SetNearPlane(string entityID, string componentID, float fov);
+
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static float Camera_GetNearPlane(string entityID, string componentID);
+
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Camera_SetFarPlane(string entityID, string componentID, float fov);
+
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static float Camera_GetFarPlane(string entityID, string componentID);
+
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static bool Camera_IsMainCamera(string entityID, string componentID);
+
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Camera_SetMainCamera(string entityID, string componentID);
+
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static string Camera_GetMainCamera();
+
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Camera_GetViewport(string entityID, string componentID, out Vector4 viewport);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Camera_SetOrthoSize(string entityID, string componentID, float size);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static float Camera_GetOrthoSize(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Camera_SetProjection(string entityID, string componentID, int projection);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static int Camera_GetProjection(string entityID, string componentID);
         #endregion
         #region Input
         [MethodImplAttribute(MethodImplOptions.InternalCall)]

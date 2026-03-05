@@ -5,6 +5,13 @@ namespace Loopie
 {
     public class Camera : Component
     {
+
+        public enum ProjectionType
+        {
+            Perspective = 0,
+            Orthographic = 1
+        }
+
         public void SetFov(float fov)
         {
             InternalCalls.Camera_SetFov(entity.ID, ID, fov);
@@ -69,5 +76,24 @@ namespace Loopie
             return viewport;
         }
 
+        public void SetOrthoSize(float size)
+        {
+            InternalCalls.Camera_SetOrthoSize(entity.ID, ID, size);
+        }
+
+        public float GetOrthoSize()
+        {
+            return InternalCalls.Camera_GetOrthoSize(entity.ID, ID);
+        }
+
+        public void SetProjection(ProjectionType projection)
+        {
+            InternalCalls.Camera_SetProjection(entity.ID, ID, (int)projection);
+        }
+
+        public ProjectionType GetProjection()
+        {
+            return (ProjectionType)InternalCalls.Camera_GetProjection(entity.ID, ID);
+        }
     }
 }

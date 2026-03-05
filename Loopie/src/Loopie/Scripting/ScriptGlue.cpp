@@ -700,6 +700,48 @@ namespace Loopie
 			*viewport = camera->GetViewport();
 	}
 
+	static void Camera_SetOrthoSize(MonoString* entityID, MonoString* componentID, float size) {
+		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		Camera* camera = entity->GetComponent<Camera>(componentUUID);
+		if (camera)
+			camera->SetOrthoSize(size);
+	}
+
+	static float Camera_GetOrthoSize(MonoString* entityID, MonoString* componentID) {
+		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		Camera* camera = entity->GetComponent<Camera>(componentUUID);
+		if (camera)
+			return camera->GetOrthoSize();
+		return 0;
+	}
+
+	static void Camera_SetProjection(MonoString* entityID, MonoString* componentID, int projectionType) {
+		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		Camera* camera = entity->GetComponent<Camera>(componentUUID);
+		if (camera)
+			camera->SetProjection((CameraProjection)projectionType);
+	}
+
+	static int Camera_GetProjection(MonoString* entityID, MonoString* componentID) {
+		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		Camera* camera = entity->GetComponent<Camera>(componentUUID);
+		if (camera)
+			return (int)camera->GetProjection();
+		return 0;
+	}
+
 #pragma endregion
 
 #pragma region Input
@@ -1189,6 +1231,10 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Camera_SetMainCamera);
 		ADD_INTERNAL_CALL(Camera_GetMainCamera);
 		ADD_INTERNAL_CALL(Camera_GetViewport);
+		ADD_INTERNAL_CALL(Camera_SetOrthoSize);
+		ADD_INTERNAL_CALL(Camera_GetOrthoSize);
+		ADD_INTERNAL_CALL(Camera_SetProjection);
+		ADD_INTERNAL_CALL(Camera_GetProjection);
 
 
 
