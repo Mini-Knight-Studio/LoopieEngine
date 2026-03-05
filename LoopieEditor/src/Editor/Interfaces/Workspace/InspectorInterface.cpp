@@ -15,6 +15,7 @@
 #include "Loopie/Components/Canvas.h"
 #include "Loopie/Components/Image.h"
 #include "Loopie/Components/Text.h"
+#include "Loopie/Components/Button.h"
 #include "Loopie/Components/BoxCollider.h"
 #include "Loopie/Scripting/ScriptingManager.h"
 #include "Loopie/Importers/TextureImporter.h"
@@ -253,6 +254,9 @@ namespace Loopie {
 			}
 			else if (component->GetTypeID() == Text::GetTypeIDStatic()) {
 				DrawText(static_cast<Text*>(component));
+			}
+			else if (component->GetTypeID() == Button::GetTypeIDStatic()) {
+				DrawButton(static_cast<Button*>(component));
 			}
 		}
 		AddComponent(entity);
@@ -1129,6 +1133,55 @@ namespace Loopie {
 		}
 
 		ImGui::PopID();
+	}
+
+	void InspectorInterface::DrawButton(Button* button)
+	{
+		if (!button)
+			return;
+
+		const bool opened = ImGui::CollapsingHeader("Button", ImGuiTreeNodeFlags_DefaultOpen);
+		ComponentContextMenu(button);
+
+		if (!opened)
+			return;
+
+		bool interactable = button->IsInteractable();
+		if (ImGui::Checkbox("Interactable", &interactable))
+			button->SetInteractable(interactable);
+
+		ImGui::SeparatorText("Colors");
+
+		vec4 normal = button->GetNormalColor();
+		if (ImGui::ColorEdit4("Normal", &normal.x))
+			button->SetNormalColor(normal);
+
+		vec4 hovered = button->GetHoveredColor();
+		if (ImGui::ColorEdit4("Hovered", &hovered.x))
+			button->SetHoveredColor(hovered);
+
+		vec4 pressed = button->GetPressedColor();
+		if (ImGui::ColorEdit4("Pressed", &pressed.x))
+			button->SetPressedColor(pressed);
+
+		vec4 disabled = button->GetDisabledColor();
+		if (ImGui::ColorEdit4("Disabled", &disabled.x))
+			button->SetDisabledColor(disabled);
+
+		ImGui::SeparatorText("On Click");
+
+		std::string scriptUuid = button->GetOnClickScriptUUID().Get();
+		char scriptUuidBuf[128]{};
+		(void)snprintf(scriptUuidBuf, sizeof(scriptUuidBuf), "%s", scriptUuid.c_str());
+
+		std::string method = button->GetOnClickMethod();
+		char methodBuf[256]{};
+		(void)snprintf(methodBuf, sizeof(methodBuf), "%s", method.c_str());
+
+		if (ImGui::InputText("Method", methodBuf, sizeof(methodBuf)))
+			button->SetOnClickMethod(std::string(methodBuf));
+
+		ImGui::TextDisabled("Method is invoked with 0 arguments.");
 	}
 
 	void InspectorInterface::DrawBoxCollider(BoxCollider* boxCollider) 

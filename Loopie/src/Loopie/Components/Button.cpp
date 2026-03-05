@@ -19,9 +19,6 @@ namespace Loopie
 		if (!GetOwner()->HasComponent<RectTransform>())
 			GetOwner()->ReplaceTransform<RectTransform>();
 
-		if (!GetOwner()->HasComponent<Image>())
-			Log::Warn("Button requires an Image component on the same entity. Add Image to '{}'.", GetOwner()->GetName());
-
 		ApplyState(m_interactable ? VisualState::Normal : VisualState::Disabled);
 	}
 
@@ -43,6 +40,9 @@ namespace Loopie
 
 	void Button::SetHovered(bool hovered)
 	{
+		if (!ScriptingManager::IsRunning())
+			return;
+
 		m_isHovered = hovered;
 
 		if (!m_interactable)
@@ -59,6 +59,9 @@ namespace Loopie
 
 	void Button::SetPressed(bool pressed)
 	{
+		if (!ScriptingManager::IsRunning())
+			return;
+
 		m_isPressed = pressed;
 
 		if (!m_interactable)
@@ -75,6 +78,9 @@ namespace Loopie
 
 	void Button::TriggerClick()
 	{
+		if (!ScriptingManager::IsRunning())
+			return;
+
 		if (!m_interactable)
 			return;
 
@@ -113,14 +119,27 @@ namespace Loopie
 		if (!owner)
 			return;
 
-		ScriptClass* target = nullptr;
-		if (UUID::IsValid(m_onClickScriptUUID.Get()))
-			target = owner->GetComponent<ScriptClass>(m_onClickScriptUUID);
-		else
-			target = owner->GetComponent<ScriptClass>();
+		ScriptClass* target = owner->GetComponent<ScriptClass>();
 
-		if (!target || !target->GetScriptingClass() || !target->GetInstance())
+		if (!target)
+		{
+			Log::Warn("Button OnClick: no ScriptClass on entity '{}'", owner->GetName());
 			return;
+		}
+
+		if (!target->GetScriptingClass())
+		{
+			Log::Warn("Button OnClick: ScriptClass has no scripting class (class name: '{}') on entity '{}'",
+				target->GetClassName(), owner->GetName());
+			return;
+		}
+
+		if (!target->GetInstance())
+		{
+			Log::Warn("Button OnClick: ScriptClass instance is null (class name: '{}') on entity '{}'. Did ScriptClass::SetUp run?",
+				target->GetClassName(), owner->GetName());
+			return;
+		}
 
 		MonoObject* instance = target->GetInstance();
 		MonoClass* klass = mono_object_get_class(instance);

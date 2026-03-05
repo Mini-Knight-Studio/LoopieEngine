@@ -18,6 +18,7 @@ namespace Loopie {
 	class Canvas;
 	class Image;
 	class Text;
+	class Button;
 	class AudioSource;
 	class AudioListener;
 
@@ -50,6 +51,7 @@ namespace Loopie {
 		void DrawCanvas(Canvas* canvas);
 		void DrawImage(Image* image);
 		void DrawText(Text* text);
+		void DrawButton(Button* button);
 		void DrawBoxCollider(BoxCollider* boxCollider);
 		void DrawAudioSource(AudioSource* source);
 		void DrawAudioListener(AudioListener* listener);

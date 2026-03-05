@@ -6,6 +6,28 @@ Loopie::RectTransform::RectTransform(float w, float h) : Transform()
 	m_height = h;
 }
 
+void Loopie::RectTransform::Init()
+{
+    Transform::Init();
+
+    if (m_inheritedParentSize)
+        return;
+
+	const auto parent = GetOwner()->GetParent().lock();
+    if (!parent)
+		return;
+
+    const auto parentTransform = parent->GetTransform();
+    if (!parentTransform->IsRectTransform())
+        return;
+
+	m_width = parentTransform->GetWidth();
+	m_height = parentTransform->GetHeight();
+	m_inheritedParentSize = true;
+
+    MarkLocalDirty();
+}
+
 float Loopie::RectTransform::GetWidth() const
 {
 	return m_width;

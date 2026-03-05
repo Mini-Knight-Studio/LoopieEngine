@@ -30,6 +30,7 @@ namespace Loopie {
 		std::shared_ptr<Entity> CreateCanvas(const std::string& name, const std::shared_ptr<Entity> parent);
 		std::shared_ptr<Entity> CreateImage(const std::string& name, const std::shared_ptr<Entity> parent);
 		std::shared_ptr<Entity> CreateText(const std::string& name, const std::shared_ptr<Entity> parent);
+		std::shared_ptr<Entity> CreateButton(const std::string& name, const std::shared_ptr<Entity> parent);
 
 	public:
 

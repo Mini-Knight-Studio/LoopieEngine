@@ -217,7 +217,7 @@ namespace Loopie
 					const float sx = (float)gameSize.x / cw;
 					const float sy = (float)gameSize.y / ch;
 
-					const vec2 mouseCanvas(mouseLocalPx.x / sx, mouseLocalPx.y / sy);
+					const vec2 mouseCanvas(mouseLocalPx.x / sx, ch - (mouseLocalPx.y / sy));
 
 					static bool s_pressedInside = false;
 					ProcessOverlayButtonsRecursive(entity, mouseCanvas, mouseOverGame, inputEvent, s_pressedInside);
@@ -620,6 +620,52 @@ namespace Loopie
 			Application::GetInstance().GetWindow().SetTitle(Application::GetInstance().m_activeProject.GetProjectName().c_str());
 			m_assetsExplorer.Reload();
 			///LOAD SCENE
+		}
+	}
+
+	void EditorModule::ProcessOverlayButtonsInput()
+	{
+		Application& app = Application::GetInstance();
+		InputEventManager& inputEvent = app.GetInputEvent();
+
+		const bool mouseOverGame = m_game.IsVisible() && m_game.IsMouseOverGame();
+		if (!mouseOverGame)
+		{
+			return;
+		}
+
+		const ivec2 gameSize = m_game.GetGameSize();
+		if (gameSize.x <= 0 || gameSize.y <= 0)
+		{
+			return;
+		}
+
+		const vec2 mouseLocalPx = m_game.GetMousePosGameLocal();
+
+		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities())
+		{
+			if (!entity || !entity->GetIsActive())
+				continue;
+
+			Canvas* canvas = entity->GetComponent<Canvas>();
+			RectTransform* canvasRt = entity->GetComponent<RectTransform>();
+			if (!canvas || !canvasRt || !canvas->GetIsActive())
+				continue;
+			if (canvas->GetRenderMode() != CanvasRenderMode::ScreenSpaceOverlay)
+				continue;
+
+			const float cw = canvasRt->GetWidth();
+			const float ch = canvasRt->GetHeight();
+			if (cw <= 0.0f || ch <= 0.0f)
+				continue;
+
+			const float sx = static_cast<float>(gameSize.x) / cw;
+			const float sy = static_cast<float>(gameSize.y) / ch;
+
+			const vec2 mouseCanvas(mouseLocalPx.x / sx, ch - (mouseLocalPx.y / sy));
+
+			static bool s_pressedInside = false;
+			ProcessOverlayButtonsRecursive(entity, mouseCanvas, mouseOverGame, inputEvent, s_pressedInside);
 		}
 	}
 

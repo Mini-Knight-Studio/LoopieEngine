@@ -11,6 +11,8 @@ namespace Loopie
 
         RectTransform(float w = 50, float h = 50);
 
+		void Init() override;
+
 		bool IsRectTransform() const override { return true; }
         bool HasSize() const override { return true; }
 
@@ -31,5 +33,6 @@ namespace Loopie
     private:
         float m_width;
         float m_height;
+        bool m_inheritedParentSize = false;
 	};
 }

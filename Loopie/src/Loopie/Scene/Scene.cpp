@@ -17,6 +17,7 @@
 #include "Loopie/Components/AudioSource.h"
 #include "Loopie/Components/AudioListener.h"
 #include "Loopie/Components/Text.h"
+#include "Loopie/Components/Button.h"
 
 #include <unordered_set>
 
@@ -302,6 +303,12 @@ namespace Loopie {
 				auto text = clone->AddComponent<Text>();
 				text->Deserialize(componentData.Child("text"));
 			}
+			// Button
+			else if (componentData.Child("button").IsValid())
+			{
+				auto button = clone->AddComponent<Button>();
+				button->Deserialize(componentData.Child("button"));
+			}
 		}
 
 		// ---- Clone children ----
@@ -585,6 +592,16 @@ namespace Loopie {
 						{
 							text->Deserialize(node);
 							text->SetUUID(componentUUID.Get());
+						}
+					}
+					else if (componentNode.Contains("button"))
+					{
+						JsonNode node = componentNode.Child("button");
+						auto button = entity->AddComponent<Button>();
+						if (button)
+						{
+							button->Deserialize(node);
+							button->SetUUID(componentUUID.Get());
 						}
 					}
 				}
