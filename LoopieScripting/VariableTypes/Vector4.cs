@@ -95,5 +95,27 @@ namespace Loopie
                 return mag > 1E-05f? this / mag : Zero;
             }
         }
+
+
+        public static Vector4 Lerp(Vector4 a, Vector4 b, float t)
+        {
+            t = Mathf.Clamp01(t);
+            return new Vector4(
+                a.x + (b.x - a.x) * t,
+                a.y + (b.y - a.y) * t,
+                a.z + (b.z - a.z) * t,
+                a.w + (b.w - a.w) * t
+            );
+        }
+
+        public static Vector4 LerpUnclamped(Vector4 a, Vector4 b, float t)
+        {
+            return new Vector4(
+                a.x + (b.x - a.x) * t,
+                a.y + (b.y - a.y) * t,
+                a.z + (b.z - a.z) * t,
+                a.w + (b.w - a.w) * t
+            );
+        }
     }
 }
