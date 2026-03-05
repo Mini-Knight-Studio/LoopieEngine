@@ -11,7 +11,7 @@
 #include "Loopie/Components/ScriptClass.h"
 
 #include "Loopie/Components/ParticleComponent.h"
-
+#include "Loopie/ParticleSystemEn/ParticleSystem.h"
 
 #include "Loopie/Scripting/ScriptingManager.h"
 
@@ -240,12 +240,60 @@ namespace Loopie {
 
 	void InspectorInterface::DrawEmitterInspector(Emitter* emitter)
 	{
+
+		//EMITTER PROPERTIES
+
+		ImGui::Separator();
+		ImGui::Text("Emitter Properties");
+		ImGui::Separator();
+
 		std::string name = emitter->GetName();
 		if (ImGui::InputText("Name", &name))
 		{
 			emitter->SetName(name);
 		}
-		//Add more properties here
+
+		unsigned int spawnRate = emitter->GetSpawnrate();
+		if (ImGui::InputScalar("SpawnRate", ImGuiDataType_U32, &spawnRate))
+		{
+			emitter->SetSpawnRate(spawnRate);
+		}
+
+		unsigned int maxParticles = emitter->GetMaxParticles();
+		if (ImGui::InputScalar("MaxParticles", ImGuiDataType_U32, &maxParticles))
+		{
+			emitter->SetMaxParticles(maxParticles);
+		}
+
+		vec3 positionOffSet = emitter->GetPositionOffSet();
+		if (ImGui::InputFloat3("Emitter Position OffSet", &positionOffSet.x))
+		{
+			emitter->SetPositionOffSet(positionOffSet);
+		}
+
+		bool active = emitter->IsActive();
+		if (ImGui::Checkbox("Active", &active)) 
+		{
+			emitter->ToggleActive();
+		}
+		
+		//PARTICLE PROPERTIES
+		ImGui::Separator();
+		ImGui::Text("Particle Properties");
+		ImGui::Separator();
+
+		ParticleProps& props = emitter->GetEmissionProperties();
+
+		ImGui::InputFloat3("Position", &props.Position.x);
+		ImGui::InputFloat3("Position Variation", &props.PositionVariation.x);
+		ImGui::InputFloat3("Velocity", &props.Velocity.x);
+		ImGui::InputFloat3("Velocity Variation", &props.VelocityVariation.x);
+		ImGui::ColorEdit4("Color Begin", &props.ColorBegin.x);
+		ImGui::ColorEdit4("Color End", &props.ColorEnd.x);
+		ImGui::InputFloat("Size Begin", &props.SizeBegin);
+		ImGui::InputFloat("Size End", &props.SizeEnd);
+		ImGui::InputFloat("Size Variation", &props.SizeVariation);
+		ImGui::InputFloat("Lifetime", &props.LifeTime);
 	}
 
 
@@ -261,7 +309,6 @@ namespace Loopie {
 		}
 		if (open)
 		{
-			//Modifiable Particlesystem Values
 			bool active = partComponent->GetIsActive();
 			if (ImGui::Checkbox("Active", &active))
 			{
@@ -269,28 +316,11 @@ namespace Loopie {
 				else { partComponent->SetIsActive(false); }
 			}
 			
-			//Attempt at selecting type
-			ParticleType type = ParticleType::SMOKE;
-			int current = static_cast<int>(type);
-			const char* particleTypeNames[] = {
-				"Smoke",
-				"Firework"
-			};
-
-			if (ImGui::Combo("Type", &current, particleTypeNames, IM_ARRAYSIZE(particleTypeNames)))
-			{
-				for (size_t i = 0; i < partComponent->GetEmittersVector().size(); i++)
-				{
-				
-					
-				}
-			}
-			///Until here
 
 			std::vector <Emitter*> emitters = partComponent->GetEmittersVector();
 			for (size_t i = 0; i < emitters.size(); i++)
 			{
-				std::string label = "Emitter " + std::to_string(i);
+				std::string label = emitters[i]->GetName();
 
 				if (ImGui::TreeNode(label.c_str()))
 				{
@@ -436,6 +466,15 @@ namespace Loopie {
 				return;
 			}
 
+			if (ImGui::Selectable("Particle Component")) 
+			{
+				ParticleSystem* pSystem = new(ParticleSystem);
+				entity->AddComponent<ParticleComponent>(pSystem);
+				Emitter* emitter = new Emitter(1000, DEFAULT, CAMERA_FACING, entity->GetTransform()->GetPosition(), 100);
+				pSystem->AddElemToEmitterArray(emitter);
+				ImGui::EndCombo();
+				return;
+			}
 
 			///// How To Add More Components
 			// 

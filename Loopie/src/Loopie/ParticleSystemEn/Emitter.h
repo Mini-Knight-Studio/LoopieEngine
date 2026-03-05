@@ -35,6 +35,7 @@ namespace Loopie
 			unsigned int m_maxParticles;
 			float m_emitterTimer;
 			vec3 m_position;
+			vec3 m_positionOffSet;
 			bool m_active;
 
 			std::vector<ParticleModule> m_particlePool;
@@ -47,7 +48,7 @@ namespace Loopie
 
 		public:
 			
-			Emitter(unsigned int maxParticles, ParticleType type, BillboardType bType, vec3 position, unsigned int spawnRate);
+			Emitter(unsigned int maxParticles, ParticleType type, BillboardType bType, vec3 position, unsigned int spawnRate, vec3 posOffSet = vec3(0));
 
 			void OnUpdate(float dt);
 			void OnRender(std::shared_ptr<VertexArray> quadVAO, std::shared_ptr<Material> material, Camera* cam);
@@ -59,17 +60,24 @@ namespace Loopie
 			unsigned int GetSpawnrate()const;
 			void SetSpawnRate(unsigned int spawnR);
 
-			unsigned int GetmaxParticles()const;
-			void SetmaxParticles(unsigned int maxPart);
+			unsigned int GetMaxParticles()const;
+			void SetMaxParticles(unsigned int maxPart);
+
+			float GetEmitterTimer()const;
+			void SetEmitterTimer(float timer);
 
 			vec3 GetPosition() const;
 			void SetPosition(const vec3& pos);
+
+			vec3 GetPositionOffSet() const;
+			void SetPositionOffSet(const vec3& posOffSet);
 
 			ParticleProps& GetEmissionProperties();
 			void SetEmisionProperties(const ParticleProps& partProps);
 			
 			int GetActiveParticles() const;
 			bool IsActive() const;
+			void ToggleActive();
 
 
 	};

@@ -34,7 +34,7 @@ namespace Loopie
 		vec3 localPos = GetOwner()->GetComponent<Transform>()->GetLocalPosition();
 		for (size_t i = 0; i < GetEmittersVector().size(); i++)
 		{
-			GetEmittersVector()[i]->SetPosition(pos);
+			GetEmittersVector()[i]->SetPosition(pos + GetEmittersVector()[i]->GetPositionOffSet());
 		}
 		
 		float dt = (float)Time::GetDeltaTime();

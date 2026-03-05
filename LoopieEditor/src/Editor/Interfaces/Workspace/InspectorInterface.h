@@ -11,6 +11,7 @@ namespace Loopie {
 	class ScriptClass;
 	class Material;
 	class ParticleComponent;
+	class ParticleSystem;
 	class Emitter;
 
 	class InspectorInterface : public Interface , public IObserver<OnEntityOrFileNotification>{

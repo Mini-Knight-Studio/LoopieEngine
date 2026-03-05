@@ -11,13 +11,14 @@ namespace Loopie
 		return min + ((float)rand() / (float)RAND_MAX) * (max - min);
 	}
 
-	Emitter::Emitter(unsigned int maxParticles, ParticleType type, BillboardType bType, vec3 position, unsigned int spawnRate)
+	Emitter::Emitter(unsigned int maxParticles, ParticleType type, BillboardType bType, vec3 position, unsigned int spawnRate, vec3 posOffSet)
 	{
 		m_billboard = std::make_shared<Billboard>(position, bType);
 		m_spawnRate = spawnRate;
 	    m_maxParticles = maxParticles;
 		m_emitterTimer = 0;
 		m_position = position;
+		m_positionOffSet = posOffSet;
 		m_active = true;
 		m_poolIndex = 0;
 
@@ -37,7 +38,7 @@ namespace Loopie
 			}
 			particle.Update(dt);
 		}
-		if (m_name == "Smoke")
+		if (m_name != "Firework")
 		{
 			if (m_active && m_spawnRate > 0)
 			{
@@ -155,15 +156,23 @@ namespace Loopie
 		m_spawnRate = spawnR;
 	}
 
-	unsigned int Emitter::GetmaxParticles()const
+	unsigned int Emitter::GetMaxParticles()const
 	{
 		return m_maxParticles;
 	}
-	void Emitter::SetmaxParticles(unsigned int maxPart)
+	void Emitter::SetMaxParticles(unsigned int maxPart)
 	{
 		m_maxParticles = maxPart;
 		m_particlePool.resize(m_maxParticles);
 		m_poolIndex = m_maxParticles - 1;
+	}
+	float Emitter::GetEmitterTimer() const
+	{
+		return m_emitterTimer;
+	}
+	void Emitter::SetEmitterTimer(float timer)
+	{
+		m_emitterTimer = timer;
 	}
 	vec3 Emitter::GetPosition() const
 	{
@@ -172,6 +181,14 @@ namespace Loopie
 	void Emitter::SetPosition(const vec3& pos)
 	{
 		m_position = pos;
+	}
+	vec3 Emitter::GetPositionOffSet() const
+	{
+		return m_positionOffSet;
+	}
+	void Emitter::SetPositionOffSet(const vec3& posOffSet)
+	{
+		m_positionOffSet = posOffSet;
 	}
 	int Emitter::GetActiveParticles() const
 	{
@@ -189,6 +206,10 @@ namespace Loopie
 	bool Emitter::IsActive() const
 	{
 		return m_active;
+	}
+	void Emitter::ToggleActive()
+	{
+		m_active = !m_active;
 	}
 	void Emitter::SetEmisionProperties(const ParticleProps& partProps)
 	{
