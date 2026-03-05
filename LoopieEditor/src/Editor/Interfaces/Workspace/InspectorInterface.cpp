@@ -1496,19 +1496,29 @@ namespace Loopie {
 		if (!isEditable)
 			materialName += " (Read-Only -> EngineDefault)";
 		//ImGui::Text(materialName.c_str());
-		ImGui::Text("Material Resource Count: %u", material->GetReferenceCount());
+		
 		const std::unordered_map<std::string, UniformValue> properties = material->GetUniforms();
 
-		std::shared_ptr<Texture> texture = material->GetTexture();
-		if (texture) {
-			Metadata* metadata = AssetRegistry::GetMetadata(material->GetTexture()->GetUUID());
-			ImGui::Text("Path: %s", metadata->CachesPath[0].c_str());
-			ImGui::Text("Texture Resource Count: %u", material->GetTexture()->GetReferenceCount());
-			ivec2 texSize = material->GetTexture()->GetSize();
-			ImGui::Text("Size: %d x %d", texSize.x, texSize.y);
-			ImGui::Separator();
-		}
+		auto& textures = material->GetTextures();
 
+		for (auto& [slotName, texture] : textures)
+		{
+			
+			ImGui::Text("%s", slotName.c_str());
+			ImGui::SameLine();
+			ImGui::ImageButton(("##" + slotName).c_str(), (ImTextureID)texture->GetRendererId(), ImVec2(20, 20));
+			std::shared_ptr<Resource> resource = GetDragDropResource(ResourceType::TEXTURE);
+
+			ImGui::SameLine();
+			if (ImGui::Button(("Set Default##" + slotName).c_str())) {
+				resource = Texture::GetDefault();
+			}
+			if (resource)
+			{
+				material->SetTexture(slotName, std::static_pointer_cast<Texture>(resource));
+			}
+			
+		}
 
 
 		if (!isEditable)
@@ -1651,7 +1661,9 @@ namespace Loopie {
 			if (ImGui::Button("Apply")) {
 				material->Save();
 			}
+
 		}
+		ImGui::Text("Material Resource Count: %u", material->GetReferenceCount());
 	}
 
 	void InspectorInterface::OnNotify(const OnEntityOrFileNotification& id)

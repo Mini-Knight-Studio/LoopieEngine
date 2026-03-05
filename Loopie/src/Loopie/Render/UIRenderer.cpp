@@ -113,7 +113,7 @@ namespace Loopie
 		c.value = tint;
 		s_material->SetShaderVariable("u_Color", c);
 
-		s_material->SetTexture(texture);
+		s_material->SetTexture("u_Albedo", texture);
 
 		Renderer::FlushRenderItem(s_quadVAO, s_material, model);
 	}
@@ -129,7 +129,7 @@ namespace Loopie
 		c.value = tint;
 		s_material->SetShaderVariable("u_Color", c);
 		
-		s_material->SetTexture(texture);
+		s_material->SetTexture("u_Albedo",texture);
 		
 		Renderer::FlushRenderItem(s_quadVAO, s_material, modelMatrix);
 	}

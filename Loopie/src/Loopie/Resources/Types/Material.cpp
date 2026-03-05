@@ -19,8 +19,11 @@ namespace Loopie
 
 	Material::~Material()
 	{
-		if (m_texture)
-			m_texture->DecrementReferenceCount();
+		for (auto& [name, texture] : m_textures)
+		{
+			if (texture)
+				texture->DecrementReferenceCount();
+		}
 	}
 
 	std::shared_ptr<Material> Material::GetDefault()
@@ -47,15 +50,21 @@ namespace Loopie
 
 		m_shader.Bind();
 
-		if (m_texture)
+		// Bind textures
+		int textureSlot = 0;
+
+		for (auto& [name, texture] : m_textures)
 		{
-			m_texture->m_tb->Bind();
-		}
-		else
-		{
-			Texture::GetDefault()->m_tb->Bind();
+			if (!texture)
+				texture = Texture::GetDefault();
+
+			texture->m_tb->Bind(textureSlot);
+			m_shader.SetUniformInt(name, textureSlot);
+
+			textureSlot++;
 		}
 
+		// Apply numeric uniforms
 		for (const auto& [name, uniformValue] : m_uniformValues)
 		{
 			ApplyUniform(name, uniformValue);
@@ -96,15 +105,31 @@ namespace Loopie
 			return;
 		}
 
+		for (auto& [name, texture] : m_textures)
+		{
+			if (texture)
+				texture->DecrementReferenceCount();
+		}
+
 		m_uniformValues.clear();
+		m_textures.clear();
+
 		const auto& uniforms = m_shader.GetUniforms();
+		const auto& samplers = m_shader.GetSamplers();
+
 		for (const auto& uniform : uniforms)
 		{
 			m_uniformValues[uniform.id].type = uniform.type;
 			m_uniformValues[uniform.id].value = uniform.defaultValue;
 		}
 
-		Log::Info("Material reset to default values");
+		for (const auto& sampler : samplers)
+		{
+			m_textures[sampler.name] = Texture::GetDefault();
+			m_textures[sampler.name]->IncrementReferenceCount();
+		}
+
+		Log::Info("Material reset to shader defaults");
 	}
 
 	void Material::ApplyUniform(const std::string& name, const UniformValue& uniformValue)
@@ -172,15 +197,36 @@ namespace Loopie
 		return true;
 	}
 
-	void Material::SetTexture(std::shared_ptr<Texture> texture)
+	std::shared_ptr<Texture> Material::GetTexture(const std::string& name) const
+	{
+		auto it = m_textures.find(name);
+		if (it != m_textures.end())
+			return it->second;
+
+		return nullptr;
+	}
+
+
+
+	void Material::SetTexture(const std::string& name, std::shared_ptr<Texture> texture)
 	{
 		if (!m_editable)
 			return;
 
-		if (m_texture)
-			m_texture->DecrementReferenceCount();
-		m_texture = texture;
-		if (m_texture)
-			m_texture->IncrementReferenceCount();
+		auto it = m_textures.find(name);
+
+		if (it == m_textures.end())
+		{
+			Log::Warn("Texture slot '{}' not found in shader.", name);
+			return;
+		}
+
+		if (it->second)
+			it->second->DecrementReferenceCount();
+
+		it->second = texture;
+
+		if (it->second)
+			it->second->IncrementReferenceCount();
 	}
 }

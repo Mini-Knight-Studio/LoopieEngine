@@ -196,10 +196,7 @@ namespace Loopie {
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_EXPLORER_FILE"))
 			{
 				std::string path = (const char*)payload->Data;
-				if (TextureImporter::CheckIfIsImage(path.c_str())) {
-					ChargeTexture(path);
-				}
-				else if (MeshImporter::CheckIfIsModel(path.c_str())) {
+				if (MeshImporter::CheckIfIsModel(path.c_str())) {
 					ChargeModel(path);
 				}
 				else if (MaterialImporter::CheckIfIsMaterial(path.c_str())) {
@@ -377,33 +374,6 @@ namespace Loopie {
 
 	}
 
-	void SceneInterface::ChargeTexture(const std::string& texturePath)
-	{
-		Metadata& meta = AssetRegistry::GetOrCreateMetadata(texturePath);
-
-		TextureImporter::ImportImage(texturePath, meta);
-		std::shared_ptr<Texture> texture = ResourceManager::GetTexture(meta);
-		if (texture) {
-			auto selectedEntity = HierarchyInterface::s_SelectedEntity.lock();
-			if (selectedEntity != nullptr) {
-				MeshRenderer* renderer = selectedEntity->GetComponent<MeshRenderer>();
-				if (renderer) {
-					if (renderer->GetMaterial())
-						renderer->GetMaterial()->SetTexture(texture);
-				}
-			}
-			else {
-				for (const auto& [uuid, entity] : Application::GetInstance().GetScene().GetAllEntities())
-				{
-					MeshRenderer* renderer = entity->GetComponent<MeshRenderer>();
-					if (renderer) {
-						if(renderer->GetMaterial())
-							renderer->GetMaterial()->SetTexture(texture);
-					}
-				}
-			}
-		}
-	}
 	void SceneInterface::ChargeMaterial(const std::string& materialPath)
 	{
 		Metadata& meta = AssetRegistry::GetOrCreateMetadata(materialPath);

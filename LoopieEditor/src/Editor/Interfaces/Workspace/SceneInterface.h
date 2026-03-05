@@ -26,7 +26,6 @@ namespace Loopie {
 		std::shared_ptr<FrameBuffer> GetFrameBuffer() { return m_buffer; }
 
 		void ChargeModel(const std::string& modelPath);
-		void ChargeTexture(const std::string& texturePath);
 		void ChargeMaterial(const std::string& materialPath);
 
 		void MousePick(bool getParent = false);

@@ -476,6 +476,7 @@ namespace Loopie {
 		glGetProgramiv(m_rendererID, GL_ACTIVE_UNIFORM_MAX_LENGTH, &maxNameLength);
 		std::vector<char> nameBuffer(maxNameLength);
 
+		int currentSlot = 0;
 		for (GLint i = 0; i < numUniforms; ++i) 
 		{
 			GLsizei length = 0;
@@ -495,6 +496,16 @@ namespace Loopie {
 			{
 				m_uniforms.push_back(Uniform{ name, typeIt->second });
 				GetUniformDefaultValue(m_uniforms.back());
+
+				if (typeIt->second == UniformType_Sampler2D || typeIt->second == UniformType_Sampler3D) {
+					SamplerSlot sampler;
+					sampler.name = name;
+					sampler.slot = currentSlot++;
+					sampler.type = typeIt->second;
+
+					m_samplers.push_back(sampler);
+				}
+				
 			}
 			else
 			{
