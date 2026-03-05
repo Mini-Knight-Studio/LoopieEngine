@@ -1086,35 +1086,88 @@ namespace Loopie {
 	void InspectorInterface::DrawAudioSource(AudioSource* source)
 	{
 		ImGui::PushID(source);
-		bool open = ImGui::CollapsingHeader("Audio Source");
-		ImGui::SetItemTooltip(source->GetUUID().Get().c_str());
-		if (ComponentContextMenu(source)) {
-			ImGui::PopID();
-			return;
-		}
-		if (open) {
+		bool open = ImGui::CollapsingHeader("Audio Source", ImGuiTreeNodeFlags_DefaultOpen);
+		if (RemoveComponent(source)) { ImGui::PopID(); return; }
+
+		if (open)
+		{
+			ImGui::Checkbox("Is Spatial (3D)", &source->isSpatial);
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("Si se desactiva, el audio sera 2D.");
+			}
+
+			bool loop = source->IsLooping();
+			if (ImGui::Checkbox("Loop Audio", &loop)) {
+				source->SetLoop(loop);
+				source->isLooping = loop;
+			}
+
+			if (loop) {
+				const char* loopStrategyNames[] = { "Repetitive", "Sequential", "Random", "Random No Repetitive" };
+				int currentLoopItem = static_cast<int>(source->loopStrategy);
+				if (ImGui::Combo("Loop Strategy", &currentLoopItem, loopStrategyNames, IM_ARRAYSIZE(loopStrategyNames))) {
+					source->loopStrategy = static_cast<Loopie::AudioLoopStrategy>(currentLoopItem);
+				}
+			}
+			else {
+				const char* noLoopStrategyNames[] = { "First", "Random" };
+				int currentNoLoopItem = static_cast<int>(source->noLoopStrategy);
+				if (ImGui::Combo("No-Loop Strategy", &currentNoLoopItem, noLoopStrategyNames, IM_ARRAYSIZE(noLoopStrategyNames))) {
+					source->noLoopStrategy = static_cast<Loopie::AudioNoLoopStrategy>(currentNoLoopItem);
+				}
+			}
+
+			ImGui::Separator();
+
+			bool playOnAwake = source->GetIfPlayOnAwake();
+			if (ImGui::Checkbox("Play On Awake", &playOnAwake)) {
+				source->SetIfPlayOnAwake(playOnAwake);
+			}
+
+			float pitch = source->GetPitch();
+			if (ImGui::SliderFloat("Pitch", &pitch, 0.1f, 3.0f))
+				source->SetPitch(pitch);
+
+			float volume = source->GetVolume();
+			if (ImGui::SliderFloat("Volume", &volume, 0.0f, 1.0f))
+				source->SetVolume(volume);
+
+			float pan = source->GetPan();
+			if (ImGui::SliderFloat("Pan", &pan, -1.0f, 1.0f))
+				source->SetPan(pan);
+
+			// Ocultar la distancia 3D si el audio es 2D (no espacial)
+			if (source->isSpatial) {
+				vec2 distanceRange;
+				source->Get3DMinMaxDistance(distanceRange.x, distanceRange.y);
+				if (ImGui::DragFloat2("3D Min/Max Distance", &distanceRange.x, 0.1f, 0.0f))
+					source->Set3DMinMaxDistance(distanceRange.x, distanceRange.y);
+			}
+
 			ImGui::Text("Playlist");
 
 			std::string previewValue = "None";
 
-			const std::vector<std::shared_ptr<AudioClip>>& clips = source->GetClips();
-			int currentClipIndex = source->GetCurrentClipIndex();
-
-			if (currentClipIndex >= 0 &&
-				currentClipIndex < (int)clips.size())
+			if (source->currentClipIndex >= 0 &&
+				source->currentClipIndex < (int)source->audioClips.size())
 			{
-				auto clip = clips[currentClipIndex];
+				auto clip = source->audioClips[source->currentClipIndex];
 				if (clip)
 				{
-					previewValue = clip->GetUUID().Get();
+					Metadata* meta = AssetRegistry::GetMetadata(clip->GetUUID());
+					if (meta && meta->HasCache)
+					{
+						std::filesystem::path p(meta->CachesPath[0]);
+						previewValue = p.filename().string();
+					}
 				}
 			}
 
 			if (ImGui::BeginCombo("Current Clip", previewValue.c_str()))
 			{
-				for (int i = 0; i < (int)clips.size(); i++)
+				for (int i = 0; i < (int)source->audioClips.size(); i++)
 				{
-					auto clip = clips[i];
+					auto clip = source->audioClips[i];
 
 					std::string name = "Invalid";
 					if (clip)
@@ -1127,7 +1180,7 @@ namespace Loopie {
 						}
 					}
 
-					bool isSelected = (currentClipIndex == i);
+					bool isSelected = (source->currentClipIndex == i);
 					if (ImGui::Selectable(name.c_str(), isSelected))
 						source->SetCurrentClip(i);
 
@@ -1138,18 +1191,16 @@ namespace Loopie {
 			}
 
 			ImGui::TextDisabled("Audio Library:");
-			for (int i = 0; i < (int)clips.size(); i++)
+			for (int i = 0; i < (int)source->audioClips.size(); i++)
 			{
 				ImGui::PushID(i);
 
 				if (ImGui::Button("X"))
 				{
-					source->RemoveClip(clips[i]);
+					source->audioClips.erase(source->audioClips.begin() + i);
 
-					if (currentClipIndex >= i && currentClipIndex > 0) {
-						currentClipIndex--;
-						source->SetCurrentClipIndex(currentClipIndex);
-					}
+					if (source->currentClipIndex >= i && source->currentClipIndex > 0)
+						source->currentClipIndex--;
 
 					ImGui::PopID();
 					continue;
@@ -1157,7 +1208,7 @@ namespace Loopie {
 
 				ImGui::SameLine();
 
-				auto clip = clips[i];
+				auto clip = source->audioClips[i];
 				std::string name = "Invalid";
 
 				if (clip)
@@ -1176,66 +1227,26 @@ namespace Loopie {
 
 			ImGui::Button(" [ Drop Audio Here ] ", ImVec2(ImGui::GetContentRegionAvail().x, 30));
 
-			if (ImGui::BeginPopupContextItem())
+			if (ImGui::BeginDragDropTarget())
 			{
-				if (ImGui::MenuItem("Paste"))
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_EXPLORER_FILE"))
 				{
-					std::shared_ptr<Resource> resource = GetPastedResource(ResourceType::AUDIO);
-					if (resource) {
-						auto clip = std::static_pointer_cast<AudioClip>(resource);
+					const char* path = (const char*)payload->Data;
+
+					Metadata* meta = AssetRegistry::GetMetadata(path);
+					if (meta && meta->Type == ResourceType::AUDIO)
+					{
+						auto clip = ResourceManager::GetAudioClip(*meta);
 						if (clip)
 						{
-							source->AddClip(clip);
-							if (clips.size() == 1)
+							source->audioClips.push_back(clip);
+
+							if (source->audioClips.size() == 1)
 								source->SetCurrentClip(0);
 						}
 					}
 				}
-				ImGui::EndPopup();
-			}
-
-			std::shared_ptr<Resource> resource = GetDragDropResource(ResourceType::AUDIO);
-			if (resource) {
-				auto clip = std::static_pointer_cast<AudioClip>(resource);
-				if (clip)
-				{
-					source->AddClip(clip);
-
-					if (clips.size() == 1)
-						source->SetCurrentClip(0);
-				}
-			}
-
-			ImGui::Separator();
-
-			if (ImGui::TreeNode("Configuration")) {
-				bool loop = source->IsLooping();
-				if (ImGui::Checkbox("Loop Audio", &loop))
-					source->SetLoop(loop);
-
-				float pitch = source->GetPitch();
-				if (ImGui::SliderFloat("Pitch", &pitch, 0.1f, 3.0f))
-					source->SetPitch(pitch);
-
-				float volume = source->GetVolume();
-				if (ImGui::SliderFloat("Volume", &volume, 0.0f, 1.0f))
-					source->SetVolume(volume);
-
-				float pan = source->GetPan();
-				if (ImGui::SliderFloat("Pan", &pan, -1.0f, 1.0f))
-					source->SetPan(pan);
-
-				vec2 distanceRange;
-				source->Get3DMinMaxDistance(distanceRange.x, distanceRange.y);
-				if (ImGui::DragFloat2("3D Min/Max Distance", &distanceRange.x, 0.1f, 0.0f))
-					source->Set3DMinMaxDistance(distanceRange.x, distanceRange.y);
-
-				bool playOnAwake = source->GetIfPlayOnAwake();
-				if (ImGui::Checkbox("Play On Awake", &playOnAwake)) {
-					source->SetIfPlayOnAwake(playOnAwake);
-				}
-
-				ImGui::TreePop();
+				ImGui::EndDragDropTarget();
 			}
 
 			ImGui::Separator();
@@ -1253,6 +1264,7 @@ namespace Loopie {
 			if (ImGui::Button("Preload"))
 				source->LoadResource();
 		}
+
 		ImGui::PopID();
 	}
 
