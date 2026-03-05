@@ -32,6 +32,7 @@
 #include "Loopie/Components/AudioSource.h"
 #include "Loopie/Components/Image.h"
 #include "Loopie/Components/Text.h"
+#include "Loopie/Components/Button.h"
 
 #include <memory>
 
@@ -186,7 +187,43 @@ namespace Loopie
 			}
 			m_game.EndScene();
 		}
-		///
+
+		{
+			InputEventManager& inputEvent = app.GetInputEvent();
+
+			const bool mouseOverGame = m_game.IsVisible() && m_game.IsMouseOverGame();
+			const vec2 mouseLocalPx = m_game.GetMousePosGameLocal();
+
+			const ivec2 gameSize = m_game.GetGameSize();
+			if (mouseOverGame && gameSize.x > 0 && gameSize.y > 0)
+			{
+				for (const auto& [uuid, entity] : m_currentScene->GetAllEntities())
+				{
+					if (!entity || !entity->GetIsActive())
+						continue;
+
+					Canvas* canvas = entity->GetComponent<Canvas>();
+					RectTransform* canvasRt = entity->GetComponent<RectTransform>();
+					if (!canvas || !canvasRt || !canvas->GetIsActive())
+						continue;
+					if (canvas->GetRenderMode() != CanvasRenderMode::ScreenSpaceOverlay)
+						continue;
+
+					const float cw = canvasRt->GetWidth();
+					const float ch = canvasRt->GetHeight();
+					if (cw <= 0.0f || ch <= 0.0f)
+						continue;
+
+					const float sx = (float)gameSize.x / cw;
+					const float sy = (float)gameSize.y / ch;
+
+					const vec2 mouseCanvas(mouseLocalPx.x / sx, mouseLocalPx.y / sy);
+
+					static bool s_pressedInside = false;
+					ProcessOverlayButtonsRecursive(entity, mouseCanvas, mouseOverGame, inputEvent, s_pressedInside);
+				}
+			}
+		}
 
 		m_currentScene->FlushRemovedEntities();
 	}
@@ -586,4 +623,51 @@ namespace Loopie
 		}
 	}
 
+	void EditorModule::ProcessOverlayButtonsRecursive(const std::shared_ptr<Loopie::Entity>& entity, const vec2& mouseCanvas, bool mouseOverGame, const Loopie::InputEventManager& input, bool& pressedInsideAny)
+	{
+		if (!entity || !entity->GetIsActive())
+			return;
+
+		Button* button = entity->GetComponent<Button>();
+		RectTransform* rt = entity->GetComponent<RectTransform>();
+
+		bool hovered = false;
+		if (mouseOverGame && button && rt && button->GetIsActive())
+		{
+			const vec3 p = rt->GetWorldPosition();
+			const float x = p.x;
+			const float y = p.y;
+			const float w = rt->GetWidth();
+			const float h = rt->GetHeight();
+
+			hovered = (mouseCanvas.x >= x && mouseCanvas.x <= x + w &&
+					   mouseCanvas.y >= y && mouseCanvas.y <= y + h);
+
+			button->SetHovered(hovered);
+
+			const bool down = (input.GetMouseButtonStatus(0) == KeyState::DOWN) ||
+							  (input.GetMouseButtonStatus(0) == KeyState::REPEAT);
+			const bool justDown = (input.GetMouseButtonStatus(0) == KeyState::DOWN);
+			const bool up = (input.GetMouseButtonStatus(0) == KeyState::UP);
+
+			if (justDown && hovered)
+			{
+				pressedInsideAny = true;
+			}
+
+			button->SetPressed(down && hovered && pressedInsideAny);
+
+			if (up && pressedInsideAny)
+			{
+				if (hovered)
+					button->TriggerClick();
+
+				pressedInsideAny = false;
+				button->SetPressed(false);
+			}
+		}
+
+		for (const auto& child : entity->GetChildren())
+			ProcessOverlayButtonsRecursive(child, mouseCanvas, mouseOverGame, input, pressedInsideAny);
+	}
 }

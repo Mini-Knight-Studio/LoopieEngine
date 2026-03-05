@@ -6,7 +6,6 @@
 
 #include <imgui.h>
 
-
 namespace Loopie {
 
 	GameInterface::GameInterface() {
@@ -14,16 +13,31 @@ namespace Loopie {
 	}
 
 	void GameInterface::Render() {
-		
+
 		ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoNav;
 		if (ImGui::Begin("Game", nullptr, flags)) {
 			m_visible = true;
+
 			ImVec2 size = ImGui::GetContentRegionAvail();
 			m_windowSize = { (int)size.x, (int)size.y };
+
+			const ImVec2 imageMin = ImGui::GetCursorScreenPos();
+			const ImVec2 mouse = ImGui::GetMousePos();
+
+			const ImVec2 local(mouse.x - imageMin.x, mouse.y - imageMin.y);
+			m_mousePosGameLocal = vec2(local.x, local.y);
+
+			m_mouseOverGame = ImGui::IsWindowHovered() && local.x >= 0.0f && local.y >= 0.0f &&
+				local.x < size.x && local.y < size.y;
+
 			ImGui::Image((ImTextureID)m_buffer->GetTextureId(), size, ImVec2(0, 1), ImVec2(1, 0));
 		}
 		else
+		{
 			m_visible = false;
+			m_mouseOverGame = false;
+			m_mousePosGameLocal = vec2(0.0f);
+		}
 
 		ImGui::End();
 	}
