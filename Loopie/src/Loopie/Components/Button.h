@@ -5,12 +5,25 @@
 #include "Loopie/Math/MathTypes.h"
 
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace Loopie
 {
+	class Entity;
+	class ScriptClass;
+
+	struct FunctionCall
+	{
+		UUID EntityUUID;
+		UUID ComponentUUID;
+		std::string Function;
+	};
+
 	class Button : public Component
 	{
 	public:
+
 		DEFINE_TYPE(Button)
 
 		Button() = default;
@@ -42,11 +55,10 @@ namespace Loopie
 		void SetPressedColor(const vec4& color) { m_pressedColor = color; }
 		void SetDisabledColor(const vec4& color) { m_disabledColor = color; }
 
-		const UUID& GetOnClickScriptUUID() const { return m_onClickScriptUUID; }
-		const std::string& GetOnClickMethod() const { return m_onClickMethod; }
-
-		void SetOnClickScriptUUID(const UUID& uuid) { m_onClickScriptUUID = uuid; }
-		void SetOnClickMethod(const std::string& method) { m_onClickMethod = method; }
+		const std::unordered_map<UUID, std::vector<FunctionCall>>& GetOnClickFunctionCalls() const { return m_onClickFunctionCalls; }
+		std::vector<FunctionCall> GetFlattenedOnClickFunctionCalls() const;
+		void SetOnClickFunctionCalls(const std::vector<FunctionCall>& functionCalls);
+		void AddOnClickFunctionCall(const FunctionCall& functionCall);
 
 	private:
 		enum class VisualState
@@ -56,6 +68,9 @@ namespace Loopie
 			Pressed,
 			Disabled
 		};
+
+		static bool IsFunctionCallConfigured(const FunctionCall& functionCall);
+		static bool TryResolveTarget(const FunctionCall& functionCall, std::shared_ptr<Entity>& entity, ScriptClass*& scriptComponent);
 
 		void ApplyState(VisualState state);
 		void InvokeOnClick();
@@ -68,8 +83,7 @@ namespace Loopie
 		vec4 m_pressedColor = vec4(0.6f);
 		vec4 m_disabledColor = vec4(0.5f);
 
-		UUID m_onClickScriptUUID{};
-		std::string m_onClickMethod;
+		std::unordered_map<UUID, std::vector<FunctionCall>> m_onClickFunctionCalls;
 
 		bool m_isHovered = false;
 		bool m_isPressed = false;

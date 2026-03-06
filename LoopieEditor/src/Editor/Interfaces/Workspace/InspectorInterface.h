@@ -21,7 +21,7 @@ namespace Loopie {
 	class Button;
 	class AudioSource;
 	class AudioListener;
-
+	class FunctionCall;
 
 	class InspectorInterface : public Interface , public IObserver<OnEntityOrFileNotification>{
 	public:
@@ -64,7 +64,11 @@ namespace Loopie {
 
 		// Inherited via IObserver
 		void OnNotify(const OnEntityOrFileNotification& id) override;
-
+	
+	private:
+		// Helper function for finding the function call target script
+		ScriptClass* FindScriptComponent(Scene& scene, const FunctionCall& functionCall);
+		FunctionCall* TryGetFirstScriptCallTarget(Scene& scene);
 
 	private:
 

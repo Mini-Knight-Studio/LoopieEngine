@@ -1170,18 +1170,99 @@ namespace Loopie {
 
 		ImGui::SeparatorText("On Click");
 
-		std::string scriptUuid = button->GetOnClickScriptUUID().Get();
-		char scriptUuidBuf[128]{};
-		(void)snprintf(scriptUuidBuf, sizeof(scriptUuidBuf), "%s", scriptUuid.c_str());
+		Scene& scene = Application::GetInstance().GetScene();
+		std::vector<FunctionCall> functionCalls = button->GetFlattenedOnClickFunctionCalls();
+		bool modified = false;
 
-		std::string method = button->GetOnClickMethod();
-		char methodBuf[256]{};
-		(void)snprintf(methodBuf, sizeof(methodBuf), "%s", method.c_str());
+		if (ImGui::Button("Add Callback"))
+		{
+			if (FunctionCall* newTarget = TryGetFirstScriptCallTarget(scene))
+			{
+				functionCalls.push_back(*newTarget);
+				modified = true;
+			}
+		}
 
-		if (ImGui::InputText("Method", methodBuf, sizeof(methodBuf)))
-			button->SetOnClickMethod(std::string(methodBuf));
+		if (functionCalls.empty())
+		{
+			ImGui::TextDisabled("No callbacks configured.");
+		}
 
-		ImGui::TextDisabled("Method is invoked with 0 arguments.");
+		for (size_t i = 0; i < functionCalls.size();)
+		{
+			FunctionCall& functionCall = functionCalls[i];
+			ImGui::PushID(static_cast<int>(i));
+
+			std::shared_ptr<Entity> selectedEntity = scene.GetEntity(functionCall.EntityUUID);
+			const std::string entityPreview = selectedEntity ? selectedEntity->GetName() : "Missing Entity";
+			if (ImGui::BeginCombo("Entity", entityPreview.c_str()))
+			{
+				for (const auto& [entityUUID, entity] : scene.GetAllEntities())
+				{
+					if (!entity)
+						continue;
+
+					const bool isSelected = (entity->GetUUID() == functionCall.EntityUUID);
+					const std::string displayName = entity->GetName() + "##" + entity->GetUUID().Get();
+					if (ImGui::Selectable(displayName.c_str(), isSelected))
+					{
+						functionCall.EntityUUID = entity->GetUUID();
+						std::vector<ScriptClass*> scriptComponents = entity->GetComponents<ScriptClass>();
+						if (!scriptComponents.empty())
+							functionCall.ComponentUUID = scriptComponents.front()->GetUUID();
+						modified = true;
+					}
+				}
+				ImGui::EndCombo();
+			}
+
+			selectedEntity = scene.GetEntity(functionCall.EntityUUID);
+			ScriptClass* selectedComponent = FindScriptComponent(scene, functionCall);
+			const std::string componentPreview = selectedComponent ? selectedComponent->GetClassName() : "Missing ScriptClass";
+			if (ImGui::BeginCombo("Component", componentPreview.c_str()))
+			{
+				if (selectedEntity)
+				{
+					for (ScriptClass* scriptComponent : selectedEntity->GetComponents<ScriptClass>())
+					{
+						if (!scriptComponent)
+							continue;
+
+						const bool isSelected = (scriptComponent->GetUUID() == functionCall.ComponentUUID);
+						const std::string displayName = scriptComponent->GetClassName() + "##" + scriptComponent->GetUUID().Get();
+						if (ImGui::Selectable(displayName.c_str(), isSelected))
+						{
+							functionCall.ComponentUUID = scriptComponent->GetUUID();
+							modified = true;
+						}
+					}
+				}
+				ImGui::EndCombo();
+			}
+
+			char methodBuf[256]{};
+			(void)std::snprintf(methodBuf, sizeof(methodBuf), "%s", functionCall.Function.c_str());
+			if (ImGui::InputText("Function", methodBuf, sizeof(methodBuf)))
+			{
+				functionCall.Function = methodBuf;
+				modified = true;
+			}
+
+			if (ImGui::Button("Remove"))
+			{
+				functionCalls.erase(functionCalls.begin() + i);
+				modified = true;
+				ImGui::PopID();
+				continue;
+			}
+
+			ImGui::Separator();
+			ImGui::PopID();
+			++i;
+		}
+
+		if (modified)
+			button->SetOnClickFunctionCalls(functionCalls);
 	}
 
 	void InspectorInterface::DrawBoxCollider(BoxCollider* boxCollider) 
@@ -1823,5 +1904,43 @@ namespace Loopie {
 			ImGui::EndPopup();
 		}
 		return false;
+	}
+
+	ScriptClass* InspectorInterface::FindScriptComponent(Scene& scene, const FunctionCall& functionCall)
+	{
+		auto entity = scene.GetEntity(functionCall.EntityUUID);
+		if (!entity)
+			return nullptr;
+
+		Component* component = entity->GetComponent(functionCall.ComponentUUID);
+		if (!component)
+			return nullptr;
+
+		if (component->GetTypeID() != ScriptClass::GetTypeIDStatic())
+			return nullptr;
+
+		return static_cast<ScriptClass*>(component);
+	}
+
+	FunctionCall* InspectorInterface::TryGetFirstScriptCallTarget(Scene& scene)
+	{
+		static FunctionCall target;
+
+		for (const auto& [entityUUID, entity] : scene.GetAllEntities())
+		{
+			if (!entity)
+				continue;
+
+			for (ScriptClass* scriptComponent : entity->GetComponents<ScriptClass>())
+			{
+				if (!scriptComponent)
+					continue;
+
+				target = FunctionCall{ entity->GetUUID(), scriptComponent->GetUUID(), std::string() };
+				return &target;
+			}
+		}
+
+		return nullptr;
 	}
 }
