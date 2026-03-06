@@ -424,7 +424,7 @@ namespace Loopie
 
 		if (img && img->GetIsActive() && rt)
 		{
-			const vec3 p = rt->GetWorldPosition();
+			const vec3 p = rt->GetLocalPosition();
 			const vec2 s(rt->GetWidth(), rt->GetHeight());
 
 			const vec2 pixelSize(s.x * scale.x, s.y * scale.y);
@@ -662,7 +662,7 @@ namespace Loopie
 		bool hovered = false;
 		if (mouseOverGame && button && rt && button->GetIsActive())
 		{
-			const vec3 p = rt->GetWorldPosition();
+			const vec3 p = rt->GetLocalPosition();
 			const float x = p.x;
 			const float y = p.y;
 			const float w = rt->GetWidth();
