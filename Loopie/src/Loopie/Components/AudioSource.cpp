@@ -263,7 +263,7 @@ namespace Loopie {
     }
 
     JsonNode AudioSource::Serialize(JsonNode& parent) const {
-        JsonNode transformObj = parent.CreateObjectField("AudioSource");
+        JsonNode transformObj = parent.CreateObjectField("audiosource");
         transformObj.CreateField("loop", isLooping);
         transformObj.CreateField("isSpatial", isSpatial);
         transformObj.CreateField("loopStrategy", static_cast<int>(loopStrategy));

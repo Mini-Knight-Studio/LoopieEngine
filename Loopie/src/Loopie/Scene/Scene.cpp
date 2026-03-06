@@ -284,13 +284,13 @@ namespace Loopie {
 				bc->Deserialize(componentData.Child("boxcollider"));
 			}
 			//AudioSource
-			else if (componentData.Child("AudioSource").IsValid())
+			else if (componentData.Child("audioSource").IsValid())
 			{
 				auto audioSource = clone->AddComponent<AudioSource>();
 				audioSource->Deserialize(componentData.Child("audioSource"));
 			}
 			//AudioListener
-			else if (componentData.Child("AudioListener").IsValid())
+			else if (componentData.Child("audioListener").IsValid())
 			{
 				auto audioListener = clone->AddComponent<AudioListener>();
 				audioListener->Deserialize(componentData.Child("audioListener"));
@@ -550,9 +550,9 @@ namespace Loopie {
 							boxCollider->SetUUID(componentUUID.Get());
 						}
 					}
-					else if (componentNode.Contains("AudioSource"))
+					else if (componentNode.Contains("audiosource"))
 					{
-						JsonNode node = componentNode.Child("AudioSource");
+						JsonNode node = componentNode.Child("audiosource");
 						auto audioSource = entity->AddComponent<AudioSource>();
 						if (audioSource)
 						{
@@ -560,9 +560,9 @@ namespace Loopie {
 							audioSource->SetUUID(componentUUID.Get());
 						}
 					}
-					else if (componentNode.Contains("AudioListener"))
+					else if (componentNode.Contains("audiolistener"))
 					{
-						JsonNode node = componentNode.Child("AudioListener");
+						JsonNode node = componentNode.Child("audiolistener");
 						auto audioListener = entity->AddComponent<AudioListener>();
 						if (audioListener)
 						{

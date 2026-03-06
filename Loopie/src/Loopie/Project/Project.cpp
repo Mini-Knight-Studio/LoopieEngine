@@ -122,6 +122,7 @@ namespace Loopie {
 		config.CreateField<bool>("fullscreen", false);
 		config.CreateField<int>("target_framerate", 60);
 		config = configData.CreateObjectField("editor_config");
+		config = configData.CreateObjectField("build_scenes");
 		ProjectConfig::Save(configData);
 
 		m_name = projectName;
@@ -153,6 +154,15 @@ namespace Loopie {
 			config = configData.CreateObjectField("editor_config");
 		else
 			config = configData.Child("editor_config");
+
+
+
+
+
+		if (!configData.HasKey("", "build_scenes"))
+			config = configData.CreateObjectField("build_scenes");
+		else
+			config = configData.Child("build_scenes");
 
 
 		ProjectConfig::Save(configData);
