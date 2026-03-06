@@ -191,6 +191,18 @@ namespace Loopie
 		}
 	}
 
+	void Button::GetCurrentColor(vec4& outColor) const 
+	{
+		if (m_currentState == VisualState::Normal)
+			outColor = m_normalColor;
+		else if (m_currentState == VisualState::Hovered)
+			outColor = m_hoveredColor;
+		else if (m_currentState == VisualState::Pressed)
+			outColor = m_pressedColor;
+		else if (m_currentState == VisualState::Disabled)
+			outColor = m_disabledColor;
+	}
+
 	JsonNode Button::Serialize(JsonNode& parent) const
 	{
 		JsonNode node = parent.CreateObjectField("button");

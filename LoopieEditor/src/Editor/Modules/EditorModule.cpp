@@ -188,42 +188,7 @@ namespace Loopie
 			m_game.EndScene();
 		}
 
-		{
-			InputEventManager& inputEvent = app.GetInputEvent();
-
-			const bool mouseOverGame = m_game.IsVisible() && m_game.IsMouseOverGame();
-			const vec2 mouseLocalPx = m_game.GetMousePosGameLocal();
-
-			const ivec2 gameSize = m_game.GetGameSize();
-			if (mouseOverGame && gameSize.x > 0 && gameSize.y > 0)
-			{
-				for (const auto& [uuid, entity] : m_currentScene->GetAllEntities())
-				{
-					if (!entity || !entity->GetIsActive())
-						continue;
-
-					Canvas* canvas = entity->GetComponent<Canvas>();
-					RectTransform* canvasRt = entity->GetComponent<RectTransform>();
-					if (!canvas || !canvasRt || !canvas->GetIsActive())
-						continue;
-					if (canvas->GetRenderMode() != CanvasRenderMode::ScreenSpaceOverlay)
-						continue;
-
-					const float cw = canvasRt->GetWidth();
-					const float ch = canvasRt->GetHeight();
-					if (cw <= 0.0f || ch <= 0.0f)
-						continue;
-
-					const float sx = (float)gameSize.x / cw;
-					const float sy = (float)gameSize.y / ch;
-
-					const vec2 mouseCanvas(mouseLocalPx.x / sx, ch - (mouseLocalPx.y / sy));
-
-					static bool s_pressedInside = false;
-					ProcessOverlayButtonsRecursive(entity, mouseCanvas, mouseOverGame, inputEvent, s_pressedInside);
-				}
-			}
-		}
+		ProcessOverlayButtonsInput();
 
 		m_currentScene->FlushRemovedEntities();
 	}
@@ -465,7 +430,14 @@ namespace Loopie
 			const vec2 pixelSize(s.x * scale.x, s.y * scale.y);
 			const vec2 pixelPos(p.x * scale.x, p.y * scale.y);
 
-			UIRenderer::DrawImage(pixelPos, pixelSize, img->GetTexture(), img->GetTint());
+			vec4 color = img->GetTint();
+
+			if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
+			{
+				button->GetCurrentColor(color);
+			}
+
+			UIRenderer::DrawImage(pixelPos, pixelSize, img->GetTexture(), color);
 		}
 
 		if (text && text->GetIsActive() && rt)
@@ -567,8 +539,14 @@ namespace Loopie
 				const float h = rt->GetHeight();
 
 				matrix4 model = rt->GetLocalToWorldMatrix() * glm::scale(matrix4(1.0f), vec3(w, h, 1.0f));
+				vec4 color = img->GetTint();
 
-				UIRenderer::DrawImageWorld(model, tex, img->GetTint());
+				if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
+				{
+					button->GetCurrentColor(color);
+				}
+
+				UIRenderer::DrawImageWorld(model, tex, color);
 			}
 		}
 
