@@ -1189,32 +1189,39 @@ namespace Loopie {
 
 			if (button->GetTransitionMode() == Button::VisualTransitionMode::ColorTint)
 			{
-				ImGui::SeparatorText("Colors");
+				ImGui::SeparatorText("Tints");
 
-				vec4 normal = button->GetNormalColor();
-				if (ImGui::ColorEdit4("Normal", &normal.x))
-					button->SetNormalColor(normal);
+				if (ImGui::TreeNode("Colors")) {
+					vec4 normal = button->GetNormalColor();
+					if (ImGui::ColorEdit4("Normal", &normal.x))
+						button->SetNormalColor(normal);
 
-				vec4 hovered = button->GetHoveredColor();
-				if (ImGui::ColorEdit4("Hovered", &hovered.x))
-					button->SetHoveredColor(hovered);
+					vec4 hovered = button->GetHoveredColor();
+					if (ImGui::ColorEdit4("Hovered", &hovered.x))
+						button->SetHoveredColor(hovered);
 
-				vec4 pressed = button->GetPressedColor();
-				if (ImGui::ColorEdit4("Pressed", &pressed.x))
-					button->SetPressedColor(pressed);
+					vec4 pressed = button->GetPressedColor();
+					if (ImGui::ColorEdit4("Pressed", &pressed.x))
+						button->SetPressedColor(pressed);
 
-				vec4 disabled = button->GetDisabledColor();
-				if (ImGui::ColorEdit4("Disabled", &disabled.x))
-					button->SetDisabledColor(disabled);
+					vec4 disabled = button->GetDisabledColor();
+					if (ImGui::ColorEdit4("Disabled", &disabled.x))
+						button->SetDisabledColor(disabled);
+					
+					ImGui::TreePop();
+				}
 			}
 			else
 			{
 				ImGui::SeparatorText("Images");
 
-				DrawImageButtonSlot(button, ButtonImageSlot::Normal);
-				DrawImageButtonSlot(button, ButtonImageSlot::Hovered);
-				DrawImageButtonSlot(button, ButtonImageSlot::Pressed);
-				DrawImageButtonSlot(button, ButtonImageSlot::Disabled);
+				if (ImGui::TreeNode("Callbakcs")) {
+					DrawImageButtonSlot(button, ButtonImageSlot::Normal);
+					DrawImageButtonSlot(button, ButtonImageSlot::Hovered);
+					DrawImageButtonSlot(button, ButtonImageSlot::Pressed);
+					DrawImageButtonSlot(button, ButtonImageSlot::Disabled);
+					ImGui::TreePop();
+				}
 			}
 
 			ImGui::SeparatorText("");
@@ -1361,8 +1368,10 @@ namespace Loopie {
 
 		if (open)
 		{
+			int currentClipIndex = source->GetCurrentClipIndex();
+			std::vector<std::shared_ptr<AudioClip>>& clips = source->GetAudioClips();
 			// --- 2. Bucle ---
-			bool loop = source->isLooping; 
+			bool loop = source->IsLooping(); 
 
 			// --- 3. Estrategias ---
 
@@ -1370,14 +1379,14 @@ namespace Loopie {
 
 			if (loop) {
 				const char* loopStrategyNames[] = { "Repetitive", "Sequential", "Random", "Random No Repetitive" };
-				int currentLoopItem = static_cast<int>(source->loopStrategy);
+				int currentLoopItem = static_cast<int>(source->GetLoopStrategy());
 				if (ImGui::Combo("Loop Strategy", &currentLoopItem, loopStrategyNames, IM_ARRAYSIZE(loopStrategyNames))) {
 					source->SetLoopStrategy(static_cast<Loopie::AudioLoopStrategy>(currentLoopItem));
 				}
 			}
 			else {
 				const char* noLoopStrategyNames[] = { "First", "Random" };
-				int currentNoLoopItem = static_cast<int>(source->noLoopStrategy);
+				int currentNoLoopItem = static_cast<int>(source->GetNoLoopStrategy());
 				if (ImGui::Combo("No-Loop Strategy", &currentNoLoopItem, noLoopStrategyNames, IM_ARRAYSIZE(noLoopStrategyNames))) {
 					source->SetNoLoopStrategy(static_cast<Loopie::AudioNoLoopStrategy>(currentNoLoopItem));
 				}
@@ -1409,7 +1418,7 @@ namespace Loopie {
 				source->SetPan(pan);
 
 
-			bool spatial = source->isSpatial;
+			bool spatial = source->GetIfSpatial();
 			if (ImGui::Checkbox("Is Spatial (3D)", &spatial)) {
 				source->SetSpatial(spatial);
 			}
@@ -1417,7 +1426,7 @@ namespace Loopie {
 				ImGui::SetTooltip("Si se desactiva, el audio sera 2D.");
 			}
 
-			if (source->isSpatial) {
+			if (spatial) {
 				vec2 distanceRange;
 				source->Get3DMinMaxDistance(distanceRange.x, distanceRange.y);
 				if (ImGui::DragFloat2("3D Min/Max Distance", &distanceRange.x, 0.1f, 0.0f))
@@ -1430,10 +1439,12 @@ namespace Loopie {
 
 			std::string previewValue = "None";
 
-			if (source->currentClipIndex >= 0 &&
-				source->currentClipIndex < (int)source->audioClips.size())
+			
+
+			if (currentClipIndex >= 0 &&
+				currentClipIndex < (int)clips.size())
 			{
-				auto clip = source->audioClips[source->currentClipIndex];
+				auto clip = clips[currentClipIndex];
 				if (clip)
 				{
 					Metadata* meta = AssetRegistry::GetMetadata(clip->GetUUID());
@@ -1447,9 +1458,9 @@ namespace Loopie {
 
 			if (ImGui::BeginCombo("Current Clip", previewValue.c_str()))
 			{
-				for (int i = 0; i < (int)source->audioClips.size(); i++)
+				for (int i = 0; i < (int)clips.size(); i++)
 				{
-					auto clip = source->audioClips[i];
+					auto clip = clips[i];
 
 					std::string name = "Invalid";
 					if (clip)
@@ -1462,7 +1473,7 @@ namespace Loopie {
 						}
 					}
 
-					bool isSelected = (source->currentClipIndex == i);
+					bool isSelected = (currentClipIndex == i);
 					if (ImGui::Selectable(name.c_str(), isSelected))
 						source->SetCurrentClip(i);
 
@@ -1473,16 +1484,18 @@ namespace Loopie {
 			}
 
 			ImGui::TextDisabled("Audio Library:");
-			for (int i = 0; i < (int)source->audioClips.size(); i++)
+			for (int i = 0; i < (int)clips.size(); i++)
 			{
 				ImGui::PushID(i);
 
 				if (ImGui::Button("X"))
 				{
-					source->audioClips.erase(source->audioClips.begin() + i);
+					source->RemoveClip(i);
 
-					if (source->currentClipIndex >= i && source->currentClipIndex > 0)
-						source->currentClipIndex--;
+					if (currentClipIndex >= i && currentClipIndex > 0) {
+						currentClipIndex--;
+						source->SetCurrentClip(currentClipIndex);
+					}
 
 					ImGui::PopID();
 					continue;
@@ -1490,7 +1503,7 @@ namespace Loopie {
 
 				ImGui::SameLine();
 
-				auto clip = source->audioClips[i];
+				auto clip = clips[i];
 				std::string name = "Invalid";
 
 				if (clip)
@@ -1521,9 +1534,9 @@ namespace Loopie {
 						auto clip = ResourceManager::GetAudioClip(*meta);
 						if (clip)
 						{
-							source->audioClips.push_back(clip);
+							clips.push_back(clip);
 
-							if (source->audioClips.size() == 1)
+							if (clips.size() == 1)
 								source->SetCurrentClip(0);
 						}
 					}

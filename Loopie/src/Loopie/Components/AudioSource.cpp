@@ -16,15 +16,21 @@ namespace Loopie {
 
     AudioSource::~AudioSource() {
         Stop();
+
+        for (auto& audio : m_audioClips)
+        {
+			audio->DecrementReferenceCount();
+        }
+        m_audioClips.clear();
     }
 
 	void AudioSource::LoadResource() {
-        if (audioClips.empty()) 
+        if (m_audioClips.empty()) 
             return;
-        if (currentClipIndex < 0 || currentClipIndex >= audioClips.size()) 
+        if (m_currentClipIndex < 0 || m_currentClipIndex >= m_audioClips.size())
             return;
 
-        auto clip = audioClips[currentClipIndex];
+        auto clip = m_audioClips[m_currentClipIndex];
         if (!clip) 
             return;
 
@@ -44,7 +50,7 @@ namespace Loopie {
         if (!t) return;
 
         if (m_isEvent && m_eventInstance) {
-            if (isSpatial) {
+            if (m_isSpatial) {
                 FMOD_VECTOR pos = AudioManager::VectorToFmod(t->GetPosition());
                 FMOD_3D_ATTRIBUTES attr = { {0} };
                 attr.position = pos;
@@ -58,14 +64,14 @@ namespace Loopie {
             m_channel->isPlaying(&isPlaying);
 
             if (isPlaying) {
-                if (isSpatial) {
+                if (m_isSpatial) {
                     FMOD_VECTOR pos = AudioManager::VectorToFmod(t->GetPosition());
                     FMOD_VECTOR vel = { 0, 0, 0 };
                     m_channel->set3DAttributes(&pos, &vel);
                 }
             }
             else if (m_hasStarted) {
-                if (isLooping) {
+                if (m_isLooping) {
                     NextTrack();
                 }
                 else {
@@ -76,27 +82,27 @@ namespace Loopie {
     }
 
     void AudioSource::NextTrack() {
-        if (audioClips.empty()) return;
+        if (m_audioClips.empty()) return;
 
-        if (isLooping) {
-            switch (loopStrategy) {
+        if (m_isLooping) {
+            switch (m_loopStrategy) {
             case AudioLoopStrategy::Sequential:
-                currentClipIndex = (currentClipIndex + 1) % audioClips.size();
+                m_currentClipIndex = (m_currentClipIndex + 1) % m_audioClips.size();
                 break;
 
             case AudioLoopStrategy::Random:
-                currentClipIndex = rand() % audioClips.size();
+                m_currentClipIndex = rand() % m_audioClips.size();
                 break;
 
             case AudioLoopStrategy::RandomNoRepetitive:
             {
-                if (audioClips.size() > 1) {
+                if (m_audioClips.size() > 1) {
                     int newIndex;
                     do {
-                        newIndex = rand() % audioClips.size();
-                    } while (newIndex == currentClipIndex); 
+                        newIndex = rand() % m_audioClips.size();
+                    } while (newIndex == m_currentClipIndex);
 
-                    currentClipIndex = newIndex;
+                    m_currentClipIndex = newIndex;
                 }
                 break;
             }
@@ -109,35 +115,56 @@ namespace Loopie {
         }
     }
 
-    void AudioSource::AddClip(std::shared_ptr<AudioClip> path) {
-        audioClips.push_back(path);
+    void AudioSource::AddClip(std::shared_ptr<AudioClip> clip) {
+        if (clip) {
+            m_audioClips.push_back(clip);
+            clip->IncrementReferenceCount();
+        }
+    }
+
+    void AudioSource::RemoveClip(std::shared_ptr<AudioClip> clip)
+    {
+		auto it = std::find(m_audioClips.begin(), m_audioClips.end(), clip);
+        if (it != m_audioClips.end()) {
+            it->get()->DecrementReferenceCount();
+            m_audioClips.erase(it);
+        }
+    }
+
+    void AudioSource::RemoveClip(int index)
+    {
+        if (index >= 0 && index < m_audioClips.size()) {
+            auto it = m_audioClips.begin() + index;
+            it->get()->DecrementReferenceCount();
+            m_audioClips.erase(it);
+        }
     }
 
     void AudioSource::SetCurrentClip(int index) {
-        if (index >= 0 && index < audioClips.size()) {
-            currentClipIndex = index;
+        if (index >= 0 && index < m_audioClips.size()) {
+            m_currentClipIndex = index;
             LoadResource();
         }
     }
 
     void AudioSource::Play() {
-        if (audioClips.empty())
+        if (m_audioClips.empty())
             return;
 
-        if (!isLooping) {
-            if (noLoopStrategy == AudioNoLoopStrategy::Random) {
-                currentClipIndex = rand() % audioClips.size();
+        if (!m_isLooping) {
+            if (m_noLoopStrategy == AudioNoLoopStrategy::Random) {
+                m_currentClipIndex = rand() % m_audioClips.size();
             }
-            else if (noLoopStrategy == AudioNoLoopStrategy::First) {
-                currentClipIndex = 0;
+            else if (m_noLoopStrategy == AudioNoLoopStrategy::First) {
+                m_currentClipIndex = 0;
             }
         }
 
-        if (currentClipIndex < 0 || currentClipIndex >= audioClips.size()) {
-            currentClipIndex = 0;
+        if (m_currentClipIndex < 0 || m_currentClipIndex >= m_audioClips.size()) {
+            m_currentClipIndex = 0;
         }
 
-        auto clip = audioClips[currentClipIndex];
+        auto clip = m_audioClips[m_currentClipIndex];
         if (!clip)
             return;
 
@@ -155,13 +182,13 @@ namespace Loopie {
             m_channel = newChannel;
 
             if (m_channel) {
-                FMOD_MODE mode = isSpatial ? (FMOD_3D | FMOD_3D_LINEARROLLOFF) : FMOD_2D;
+                FMOD_MODE mode = m_isSpatial ? (FMOD_3D | FMOD_3D_LINEARROLLOFF) : FMOD_2D;
                 mode |= FMOD_LOOP_OFF;
                
 
                 m_channel->setMode(mode);
 
-                if (isSpatial) {
+                if (m_isSpatial) {
                     m_channel->set3DMinMaxDistance(m_minDistance, m_maxDistance);
 
                     Transform* t = GetOwner()->GetTransform();
@@ -189,7 +216,7 @@ namespace Loopie {
     }
 
     void AudioSource::SetLoop(bool active) {
-        isLooping = active;
+        m_isLooping = active;
         UpdateChannelMode();
     }
 
@@ -233,9 +260,9 @@ namespace Loopie {
     void AudioSource::UpdateChannelMode() {
         if (!m_isEvent && m_channel) {
 
-            FMOD_MODE mode = isSpatial ? (FMOD_3D | FMOD_3D_LINEARROLLOFF) : FMOD_2D;
+            FMOD_MODE mode = m_isSpatial ? (FMOD_3D | FMOD_3D_LINEARROLLOFF) : FMOD_2D;
 
-            if (isLooping && loopStrategy == AudioLoopStrategy::Repetitive) {
+            if (m_isLooping && m_loopStrategy == AudioLoopStrategy::Repetitive) {
                 mode |= FMOD_LOOP_NORMAL;
             }
             else {
@@ -248,38 +275,38 @@ namespace Loopie {
 
 
     void AudioSource::SetSpatial(bool active) {
-        isSpatial = active;
+        m_isSpatial = active;
         UpdateChannelMode();
     }
 
     void AudioSource::SetLoopStrategy(AudioLoopStrategy strategy) {
-        loopStrategy = strategy;
+        m_loopStrategy = strategy;
         UpdateChannelMode();
     }
 
     void AudioSource::SetNoLoopStrategy(AudioNoLoopStrategy strategy) {
-        noLoopStrategy = strategy;
+        m_noLoopStrategy = strategy;
         
     }
 
     JsonNode AudioSource::Serialize(JsonNode& parent) const {
         JsonNode transformObj = parent.CreateObjectField("audiosource");
-        transformObj.CreateField("loop", isLooping);
-        transformObj.CreateField("isSpatial", isSpatial);
-        transformObj.CreateField("loopStrategy", static_cast<int>(loopStrategy));
-        transformObj.CreateField("noLoopStrategy", static_cast<int>(noLoopStrategy));
+        transformObj.CreateField("loop", m_isLooping);
+        transformObj.CreateField("isSpatial", m_isSpatial);
+        transformObj.CreateField("loopStrategy", static_cast<int>(m_loopStrategy));
+        transformObj.CreateField("noLoopStrategy", static_cast<int>(m_noLoopStrategy));
 
-        transformObj.CreateField("playOnAwake", playOnAwake);
+        transformObj.CreateField("playOnAwake", m_playOnAwake);
         transformObj.CreateField("pitch", m_pitch);
         transformObj.CreateField("volume", m_volume);
         transformObj.CreateField("pan", m_pan);
         transformObj.CreateField("minDistance", m_minDistance);
         transformObj.CreateField("maxDistance", m_maxDistance);
-        transformObj.CreateField("currentClipIndex", currentClipIndex);
+        transformObj.CreateField("currentClipIndex", m_currentClipIndex);
 
         JsonNode clipsArray = transformObj.CreateObjectField("audioClips");
         int arrayIndex = 0;
-        for (const auto& clip : audioClips) {
+        for (const auto& clip : m_audioClips) {
 
             clipsArray.CreateField(std::to_string(arrayIndex), clip->GetUUID().Get());
             arrayIndex++;
@@ -289,25 +316,25 @@ namespace Loopie {
     }
 
     void AudioSource::Deserialize(const JsonNode& data) {
-        isLooping = data.GetValue<bool>("loop", false).Result;
-        isSpatial = data.GetValue<bool>("isSpatial", true).Result;
+        m_isLooping = data.GetValue<bool>("loop", false).Result;
+        m_isSpatial = data.GetValue<bool>("isSpatial", true).Result;
         int ls = 0, nls = 0;
         auto loopStrategyResult = data.GetValue<int>("loopStrategy", ls);
         if (loopStrategyResult.Found) 
-            loopStrategy = static_cast<AudioLoopStrategy>(loopStrategyResult.Result);
+            m_loopStrategy = static_cast<AudioLoopStrategy>(loopStrategyResult.Result);
         auto noLoopStrategyResult = data.GetValue<int>("noLoopStrategy", nls);
         if (noLoopStrategyResult.Found) 
-            noLoopStrategy = static_cast<AudioNoLoopStrategy>(noLoopStrategyResult.Result);
+            m_noLoopStrategy = static_cast<AudioNoLoopStrategy>(noLoopStrategyResult.Result);
 
-        playOnAwake = data.GetValue<bool>("playOnAwake", true).Result;
+        m_playOnAwake = data.GetValue<bool>("playOnAwake", true).Result;
         m_pitch = data.GetValue<float>("pitch", 1).Result;
         m_volume = data.GetValue<float>("volume", 1).Result;
         m_pan = data.GetValue<float>("pan", 0).Result;
         m_minDistance = data.GetValue<float>("minDistance", 2).Result;
         m_maxDistance = data.GetValue<float>("maxDistance", 100).Result;
-        currentClipIndex = data.GetValue<int>("currentClipIndex", 0).Result;
+        m_currentClipIndex = data.GetValue<int>("currentClipIndex", 0).Result;
 
-        audioClips.clear();
+        m_audioClips.clear();
 
         JsonNode clipsArray = data.Child("audioClips");
         int arrayAmount = clipsArray.Size();

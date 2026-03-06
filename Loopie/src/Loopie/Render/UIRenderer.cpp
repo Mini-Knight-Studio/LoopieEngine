@@ -55,6 +55,7 @@ namespace Loopie
 		s_material = ResourceManager::GetMaterial(meta);
 		s_material->Load();
 		s_material->SetIfEditable(true);
+		s_material->SetTextureOwnership(false);
 
 		s_shader = new Shader("assets/shaders/UIQuad.shader");
 		s_material->SetShader(*s_shader);

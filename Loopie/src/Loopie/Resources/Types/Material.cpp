@@ -19,11 +19,15 @@ namespace Loopie
 
 	Material::~Material()
 	{
-		for (auto& [name, texture] : m_textures)
-		{
-			if (texture)
-				texture->DecrementReferenceCount();
+		if (m_textureOwnership) {
+			for (auto& [name, texture] : m_textures)
+			{
+				if (texture)
+					texture->DecrementReferenceCount();
+			}
 		}
+
+		m_textures.clear();
 	}
 
 	void Material::SetTextureBufferOverride(const std::shared_ptr<TextureBuffer>& textureBuffer)
@@ -126,11 +130,12 @@ namespace Loopie
 			Log::Error("Cannot reset material with invalid shader.");
 			return;
 		}
-
-		for (auto& [name, texture] : m_textures)
-		{
-			if (texture)
-				texture->DecrementReferenceCount();
+		if (m_textureOwnership){
+			for (auto& [name, texture] : m_textures)
+			{
+				if (texture)
+					texture->DecrementReferenceCount();
+			}
 		}
 
 		m_uniformValues.clear();
@@ -148,7 +153,8 @@ namespace Loopie
 		for (const auto& sampler : samplers)
 		{
 			m_textures[sampler.name] = Texture::GetDefault();
-			m_textures[sampler.name]->IncrementReferenceCount();
+			if(m_textureOwnership)
+				m_textures[sampler.name]->IncrementReferenceCount();
 		}
 
 		Log::Info("Material reset to shader defaults");
@@ -243,12 +249,12 @@ namespace Loopie
 			return;
 		}
 
-		if (it->second)
+		if (m_textureOwnership && it->second)
 			it->second->DecrementReferenceCount();
 
 		it->second = texture;
 
-		if (it->second)
+		if (m_textureOwnership && it->second)
 			it->second->IncrementReferenceCount();
 	}
 }

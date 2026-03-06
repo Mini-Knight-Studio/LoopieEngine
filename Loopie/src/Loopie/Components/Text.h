@@ -15,7 +15,7 @@ namespace Loopie
 		DEFINE_TYPE(Text)
 
 		Text() = default;
-		~Text() override = default;
+		~Text();
 
 		void Init() override;
 

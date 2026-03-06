@@ -15,7 +15,7 @@ namespace Loopie
 		DEFINE_TYPE(Image)
 
 		Image() = default;
-		~Image() override = default;
+		~Image();
 
 		void Init() override;
 
