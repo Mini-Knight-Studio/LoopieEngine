@@ -61,7 +61,7 @@ namespace Loopie {
         void SetVolume(float volume);
         void SetPan(float pan);
         void Set3DMinMaxDistance(float minDist, float maxDist);
-		void SetIfPlayOnAwake(bool playOnAwake) { playOnAwake = playOnAwake; }
+		void SetIfPlayOnAwake(bool playOnAwake) { this->playOnAwake = playOnAwake; }
 
         float GetPitch() const { return m_pitch; }
         float GetVolume() const { return m_volume; }
@@ -106,9 +106,8 @@ namespace Loopie {
         float m_volume = 1.0f;   
         float m_pan = 0.0f;
         float m_minDistance = 2.0f;
-        float m_maxDistance = 25.0f;
+        float m_maxDistance = 100.0f;
 
         bool playOnAwake = true;
-        bool usePlaylist = false;
     };
 }

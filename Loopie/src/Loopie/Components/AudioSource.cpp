@@ -270,7 +270,11 @@ namespace Loopie {
         transformObj.CreateField("noLoopStrategy", static_cast<int>(noLoopStrategy));
 
         transformObj.CreateField("playOnAwake", playOnAwake);
-        transformObj.CreateField("usePlaylist", usePlaylist);
+        transformObj.CreateField("pitch", m_pitch);
+        transformObj.CreateField("volume", m_volume);
+        transformObj.CreateField("pan", m_pan);
+        transformObj.CreateField("minDistance", m_minDistance);
+        transformObj.CreateField("maxDistance", m_maxDistance);
         transformObj.CreateField("currentClipIndex", currentClipIndex);
 
         JsonNode clipsArray = transformObj.CreateObjectField("audioClips");
@@ -285,17 +289,23 @@ namespace Loopie {
     }
 
     void AudioSource::Deserialize(const JsonNode& data) {
-        data.GetValue<bool>("loop", isLooping);
-        data.GetValue<bool>("isSpatial", isSpatial);
+        isLooping = data.GetValue<bool>("loop", false).Result;
+        isSpatial = data.GetValue<bool>("isSpatial", true).Result;
         int ls = 0, nls = 0;
         auto loopStrategyResult = data.GetValue<int>("loopStrategy", ls);
-        if (loopStrategyResult.Found) loopStrategy = static_cast<AudioLoopStrategy>(loopStrategyResult.Result);
+        if (loopStrategyResult.Found) 
+            loopStrategy = static_cast<AudioLoopStrategy>(loopStrategyResult.Result);
         auto noLoopStrategyResult = data.GetValue<int>("noLoopStrategy", nls);
-        if (noLoopStrategyResult.Found) noLoopStrategy = static_cast<AudioNoLoopStrategy>(noLoopStrategyResult.Result);
+        if (noLoopStrategyResult.Found) 
+            noLoopStrategy = static_cast<AudioNoLoopStrategy>(noLoopStrategyResult.Result);
 
-        data.GetValue<bool>("playOnAwake", playOnAwake);
-        data.GetValue<bool>("usePlaylist", usePlaylist);
-        data.GetValue<int>("currentClipIndex", currentClipIndex);
+        playOnAwake = data.GetValue<bool>("playOnAwake", true).Result;
+        m_pitch = data.GetValue<float>("pitch", 1).Result;
+        m_volume = data.GetValue<float>("volume", 1).Result;
+        m_pan = data.GetValue<float>("pan", 0).Result;
+        m_minDistance = data.GetValue<float>("minDistance", 2).Result;
+        m_maxDistance = data.GetValue<float>("maxDistance", 100).Result;
+        currentClipIndex = data.GetValue<int>("currentClipIndex", 0).Result;
 
         audioClips.clear();
 

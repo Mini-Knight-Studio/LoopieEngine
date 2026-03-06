@@ -203,7 +203,12 @@ namespace Loopie {
 	void InspectorInterface::Render() {
 		if (ImGui::Begin("Inspector")) {
 
-			ImGui::Checkbox("Lock Inspector", &m_locked);
+			if (ImGui::Checkbox("Lock Inspector", &m_locked)) {
+				if (!m_locked) {
+					m_currentEntity = HierarchyInterface::s_SelectedEntity;
+					m_currentFile = AssetsExplorerInterface::s_SelectedFile;
+				}
+			}
 			ImGui::Separator();
 
 			switch (m_mode)
@@ -276,8 +281,6 @@ namespace Loopie {
 			else if (component->GetTypeID() == Button::GetTypeIDStatic()) {
 				DrawButton(static_cast<Button*>(component));
 			}
-
-
 		}
 		AddComponent(entity);
 	}
