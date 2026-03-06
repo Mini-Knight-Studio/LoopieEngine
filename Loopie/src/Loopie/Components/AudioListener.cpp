@@ -23,7 +23,7 @@ namespace Loopie {
 	}
 
 	void AudioListener::Deserialize(const JsonNode& data) {
-		if (!data.Contains("AudioListener")) return;
-		JsonNode transformObj = data.Child("AudioListener");
+		if (!data.Contains("audiolistener")) return;
+		JsonNode transformObj = data.Child("audiolistener");
 	}
 }
