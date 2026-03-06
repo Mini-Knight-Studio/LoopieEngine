@@ -453,6 +453,9 @@ namespace Loopie {
 				prevMeshIndex = mesh->GetMeshIndex();
 				meshIndex = prevMeshIndex;
 			}
+
+			ImGui::SeparatorText("Mesh");
+
 			ImGui::Text("Mesh: %s", mesh ? "Assigned" : "None");
 			ImGui::SameLine();
 			ImGui::SetNextItemWidth(80);
@@ -502,8 +505,6 @@ namespace Loopie {
 				return;
 			}
 
-			ImGui::Separator();
-
 			if (ImGui::TreeNode("Mesh Info")) {
 				ImGui::Text("Mesh Resource Count: %u", mesh->GetReferenceCount());
 				ImGui::Text("Mesh Vertices: %d", mesh->GetData().VerticesAmount);
@@ -512,7 +513,6 @@ namespace Loopie {
 				ImGui::TreePop();
 			}
 
-			ImGui::Separator();
 
 			if (ImGui::TreeNode("Mesh Options")) {
 				bool drawFN = meshRenderer->GetDrawNormalsPerFace();
@@ -532,35 +532,31 @@ namespace Loopie {
 				ImGui::TreePop();
 			}
 
-			ImGui::Separator();
+			ImGui::SeparatorText("Material");
 			std::shared_ptr<Material> material = meshRenderer->GetMaterial();
 
-			if (ImGui::TreeNode("Material")) {
-				ImGui::Button(" [ Drop Material Here ] ", ImVec2(ImGui::GetContentRegionAvail().x, 30));
+			ImGui::Button(" [ Drop Material Here ] ", ImVec2(ImGui::GetContentRegionAvail().x, 30));
 
-				if (ImGui::BeginPopupContextItem())
+			if (ImGui::BeginPopupContextItem())
+			{
+				if (ImGui::MenuItem("Paste"))
 				{
-					if (ImGui::MenuItem("Paste"))
-					{
-						resource = GetPastedResource(ResourceType::MATERIAL);
-						if (resource) {
-							material = std::static_pointer_cast<Material>(resource);
-							meshRenderer->SetMaterial(material);
-						}
+					resource = GetPastedResource(ResourceType::MATERIAL);
+					if (resource) {
+						material = std::static_pointer_cast<Material>(resource);
+						meshRenderer->SetMaterial(material);
 					}
-					ImGui::EndPopup();
 				}
+				ImGui::EndPopup();
+			}
 
-				resource = GetDragDropResource(ResourceType::MATERIAL);
-				if (resource) {
-					material = std::static_pointer_cast<Material>(resource);
-					meshRenderer->SetMaterial(material);
-				}
+			resource = GetDragDropResource(ResourceType::MATERIAL);
+			if (resource) {
+				material = std::static_pointer_cast<Material>(resource);
+				meshRenderer->SetMaterial(material);
+			}
 
-				DrawMaterial(material);
-
-				ImGui::TreePop();
-			}	
+			DrawMaterial(material);
 		}
 
 		ImGui::PopID();
@@ -582,9 +578,10 @@ namespace Loopie {
 
 			const auto& renderers = animator->GetRenderers();
 
-			ImGui::Text("Add Renderer");
 			static Entity* selectedEntity = nullptr;
 			static MeshRenderer* selectedRenderer = nullptr;
+
+			ImGui::SeparatorText("Set Up Renderers");
 
 			if (ImGui::BeginCombo("Target", selectedRenderer ? selectedRenderer->GetOwner()->GetName().c_str() : "Select..."))
 			{
@@ -670,8 +667,9 @@ namespace Loopie {
 			{
 				animator->ClearRenderers();
 			}
+			
+			ImGui::Dummy({ 0,3 });
 
-			ImGui::Separator();
 			if (ImGui::TreeNode("Linked Renderers")) {
 
 				if (renderers.empty())
@@ -747,7 +745,7 @@ namespace Loopie {
 			{
 				ImGui::Spacing();
 				ImGui::Separator();
-				ImGui::Text("Configuration");
+				ImGui::SeparatorText("Configuration");
 				
 				MeshRenderer* targetRenderer = animator->GetTargetRenderer();
 
@@ -853,14 +851,14 @@ namespace Loopie {
 							if (ImGui::Button("Stop")) animator->Stop();
 						}
 						else
-							ImGui::Text("No animation clips in target mesh.");
+							ImGui::TextColored({ 0,255,255,255 }, "No animation clips in target mesh.");
 					}
 					else
-						ImGui::Text("Target renderer has no mesh.");
+						ImGui::TextColored({ 255,0,0,255 }, "Target renderer has no mesh.");
 				}
 			}
 			else
-				ImGui::Text("Add a MeshRenderer to enable animation controls.");
+				ImGui::TextColored({255,0,0,255}, "Add a MeshRenderer to enable animation controls.");
 		}
 
 		ImGui::PopID();
@@ -1575,7 +1573,7 @@ namespace Loopie {
 		if (!entity)
 			return;
 
-		ImGui::Separator();
+		ImGui::Dummy(ImVec2{ 0,8 });
 
 		static ImGuiTextFilter filter;
 		static bool isOpen = false;
