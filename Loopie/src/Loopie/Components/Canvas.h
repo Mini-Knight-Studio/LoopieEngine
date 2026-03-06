@@ -43,6 +43,6 @@ namespace Loopie {
 		mutable bool m_cornersDirty = true;
 		mutable vec3 m_worldCorners[4]{};
 
-		CanvasRenderMode m_renderMode = CanvasRenderMode::WorldSpace;
+		CanvasRenderMode m_renderMode = CanvasRenderMode::ScreenSpaceOverlay;
 	};
 }

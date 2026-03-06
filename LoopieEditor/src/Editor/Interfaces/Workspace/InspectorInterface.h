@@ -67,9 +67,6 @@ namespace Loopie {
 		void OnNotify(const OnEntityOrFileNotification& id) override;
 	
 	private:
-		// Helper function for finding the function call target script
-		ScriptClass* FindScriptComponent(Scene& scene, const FunctionCall& functionCall);
-		FunctionCall* TryGetFirstScriptCallTarget(Scene& scene);
 
 		enum class ButtonImageSlot
 		{
@@ -85,5 +82,8 @@ namespace Loopie {
 
 		InspectorMode m_mode = InspectorMode::None;
 		bool m_locked = false;
+
+		std::weak_ptr<Entity> m_currentEntity;
+		std::filesystem::path m_currentFile;
 	};
 }

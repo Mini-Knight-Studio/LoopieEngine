@@ -166,6 +166,25 @@ namespace Loopie {
 		return nullptr;
 	}
 
+	std::shared_ptr<Entity> GetDragDropEntity() {
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY_UUID"))
+			{
+				const char* uuidChars = static_cast<const char*>(payload->Data);
+
+				std::string uuidStr(uuidChars);
+
+				if (!UUID::IsValid(uuidStr))
+					return nullptr;
+
+				return Application::GetInstance().GetScene().GetEntity(UUID(uuidStr));
+			}
+			ImGui::EndDragDropTarget();
+		}
+		return nullptr;
+	}
+
 	InspectorInterface::InspectorInterface() {
 		
 	}
@@ -190,16 +209,15 @@ namespace Loopie {
 			switch (m_mode)
 			{
 			case InspectorMode::EntityMode:
-				DrawEntityInspector(HierarchyInterface::s_SelectedEntity.lock());
+				DrawEntityInspector(m_currentEntity.lock());
 				break;
 			case InspectorMode::ImportMode:
 			{
-				const std::filesystem::path& path = AssetsExplorerInterface::s_SelectedFile;
-				const bool hasInspectableFile = (!path.empty() && path.has_extension() && path.extension().string() == ".mat");
+				const bool hasInspectableFile = (!m_currentFile.empty() && m_currentFile.has_extension() && m_currentFile.extension().string() == ".mat");
 				if (hasInspectableFile)
-					DrawFileImportSettings(path);
+					DrawFileImportSettings(m_currentFile);
 				else
-					DrawEntityInspector(HierarchyInterface::s_SelectedEntity.lock());
+					DrawEntityInspector(m_currentEntity.lock());
 
 				break;
 			}
@@ -258,6 +276,8 @@ namespace Loopie {
 			else if (component->GetTypeID() == Button::GetTypeIDStatic()) {
 				DrawButton(static_cast<Button*>(component));
 			}
+
+
 		}
 		AddComponent(entity);
 	}
@@ -339,6 +359,9 @@ namespace Loopie {
 			}
 			if (transform->IsRectTransform())
 			{
+
+				ImGui::SeparatorText("Size");
+
 				float w = transform->GetWidth();
 				float h = transform->GetHeight();
 
@@ -534,9 +557,7 @@ namespace Loopie {
 				DrawMaterial(material);
 
 				ImGui::TreePop();
-			}
-			
-			
+			}	
 		}
 
 		ImGui::PopID();
@@ -963,12 +984,14 @@ namespace Loopie {
 	void InspectorInterface::DrawCanvas(Canvas* canvas)
 	{
 		ImGui::PushID(canvas);
+
 		bool open = ImGui::CollapsingHeader("Canvas");
 		ImGui::SetItemTooltip(canvas->GetUUID().Get().c_str());
 		if (ComponentContextMenu(canvas)) {
 			ImGui::PopID();
 			return;
 		}
+
 		if (open) {
 			CanvasRenderMode renderMode = canvas->GetRenderMode();
 			int modeIndex = (int)renderMode;
@@ -986,15 +1009,11 @@ namespace Loopie {
 
 	void InspectorInterface::DrawImage(Image* image)
 	{
-		if (!image)
-			return;
-
 		ImGui::PushID(image);
 
 		bool open = ImGui::CollapsingHeader("Image");
 		ImGui::SetItemTooltip(image->GetUUID().Get().c_str());
-		if (ComponentContextMenu(image))
-		{
+		if (ComponentContextMenu(image)) {
 			ImGui::PopID();
 			return;
 		}
@@ -1004,14 +1023,14 @@ namespace Loopie {
 			vec4 color = image->GetTint();
 			ImVec4 imColor(color.r, color.g, color.b, color.a);
 
-			ImGui::Text("Tint");
-			ImGui::SameLine();
+			ImGui::SeparatorText("Tint");
 
 			if (ImGui::ColorEdit4("##ImageTint", (float*)&imColor))
 			{
 				image->SetTint(vec4(imColor.x, imColor.y, imColor.z, imColor.w));
 			}
-			ImGui::Separator();
+
+			ImGui::SeparatorText("Texture");
 
 			std::shared_ptr<Texture> texture = image->GetTexture();
 
@@ -1033,18 +1052,23 @@ namespace Loopie {
 			if (resource)
 				image->SetTexture(std::static_pointer_cast<Texture>(resource));
 
+
 			ImGui::Text("Texture: %s", meta ? "Assigned" : "None / Unknown");
 
 			texture = image->GetTexture();
 			if (texture)
 			{
 				meta = AssetRegistry::GetMetadata(texture->GetUUID());
-
-				if (meta && !meta->CachesPath.empty())
-					ImGui::Text("Path: %s", meta->CachesPath[0].c_str());
-
 				ivec2 texSize = texture->GetSize();
-				ImGui::Text("Size: %d x %d", texSize.x, texSize.y);
+
+				if (ImGui::TreeNode("Texture Info")) {
+
+					if (meta && !meta->CachesPath.empty())
+						ImGui::Text("Path: %s", meta->CachesPath[0].c_str());
+
+					ImGui::Text("Size: %d x %d", texSize.x, texSize.y);
+					ImGui::TreePop();
+				}
 
 				const float maxSizeNormal = 64.0f;
 				const float maxSizeWide = 128.0f;
@@ -1068,15 +1092,11 @@ namespace Loopie {
 
 	void InspectorInterface::DrawText(Text* text)
 	{
-		if (!text)
-			return;
-
 		ImGui::PushID(text);
 
 		bool open = ImGui::CollapsingHeader("Text");
 		ImGui::SetItemTooltip(text->GetUUID().Get().c_str());
-		if (ComponentContextMenu(text))
-		{
+		if (ComponentContextMenu(text)) {
 			ImGui::PopID();
 			return;
 		}
@@ -1088,24 +1108,31 @@ namespace Loopie {
 			memset(buffer, 0, sizeof(buffer));
 			strncpy_s(buffer, value.c_str(), sizeof(buffer) - 1);
 
-			if (ImGui::InputTextMultiline("Value", buffer, sizeof(buffer), ImVec2(0, 60)))
-				text->SetText(std::string(buffer));
+			ImGui::SeparatorText("Value");
 
-			ImGui::Separator();
+			if (ImGui::InputTextMultiline("##Value", buffer, sizeof(buffer), ImVec2(0, 60)))
+				text->SetText(std::string(buffer));
 
 			vec4 c = text->GetColor();
 			ImVec4 imColor(c.r, c.g, c.b, c.a);
-			if (ImGui::ColorEdit4("Color", (float*)&imColor))
+
+			ImGui::SeparatorText("Tint");
+
+			if (ImGui::ColorEdit4("##Tint", (float*)&imColor))
 				text->SetColor(vec4(imColor.x, imColor.y, imColor.z, imColor.w));
 
-			ImGui::Separator();
+			ImGui::SeparatorText("Font");
 
 			std::shared_ptr<Font> font = text->GetFont();
 			Metadata* meta = font ? AssetRegistry::GetMetadata(font->GetUUID()) : nullptr;
 
 			ImGui::Text("Font: %s", meta ? "Assigned" : "None / Unknown");
-			if (meta && meta->HasCache && !meta->CachesPath.empty())
-				ImGui::TextDisabled("Cache: %s", meta->CachesPath[0].c_str());
+			if (meta && meta->HasCache && !meta->CachesPath.empty()) {
+				if (ImGui::TreeNode("Info")) {
+					ImGui::TextDisabled("Cache: %s", meta->CachesPath[0].c_str());
+					ImGui::TreePop();
+				}
+			}
 
 			ImGui::Button("[ Drop Font Here ]", ImVec2(ImGui::GetContentRegionAvail().x, 30));
 
@@ -1129,7 +1156,6 @@ namespace Loopie {
 				ImGui::EndDragDropTarget();
 			}
 
-			ImGui::TextDisabled("Drag & drop a .ttf/.otf from Assets Explorer.");
 		}
 
 		ImGui::PopID();
@@ -1137,154 +1163,162 @@ namespace Loopie {
 
 	void InspectorInterface::DrawButton(Button* button)
 	{
-		if (!button)
+		ImGui::PushID(button);
+
+		bool open = ImGui::CollapsingHeader("Button");
+		ImGui::SetItemTooltip(button->GetUUID().Get().c_str());
+		if (ComponentContextMenu(button)) {
+			ImGui::PopID();
 			return;
-
-		const bool opened = ImGui::CollapsingHeader("Button", ImGuiTreeNodeFlags_DefaultOpen);
-		ComponentContextMenu(button);
-
-		if (!opened)
-			return;
-
-		bool interactable = button->IsInteractable();
-		if (ImGui::Checkbox("Interactable", &interactable))
-			button->SetInteractable(interactable);
-
-		ImGui::SeparatorText("Transition");
-
-		Button::VisualTransitionMode mode = button->GetTransitionMode();
-		int modeIndex = static_cast<int>(mode);
-		const char* modeLabels[] = { "Color Tint", "Image Swap" };
-
-		if (ImGui::Combo("Mode", &modeIndex, modeLabels, IM_ARRAYSIZE(modeLabels)))
-			button->SetTransitionMode(static_cast<Button::VisualTransitionMode>(modeIndex));
-
-		if (button->GetTransitionMode() == Button::VisualTransitionMode::ColorTint)
-		{
-			ImGui::SeparatorText("Colors");
-
-			vec4 normal = button->GetNormalColor();
-			if (ImGui::ColorEdit4("Normal", &normal.x))
-				button->SetNormalColor(normal);
-
-			vec4 hovered = button->GetHoveredColor();
-			if (ImGui::ColorEdit4("Hovered", &hovered.x))
-				button->SetHoveredColor(hovered);
-
-			vec4 pressed = button->GetPressedColor();
-			if (ImGui::ColorEdit4("Pressed", &pressed.x))
-				button->SetPressedColor(pressed);
-
-			vec4 disabled = button->GetDisabledColor();
-			if (ImGui::ColorEdit4("Disabled", &disabled.x))
-				button->SetDisabledColor(disabled);
-		}
-		else
-		{
-			ImGui::SeparatorText("Images");
-
-			DrawImageButtonSlot(button, ButtonImageSlot::Normal);
-			DrawImageButtonSlot(button, ButtonImageSlot::Hovered);
-			DrawImageButtonSlot(button, ButtonImageSlot::Pressed);
-			DrawImageButtonSlot(button, ButtonImageSlot::Disabled);
 		}
 
-		ImGui::SeparatorText("On Click");
+		if (open) {
+			bool interactable = button->IsInteractable();
+			if (ImGui::Checkbox("Interactable", &interactable))
+				button->SetInteractable(interactable);
 
-		Scene& scene = Application::GetInstance().GetScene();
-		std::vector<FunctionCall> functionCalls = button->GetFlattenedOnClickFunctionCalls();
-		bool modified = false;
+			ImGui::SeparatorText("Transition");
 
-		if (ImGui::Button("Add Callback"))
-		{
-			if (FunctionCall* newTarget = TryGetFirstScriptCallTarget(scene))
+			Button::VisualTransitionMode mode = button->GetTransitionMode();
+			int modeIndex = static_cast<int>(mode);
+			const char* modeLabels[] = { "Color Tint", "Image Swap" };
+
+			if (ImGui::Combo("Mode", &modeIndex, modeLabels, IM_ARRAYSIZE(modeLabels)))
+				button->SetTransitionMode(static_cast<Button::VisualTransitionMode>(modeIndex));
+
+			if (button->GetTransitionMode() == Button::VisualTransitionMode::ColorTint)
 			{
-				functionCalls.push_back(*newTarget);
-				modified = true;
+				ImGui::SeparatorText("Colors");
+
+				vec4 normal = button->GetNormalColor();
+				if (ImGui::ColorEdit4("Normal", &normal.x))
+					button->SetNormalColor(normal);
+
+				vec4 hovered = button->GetHoveredColor();
+				if (ImGui::ColorEdit4("Hovered", &hovered.x))
+					button->SetHoveredColor(hovered);
+
+				vec4 pressed = button->GetPressedColor();
+				if (ImGui::ColorEdit4("Pressed", &pressed.x))
+					button->SetPressedColor(pressed);
+
+				vec4 disabled = button->GetDisabledColor();
+				if (ImGui::ColorEdit4("Disabled", &disabled.x))
+					button->SetDisabledColor(disabled);
 			}
-		}
-
-		if (functionCalls.empty())
-		{
-			ImGui::TextDisabled("No callbacks configured.");
-		}
-
-		for (size_t i = 0; i < functionCalls.size();)
-		{
-			FunctionCall& functionCall = functionCalls[i];
-			ImGui::PushID(static_cast<int>(i));
-
-			std::shared_ptr<Entity> selectedEntity = scene.GetEntity(functionCall.EntityUUID);
-			const std::string entityPreview = selectedEntity ? selectedEntity->GetName() : "Missing Entity";
-			if (ImGui::BeginCombo("Entity", entityPreview.c_str()))
+			else
 			{
-				for (const auto& [entityUUID, entity] : scene.GetAllEntities())
-				{
-					if (!entity)
-						continue;
+				ImGui::SeparatorText("Images");
 
-					const bool isSelected = (entity->GetUUID() == functionCall.EntityUUID);
-					const std::string displayName = entity->GetName() + "##" + entity->GetUUID().Get();
-					if (ImGui::Selectable(displayName.c_str(), isSelected))
-					{
-						functionCall.EntityUUID = entity->GetUUID();
-						std::vector<ScriptClass*> scriptComponents = entity->GetComponents<ScriptClass>();
-						if (!scriptComponents.empty())
-							functionCall.ComponentUUID = scriptComponents.front()->GetUUID();
-						modified = true;
-					}
+				DrawImageButtonSlot(button, ButtonImageSlot::Normal);
+				DrawImageButtonSlot(button, ButtonImageSlot::Hovered);
+				DrawImageButtonSlot(button, ButtonImageSlot::Pressed);
+				DrawImageButtonSlot(button, ButtonImageSlot::Disabled);
+			}
+
+			ImGui::SeparatorText("");
+
+			Scene& scene = Application::GetInstance().GetScene();
+			std::vector<FunctionCall> functionCalls = button->GetFlattenedOnClickFunctionCalls();
+			bool modified = false;
+
+			if (ImGui::TreeNode("Callbakcs")) {
+
+				if (functionCalls.empty())
+				{
+					ImGui::TextDisabled("No callbacks configured.");
 				}
-				ImGui::EndCombo();
-			}
 
-			selectedEntity = scene.GetEntity(functionCall.EntityUUID);
-			ScriptClass* selectedComponent = FindScriptComponent(scene, functionCall);
-			const std::string componentPreview = selectedComponent ? selectedComponent->GetClassName() : "Missing ScriptClass";
-			if (ImGui::BeginCombo("Component", componentPreview.c_str()))
-			{
-				if (selectedEntity)
+				for (size_t i = 0; i < functionCalls.size();)
 				{
-					for (ScriptClass* scriptComponent : selectedEntity->GetComponents<ScriptClass>())
-					{
-						if (!scriptComponent)
-							continue;
+					ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+					if (ImGui::TreeNode(std::to_string(i).c_str())) {
 
-						const bool isSelected = (scriptComponent->GetUUID() == functionCall.ComponentUUID);
-						const std::string displayName = scriptComponent->GetClassName() + "##" + scriptComponent->GetUUID().Get();
-						if (ImGui::Selectable(displayName.c_str(), isSelected))
-						{
-							functionCall.ComponentUUID = scriptComponent->GetUUID();
+						FunctionCall& functionCall = functionCalls[i];
+						ImGui::PushID(static_cast<int>(i));
+
+						std::shared_ptr<Entity> selectedEntity = scene.GetEntity(functionCall.EntityUUID);
+						const std::string entityPreview = selectedEntity ? selectedEntity->GetName() : "Missing Entity";
+
+						ImGui::Button(entityPreview.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 20));
+
+						std::shared_ptr<Entity> entity = GetDragDropEntity();
+						if (entity) {
+							functionCall.EntityUUID = entity->GetUUID();
+							std::vector<ScriptClass*> scriptComponents = entity->GetComponents<ScriptClass>();
+							if (!scriptComponents.empty())
+								functionCall.ComponentUUID = scriptComponents.front()->GetUUID();
 							modified = true;
 						}
+
+						if (modified)
+							selectedEntity = scene.GetEntity(functionCall.EntityUUID);
+
+						ScriptClass* selectedComponent = nullptr;
+						if (selectedEntity)
+							selectedComponent = selectedEntity->GetComponent<ScriptClass>(functionCall.ComponentUUID);
+
+						const std::string componentPreview = selectedComponent ? selectedComponent->GetClassName() : "Missing ScriptClass";
+
+
+						if (ImGui::BeginCombo("##", componentPreview.c_str()))
+						{
+							if (selectedEntity)
+							{
+								for (ScriptClass* scriptComponent : selectedEntity->GetComponents<ScriptClass>())
+								{
+									if (!scriptComponent)
+										continue;
+
+									const bool isSelected = (scriptComponent->GetUUID() == functionCall.ComponentUUID);
+									const std::string displayName = scriptComponent->GetClassName() + "##" + scriptComponent->GetUUID().Get();
+									if (ImGui::Selectable(displayName.c_str(), isSelected))
+									{
+										functionCall.ComponentUUID = scriptComponent->GetUUID();
+										modified = true;
+									}
+								}
+							}
+							ImGui::EndCombo();
+						}
+
+						char methodBuf[256]{};
+						(void)std::snprintf(methodBuf, sizeof(methodBuf), "%s", functionCall.Function.c_str());
+						if (ImGui::InputText("Function", methodBuf, sizeof(methodBuf)))
+						{
+							functionCall.Function = methodBuf;
+							modified = true;
+						}
+
+						if (ImGui::Button("Remove"))
+						{
+							functionCalls.erase(functionCalls.begin() + i);
+							modified = true;
+							ImGui::PopID();
+							ImGui::TreePop();
+							break;
+						}
+
+						ImGui::PopID();
+						ImGui::TreePop();
 					}
+					++i;
 				}
-				ImGui::EndCombo();
+
+				if (ImGui::Button("+"))
+				{
+					functionCalls.push_back(FunctionCall{ UUID(), UUID(), std::string() });
+					modified = true;
+				}
+
+				ImGui::TreePop();
 			}
 
-			char methodBuf[256]{};
-			(void)std::snprintf(methodBuf, sizeof(methodBuf), "%s", functionCall.Function.c_str());
-			if (ImGui::InputText("Function", methodBuf, sizeof(methodBuf)))
-			{
-				functionCall.Function = methodBuf;
-				modified = true;
-			}
-
-			if (ImGui::Button("Remove"))
-			{
-				functionCalls.erase(functionCalls.begin() + i);
-				modified = true;
-				ImGui::PopID();
-				continue;
-			}
-
-			ImGui::Separator();
-			ImGui::PopID();
-			++i;
+			if (modified)
+				button->SetOnClickFunctionCalls(functionCalls);
 		}
-
-		if (modified)
-			button->SetOnClickFunctionCalls(functionCalls);
-
+		
+		ImGui::PopID();
 	}
 
 	void InspectorInterface::DrawBoxCollider(BoxCollider* boxCollider) 
@@ -1326,22 +1360,13 @@ namespace Loopie {
 
 		if (open)
 		{
-			// --- 1. Espacialidad ---
-			bool spatial = source->isSpatial;
-			if (ImGui::Checkbox("Is Spatial (3D)", &spatial)) {
-				source->SetSpatial(spatial);
-			}
-			if (ImGui::IsItemHovered()) {
-				ImGui::SetTooltip("Si se desactiva, el audio sera 2D.");
-			}
-
 			// --- 2. Bucle ---
 			bool loop = source->isLooping; 
-			if (ImGui::Checkbox("Loop Audio", &loop)) {
-				source->SetLoop(loop);
-			}
 
 			// --- 3. Estrategias ---
+
+			ImGui::SeparatorText("Mode");
+
 			if (loop) {
 				const char* loopStrategyNames[] = { "Repetitive", "Sequential", "Random", "Random No Repetitive" };
 				int currentLoopItem = static_cast<int>(source->loopStrategy);
@@ -1357,9 +1382,14 @@ namespace Loopie {
 				}
 			}
 
-			ImGui::Separator();
+			ImGui::SeparatorText("Configurations");
 
 			// --- 4. Propiedades Generales ---
+
+			if (ImGui::Checkbox("Loop Audio", &loop)) {
+				source->SetLoop(loop);
+			}
+
 			bool playOnAwake = source->GetIfPlayOnAwake();
 			if (ImGui::Checkbox("Play On Awake", &playOnAwake)) {
 				source->SetIfPlayOnAwake(playOnAwake);
@@ -1377,6 +1407,15 @@ namespace Loopie {
 			if (ImGui::SliderFloat("Pan", &pan, -1.0f, 1.0f))
 				source->SetPan(pan);
 
+
+			bool spatial = source->isSpatial;
+			if (ImGui::Checkbox("Is Spatial (3D)", &spatial)) {
+				source->SetSpatial(spatial);
+			}
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("Si se desactiva, el audio sera 2D.");
+			}
+
 			if (source->isSpatial) {
 				vec2 distanceRange;
 				source->Get3DMinMaxDistance(distanceRange.x, distanceRange.y);
@@ -1384,10 +1423,9 @@ namespace Loopie {
 					source->Set3DMinMaxDistance(distanceRange.x, distanceRange.y);
 			}
 
-			ImGui::Separator();
 
 			// --- 5. Playlist ---
-			ImGui::Text("Playlist");
+			ImGui::SeparatorText("Playlist");
 
 			std::string previewValue = "None";
 
@@ -1492,7 +1530,8 @@ namespace Loopie {
 				ImGui::EndDragDropTarget();
 			}
 
-			ImGui::Separator();
+			ImGui::SeparatorText("Controls");
+
 
 			// --- 6. Controles Rápidos ---
 			if (ImGui::Button("Play"))
@@ -1639,6 +1678,24 @@ namespace Loopie {
 					if (ImGui::Selectable("Image"))
 					{
 						entity->AddComponent<Image>();
+						forceClose = true;
+					}
+				}
+
+				if (filter.PassFilter("Button"))
+				{
+					if (ImGui::Selectable("Button"))
+					{
+						entity->AddComponent<Button>();
+						forceClose = true;
+					}
+				}
+
+				if (filter.PassFilter("Text"))
+				{
+					if (ImGui::Selectable("Text"))
+					{
+						entity->AddComponent<Text>();
 						forceClose = true;
 					}
 				}
@@ -1903,9 +1960,11 @@ namespace Loopie {
 
 		if (id == OnEntityOrFileNotification::OnEntitySelect) {
 			m_mode = InspectorMode::EntityMode;
+			m_currentEntity = HierarchyInterface::s_SelectedEntity;
 		}
 		else if (id == OnEntityOrFileNotification::OnFileSelect) {
 			m_mode = InspectorMode::ImportMode;
+			m_currentFile = AssetsExplorerInterface::s_SelectedFile;
 		}
 	}
 
@@ -1928,43 +1987,6 @@ namespace Loopie {
 		return false;
 	}
 
-	ScriptClass* InspectorInterface::FindScriptComponent(Scene& scene, const FunctionCall& functionCall)
-	{
-		auto entity = scene.GetEntity(functionCall.EntityUUID);
-		if (!entity)
-			return nullptr;
-
-		Component* component = entity->GetComponent(functionCall.ComponentUUID);
-		if (!component)
-			return nullptr;
-
-		if (component->GetTypeID() != ScriptClass::GetTypeIDStatic())
-			return nullptr;
-
-		return static_cast<ScriptClass*>(component);
-	}
-
-	FunctionCall* InspectorInterface::TryGetFirstScriptCallTarget(Scene& scene)
-	{
-		static FunctionCall target;
-
-		for (const auto& [entityUUID, entity] : scene.GetAllEntities())
-		{
-			if (!entity)
-				continue;
-
-			for (ScriptClass* scriptComponent : entity->GetComponents<ScriptClass>())
-			{
-				if (!scriptComponent)
-					continue;
-
-				target = FunctionCall{ entity->GetUUID(), scriptComponent->GetUUID(), std::string() };
-				return &target;
-			}
-		}
-
-		return nullptr;
-	}
 	void InspectorInterface::DrawImageButtonSlot(Button* button, ButtonImageSlot slot)
 	{
 		if (!button)
