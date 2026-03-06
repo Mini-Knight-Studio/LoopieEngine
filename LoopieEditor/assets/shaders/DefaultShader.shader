@@ -17,6 +17,13 @@ layout (std140, binding = 0) uniform Matrices
     mat4 lp_View;
 };
 
+layout (std140, binding = 1) uniform Lighting
+{
+    vec4 lp_CameraWorldPos;
+    vec4 lp_LightDir;
+    vec4 lp_LightCol;
+};
+
 uniform mat4 lp_Transform;
 uniform mat4 lp_Bones[100]; 
 uniform bool lp_Skinned;
@@ -25,7 +32,7 @@ uniform bool lp_Skinned;
 
 out vec2 v_TexCoord;
 out vec3 v_Normal;
-
+out vec3 v_WorldPos;
 
 void main()
 {
@@ -43,10 +50,12 @@ void main()
     vec4 localPos = skinMatrix * vec4(a_Position, 1.0);
     vec3 skinnedNormal = mat3(skinMatrix) * a_Normal;
 
-    gl_Position = lp_Projection * lp_View * lp_Transform * localPos;
+    vec4 worldPos = lp_Transform * localPos;
+    gl_Position = lp_Projection * lp_View * worldPos;
 
     v_TexCoord = a_TexCoord;
     v_Normal = normalize(mat3(lp_Transform) * skinnedNormal);
+    v_WorldPos = worldPos.xyz;
 }
 
 
@@ -54,7 +63,22 @@ void main()
 #version 460 core
 in vec2 v_TexCoord;
 in vec3 v_Normal;
+in vec3 v_WorldPos;
+
 out vec4 FragColor;
+
+layout (std140, binding = 0) uniform Matrices
+{
+    mat4 lp_Projection;
+    mat4 lp_View;
+};
+
+layout (std140, binding = 1) uniform Lighting
+{
+    vec4 lp_CameraWorldPos;
+    vec4 lp_LightDir;
+    vec4 lp_LightCol;
+};
 
 uniform sampler2D u_Albedo;
 uniform vec4 u_Color = vec4(1.0);
@@ -66,13 +90,25 @@ void main()
     texColor = texture(u_Albedo, v_TexCoord);
         if (texColor.a < 0.5f)
             discard;
+    
+    // Ambient
+    vec3 ambient = lp_LightCol.xyz * lp_LightCol.w;
 
-    vec3 lightDir = normalize(vec3(0.3, 0.7, 0.5));
+    // Diffuse
     vec3 normal = normalize(v_Normal);
+    // Normal = mat3(transpose(inverse(model))) * aNormal; // If light looks wrong due to scaling
+    float diff = max(dot(normal, lp_LightDir.xyz), 0.0);
+    vec3 diffuse = diff * lp_LightCol.xyz;
 
-    float diff = max(dot(normal, lightDir), 0.4);
-    diff = mix(1.0, diff, 0.8);
+    // Specular
+    float specularStrength = 0.5;
+    vec3 viewDir = normalize(lp_CameraWorldPos.xyz - v_WorldPos);
+    vec3 reflectDir = reflect(-lp_LightDir.xyz, normal);  
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+    vec3 specular = specularStrength * spec * lp_LightCol.xyz;  
 
-    vec3 litColor = texColor.rgb * diff;
-    FragColor = vec4(litColor, texColor.a) * u_Color;
+    // Resulting Color with Lighting
+    vec3 result = (ambient + diffuse + specular) * texColor.rgb;
+
+    FragColor = vec4(result, texColor.a) * u_Color;
 }
