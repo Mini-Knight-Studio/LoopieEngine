@@ -62,12 +62,19 @@ namespace Loopie
 
 		if (m_textureBufferOverride)
 		{
-			m_textureBufferOverride->Bind();
+			m_textureBufferOverride->Bind(0);
+			m_shader.SetUniformInt("u_Albedo", 0);
+			
+			for (const auto& [name, uniformValue] : m_uniformValues)
+			{
+				ApplyUniform(name, uniformValue);
+			}
+
+			return;
 		}
 		
 		// Bind textures
 		int textureSlot = 0;
-
 		for (auto& [name, texture] : m_textures)
 		{
 			if (!texture)
