@@ -24,6 +24,18 @@ struct FMOD_VECTOR;
 
 namespace Loopie {
 
+    enum class AudioLoopStrategy {
+        Repetitive,
+        Sequential,
+        Random,
+        RandomNoRepetitive
+    };
+
+    enum class AudioNoLoopStrategy {
+        First,
+        Random
+    };
+
     class AudioSource : public Component {
     public:
         DEFINE_TYPE(AudioSource)
@@ -37,13 +49,7 @@ namespace Loopie {
         void OnUpdate() override;
 
         void NextTrack();
-        void AddClip(std::shared_ptr<AudioClip> clip);
-        void RemoveClip(std::shared_ptr<AudioClip> clip);
-
-        const std::vector<std::shared_ptr<AudioClip>>& GetClips() { return m_audioClips; }
-
-        int GetCurrentClipIndex() const { return m_currentClipIndex; }
-        void SetCurrentClipIndex(int index) { m_currentClipIndex = index; }
+        void AddClip(std::shared_ptr<AudioClip> path);
 
         void SetCurrentClip(int index);
         void Play();
@@ -55,16 +61,19 @@ namespace Loopie {
         void SetVolume(float volume);
         void SetPan(float pan);
         void Set3DMinMaxDistance(float minDist, float maxDist);
-		void SetIfPlayOnAwake(bool playOnAwake) { m_playOnAwake = playOnAwake; }
+		void SetIfPlayOnAwake(bool playOnAwake) { playOnAwake = playOnAwake; }
 
         float GetPitch() const { return m_pitch; }
         float GetVolume() const { return m_volume; }
         float GetPan() const { return m_pan; }
-        bool IsLooping() const { return m_loop; }
-		bool GetIfPlayOnAwake() const { return m_playOnAwake; }
+        bool IsLooping() const { return isLooping; }
+		bool GetIfPlayOnAwake() const { return playOnAwake; }
         void Get3DMinMaxDistance(float& minDist, float& maxDist) const { minDist = m_minDistance; maxDist = m_maxDistance; }
 
-
+        void UpdateChannelMode();
+        void SetSpatial(bool active);
+        void SetLoopStrategy(AudioLoopStrategy strategy);
+        void SetNoLoopStrategy(AudioNoLoopStrategy strategy);
 
         JsonNode Serialize(JsonNode& parent) const override;
 
@@ -72,14 +81,25 @@ namespace Loopie {
 
     private:
 
+    public:
+
+        std::vector<std::shared_ptr<AudioClip>> audioClips;
+        int currentClipIndex = 0;
+
+        bool isSpatial = true;
+        bool isLooping = false;
+
+        AudioLoopStrategy loopStrategy = AudioLoopStrategy::Repetitive;
+        AudioNoLoopStrategy noLoopStrategy = AudioNoLoopStrategy::First;
+
     private:
+
         friend class AudioManager;
         FMOD::Studio::EventInstance* m_eventInstance = nullptr;
 
         FMOD::Channel* m_channel = nullptr;
         bool m_isEvent = false;
         bool m_hasStarted = false;
-
 
         // Audio configuration
         float m_pitch = 1.0f;  
@@ -88,11 +108,7 @@ namespace Loopie {
         float m_minDistance = 2.0f;
         float m_maxDistance = 25.0f;
 
-        bool m_loop = false;
-        bool m_playOnAwake = true;
-        bool m_usePlaylist = false;
-
-        std::vector<std::shared_ptr<AudioClip>> m_audioClips;
-        int m_currentClipIndex = 0;
+        bool playOnAwake = true;
+        bool usePlaylist = false;
     };
 }

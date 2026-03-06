@@ -33,14 +33,15 @@ namespace Loopie
 		// Getters
 		Shader& GetShader() { return m_shader; }
 		const Shader& GetShader() const { return m_shader; }
-		std::shared_ptr<Texture> GetTexture() const { return m_texture; } /// Remove
+		std::shared_ptr<Texture> GetTexture(const std::string& name) const;
+		const std::unordered_map<std::string, std::shared_ptr<Texture>>& GetTextures() { return m_textures; }
 		UniformValue* GetShaderVariable(const std::string& name);
 		const std::unordered_map<std::string, UniformValue>& GetUniforms() const { return m_uniformValues; }
 
 		// Setters
 		void SetShader(const Shader& shader);
 		bool SetShaderVariable(const std::string& name, const UniformValue& value);
-		void SetTexture(std::shared_ptr<Texture> texture); /// Remove
+		void SetTexture(const std::string& name, std::shared_ptr<Texture> texture); /// Remove
 
 		void SetTextureBufferOverride(const std::shared_ptr<TextureBuffer>& textureBuffer);
 		void ClearTextureBufferOverride();
@@ -54,11 +55,11 @@ namespace Loopie
 		
 	private:
 		Shader m_shader = Shader("assets/shaders/DefaultShader.shader");
-		std::shared_ptr<Texture> m_texture;
 		// The idea behind uniforms is to retrieve them from shader and being able to 
 		// adjust them for different textures (maybe we want a variable of type roughness
 		// to be different for all different kinds of textures, which can be changed like this)
 		std::unordered_map<std::string, UniformValue> m_uniformValues;
+		std::unordered_map<std::string, std::shared_ptr<Texture>> m_textures;
 		bool m_editable = true;
 
 		std::shared_ptr<TextureBuffer> m_textureBufferOverride;

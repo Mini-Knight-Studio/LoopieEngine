@@ -700,6 +700,48 @@ namespace Loopie
 			*viewport = camera->GetViewport();
 	}
 
+	static void Camera_SetOrthoSize(MonoString* entityID, MonoString* componentID, float size) {
+		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		Camera* camera = entity->GetComponent<Camera>(componentUUID);
+		if (camera)
+			camera->SetOrthoSize(size);
+	}
+
+	static float Camera_GetOrthoSize(MonoString* entityID, MonoString* componentID) {
+		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		Camera* camera = entity->GetComponent<Camera>(componentUUID);
+		if (camera)
+			return camera->GetOrthoSize();
+		return 0;
+	}
+
+	static void Camera_SetProjection(MonoString* entityID, MonoString* componentID, int projectionType) {
+		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		Camera* camera = entity->GetComponent<Camera>(componentUUID);
+		if (camera)
+			camera->SetProjection((CameraProjection)projectionType);
+	}
+
+	static int Camera_GetProjection(MonoString* entityID, MonoString* componentID) {
+		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		Camera* camera = entity->GetComponent<Camera>(componentUUID);
+		if (camera)
+			return (int)camera->GetProjection();
+		return 0;
+	}
+
 #pragma endregion
 
 #pragma region Input
@@ -822,265 +864,227 @@ namespace Loopie
 #pragma endregion
 
 #pragma region BoxCollider
-	static void BoxCollider_SetLocalCenter(MonoString* entityID, vec3* center)
+	static void BoxCollider_SetLocalCenter(MonoString* entityID, MonoString* componentID, vec3* center)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		if (entity)
-		{
-			BoxCollider* collider = entity->GetComponent<BoxCollider>();
-			if (collider)
-				collider->SetLocalCenter(*center);
-		}
+		BoxCollider* collider = entity->GetComponent<BoxCollider>();
+		if (collider)
+			collider->SetLocalCenter(*center);
 	}
 
-	static void BoxCollider_GetLocalCenter(MonoString* entityID, vec3* outCenter)
+	static void BoxCollider_GetLocalCenter(MonoString* entityID, MonoString* componentID, vec3* outCenter)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		if (entity)
-		{
-			BoxCollider* collider = entity->GetComponent<BoxCollider>();
-			if (collider)
-				*outCenter = collider->GetLocalCenter();
-		}
+		BoxCollider* collider = entity->GetComponent<BoxCollider>();
+		if (collider)
+			*outCenter =  collider->GetLocalCenter();
 	}
 
-	static void BoxCollider_SetLocalExtents(MonoString* entityID, vec3* extents)
+	static void BoxCollider_SetLocalExtents(MonoString* entityID, MonoString* componentID, vec3* extents)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		if (entity)
-		{
-			BoxCollider* collider = entity->GetComponent<BoxCollider>();
-			if (collider)
-				collider->SetLocalExtents(*extents);
-		}
+		BoxCollider* collider = entity->GetComponent<BoxCollider>();
+		if (collider)
+			collider->SetLocalExtents(*extents);
 	}
 
-	static void BoxCollider_GetLocalExtents(MonoString* entityID, vec3* outExtents)
+	static void BoxCollider_GetLocalExtents(MonoString* entityID, MonoString* componentID, vec3* outExtents)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		if (entity)
-		{
-			BoxCollider* collider = entity->GetComponent<BoxCollider>();
-			if (collider)
-				*outExtents = collider->GetLocalExtents();
-		}
+		BoxCollider* collider = entity->GetComponent<BoxCollider>();
+		if (collider)
+			*outExtents = collider->GetLocalExtents();
 	}
 
-	static bool BoxCollider_IsColliding(MonoString* entityID)
+	static bool BoxCollider_IsColliding(MonoString* entityID, MonoString* componentID)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		if (entity)
-		{
-			BoxCollider* collider = entity->GetComponent<BoxCollider>();
-			if (collider)
-				return collider->IsColliding();
-		}
+		BoxCollider* collider = entity->GetComponent<BoxCollider>();
+		if (collider)
+			return collider->IsColliding();
 		return false;
 	}
 
-	static bool BoxCollider_HasCollided(MonoString* entityID)
+	static bool BoxCollider_HasCollided(MonoString* entityID, MonoString* componentID)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		if (entity)
-		{
-			BoxCollider* collider = entity->GetComponent<BoxCollider>();
-			if (collider)
-				return collider->CollidedThisFrame();
-		}
+		BoxCollider* collider = entity->GetComponent<BoxCollider>();
+		if (collider)
+			return collider->CollidedThisFrame();
 		return false;
 	}	
 	
-	static bool BoxCollider_HasEndedCollision(MonoString* entityID)
+	static bool BoxCollider_HasEndedCollision(MonoString* entityID, MonoString* componentID)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		if (entity)
-		{
-			BoxCollider* collider = entity->GetComponent<BoxCollider>();
-			if (collider)
-				return collider->StoppedColliding();
-		}
+		BoxCollider* collider = entity->GetComponent<BoxCollider>();
+		if (collider)
+			return collider->StoppedColliding();
 		return false;
 	}
 #pragma endregion
 
 #pragma region AudioSource
-	static void AudioSource_Play(MonoString* entityID)
+	static void AudioSource_Play(MonoString* entityID, MonoString* componentID)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		if (entity)
-		{
-			AudioSource* audioSource = entity->GetComponent<AudioSource>();
-			if (audioSource)
-				audioSource->Play();
-		}
+		AudioSource* audioSource = entity->GetComponent<AudioSource>();
+		if (audioSource)
+			audioSource->Play();
 	}
 
-	static void AudioSource_Stop(MonoString* entityID)
+	static void AudioSource_Stop(MonoString* entityID, MonoString* componentID)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		if (entity)
-		{
-			AudioSource* audioSource = entity->GetComponent<AudioSource>();
-			if (audioSource)
-				audioSource->Stop();
-		}
+		AudioSource* audioSource = entity->GetComponent<AudioSource>();
+		if (audioSource)
+			audioSource->Stop();
 	}
 
-	static void AudioSource_SetLoop(MonoString* entityID, MonoBoolean loop)
+	static void AudioSource_SetLoop(MonoString* entityID, MonoString* componentID, MonoBoolean loop)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		if (entity)
-		{
-			AudioSource* audioSource = entity->GetComponent<AudioSource>();
-			if (audioSource)
-				audioSource->SetLoop(loop != 0);
-		}
+		AudioSource* audioSource = entity->GetComponent<AudioSource>();
+		if (audioSource)
+			audioSource->SetLoop(loop!=0);
 	}
 
-	static void AudioSource_SetPitch(MonoString* entityID, float pitch)
+	static void AudioSource_SetPitch(MonoString* entityID, MonoString* componentID, float pitch)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		if (entity)
-		{
-			AudioSource* audioSource = entity->GetComponent<AudioSource>();
-			if (audioSource)
-				audioSource->SetPitch(pitch);
-		}
+		AudioSource* audioSource = entity->GetComponent<AudioSource>();
+		if (audioSource)
+			audioSource->SetPitch(pitch);
 	}
 
-	static void AudioSource_SetVolume(MonoString* entityID, float volume)
+	static void AudioSource_SetVolume(MonoString* entityID, MonoString* componentID, float volume)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		if (entity)
-		{
-			AudioSource* audioSource = entity->GetComponent<AudioSource>();
-			if (audioSource)
-				audioSource->SetVolume(volume);
-		}
+		AudioSource* audioSource = entity->GetComponent<AudioSource>();
+		if (audioSource)
+			audioSource->SetVolume(volume);
 	}
 
-	static void AudioSource_SetPan(MonoString* entityID, float pan)
+	static void AudioSource_SetPan(MonoString* entityID, MonoString* componentID, float pan)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		if (entity)
-		{
-			AudioSource* audioSource = entity->GetComponent<AudioSource>();
-			if (audioSource)
-				audioSource->SetPan(pan);
-		}
+		AudioSource* audioSource = entity->GetComponent<AudioSource>();
+		if (audioSource)
+			audioSource->SetPan(pan);
 	}
 
-	static void AudioSource_SetSet3DMinMaxDistance(MonoString* entityID, float min, float max)
+	static void AudioSource_SetSet3DMinMaxDistance(MonoString* entityID, MonoString* componentID, float min, float max)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		if (entity)
-		{
-			AudioSource* audioSource = entity->GetComponent<AudioSource>();
-			if (audioSource)
-				audioSource->Set3DMinMaxDistance(min, max);
-		}
+		AudioSource* audioSource = entity->GetComponent<AudioSource>();
+		if (audioSource)
+			audioSource->Set3DMinMaxDistance(min,max);
 	}
 
-	static MonoBoolean AudioSource_IsLooping(MonoString* entityID)
+	static MonoBoolean AudioSource_IsLooping(MonoString* entityID, MonoString* componentID)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		if (entity)
-		{
-			AudioSource* audioSource = entity->GetComponent<AudioSource>();
-			if (audioSource)
-				return audioSource->IsLooping();
-		}
+		AudioSource* audioSource = entity->GetComponent<AudioSource>();
+		if (audioSource)
+			return audioSource->IsLooping();
 		return false;
 	}
 
-	static float AudioSource_GetPitch(MonoString* entityID)
+	static float AudioSource_GetPitch(MonoString* entityID, MonoString* componentID)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		if (entity)
-		{
-			AudioSource* audioSource = entity->GetComponent<AudioSource>();
-			if (audioSource)
-				return audioSource->GetPitch();
-		}
+		AudioSource* audioSource = entity->GetComponent<AudioSource>();
+		if (audioSource)
+			return audioSource->GetPitch();
 		return 0;
 	}
 
-	static float AudioSource_GetVolume(MonoString* entityID)
+	static float AudioSource_GetVolume(MonoString* entityID, MonoString* componentID)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		if (entity)
-		{
-			AudioSource* audioSource = entity->GetComponent<AudioSource>();
-			if (audioSource)
-				return audioSource->GetVolume();
-		}
+		AudioSource* audioSource = entity->GetComponent<AudioSource>();
+		if (audioSource)
+			return audioSource->GetVolume();
 		return 0;
 	}
 
-	static float AudioSource_GetPan(MonoString* entityID)
+	static float AudioSource_GetPan(MonoString* entityID, MonoString* componentID)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		if (entity)
-		{
-			AudioSource* audioSource = entity->GetComponent<AudioSource>();
-			if (audioSource)
-				return audioSource->GetPan();
-		}
+		AudioSource* audioSource = entity->GetComponent<AudioSource>();
+		if (audioSource)
+			return audioSource->GetPan();
 		return 0;
 	}
 
-	static void AudioSource_GetSet3DMinMaxDistance(MonoString* entityID, float* min, float* max)
+	static void AudioSource_GetSet3DMinMaxDistance(MonoString* entityID, MonoString* componentID, float* min, float* max)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
+		UUID componentUUID(Utils::MonoStringToString(componentID));
 		Scene* scene = &Application::GetInstance().GetScene();
 		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		if (entity)
-		{
-			AudioSource* audioSource = entity->GetComponent<AudioSource>();
-			if (audioSource) {
-				float minVal = 0;
-				float maxVal = 0;
-				audioSource->Get3DMinMaxDistance(minVal, maxVal);
-				*min = minVal;
-				*max = maxVal;
-				return;
-			}
+		AudioSource* audioSource = entity->GetComponent<AudioSource>();
+		if (audioSource) {
+			float minVal = 0;
+			float maxVal = 0;
+			audioSource->Get3DMinMaxDistance(minVal, maxVal);
+			*min = minVal;
+			*max = maxVal;
+			return;
 		}
 		*min = 0;
 		*max = 0;
@@ -1189,6 +1193,10 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Camera_SetMainCamera);
 		ADD_INTERNAL_CALL(Camera_GetMainCamera);
 		ADD_INTERNAL_CALL(Camera_GetViewport);
+		ADD_INTERNAL_CALL(Camera_SetOrthoSize);
+		ADD_INTERNAL_CALL(Camera_GetOrthoSize);
+		ADD_INTERNAL_CALL(Camera_SetProjection);
+		ADD_INTERNAL_CALL(Camera_GetProjection);
 
 
 

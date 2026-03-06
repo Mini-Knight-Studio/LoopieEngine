@@ -196,10 +196,7 @@ namespace Loopie {
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_EXPLORER_FILE"))
 			{
 				std::string path = (const char*)payload->Data;
-				if (TextureImporter::CheckIfIsImage(path.c_str())) {
-					ChargeTexture(path);
-				}
-				else if (MeshImporter::CheckIfIsModel(path.c_str())) {
+				if (MeshImporter::CheckIfIsModel(path.c_str())) {
 					ChargeModel(path);
 				}
 				else if (MaterialImporter::CheckIfIsMaterial(path.c_str())) {
@@ -308,61 +305,75 @@ namespace Loopie {
 		return add;
 	}
 
+	
 	void SceneInterface::ChargeModel(const std::string& modelPath)
 	{
+		std::filesystem::path path(modelPath);
 		Metadata& meta = AssetRegistry::GetOrCreateMetadata(modelPath);
 		MeshImporter::ImportModel(modelPath, meta);
-		std::shared_ptr<Entity> parent;
 
 		auto selected = HierarchyInterface::s_SelectedEntity.lock();
-		if (meta.CachesPath.size() > 0) {
-			parent = Application::GetInstance().GetScene().CreateEntity("ModelEntity", selected);
-		}
-		for (size_t i = 0; i < meta.CachesPath.size(); i++)
-		{			
-			std::shared_ptr<Mesh> mesh = ResourceManager::GetMesh(meta, (int)i);
-			if (mesh) {
-				std::shared_ptr<Entity> newEntity;
-				if (!parent) {
-					newEntity = Application::GetInstance().GetScene().CreateEntity(mesh->GetData().Name, selected);
-				}else
-					newEntity = Application::GetInstance().GetScene().CreateEntity(mesh->GetData().Name, parent);
+		if (meta.CachesPath.empty()) return;
 
-				MeshRenderer* renderer = newEntity->AddComponent<MeshRenderer>();
-				renderer->SetMesh(mesh);
-				renderer->GetTransform()->SetLocalPosition(mesh->GetData().Position);
-				renderer->GetTransform()->SetLocalRotation(mesh->GetData().Rotation);
-				renderer->GetTransform()->SetLocalScale(mesh->GetData().Scale);
-			}
-		}
-	}
-	void SceneInterface::ChargeTexture(const std::string& texturePath)
-	{
-		Metadata& meta = AssetRegistry::GetOrCreateMetadata(texturePath);
+		auto modelRoot = Application::GetInstance().GetScene().CreateEntity(path.stem().string(), selected);
 
-		TextureImporter::ImportImage(texturePath, meta);
-		std::shared_ptr<Texture> texture = ResourceManager::GetTexture(meta);
-		if (texture) {
-			auto selectedEntity = HierarchyInterface::s_SelectedEntity.lock();
-			if (selectedEntity != nullptr) {
-				MeshRenderer* renderer = selectedEntity->GetComponent<MeshRenderer>();
-				if (renderer) {
-					if (renderer->GetMaterial())
-						renderer->GetMaterial()->SetTexture(texture);
-				}
-			}
-			else {
-				for (const auto& [uuid, entity] : Application::GetInstance().GetScene().GetAllEntities())
+		std::vector<std::shared_ptr<Entity>> boneEntities;
+		Animator* animator = nullptr;
+
+		for (size_t i = 0; i < meta.CachesPath.size(); ++i)
+		{
+			auto mesh = ResourceManager::GetMesh(meta, (int)i);
+			if (mesh && !mesh->GetData().Skeleton.empty())
+			{
+				const auto& skeleton = mesh->GetData().Skeleton;
+				boneEntities.reserve(skeleton.size());
+
+				for (const auto& bone : skeleton)
 				{
-					MeshRenderer* renderer = entity->GetComponent<MeshRenderer>();
-					if (renderer) {
-						if(renderer->GetMaterial())
-							renderer->GetMaterial()->SetTexture(texture);
+					auto boneEntity = Application::GetInstance().GetScene().CreateEntity(bone.Name, modelRoot);
+
+					glm::vec3 position, scale;
+					glm::quat rotation;
+					glm::vec3 skew;
+					glm::vec4 perspective;
+					glm::decompose(bone.LocalBindTransform, scale, rotation, position, skew, perspective);
+					rotation = glm::normalize(rotation);
+
+					boneEntity->GetTransform()->SetLocalPosition(position);
+					boneEntity->GetTransform()->SetLocalRotation(rotation);
+					boneEntity->GetTransform()->SetLocalScale(scale);
+					boneEntities.push_back(boneEntity);
+				}
+
+				for (size_t j = 0; j < skeleton.size(); ++j)
+				{
+					int parentID = skeleton[j].ParentID;
+					if (parentID >= 0 && parentID < static_cast<int>(skeleton.size()))
+					{
+						boneEntities[j]->SetParent(boneEntities[parentID]);
 					}
 				}
+				break;
 			}
 		}
+
+		for (size_t i = 0; i < meta.CachesPath.size(); ++i)
+		{
+			auto mesh = ResourceManager::GetMesh(meta, (int)i);
+			if (!mesh) continue;
+
+			auto meshEntity = Application::GetInstance().GetScene().CreateEntity(mesh->GetData().Name, modelRoot);
+
+			MeshRenderer* renderer = meshEntity->AddComponent<MeshRenderer>();
+			renderer->SetMesh(mesh);
+			renderer->GetTransform()->SetLocalPosition(mesh->GetData().Position);
+			renderer->GetTransform()->SetLocalRotation(mesh->GetData().Rotation);
+			renderer->GetTransform()->SetLocalScale(mesh->GetData().Scale);
+
+		}
+
 	}
+
 	void SceneInterface::ChargeMaterial(const std::string& materialPath)
 	{
 		Metadata& meta = AssetRegistry::GetOrCreateMetadata(materialPath);

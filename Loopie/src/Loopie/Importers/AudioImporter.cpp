@@ -34,12 +34,8 @@ namespace Loopie {
 
         std::filesystem::create_directories(destination.parent_path());
 
-        try
-        {
-            std::filesystem::copy_file(filepath, destination, std::filesystem::copy_options::overwrite_existing);
-        }
-        catch (...)
-        {
+        bool success = std::filesystem::copy_file(filepath, destination, std::filesystem::copy_options::overwrite_existing);
+        if(!success){
             Log::Error("Failed to copy audio to cache: {0}", filepath);
             return;
         }

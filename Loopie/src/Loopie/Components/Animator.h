@@ -53,6 +53,7 @@ namespace Loopie {
 		void SetPlaybackSpeed(float speed) { m_playbackSpeed = speed; }
 		float GetCurrentTime() const { return m_currentTime; }
 
+
 		void Play(const std::string& clipName);
 		void Play();
 
@@ -61,7 +62,7 @@ namespace Loopie {
 
 		void Stop();
 
-
+		void RefreshBoneCache();
 
 		bool SelectClip(const std::string& clipName);
 
@@ -85,6 +86,8 @@ namespace Loopie {
 		bool m_isPlaying = false;
 		bool m_looping = true;
 
+		std::unordered_map<std::string, std::weak_ptr<Entity>> m_boneCache;
+		bool m_cacheDirty = true;
 
 
 		/// Serialization Temporal fields
