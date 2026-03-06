@@ -1215,7 +1215,7 @@ namespace Loopie {
 			{
 				ImGui::SeparatorText("Images");
 
-				if (ImGui::TreeNode("Callbakcs")) {
+				if (ImGui::TreeNode("Sprites")) {
 					DrawImageButtonSlot(button, ButtonImageSlot::Normal);
 					DrawImageButtonSlot(button, ButtonImageSlot::Hovered);
 					DrawImageButtonSlot(button, ButtonImageSlot::Pressed);
@@ -2080,12 +2080,15 @@ namespace Loopie {
 			}
 
 			Metadata* meta = AssetRegistry::GetMetadata(current->GetUUID());
-
-			if (meta && !meta->CachesPath.empty())
-				ImGui::TextDisabled("Path: %s", meta->CachesPath[0].c_str());
-
 			ivec2 texSize = current->GetSize();
-			ImGui::TextDisabled("Size: %d x %d", texSize.x, texSize.y);
+			if (ImGui::TreeNode(("Texture Info ##" + std::string(label)).c_str())) {
+				if (meta && !meta->CachesPath.empty())
+					ImGui::TextDisabled("Path: %s", meta->CachesPath[0].c_str());
+
+				ImGui::TextDisabled("Size: %d x %d", texSize.x, texSize.y);
+
+				ImGui::TreePop();
+			}
 
 			const float maxSizeNormal = 64.0f;
 			const float maxSizeWide = 128.0f;
