@@ -431,13 +431,15 @@ namespace Loopie
 			const vec2 pixelPos(p.x * scale.x, p.y * scale.y);
 
 			vec4 color = img->GetTint();
+			std::shared_ptr<Texture> texture = img->GetTexture();
 
 			if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
 			{
 				button->GetCurrentColor(color);
+				button->GetCurrentTexture(texture);
 			}
 
-			UIRenderer::DrawImage(pixelPos, pixelSize, img->GetTexture(), color);
+			UIRenderer::DrawImage(pixelPos, pixelSize, texture, color);
 		}
 
 		if (text && text->GetIsActive() && rt)
@@ -540,13 +542,15 @@ namespace Loopie
 
 				matrix4 model = rt->GetLocalToWorldMatrix() * glm::scale(matrix4(1.0f), vec3(w, h, 1.0f));
 				vec4 color = img->GetTint();
+				std::shared_ptr<Texture> texture = img->GetTexture();
 
 				if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
 				{
 					button->GetCurrentColor(color);
+					button->GetCurrentTexture(texture);
 				}
 
-				UIRenderer::DrawImageWorld(model, tex, color);
+				UIRenderer::DrawImageWorld(model, texture, color);
 			}
 		}
 

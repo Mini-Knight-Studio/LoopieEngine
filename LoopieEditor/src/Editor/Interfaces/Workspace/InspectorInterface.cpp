@@ -1150,23 +1150,44 @@ namespace Loopie {
 		if (ImGui::Checkbox("Interactable", &interactable))
 			button->SetInteractable(interactable);
 
-		ImGui::SeparatorText("Colors");
+		ImGui::SeparatorText("Transition");
 
-		vec4 normal = button->GetNormalColor();
-		if (ImGui::ColorEdit4("Normal", &normal.x))
-			button->SetNormalColor(normal);
+		Button::VisualTransitionMode mode = button->GetTransitionMode();
+		int modeIndex = static_cast<int>(mode);
+		const char* modeLabels[] = { "Color Tint", "Image Swap" };
 
-		vec4 hovered = button->GetHoveredColor();
-		if (ImGui::ColorEdit4("Hovered", &hovered.x))
-			button->SetHoveredColor(hovered);
+		if (ImGui::Combo("Mode", &modeIndex, modeLabels, IM_ARRAYSIZE(modeLabels)))
+			button->SetTransitionMode(static_cast<Button::VisualTransitionMode>(modeIndex));
 
-		vec4 pressed = button->GetPressedColor();
-		if (ImGui::ColorEdit4("Pressed", &pressed.x))
-			button->SetPressedColor(pressed);
+		if (button->GetTransitionMode() == Button::VisualTransitionMode::ColorTint)
+		{
+			ImGui::SeparatorText("Colors");
 
-		vec4 disabled = button->GetDisabledColor();
-		if (ImGui::ColorEdit4("Disabled", &disabled.x))
-			button->SetDisabledColor(disabled);
+			vec4 normal = button->GetNormalColor();
+			if (ImGui::ColorEdit4("Normal", &normal.x))
+				button->SetNormalColor(normal);
+
+			vec4 hovered = button->GetHoveredColor();
+			if (ImGui::ColorEdit4("Hovered", &hovered.x))
+				button->SetHoveredColor(hovered);
+
+			vec4 pressed = button->GetPressedColor();
+			if (ImGui::ColorEdit4("Pressed", &pressed.x))
+				button->SetPressedColor(pressed);
+
+			vec4 disabled = button->GetDisabledColor();
+			if (ImGui::ColorEdit4("Disabled", &disabled.x))
+				button->SetDisabledColor(disabled);
+		}
+		else
+		{
+			ImGui::SeparatorText("Images");
+
+			DrawImageButtonSlot(button, ButtonImageSlot::Normal);
+			DrawImageButtonSlot(button, ButtonImageSlot::Hovered);
+			DrawImageButtonSlot(button, ButtonImageSlot::Pressed);
+			DrawImageButtonSlot(button, ButtonImageSlot::Disabled);
+		}
 
 		ImGui::SeparatorText("On Click");
 
@@ -1263,6 +1284,7 @@ namespace Loopie {
 
 		if (modified)
 			button->SetOnClickFunctionCalls(functionCalls);
+
 	}
 
 	void InspectorInterface::DrawBoxCollider(BoxCollider* boxCollider) 
@@ -1942,5 +1964,107 @@ namespace Loopie {
 		}
 
 		return nullptr;
+	}
+	void InspectorInterface::DrawImageButtonSlot(Button* button, ButtonImageSlot slot)
+	{
+		if (!button)
+			return;
+
+		const char* label = "";
+		std::shared_ptr<Texture> current;
+
+		switch (slot)
+		{
+			case ButtonImageSlot::Normal:
+			label = "Normal";
+			current = button->GetNormalTexture();
+			break;
+
+			case ButtonImageSlot::Hovered:
+			label = "Hovered";
+			current = button->GetHoveredTexture();
+			break;
+
+			case ButtonImageSlot::Pressed:
+			label = "Pressed";
+			current = button->GetPressedTexture();
+			break;
+
+			case ButtonImageSlot::Disabled:
+			label = "Disabled";
+			current = button->GetDisabledTexture();
+			break;
+		}
+
+		ImGui::Text("%s", label);
+
+		const char* previewText = current ? "Assigned" : "None";
+		ImGui::SameLine();
+		ImGui::TextDisabled("%s", previewText);
+
+		ImGui::Button((" [ Drop Texture Here ] ##" + std::string(label)).c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 30));
+
+		if (ImGui::BeginPopupContextItem())
+		{
+			if (ImGui::MenuItem("Paste"))
+			{
+				std::shared_ptr<Resource> resource = GetPastedResource(ResourceType::TEXTURE);
+				if (resource)
+					current = std::static_pointer_cast<Texture>(resource);
+			}
+
+			if (ImGui::MenuItem("Set Default"))
+			{
+				current = Texture::GetDefault();
+			}
+
+			ImGui::EndPopup();
+		}
+
+		std::shared_ptr<Resource> dd = GetDragDropResource(ResourceType::TEXTURE);
+		if (dd)
+			current = std::static_pointer_cast<Texture>(dd);
+
+		if (current)
+		{
+			switch (slot)
+			{
+			case ButtonImageSlot::Normal:
+				button->SetNormalTexture(current);
+				break;
+			case ButtonImageSlot::Hovered:
+				button->SetHoveredTexture(current);
+				break;
+			case ButtonImageSlot::Pressed:
+				button->SetPressedTexture(current);
+				break;
+			case ButtonImageSlot::Disabled:
+				button->SetDisabledTexture(current);
+				break;
+			}
+
+			Metadata* meta = AssetRegistry::GetMetadata(current->GetUUID());
+
+			if (meta && !meta->CachesPath.empty())
+				ImGui::TextDisabled("Path: %s", meta->CachesPath[0].c_str());
+
+			ivec2 texSize = current->GetSize();
+			ImGui::TextDisabled("Size: %d x %d", texSize.x, texSize.y);
+
+			const float maxSizeNormal = 64.0f;
+			const float maxSizeWide = 128.0f;
+
+			bool isWide = texSize.x > texSize.y * 1.5f;
+
+			float maxWidth = isWide ? maxSizeWide : maxSizeNormal;
+			float maxHeight = maxSizeNormal;
+			float scale = std::min(maxWidth / static_cast<float>(texSize.x), maxHeight / static_cast<float>(texSize.y));
+			ImVec2 previewSize(texSize.x * scale, texSize.y * scale);
+
+			ImGui::Text("Preview:");
+			ImGui::Image((ImTextureID)current->GetRendererId(), previewSize, ImVec2(0, 0), ImVec2(1, 1));
+		}
+
+		ImGui::Separator();
 	}
 }

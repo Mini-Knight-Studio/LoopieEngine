@@ -12,6 +12,7 @@ namespace Loopie {
 	class MeshRenderer;
 	class ScriptClass;
 	class Material;
+	class Texture;
 	class Animator;
 	class BoxCollider;
 	class RectTransform;
@@ -69,6 +70,16 @@ namespace Loopie {
 		// Helper function for finding the function call target script
 		ScriptClass* FindScriptComponent(Scene& scene, const FunctionCall& functionCall);
 		FunctionCall* TryGetFirstScriptCallTarget(Scene& scene);
+
+		enum class ButtonImageSlot
+		{
+			Normal,
+			Hovered,
+			Pressed,
+			Disabled
+		};
+
+		void DrawImageButtonSlot(Button* button, ButtonImageSlot slot);
 
 	private:
 

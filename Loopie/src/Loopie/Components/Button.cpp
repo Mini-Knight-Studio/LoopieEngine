@@ -5,6 +5,7 @@
 #include "Loopie/Components/Image.h"
 #include "Loopie/Components/RectTransform.h"
 #include "Loopie/Components/ScriptClass.h"
+#include "Loopie/Resources/ResourceManager.h"
 #include "Loopie/Scene/Scene.h"
 #include "Loopie/Scripting/ScriptingManager.h"
 
@@ -22,6 +23,39 @@ namespace Loopie
 			GetOwner()->ReplaceTransform<RectTransform>();
 
 		ApplyState(m_interactable ? VisualState::Normal : VisualState::Disabled);
+	}
+
+	void Button::SetTransitionMode(VisualTransitionMode mode)
+	{
+		if (m_transitionMode == mode)
+			return;
+
+		m_transitionMode = mode;
+		ApplyState(m_currentState);
+	}
+
+	void Button::SetNormalTexture(const std::shared_ptr<Texture>& texture)
+	{
+		m_normalTexture = texture;
+		ApplyState(m_currentState);
+	}
+
+	void Button::SetHoveredTexture(const std::shared_ptr<Texture>& texture)
+	{
+		m_hoveredTexture = texture;
+		ApplyState(m_currentState);
+	}
+
+	void Button::SetPressedTexture(const std::shared_ptr<Texture>& texture)
+	{
+		m_pressedTexture = texture;
+		ApplyState(m_currentState);
+	}
+
+	void Button::SetDisabledTexture(const std::shared_ptr<Texture>& texture)
+	{
+		m_disabledTexture = texture;
+		ApplyState(m_currentState);
 	}
 
 	void Button::SetInteractable(bool v)
@@ -124,13 +158,42 @@ namespace Loopie
 		if (!img || !img->GetIsActive())
 			return;
 
+		switch (m_transitionMode)
+		{
+			case VisualTransitionMode::ColorTint:
+				ApplyStateTint(*img, state);
+				break;
+
+			case VisualTransitionMode::TextureSwap:
+				ApplyStateTexture(*img, state);
+				break;
+		}
+	}
+
+	void Button::ApplyStateTint(Image& image, VisualState state) const
+	{
 		switch (state)
 		{
-		case VisualState::Normal: img->SetTint(m_normalColor); break;
-		case VisualState::Hovered: img->SetTint(m_hoveredColor); break;
-		case VisualState::Pressed: img->SetTint(m_pressedColor); break;
-		case VisualState::Disabled: img->SetTint(m_disabledColor); break;
+		case VisualState::Normal: image.SetTint(m_normalColor); break;
+		case VisualState::Hovered: image.SetTint(m_hoveredColor); break;
+		case VisualState::Pressed: image.SetTint(m_pressedColor); break;
+		case VisualState::Disabled: image.SetTint(m_disabledColor); break;
 		}
+	}
+
+	void Button::ApplyStateTexture(Image& image, VisualState state) const
+	{
+		std::shared_ptr<Texture> tex;
+		switch (state)
+		{
+		case VisualState::Normal: tex = m_normalTexture; break;
+		case VisualState::Hovered: tex = m_hoveredTexture; break;
+		case VisualState::Pressed: tex = m_pressedTexture; break;
+		case VisualState::Disabled: tex = m_disabledTexture; break;
+		}
+
+		if (tex)
+			image.SetTexture(tex);
 	}
 
 	void Button::InvokeOnClick()
@@ -193,6 +256,9 @@ namespace Loopie
 
 	void Button::GetCurrentColor(vec4& outColor) const 
 	{
+		if (m_transitionMode != VisualTransitionMode::ColorTint)
+			return;
+
 		if (m_currentState == VisualState::Normal)
 			outColor = m_normalColor;
 		else if (m_currentState == VisualState::Hovered)
@@ -203,11 +269,27 @@ namespace Loopie
 			outColor = m_disabledColor;
 	}
 
+	void Button::GetCurrentTexture(std::shared_ptr<Texture>& outTexture) const
+	{
+		if (m_transitionMode != VisualTransitionMode::TextureSwap)
+			return;
+
+		if (m_currentState == VisualState::Normal)
+			outTexture = m_normalTexture;
+		else if (m_currentState == VisualState::Hovered)
+			outTexture = m_hoveredTexture;
+		else if (m_currentState == VisualState::Pressed)
+			outTexture = m_pressedTexture;
+		else if (m_currentState == VisualState::Disabled)
+			outTexture = m_disabledTexture;
+	}
+
 	JsonNode Button::Serialize(JsonNode& parent) const
 	{
 		JsonNode node = parent.CreateObjectField("button");
 
 		node.CreateField<bool>("interactable", m_interactable);
+		node.CreateField<int>("transition_mode", static_cast<int>(m_transitionMode));
 
 		auto writeColor = [&](const char* name, const vec4& c)
 		{
@@ -222,6 +304,17 @@ namespace Loopie
 		writeColor("hovered", m_hoveredColor);
 		writeColor("pressed", m_pressedColor);
 		writeColor("disabled", m_disabledColor);
+
+		auto writeTexture = [&](const char* name, const std::shared_ptr<Texture>& tex)
+		{
+			if (tex)
+				node.CreateField<std::string>(name, tex->GetUUID().Get());
+		};
+
+		writeTexture("normal_texture", m_normalTexture);
+		writeTexture("hovered_texture", m_hoveredTexture);
+		writeTexture("pressed_texture", m_pressedTexture);
+		writeTexture("disabled_texture", m_disabledTexture);
 
 		JsonNode onClickBindings = node.CreateObjectField("on_click_bindings");
 		for (const auto& [entityUUID, functionCalls] : m_onClickFunctionCalls)
@@ -248,6 +341,7 @@ namespace Loopie
 	void Button::Deserialize(const JsonNode& data)
 	{
 		m_interactable = data.GetValue<bool>("interactable", true).Result;
+		m_transitionMode = static_cast<VisualTransitionMode>(data.GetValue<int>("transition_mode", 0).Result);
 
 		auto readColor = [&](const char* name, vec4& out)
 		{
@@ -265,6 +359,32 @@ namespace Loopie
 		readColor("hovered", m_hoveredColor);
 		readColor("pressed", m_pressedColor);
 		readColor("disabled", m_disabledColor);
+
+		auto readTexture = [&](const char* name, std::shared_ptr<Texture>& out)
+		{
+			const std::string uuidStr = data.GetValue<std::string>(name, "").Result;
+			if (!UUID::IsValid(uuidStr))
+			{
+				out.reset();
+				return;
+			}
+
+			Metadata* meta = AssetRegistry::GetMetadata(UUID(uuidStr));
+			if (!meta)
+			{
+				out.reset();
+				return;
+			}
+
+			out = ResourceManager::GetTexture(*meta);
+			if (!out)
+				out->Load();
+		};
+
+		readTexture("normal_texture", m_normalTexture);
+		readTexture("hovered_texture", m_hoveredTexture);
+		readTexture("pressed_texture", m_pressedTexture);
+		readTexture("disabled_texture", m_disabledTexture);
 
 		m_onClickFunctionCalls.clear();
 
