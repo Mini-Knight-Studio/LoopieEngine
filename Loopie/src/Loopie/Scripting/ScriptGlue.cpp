@@ -14,6 +14,8 @@
 #include "Loopie/Core/UUID.h"
 #include "Loopie/Core/InputEventManager.h"
 
+#include "Loopie/Collisions/CollisionProcessor.h"
+
 #include "Loopie/Core/Application.h"
 #include "Loopie/Scene/Scene.h"
 #include "Loopie/Scene/Entity.h"
@@ -1092,6 +1094,42 @@ namespace Loopie
 
 #pragma endregion
 
+#pragma region Collisions
+
+	struct MonoRaycastHit
+	{
+		MonoString* entityID;
+		MonoString* componentID;
+		vec3 point;
+		float distance;
+	};
+
+	static MonoBoolean Collisions_Raycast(vec3* origin, vec3* direction, float maxDistance, MonoRaycastHit* outHit)
+	{
+		Ray ray(*origin, *direction, maxDistance);
+
+		RaycastHit nativeHit;
+
+		if (!CollisionProcessor::Raycast(ray, nativeHit))
+			return false;
+
+		BoxCollider* collider = nativeHit.collider;
+		if (!collider)
+			return false;
+
+		std::shared_ptr<Entity> entity = collider->GetOwner();
+		UUID componentUUID = collider->GetUUID();
+
+		outHit->entityID = ScriptingManager::CreateString(entity->GetUUID().Get().c_str());
+		outHit->componentID = ScriptingManager::CreateString(componentUUID.Get().c_str());
+		outHit->point = nativeHit.point;
+		outHit->distance = nativeHit.distance;
+
+		return true;
+	}
+#pragma endregion
+
+
 
 	template<typename Comp, typename = std::enable_if_t<std::is_base_of_v<Component, Comp>>>
 	static void RegisterComponent()
@@ -1249,5 +1287,7 @@ namespace Loopie
 		ADD_INTERNAL_CALL(AudioSource_GetVolume);
 		ADD_INTERNAL_CALL(AudioSource_GetPan);
 		ADD_INTERNAL_CALL(AudioSource_GetSet3DMinMaxDistance);
+
+		ADD_INTERNAL_CALL(Collisions_Raycast);
 	}
 }

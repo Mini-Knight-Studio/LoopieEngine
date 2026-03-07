@@ -19,6 +19,51 @@ namespace Loopie {
 		s_colliders.erase(std::remove(s_colliders.begin(), s_colliders.end(), collider), s_colliders.end());
 	}
 
+    bool CollisionProcessor::Raycast(const Ray& ray, RaycastHit& hit)
+    {
+        if (s_colliders.empty())
+            return false;
+
+        float rayMinX = std::min(ray.StartPoint().x, ray.EndPoint().x);
+        float rayMaxX = std::max(ray.StartPoint().x, ray.EndPoint().x);
+
+        bool foundHit = false;
+
+        for (auto* collider : s_colliders)
+        {
+            if (!collider || !collider->GetIsActive())
+                continue;
+
+            const AABB& aabb = collider->GetWorldAABB();
+
+            if (aabb.MinPoint.x > rayMaxX)
+                break;
+
+            if (aabb.MaxPoint.x < rayMinX)
+                continue;
+
+            vec3 aabbHit;
+            if (!aabb.IntersectsRay(ray.StartPoint(), ray.Direction(), aabbHit))
+                continue;
+
+            vec3 obbHit;
+            if (!collider->GetWorldOBB().IntersectsRay(ray.StartPoint(), ray.Direction(), obbHit))
+                continue;
+
+            float dist = glm::length(obbHit - ray.StartPoint());
+
+            if (dist < hit.distance)
+            {
+                hit.collider = collider;
+                hit.point = obbHit;
+                hit.distance = dist;
+                foundHit = true;
+            }
+        }
+
+        return foundHit;
+    }
+
 	void CollisionProcessor::Process() {
         if (s_colliders.empty())
             return;

@@ -1249,6 +1249,8 @@ namespace Loopie {
 						const std::string entityPreview = selectedEntity ? selectedEntity->GetName() : "Missing Entity";
 
 						ImGui::Button(entityPreview.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 20));
+						if(selectedEntity && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && ImGui::IsItemHovered())
+							HierarchyInterface::SelectEntity(selectedEntity);
 
 						std::shared_ptr<Entity> entity = GetDragDropEntity();
 						if (entity) {
@@ -1269,7 +1271,7 @@ namespace Loopie {
 						const std::string componentPreview = selectedComponent ? selectedComponent->GetClassName() : "Missing ScriptClass";
 
 
-						if (ImGui::BeginCombo("##", componentPreview.c_str()))
+						if (ImGui::BeginCombo("Component##", componentPreview.c_str()))
 						{
 							if (selectedEntity)
 							{

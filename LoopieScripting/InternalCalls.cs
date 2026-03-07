@@ -316,5 +316,9 @@ namespace Loopie
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static bool Entity_IsActiveInHierarchy(string entityID);
         #endregion
+        #region Collisions
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool Collisions_Raycast(Vector3 origin, Vector3 direction, float maxDistance, out RaycastHit hit);
+        #endregion
     }
 }

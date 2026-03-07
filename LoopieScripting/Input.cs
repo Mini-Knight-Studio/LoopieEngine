@@ -2,7 +2,7 @@ using System.Collections.Specialized;
 
 namespace Loopie
 {
-    public class Input
+    public static class Input
     {
         public static bool IsKeyDown(KeyCode keycode)
         {
