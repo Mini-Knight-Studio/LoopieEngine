@@ -286,16 +286,16 @@ namespace Loopie {
 				bc->Deserialize(componentData.Child("boxcollider"));
 			}
 			//AudioSource
-			else if (componentData.Child("audioSource").IsValid())
+			else if (componentData.Child("audiosource").IsValid())
 			{
 				auto audioSource = clone->AddComponent<AudioSource>();
-				audioSource->Deserialize(componentData.Child("audioSource"));
+				audioSource->Deserialize(componentData.Child("audiosource"));
 			}
 			//AudioListener
-			else if (componentData.Child("audioListener").IsValid())
+			else if (componentData.Child("audiolistener").IsValid())
 			{
 				auto audioListener = clone->AddComponent<AudioListener>();
-				audioListener->Deserialize(componentData.Child("audioListener"));
+				audioListener->Deserialize(componentData.Child("audiolistener"));
 			}
 			// Text
 			else if (componentData.Child("text").IsValid())
