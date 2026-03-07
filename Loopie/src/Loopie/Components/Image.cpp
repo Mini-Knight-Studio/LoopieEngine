@@ -62,7 +62,6 @@ namespace Loopie
 			return;
 
 		m_texture = texture;
-
 	}
 
 	std::shared_ptr<Texture> Image::GetTexture()
