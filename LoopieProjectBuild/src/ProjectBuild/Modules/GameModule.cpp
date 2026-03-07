@@ -27,6 +27,7 @@
 #include "Loopie/Components/Transform.h"
 #include "Loopie/Components/RectTransform.h"
 #include "Loopie/Components/Canvas.h"
+#include "Loopie/Components/CanvasScaler.h"
 #include "Loopie/Components/AudioListener.h"
 #include "Loopie/Components/AudioSource.h"
 #include "Loopie/Components/Image.h"
@@ -284,10 +285,13 @@ namespace Loopie
 
 		if (img && img->GetIsActive() && rt)
 		{
-			const vec3 p = rt->GetLocalPosition();
+			const vec3 p = rt->GetWorldPosition();
+			const vec3 ws3 = rt->GetWorldScale();
+			const vec2 ws(ws3.x, ws3.y);
+
 			const vec2 s(rt->GetWidth(), rt->GetHeight());
 
-			const vec2 pixelSize(s.x * scale.x, s.y * scale.y);
+			const vec2 pixelSize(s.x * ws.x * scale.x, s.y * ws.y * scale.y);
 			const vec2 pixelPos(p.x * scale.x, p.y * scale.y);
 
 			vec4 color = img->GetTint();
@@ -305,10 +309,13 @@ namespace Loopie
 		if (text && text->GetIsActive() && rt)
 		{
 			const vec3 p = rt->GetWorldPosition();
+			const vec3 ws3 = rt->GetWorldScale();
+			const vec2 ws(ws3.x, ws3.y);
+
 			const vec2 s(rt->GetWidth(), rt->GetHeight());
 
 			const vec2 pixelPos(p.x * scale.x, p.y * scale.y);
-			const vec2 pixelSize(s.x * scale.x, s.y * scale.y);
+			const vec2 pixelSize(s.x * ws.x * scale.x, s.y * ws.y * scale.y);
 
 			UIRenderer::DrawText(pixelPos, pixelSize, text->GetText(), text->GetFont(), text->GetColor(), text->GetScale());
 		}
@@ -352,16 +359,31 @@ namespace Loopie
 			if (!canvasRt)
 				continue;
 
-			const float cw = canvasRt->GetWidth();
-			const float ch = canvasRt->GetHeight();
+			const vec2 targetPixels(w, h);
 
-			if (cw <= 0.0f || ch <= 0.0f)
+			vec2 canvasUnits(canvasRt->GetWidth(), canvasRt->GetHeight());
+			if (auto* scaler = entity->GetComponent<CanvasScaler>(); scaler && scaler->GetIsActive())
+			{
+				canvasUnits = scaler->ComputeOverlayCanvasSize(targetPixels);
+				if (scaler->GetScaleMode() == CanvasScaleMode::ScaleWithCanvasSize)
+				{
+					scaler->SetReferenceResolution(vec2(canvasRt->GetWidth(), canvasRt->GetHeight()));
+				}
+				else if (scaler->GetScaleMode() == CanvasScaleMode::ConstantPixelSize)
+				{
+					canvasRt->SetWidth(size.x);
+					canvasRt->SetHeight(size.y);
+				}
+			}
+			else
+			{
+				canvasUnits = targetPixels;
+			}
+
+			if (canvasUnits.x <= 0.0f || canvasUnits.y <= 0.0f)
 				continue;
 
-			const float sx = w / cw;
-			const float sy = h / ch;
-
-			RenderUIRecursive(entity, vec2(sx, sy));
+			RenderUIRecursive(entity, vec2(targetPixels.x / canvasUnits.x, targetPixels.y / canvasUnits.y));
 		}
 
 		Renderer::EndScene();
@@ -422,6 +444,8 @@ namespace Loopie
 		Renderer::EnableDepth();
 		Renderer::SetDepthWrite(true);
 
+		ivec2 size = Application::GetInstance().GetWindow().GetSize();
+
 		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities())
 		{
 			if (!entity || !entity->GetIsActive())
@@ -433,6 +457,20 @@ namespace Loopie
 
 			if (canvas->GetRenderMode() == CanvasRenderMode::ScreenSpaceOverlay)
 				continue;
+
+			RectTransform* canvasRt = entity->GetComponent<RectTransform>();
+			if (auto* scaler = entity->GetComponent<CanvasScaler>(); scaler && scaler->GetIsActive())
+			{
+				if (scaler->GetScaleMode() == CanvasScaleMode::ScaleWithCanvasSize)
+				{
+					scaler->SetReferenceResolution(vec2(canvasRt->GetWidth(), canvasRt->GetHeight()));
+				}
+				else if (scaler->GetScaleMode() == CanvasScaleMode::ConstantPixelSize)
+				{
+					canvasRt->SetWidth(size.x);
+					canvasRt->SetHeight(size.y);
+				}
+			}
 
 			RenderSceneUIRecursive(entity);
 		}
