@@ -52,7 +52,7 @@ namespace Loopie {
 
             float dist = glm::length(obbHit - ray.StartPoint());
 
-            if (dist < hit.distance)
+            if (dist <= glm::length(ray.EndPoint() - ray.StartPoint()) && dist < hit.distance)
             {
                 hit.collider = collider;
                 hit.point = obbHit;
