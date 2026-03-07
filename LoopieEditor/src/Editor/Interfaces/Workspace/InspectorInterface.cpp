@@ -1190,9 +1190,11 @@ namespace Loopie {
 
 			std::shared_ptr<Resource> resource = GetDragDropResource(ResourceType::TEXTURE);
 			Metadata* meta = texture ? AssetRegistry::GetMetadata(texture->GetUUID()) : nullptr;
-			if (resource)
+			if (resource) {
 				image->SetTexture(std::static_pointer_cast<Texture>(resource));
-
+				image->GetTransform()->SetWidth((float)image->GetTexture()->GetSize().x);
+				image->GetTransform()->SetHeight((float)image->GetTexture()->GetSize().y);
+			}
 
 			ImGui::Text("Texture: %s", meta ? "Assigned" : "None / Unknown");
 
