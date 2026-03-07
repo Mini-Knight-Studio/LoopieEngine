@@ -9,6 +9,7 @@
 #include "Loopie/Components/Animator.h"
 #include "Loopie/Components/ScriptClass.h"
 #include "Loopie/Components/Canvas.h"
+#include "Loopie/Components/CanvasScaler.h"
 #include "Loopie/Components/Image.h"
 #include "Loopie/Helpers/LoopieHelpers.h"
 #include "Loopie/Resources/AssetRegistry.h"
@@ -312,6 +313,12 @@ namespace Loopie {
 				auto button = clone->AddComponent<Button>();
 				button->Deserialize(componentData.Child("button"));
 			}
+			// CanvasScaler
+			else if (componentData.Child("canvas_scaler").IsValid())
+			{
+				auto scaler = clone->AddComponent<CanvasScaler>();
+				scaler->Deserialize(componentData.Child("canvas_scaler"));
+			}
 		}
 
 		// ---- Clone children ----
@@ -606,6 +613,16 @@ namespace Loopie {
 						{
 							button->Deserialize(node);
 							button->SetUUID(componentUUID.Get());
+						}
+					}
+					else if (componentNode.Contains("canvas_scaler"))
+					{
+						JsonNode node = componentNode.Child("canvas_scaler");
+						auto scaler = entity->AddComponent<CanvasScaler>();
+						if (scaler)
+						{
+							scaler->Deserialize(node);
+							scaler->SetUUID(componentUUID.Get());
 						}
 					}
 				}

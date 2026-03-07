@@ -13,6 +13,7 @@
 #include "Loopie/Components/ScriptClass.h"
 #include "Loopie/Components/Animator.h"
 #include "Loopie/Components/Canvas.h"
+#include "Loopie/Components/CanvasScaler.h"
 #include "Loopie/Components/Image.h"
 #include "Loopie/Components/Text.h"
 #include "Loopie/Components/Button.h"
@@ -263,6 +264,9 @@ namespace Loopie {
 			else if (component->GetTypeID() == Canvas::GetTypeIDStatic()) {
 				DrawCanvas(static_cast<Canvas*>(component));
 			}
+			else if (component->GetTypeID() == CanvasScaler::GetTypeIDStatic()) {
+				DrawCanvasScaler(static_cast<CanvasScaler*>(component));
+			}
 			else if (component->GetTypeID() == Image::GetTypeIDStatic()) {
 				DrawImage(static_cast<Image*>(component));
 			}
@@ -345,17 +349,29 @@ namespace Loopie {
 
 		static bool uniformScale = false;
 
-		if (open) {
+		if (open)
+		{
+			const bool isRectTransform = transform->IsRectTransform();
+			const bool isOverlayRectTransform = isRectTransform &&
+				transform->GetOwner() &&
+				transform->GetOwner()->GetComponent<Canvas>() &&
+				transform->GetOwner()->GetComponent<Canvas>()->GetRenderMode() == CanvasRenderMode::ScreenSpaceOverlay;
+
 			vec3 position = transform->GetLocalPosition();
 			vec3 rotation = transform->GetLocalEulerAngles();
 			vec3 scale = transform->GetLocalScale();
 			vec3 oldScale = scale;
 
-			if (ImGui::DragFloat3("Position", &position.x, 0.1f)) {
+			if (isOverlayRectTransform)
+				ImGui::BeginDisabled();
+
+			if (ImGui::DragFloat3("Position", &position.x, 0.1f))
+			{
 				modified = true;
 				transform->SetLocalPosition(position);
 			}
-			if (ImGui::DragFloat3("Rotation", &rotation.x, 0.5f)) {
+			if (ImGui::DragFloat3("Rotation", &rotation.x, 0.5f))
+			{
 				modified = true;
 				transform->SetLocalEulerAngles(rotation);
 			}
@@ -422,18 +438,34 @@ namespace Loopie {
 			bool hasStyle = uniformScale;
 			if (hasStyle)
 				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0, 0.5, 0.75, 1.0));
-			if (ImGui::Button("U")) 
+			if (ImGui::Button("U"))
 				uniformScale = !uniformScale;
 			if (hasStyle)
 				ImGui::PopStyleColor();
 
-			if (transform->IsRectTransform()) {
+			if (isOverlayRectTransform)
+				ImGui::EndDisabled();
+
+			if (isRectTransform)
+			{
 				ImGui::SeparatorText("Size");
-				float w = transform->GetWidth(), h = transform->GetHeight();
-				if (ImGui::DragFloat("Width", &w, 1.f)) transform->SetWidth(w);
-				if (ImGui::DragFloat("Height", &h, 1.f)) transform->SetHeight(h);
+
+				float w = transform->GetWidth();
+				float h = transform->GetHeight();
+
+				if (ImGui::DragFloat("Width", &w, 1.0f))
+				{
+					transform->SetWidth(w);
+					modified = true;
+				}
+				if (ImGui::DragFloat("Height", &h, 1.0f))
+				{
+					transform->SetHeight(h);
+					modified = true;
+				}
 			}
 		}
+
 		ImGui::PopID();
 
 		if (modified)
@@ -1064,6 +1096,47 @@ namespace Loopie {
 				//.............
 			}
 		}
+		ImGui::PopID();
+	}
+
+	void InspectorInterface::DrawCanvasScaler(CanvasScaler* canvasScaler)
+	{
+		if (!canvasScaler)
+			return;
+
+		ImGui::PushID(canvasScaler);
+
+		const bool open = ImGui::CollapsingHeader("Canvas Scaler");
+		ImGui::SetItemTooltip(canvasScaler->GetUUID().Get().c_str());
+		if (ComponentContextMenu(canvasScaler))
+		{
+			ImGui::PopID();
+			return;
+		}
+
+		if (open)
+		{
+			ImGui::SeparatorText("Scale");
+
+			CanvasScaleMode mode = canvasScaler->GetScaleMode();
+			int modeIndex = static_cast<int>(mode);
+			const char* modeLabels[] = { "Constant Pixel Size", "Scale With Canvas Size" };
+
+			if (ImGui::Combo("Mode", &modeIndex, modeLabels, IM_ARRAYSIZE(modeLabels)))
+			{
+				canvasScaler->SetScaleMode(static_cast<CanvasScaleMode>(modeIndex));
+			}
+
+			if (canvasScaler->GetScaleMode() == CanvasScaleMode::ScaleWithCanvasSize)
+			{
+				vec2 refRes = canvasScaler->GetReferenceResolution();
+				
+				ImGui::BeginDisabled();
+				(void)ImGui::DragFloat2("Reference Resolution", &refRes.x, 1.0f, 1.0f, 16384.0f);
+				ImGui::EndDisabled();
+			}
+		}
+
 		ImGui::PopID();
 	}
 

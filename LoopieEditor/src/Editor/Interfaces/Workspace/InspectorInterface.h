@@ -17,6 +17,7 @@ namespace Loopie {
 	class BoxCollider;
 	class RectTransform;
 	class Canvas;
+	class CanvasScaler;
 	class Image;
 	class Text;
 	class Button;
@@ -50,6 +51,7 @@ namespace Loopie {
 		void DrawAnimator(Animator* animator);
 		void DrawScriptClass(ScriptClass* scriptClass);
 		void DrawCanvas(Canvas* canvas);
+		void DrawCanvasScaler(CanvasScaler* canvasScaler);
 		void DrawImage(Image* image);
 		void DrawText(Text* text);
 		void DrawButton(Button* button);

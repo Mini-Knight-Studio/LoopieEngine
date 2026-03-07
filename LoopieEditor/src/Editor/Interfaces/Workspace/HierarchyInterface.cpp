@@ -8,6 +8,7 @@
 #include "Loopie/Components/Image.h"
 #include "Loopie/Components/Text.h"
 #include "Loopie/Components/Button.h"
+#include "Loopie/Components/CanvasScaler.h"
 
 #include "Editor/Interfaces/Workspace/SceneInterface.h"
 #include <imgui.h>
@@ -290,6 +291,7 @@ namespace Loopie {
 		std::shared_ptr<Entity> newEntity = m_scene->CreateEntity(name, parent);
 		newEntity->ReplaceTransform<RectTransform>();
 		newEntity->AddComponent<Canvas>();
+		newEntity->AddComponent<CanvasScaler>();
 
 		return newEntity;
 	}

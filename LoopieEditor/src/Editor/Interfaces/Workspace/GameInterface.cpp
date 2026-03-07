@@ -37,6 +37,8 @@ namespace Loopie {
 			m_visible = false;
 			m_mouseOverGame = false;
 			m_mousePosGameLocal = vec2(0.0f);
+			ImVec2 size = ImGui::GetContentRegionAvail();
+			m_windowSize = { (int)size.x, (int)size.y };
 		}
 
 		ImGui::End();
