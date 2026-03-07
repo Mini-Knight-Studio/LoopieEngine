@@ -14,6 +14,9 @@
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Components/BoxCollider.h"
 
+#include "Loopie/Scripting/ScriptingManager.h"
+#include "Loopie/Audio/AudioManager.h"
+
 #include "Loopie/Components/AudioSource.h"
 #include "Loopie/Components/AudioListener.h"
 #include "Loopie/Components/Text.h"
@@ -398,6 +401,7 @@ namespace Loopie {
 
 	bool Scene::ReadAndLoadSceneFile(std::string filePath, bool safeSceneAsLastLoaded)
 	{
+		
 		m_entities.clear();
 		m_octree->Clear();
 
@@ -624,6 +628,11 @@ namespace Loopie {
 
 		Log::Info("Scene loaded successfully");
 
+		if(ScriptingManager::IsRunning())
+		{
+			Application::GetInstance().m_notifier.Notify(EngineNotification::OnRuntimeStart);
+		}
+
 		if (safeSceneAsLastLoaded) {
 			m_filePath = filePath;
 			std::filesystem::path config = Application::GetInstance().m_activeProject.GetConfigPath();
@@ -649,12 +658,23 @@ namespace Loopie {
 	{
 		if(id == EngineNotification::OnRuntimeStart)
 		{
+			AudioManager::StartSceneAudio(this);
+
 			for(const auto& [uuid, entity] : m_entities)
 			{
 				std::vector<ScriptClass*> scripts =entity->GetComponents<ScriptClass>();
 				for (size_t i = 0; i < scripts.size(); i++)
 				{
 					scripts[i]->SetUp();
+				}
+			}
+
+			for (const auto& [uuid, entity] : m_entities)
+			{
+				std::vector<ScriptClass*> scripts = entity->GetComponents<ScriptClass>();
+				for (size_t i = 0; i < scripts.size(); i++)
+				{
+					scripts[i]->InvokeOnCreate();
 				}
 			}
 		}

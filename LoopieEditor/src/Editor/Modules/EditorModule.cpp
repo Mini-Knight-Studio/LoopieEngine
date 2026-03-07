@@ -241,17 +241,12 @@ namespace Loopie
 
 			bool errors = false;
 			for (const auto& [uuid, entity] : m_currentScene->GetAllEntities()) {
-				const std::vector<Component*>& components = entity->GetComponents();
-				for (size_t i = 0; i < components.size(); i++)
+				std::vector<ScriptClass*> scripts = entity->GetComponents<ScriptClass>();
+				for (size_t i = 0; i < scripts.size(); i++)
 				{
-					Component* component = components[i];
-					if (component->GetTypeID() == ScriptClass::GetTypeIDStatic())
-					{
-						ScriptClass* script = static_cast<ScriptClass*>(component);
-						if (!script->GetScriptingClass()) {
-							errors = true;
-							Log::Error("Failed to start the game. Check the scripts || Entity: {0}   Component UUID: {1}",script->GetOwner()->GetName(), script->GetUUID().Get());
-						}
+					if (!scripts[i]->GetScriptingClass()) {
+						errors = true;
+						Log::Error("Failed to start the game. Check the scripts || Entity: {0}   Component UUID: {1}", scripts[i]->GetOwner()->GetName(), scripts[i]->GetUUID().Get());
 					}
 				}
 			}
@@ -259,12 +254,12 @@ namespace Loopie
 			{
 				return false;
 			}
-			
 
 			ScriptingManager::RuntimeStart();
-			AudioManager::StartSceneAudio(&Application::GetInstance().GetScene());
-			Application::GetInstance().GetScene().SaveScene("recoverScene.scene");
+			m_currentScene->SaveScene("recoverScene.scene");
 		}
+
+
 
 		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities()) {
 			if (!entity->GetIsActive())
@@ -282,18 +277,10 @@ namespace Loopie
 					ScriptClass* script = static_cast<ScriptClass*>(component);
 					switch (mode)
 					{
-					case Loopie::START:
-						script->InvokeOnCreate();
-						break;
 					case Loopie::UPDATING:
 					case Loopie::NEXTFRAME:
 						script->InvokeOnUpdate();
 						break;
-					case Loopie::END:
-						script->DestroyInstance();
-						break;
-					case Loopie::PAUSED:
-					case Loopie::DEACTIVATED:
 					default:
 						break;
 					}
