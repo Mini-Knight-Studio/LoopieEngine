@@ -1125,6 +1125,7 @@ namespace Loopie {
 			if (ImGui::Combo("Mode", &modeIndex, modeLabels, IM_ARRAYSIZE(modeLabels)))
 			{
 				canvasScaler->SetScaleMode(static_cast<CanvasScaleMode>(modeIndex));
+				
 			}
 
 			if (canvasScaler->GetScaleMode() == CanvasScaleMode::ScaleWithCanvasSize)
@@ -1134,6 +1135,13 @@ namespace Loopie {
 				ImGui::BeginDisabled();
 				(void)ImGui::DragFloat2("Reference Resolution", &refRes.x, 1.0f, 1.0f, 16384.0f);
 				ImGui::EndDisabled();
+
+				float match = canvasScaler->GetMatchWidthOrHeight();
+
+				if (ImGui::SliderFloat("Width / Height", &match, 0.0f, 1.0f))
+				{
+					canvasScaler->SetMatchWidthOrHeight(match);
+				}
 			}
 		}
 

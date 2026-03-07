@@ -33,8 +33,12 @@ namespace Loopie
 		vec2 ComputeScale(const vec2& targetPixels, const vec2& canvasUnits) const;
 		vec2 ComputeOverlayCanvasSize(const vec2& targetPixels) const;
 
+		float GetMatchWidthOrHeight() const { return m_matchWidthOrHeight; }
+		void SetMatchWidthOrHeight(float v) { m_matchWidthOrHeight = v; }
+
 	private:
 		CanvasScaleMode m_scaleMode = CanvasScaleMode::ScaleWithCanvasSize;
-		vec2 m_referenceResolution = vec2(500.0f, 500.0f);
+		vec2 m_referenceResolution = vec2(192.f, 108.f);
+		float m_matchWidthOrHeight = 0.5f;
 	};
 }

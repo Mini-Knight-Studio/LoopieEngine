@@ -22,24 +22,37 @@ namespace Loopie
 
 	vec2 CanvasScaler::ComputeScale(const vec2& targetPixels, const vec2& canvasUnits) const
 	{
-		if (canvasUnits.x <= 0.0f || canvasUnits.y <= 0.0f)
-			return vec2(1.0f);
-
 		if (m_scaleMode == CanvasScaleMode::ConstantPixelSize)
 			return vec2(1.0f);
 
-		const float sx = targetPixels.x / canvasUnits.x;
-		const float sy = targetPixels.y / canvasUnits.y;
-		return vec2(sx, sy);
+		if (m_scaleMode == CanvasScaleMode::ScaleWithCanvasSize)
+		{
+			float widthScale = targetPixels.x / m_referenceResolution.x;
+			float heightScale = targetPixels.y / m_referenceResolution.y;
+
+			float scale = glm::mix(widthScale, heightScale, m_matchWidthOrHeight);
+
+			return vec2(scale, scale);
+		}
+
+		return vec2(1.0f);
 	}
 
 	vec2 CanvasScaler::ComputeOverlayCanvasSize(const vec2& targetPixels) const
 	{
 		if (m_scaleMode == CanvasScaleMode::ConstantPixelSize)
-		{
 			return targetPixels;
+
+		if (m_scaleMode == CanvasScaleMode::ScaleWithCanvasSize)
+		{
+			float widthScale = targetPixels.x / m_referenceResolution.x;
+			float heightScale = targetPixels.y / m_referenceResolution.y;
+
+			float scale = glm::mix(widthScale, heightScale, m_matchWidthOrHeight);
+
+			return targetPixels / scale;
 		}
 
-		return m_referenceResolution;
+		return targetPixels;
 	}
 }
