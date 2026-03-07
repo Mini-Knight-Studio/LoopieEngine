@@ -61,6 +61,13 @@ namespace Loopie {
 		int m_gizmoMode = 0;
 		std::array<const char*,2> m_gizmoModes = { "World", "Local" };
 
+		float m_snap[3] = { 0.0f, 0.0f, 0.0f };
+		bool m_snapEnabled = false;
+		bool m_temporalSnapEnabled = false;
+		float m_translationSnap = 1.0f;
+		float m_rotationSnap = 15.0f;
+		float m_scaleSnap = 0.1f;
+
 		std::shared_ptr<Texture> m_moveIcon;
 		std::shared_ptr<Texture> m_scaleIcon;
 		std::shared_ptr<Texture> m_rotateIcon;
@@ -68,5 +75,6 @@ namespace Loopie {
 
 		std::shared_ptr<Texture> m_octreeIcon;
 		std::shared_ptr<Texture> m_gridIcon;
+		std::shared_ptr<Texture> m_snapIcon;
 	};
 }

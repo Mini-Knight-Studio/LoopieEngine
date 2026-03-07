@@ -34,7 +34,8 @@ namespace Loopie {
 			"assets/icons/icon_scale.png",
 			"assets/icons/icon_trs.png",
 			"assets/icons/icon_grid.png",
-			"assets/icons/icon_octree.png"
+			"assets/icons/icon_octree.png",
+			"assets/icons/icon_snap.png"
 		};
 
 		std::vector<Metadata> iconsToLoadMetadatas;
@@ -51,6 +52,7 @@ namespace Loopie {
 		m_trsIcon = ResourceManager::GetTexture(iconsToLoadMetadatas[3]);
 		m_gridIcon = ResourceManager::GetTexture(iconsToLoadMetadatas[4]);
 		m_octreeIcon = ResourceManager::GetTexture(iconsToLoadMetadatas[5]);
+		m_snapIcon = ResourceManager::GetTexture(iconsToLoadMetadatas[6]);
 
 
 		m_gizmoOperation = ImGuizmo::TRANSLATE;
@@ -118,7 +120,26 @@ namespace Loopie {
 				Renderer::DisableDepth();
 				ImGuizmo::SetRect(cursorScreenPos.x, cursorScreenPos.y, (float)m_windowSize.x, (float)m_windowSize.y);
 				ImGuizmo::SetDrawlist();
-				if (ImGuizmo::Manipulate(&m_camera->GetCamera()->GetViewMatrix()[0][0], &m_camera->GetCamera()->GetProjectionMatrix()[0][0], (ImGuizmo::OPERATION)m_gizmoOperation, (ImGuizmo::MODE)m_gizmoMode, &worldMatrix[0][0])) {
+
+				bool allowSnap = (m_snapEnabled || m_temporalSnapEnabled) && (m_gizmoOperation != (int)ImGuizmo::UNIVERSAL);
+				if (allowSnap) {
+					switch (m_gizmoOperation)
+					{
+					case ImGuizmo::TRANSLATE:
+						m_snap[0] = m_snap[1] = m_snap[2] = m_translationSnap;
+						break;
+
+					case ImGuizmo::ROTATE:
+						m_snap[0] = m_snap[1] = m_snap[2] = m_rotationSnap;
+						break;
+
+					case ImGuizmo::SCALE:
+						m_snap[0] = m_snap[1] = m_snap[2] = m_scaleSnap;
+						break;
+					}
+				}
+
+				if (ImGuizmo::Manipulate(&m_camera->GetCamera()->GetViewMatrix()[0][0], &m_camera->GetCamera()->GetProjectionMatrix()[0][0], (ImGuizmo::OPERATION)m_gizmoOperation, (ImGuizmo::MODE)m_gizmoMode, &worldMatrix[0][0],nullptr, allowSnap ? m_snap : nullptr)) {
 					transform->SetWorldMatrix(worldMatrix);
 					Application::GetInstance().GetScene().GetOctree().Rebuild();				
 				}
@@ -151,7 +172,7 @@ namespace Loopie {
 
 	void SceneInterface::HotKeysBasic(const InputEventManager& inputEvent)
 	{
-		if (!m_camera->IsMoving()) {
+		if (!m_camera->IsMoving() && !m_temporalSnapEnabled) {
 			if (inputEvent.GetKeyStatus(SDL_SCANCODE_W) == KeyState::DOWN)
 				m_gizmoOperation = (int)ImGuizmo::TRANSLATE;
 			if (inputEvent.GetKeyStatus(SDL_SCANCODE_E) == KeyState::DOWN)
@@ -162,6 +183,11 @@ namespace Loopie {
 				m_gizmoOperation = (int)ImGuizmo::UNIVERSAL;
 		}
 		
+		
+		if (inputEvent.GetKeyStatus(SDL_SCANCODE_LCTRL) == KeyState::REPEAT)
+			m_temporalSnapEnabled = true;
+		else
+			m_temporalSnapEnabled = false;
 	}
 
 	void SceneInterface::HotKeysSelectedEntiy(const InputEventManager& inputEvent)
@@ -227,42 +253,75 @@ namespace Loopie {
 
 		float availableWidth = ImGui::GetContentRegionAvail().x - buttonsSize.x - framePadding.x*2;
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + availableWidth);
-		bool haStyle = AddStyleButton(Gizmo::GetGridVisibility());
+		bool hasStyle = AddStyleButton(Gizmo::GetGridVisibility());
 		if (ImGui::ImageButton("grid", (ImTextureID)m_gridIcon->GetRendererId(), buttonsSize)) {
 			Gizmo::SetGridVisibility(!Gizmo::GetGridVisibility());
 		}
-		RemoveStyleButton(haStyle);
+		RemoveStyleButton(hasStyle);
 
-		haStyle = AddStyleButton(m_gizmoOperation == (int)ImGuizmo::TRANSLATE);
-		if (ImGui::ImageButton("move",(ImTextureID)m_moveIcon->GetRendererId(), buttonsSize))
+		hasStyle = AddStyleButton(m_gizmoOperation == (int)ImGuizmo::TRANSLATE);
+		if (ImGui::ImageButton("move", (ImTextureID)m_moveIcon->GetRendererId(), buttonsSize)) {
 			m_gizmoOperation = (int)ImGuizmo::TRANSLATE;
-		RemoveStyleButton(haStyle);
+		}
+		RemoveStyleButton(hasStyle);
 
 		ImGui::SameLine();
 		availableWidth = ImGui::GetContentRegionAvail().x - buttonsSize.x - framePadding.x * 2;
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + availableWidth);
 
 		Octree& octree = Application::GetInstance().GetScene().GetOctree();
-		haStyle = AddStyleButton(octree.GetShouldDraw());
+		hasStyle = AddStyleButton(octree.GetShouldDraw());
 		if (ImGui::ImageButton("octree", (ImTextureID)m_octreeIcon->GetRendererId(), buttonsSize)) {
 			octree.SetShouldDraw(!octree.GetShouldDraw());
 		}
-		RemoveStyleButton(haStyle);
+		RemoveStyleButton(hasStyle);
 
-		haStyle = AddStyleButton(m_gizmoOperation == (int)ImGuizmo::ROTATE);
-		if (ImGui::ImageButton("rotate", (ImTextureID)m_rotateIcon->GetRendererId(), buttonsSize))
+		hasStyle = AddStyleButton(m_gizmoOperation == (int)ImGuizmo::ROTATE);
+		if (ImGui::ImageButton("rotate", (ImTextureID)m_rotateIcon->GetRendererId(), buttonsSize)) {
 			m_gizmoOperation = (int)ImGuizmo::ROTATE;
-		RemoveStyleButton(haStyle);
+		}
+		RemoveStyleButton(hasStyle);
+
+		if (m_gizmoOperation != (int)ImGuizmo::UNIVERSAL) {
+			ImGui::SameLine();
+			availableWidth = ImGui::GetContentRegionAvail().x - buttonsSize.x - framePadding.x * 2;
+			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + availableWidth);
+			hasStyle = AddStyleButton(m_snapEnabled || m_temporalSnapEnabled);
+			if (ImGui::ImageButton("snap", (ImTextureID)m_snapIcon->GetRendererId(), buttonsSize))
+			{
+				ImGui::OpenPopup("SnapSettings");
+			}
+			RemoveStyleButton(hasStyle);
+
+			if (ImGui::BeginPopup("SnapSettings", ImGuiWindowFlags_AlwaysAutoResize))
+			{
+				ImGui::Checkbox("Enable Snap", &m_snapEnabled);
+
+				ImGui::Separator();
+
+				ImGui::Text("Translation");
+				ImGui::DragFloat("Step##trans", &m_translationSnap, 0.1f, 0.01f, 100.0f);
+
+				ImGui::Text("Rotation");
+				ImGui::DragFloat("Step##rot", &m_rotationSnap, 1.0f, 1.0f, 180.0f);
+
+				ImGui::Text("Scale");
+				ImGui::DragFloat("Step##scale", &m_scaleSnap, 0.01f, 0.001f, 10.0f);
+
+				ImGui::EndPopup();
+			}
+		}
 		
-		haStyle = AddStyleButton(m_gizmoOperation == (int)ImGuizmo::SCALE);
-		if (ImGui::ImageButton("scale", (ImTextureID)m_scaleIcon->GetRendererId(), buttonsSize))
+		hasStyle = AddStyleButton(m_gizmoOperation == (int)ImGuizmo::SCALE);
+		if (ImGui::ImageButton("scale", (ImTextureID)m_scaleIcon->GetRendererId(), buttonsSize)) {
 			m_gizmoOperation = (int)ImGuizmo::SCALE;
-		RemoveStyleButton(haStyle);
-		
-		haStyle = AddStyleButton(m_gizmoOperation == (int)ImGuizmo::UNIVERSAL);
+		}
+		RemoveStyleButton(hasStyle);
+
+		hasStyle = AddStyleButton(m_gizmoOperation == (int)ImGuizmo::UNIVERSAL);
 		if (ImGui::ImageButton("all", (ImTextureID)m_trsIcon->GetRendererId(), buttonsSize))
 			m_gizmoOperation = (int)ImGuizmo::UNIVERSAL;
-		RemoveStyleButton(haStyle);
+		RemoveStyleButton(hasStyle);
 
 		if(!m_usingGuizmo)
 			m_usingGuizmo = ImGui::IsAnyItemHovered();

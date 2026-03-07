@@ -343,10 +343,13 @@ namespace Loopie {
 		ImGui::SetItemTooltip(transform->GetUUID().Get().c_str());
 		ComponentContextMenu(transform, false);
 
+		static bool uniformScale = false;
+
 		if (open) {
 			vec3 position = transform->GetLocalPosition();
 			vec3 rotation = transform->GetLocalEulerAngles();
 			vec3 scale = transform->GetLocalScale();
+			vec3 oldScale = scale;
 
 			if (ImGui::DragFloat3("Position", &position.x, 0.1f)) {
 				modified = true;
@@ -356,28 +359,84 @@ namespace Loopie {
 				modified = true;
 				transform->SetLocalEulerAngles(rotation);
 			}
-			if (ImGui::DragFloat3("Scale", &scale.x, 0.1f)) {
+
+			bool scaleChanged = ImGui::DragFloat3("Scale", &scale.x, 0.1f);
+
+			if (ImGui::IsItemActive()) {
+				if (scale.x == 0.0f) 
+					scale.x = 0.0001f;
+				if (scale.y == 0.0f) 
+					scale.y = 0.0001f;
+				if (scale.z == 0.0f) 
+					scale.z = 0.0001f;
+			}
+
+			if (scaleChanged) {
 				modified = true;
+				if (uniformScale) {
+					if (oldScale.x == 0.0f && oldScale.y == 0.0f && oldScale.z == 0.0f) {
+						if (scale.x != oldScale.x){
+							scale.y = scale.x; 
+							scale.z = scale.x;
+						}
+						else if (scale.y != oldScale.y) {
+							scale.x = scale.y; 
+							scale.z = scale.y;
+						}
+						else if (scale.z != oldScale.z) {
+							scale.x = scale.z; 
+							scale.y = scale.z; 
+						}
+					}
+					else {
+						if (scale.x != oldScale.x && oldScale.x != 0.0f) {
+							float ratio = scale.x / oldScale.x;
+							scale.y = oldScale.y * ratio;
+							scale.z = oldScale.z * ratio;
+						}
+						else if (scale.y != oldScale.y && oldScale.y != 0.0f) {
+							float ratio = scale.y / oldScale.y;
+							scale.x = oldScale.x * ratio;
+							scale.z = oldScale.z * ratio;
+						}
+						else if (scale.z != oldScale.z && oldScale.z != 0.0f) {
+							float ratio = scale.z / oldScale.z;
+							scale.x = oldScale.x * ratio;
+							scale.y = oldScale.y * ratio;
+						}
+					}
+				}
 				transform->SetLocalScale(scale);
 			}
-			if (transform->IsRectTransform())
-			{
 
+			if (ImGui::IsItemDeactivatedAfterEdit()) {
+				if (scale.x == 0.0f || scale.y == 0.0f || scale.z == 0.0f) {
+					scale = vec3(0.0f, 0.0f, 0.0f);
+					transform->SetLocalScale(scale);
+					modified = true;
+				}
+			}
+
+			ImGui::SameLine();
+
+			bool hasStyle = uniformScale;
+			if (hasStyle)
+				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0, 0.5, 0.75, 1.0));
+			if (ImGui::Button("U")) 
+				uniformScale = !uniformScale;
+			if (hasStyle)
+				ImGui::PopStyleColor();
+
+			if (transform->IsRectTransform()) {
 				ImGui::SeparatorText("Size");
-
-				float w = transform->GetWidth();
-				float h = transform->GetHeight();
-
-				if (ImGui::DragFloat("Width", &w, 1.f))
-					transform->SetWidth(w);
-
-				if (ImGui::DragFloat("Height", &h, 1.f))
-					transform->SetHeight(h);
+				float w = transform->GetWidth(), h = transform->GetHeight();
+				if (ImGui::DragFloat("Width", &w, 1.f)) transform->SetWidth(w);
+				if (ImGui::DragFloat("Height", &h, 1.f)) transform->SetHeight(h);
 			}
 		}
 		ImGui::PopID();
 
-		if(modified)
+		if (modified)
 			Application::GetInstance().GetScene().GetOctree().Rebuild();
 	}
 
