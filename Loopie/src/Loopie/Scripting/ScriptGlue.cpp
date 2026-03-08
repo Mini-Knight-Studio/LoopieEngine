@@ -1140,13 +1140,13 @@ namespace Loopie
 		float distance;
 	};
 
-	static MonoBoolean Collisions_Raycast(vec3* origin, vec3* direction, float maxDistance, MonoRaycastHit* outHit)
+	static MonoBoolean Collisions_Raycast(vec3* origin, vec3* direction, float maxDistance, MonoRaycastHit* outHit, int layerMask)
 	{
 		Ray ray(*origin, *direction, maxDistance);
 
 		RaycastHit nativeHit;
 
-		if (!CollisionProcessor::Raycast(ray, nativeHit))
+		if (!CollisionProcessor::Raycast(ray, nativeHit, layerMask))
 			return false;
 
 		BoxCollider* collider = nativeHit.collider;
@@ -1163,6 +1163,18 @@ namespace Loopie
 
 		return true;
 	}
+
+	static int Collisions_GetLayerBit(MonoString* layerName)
+	{
+		std::string name = Utils::MonoStringToString(layerName);
+		int index = CollisionProcessor::GetLayerIndex(name);
+
+		if (index < 0 || index >= Loopie::MAX_LAYERS)
+			return -1;
+
+		return CollisionProcessor::GetLayer(index).bit;
+	}
+
 #pragma endregion
 
 #pragma region Gizmo
@@ -1329,6 +1341,7 @@ namespace Loopie
 		ADD_INTERNAL_CALL(AudioSource_GetSet3DMinMaxDistance);
 
 		ADD_INTERNAL_CALL(Collisions_Raycast);
+		ADD_INTERNAL_CALL(Collisions_GetLayerBit);
 
 		ADD_INTERNAL_CALL(Gizmo_DrawLine);
 	}

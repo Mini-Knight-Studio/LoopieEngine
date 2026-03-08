@@ -324,7 +324,9 @@ namespace Loopie
         #endregion
         #region Collisions
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static bool Collisions_Raycast(Vector3 origin, Vector3 direction, float maxDistance, out RaycastHit hit);
+        internal extern static bool Collisions_Raycast(Vector3 origin, Vector3 direction, float maxDistance, out RaycastHit hit, int layerMask);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static int Collisions_GetLayerBit(string layerName);
         #endregion
         #region Gizmo
         [MethodImplAttribute(MethodImplOptions.InternalCall)]

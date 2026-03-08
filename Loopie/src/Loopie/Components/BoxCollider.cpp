@@ -77,6 +77,12 @@ namespace Loopie {
         return GetWorldOBB().Intersects(other->GetWorldOBB());
     }
 
+    const unsigned int BoxCollider::GetLayerBit() const
+    {
+        const CollisionLayer& layer = CollisionProcessor::GetLayer(m_layerIndex);
+		return layer.bit;
+    }
+
     void BoxCollider::SetLayer(const std::string& name)
     {
 		int result = CollisionProcessor::GetLayerIndex(name);

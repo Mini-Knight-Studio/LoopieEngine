@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel;
 
 namespace Loopie
@@ -25,10 +26,15 @@ namespace Loopie
 
     public static class Collisions
     {
-        public static bool Raycast(Vector3 origin, Vector3 direction, float maxDistance, out RaycastHit hit)
+        public static bool Raycast(Vector3 origin, Vector3 direction, float maxDistance, out RaycastHit hit, int layerMask = -1)
         {
             hit = new RaycastHit();
-            return InternalCalls.Collisions_Raycast(origin, direction, maxDistance, out hit);
+            return InternalCalls.Collisions_Raycast(origin, direction, maxDistance, out hit, layerMask);
+        }
+
+        public static int GetLayerBit(string layerName)
+        {
+            return InternalCalls.Collisions_GetLayerBit(layerName);
         }
     }
 }

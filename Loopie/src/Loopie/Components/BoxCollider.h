@@ -33,6 +33,7 @@ namespace Loopie {
 
         bool Intersects(const BoxCollider* other) const;
         const unsigned int GetLayerIndex() const { return m_layerIndex; }
+        const unsigned int GetLayerBit() const;
         void SetLayer(const std::string& name);
         void SetLayer(int index);
         bool IsColliding() const { return m_colliding; }
