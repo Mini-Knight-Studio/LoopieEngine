@@ -5,6 +5,18 @@ namespace Loopie
     public class BoxCollider : Component
     {
         public Vector3 LocalCenter {get { return GetLocalCenter(); } set { SetLocalCenter(value); }}
+        public string Tag
+        {
+            get
+            {
+                return InternalCalls.BoxCollider_GetTag(entity.ID, ID);
+            }
+            set
+            {
+                InternalCalls.BoxCollider_SetTag(entity.ID, ID, value);
+            }
+        }
+       
 
         private Vector3 GetLocalCenter()
         {
@@ -51,6 +63,10 @@ namespace Loopie
         private bool GetIfHasEndedCollision()
         {
             return InternalCalls.BoxCollider_HasEndedCollision(entity.ID, ID);
+        }
+        public bool IsCollidingWithTag(string tag)
+        {
+            return InternalCalls.BoxCollider_IsCollidingWithTag(entity.ID, ID, tag);
         }
     }
 }

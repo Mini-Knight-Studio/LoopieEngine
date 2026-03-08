@@ -1494,6 +1494,14 @@ namespace Loopie {
 			if (ImGui::DragFloat3("Extents", &extents.x, 0.01f))
 				boxCollider->SetLocalExtents(extents);
 
+			char tagBuffer[256];
+			memset(tagBuffer, 0, sizeof(tagBuffer));
+			strncpy_s(tagBuffer, boxCollider->GetCollisionTag().c_str(), sizeof(tagBuffer) - 1);
+
+			if (ImGui::InputText("Collision Tag", tagBuffer, sizeof(tagBuffer)))
+			{
+				boxCollider->SetCollisionTag(std::string(tagBuffer));
+			}
 			//if (ImGui::Checkbox("Visible Lines", &draw))
 			//	boxCollider->SetDrawGizmo(draw);
 		}

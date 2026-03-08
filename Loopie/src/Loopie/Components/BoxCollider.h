@@ -4,6 +4,7 @@
 #include "Loopie/Events/EventTypes.h"
 #include "Loopie/Math/OBB.h"
 #include "Loopie/Math/AABB.h"
+#include <vector>
 
 namespace Loopie {
 
@@ -18,7 +19,6 @@ namespace Loopie {
         void Init() override;
         void RenderGizmo() override;
 
-
         const OBB& GetWorldOBB() const;
         const AABB& GetWorldAABB() const;
 
@@ -32,21 +32,23 @@ namespace Loopie {
         bool GetDrawGizmo() const { return m_drawGizmo; }
 
         bool Intersects(const BoxCollider* other) const;
-
+        const std::string& GetCollisionTag() const { return m_collisionTag; }
+        void SetCollisionTag(const std::string& tag) { m_collisionTag = tag; }
         bool IsColliding() const { return m_colliding; }
         bool CollidedThisFrame() const { return m_collided; }
         bool StoppedColliding() const { return m_stopColliding; }
 
         JsonNode Serialize(JsonNode& parent) const override;
         void Deserialize(const JsonNode& data) override;
+        std::vector<BoxCollider*> m_collidingWith;
 
     private:
         void RecalculateOBB() const;
         void OnNotify(const TransformNotification& id) override;
-
     private:
         vec3 m_localCenter = vec3(0.0f);
         vec3 m_localExtents = vec3(0.5f);
+        std::string m_collisionTag = "Untagged";
 
 
         bool m_wasCollidingLastFrame = false;

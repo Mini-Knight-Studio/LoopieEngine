@@ -79,7 +79,7 @@ namespace Loopie {
 
     JsonNode BoxCollider::Serialize(JsonNode& parent) const {
         JsonNode node = parent.CreateObjectField("boxcollider");
-
+        node.CreateField<std::string>("collision_tag", m_collisionTag);
         JsonNode centerNode = node.CreateObjectField("center");
         centerNode.CreateField<double>("x", static_cast<double>(m_localCenter.x));
         centerNode.CreateField<double>("y", static_cast<double>(m_localCenter.y));
@@ -102,7 +102,9 @@ namespace Loopie {
             m_localCenter.y = static_cast<float>(centerNode.GetValue<double>("y", 0.0).Result);
             m_localCenter.z = static_cast<float>(centerNode.GetValue<double>("z", 0.0).Result);
         }
-
+        if (data.Contains("collision_tag")) {
+            m_collisionTag = data.GetValue<std::string>("collision_tag", "Untagged").Result;
+        }
         if (data.Contains("extents")) {
             JsonNode extentsNode = data.Child("extents");
             m_localExtents.x = static_cast<float>(extentsNode.GetValue<double>("x", 0.5).Result);

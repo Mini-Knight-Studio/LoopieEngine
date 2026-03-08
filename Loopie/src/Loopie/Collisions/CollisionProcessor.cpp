@@ -76,11 +76,12 @@ namespace Loopie {
 
         const int count = (int)s_colliders.size();
 
-        for (auto* colider : s_colliders)
+        for (auto* collider : s_colliders)
         {
-            colider->m_colliding = false;
-            colider->m_collided = false;
-            colider->m_stopColliding = false;
+            collider->m_colliding = false;
+            collider->m_collided = false;
+            collider->m_stopColliding = false;
+            collider->m_collidingWith.clear();
         }
 
         for (int i = 0; i < count; ++i)
@@ -107,6 +108,9 @@ namespace Loopie {
                 {
                     collider1->m_colliding = true;
                     collider2->m_colliding = true;
+
+                    collider1->m_collidingWith.push_back(collider2);
+                    collider2->m_collidingWith.push_back(collider1);
 
                     if (!collider1->m_wasCollidingLastFrame)
                         collider1->m_collided = true;
