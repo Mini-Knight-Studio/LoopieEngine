@@ -104,6 +104,12 @@ namespace Loopie
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static bool BoxCollider_HasEndedCollision(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static string BoxCollider_GetLayer(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_SetLayer(string entityID, string componentID, string tag);
         #endregion
         #region Animator
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
@@ -319,12 +325,6 @@ namespace Loopie
         #region Collisions
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static bool Collisions_Raycast(Vector3 origin, Vector3 direction, float maxDistance, out RaycastHit hit);
-        [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static bool BoxCollider_IsCollidingWithTag(string entityID, string componentID, string tag);
-        [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static string BoxCollider_GetTag(string entityID, string componentID);
-        [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void BoxCollider_SetTag(string entityID, string componentID, string tag);
         #endregion
     }
 }

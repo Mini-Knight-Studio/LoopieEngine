@@ -32,15 +32,17 @@ namespace Loopie {
         bool GetDrawGizmo() const { return m_drawGizmo; }
 
         bool Intersects(const BoxCollider* other) const;
-        const std::string& GetCollisionTag() const { return m_collisionTag; }
-        void SetCollisionTag(const std::string& tag) { m_collisionTag = tag; }
+        const unsigned int GetLayerIndex() const { return m_layerIndex; }
+        void SetLayer(const std::string& name);
+        void SetLayer(int index);
         bool IsColliding() const { return m_colliding; }
         bool CollidedThisFrame() const { return m_collided; }
         bool StoppedColliding() const { return m_stopColliding; }
 
+        const std::vector<BoxCollider*>& GetCollidingWith() const { return m_collidingWith; }
+
         JsonNode Serialize(JsonNode& parent) const override;
         void Deserialize(const JsonNode& data) override;
-        std::vector<BoxCollider*> m_collidingWith;
 
     private:
         void RecalculateOBB() const;
@@ -48,8 +50,9 @@ namespace Loopie {
     private:
         vec3 m_localCenter = vec3(0.0f);
         vec3 m_localExtents = vec3(0.5f);
-        std::string m_collisionTag = "Untagged";
+        unsigned int  m_layerIndex = 0;
 
+        std::vector<BoxCollider*> m_collidingWith;
 
         bool m_wasCollidingLastFrame = false;
         bool m_colliding = false;

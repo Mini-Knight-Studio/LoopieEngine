@@ -77,9 +77,22 @@ namespace Loopie {
         return GetWorldOBB().Intersects(other->GetWorldOBB());
     }
 
+    void BoxCollider::SetLayer(const std::string& name)
+    {
+		int result = CollisionProcessor::GetLayerIndex(name);
+        if(result != -1)
+            m_layerIndex = static_cast<unsigned int>(result);
+    }
+
+    void BoxCollider::SetLayer(int index)
+    {
+        if (index >= 0 && index < CollisionProcessor::GetLayers().size())
+			m_layerIndex = static_cast<unsigned int>(index);
+    }
+
     JsonNode BoxCollider::Serialize(JsonNode& parent) const {
         JsonNode node = parent.CreateObjectField("boxcollider");
-        node.CreateField<std::string>("collision_tag", m_collisionTag);
+        node.CreateField<unsigned int>("layer_index", m_layerIndex);
         JsonNode centerNode = node.CreateObjectField("center");
         centerNode.CreateField<double>("x", static_cast<double>(m_localCenter.x));
         centerNode.CreateField<double>("y", static_cast<double>(m_localCenter.y));
@@ -103,7 +116,7 @@ namespace Loopie {
             m_localCenter.z = static_cast<float>(centerNode.GetValue<double>("z", 0.0).Result);
         }
         if (data.Contains("collision_tag")) {
-            m_collisionTag = data.GetValue<std::string>("collision_tag", "Untagged").Result;
+            m_layerIndex = data.GetValue<unsigned int>("layer_index", 0).Result;
         }
         if (data.Contains("extents")) {
             JsonNode extentsNode = data.Child("extents");

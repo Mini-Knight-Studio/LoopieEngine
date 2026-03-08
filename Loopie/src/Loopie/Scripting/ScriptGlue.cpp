@@ -866,7 +866,7 @@ namespace Loopie
 
 #pragma region BoxCollider
 
-	static MonoString* BoxCollider_GetTag(MonoString* entityIDStr, MonoString* componentIDStr)
+	static MonoString* BoxCollider_GetLayer(MonoString* entityIDStr, MonoString* componentIDStr)
 	{
 		UUID uuid(Utils::MonoStringToString(entityIDStr));
 		Scene* scene = &Application::GetInstance().GetScene();
@@ -876,14 +876,15 @@ namespace Loopie
 			BoxCollider* collider = entity->GetComponent<BoxCollider>();
 			if (collider)
 			{
-				std::string tag = collider->GetCollisionTag();
-				return ScriptingManager::CreateString(tag.c_str());
+				unsigned int tagIndex = collider->GetLayerIndex();
+				const CollisionLayer& tag = CollisionProcessor::GetLayer(tagIndex);
+				return ScriptingManager::CreateString(tag.name.c_str());
 			}
 		}
 		return ScriptingManager::CreateString("");
 	}
 
-	static void BoxCollider_SetTag(MonoString* entityIDStr, MonoString* componentIDStr, MonoString* tagStr)
+	static void BoxCollider_SetLayer(MonoString* entityIDStr, MonoString* componentIDStr, MonoString* tagStr)
 	{
 		UUID uuid(Utils::MonoStringToString(entityIDStr));
 		Scene* scene = &Application::GetInstance().GetScene();
@@ -894,32 +895,9 @@ namespace Loopie
 			if (collider)
 			{
 				std::string targetTag = Utils::MonoStringToString(tagStr);
-				collider->SetCollisionTag(targetTag);
+				collider->SetLayer(targetTag);
 			}
 		}
-	}
-
-	static MonoBoolean BoxCollider_IsCollidingWithTag(MonoString* entityIDStr, MonoString* componentIDStr, MonoString* tagStr)
-	{
-		UUID uuid(Utils::MonoStringToString(entityIDStr));
-		Scene* scene = &Application::GetInstance().GetScene();
-		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
-		if (entity)
-		{
-			BoxCollider* collider = entity->GetComponent<BoxCollider>();
-			if (collider)
-			{
-				std::string targetTag = Utils::MonoStringToString(tagStr);
-				for (BoxCollider* other : collider->m_collidingWith)
-				{
-					if (other->GetCollisionTag() == targetTag)
-					{
-						return true;
-					}
-				}
-			}
-		}
-		return false;
 	}
 
 	static void BoxCollider_SetLocalCenter(MonoString* entityID, MonoString* componentID, vec3* center)
@@ -1318,9 +1296,8 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Time_GetTimeScale);
 		ADD_INTERNAL_CALL(Time_SetTimeScale);
 
-		ADD_INTERNAL_CALL(BoxCollider_GetTag);
-		ADD_INTERNAL_CALL(BoxCollider_SetTag);
-		ADD_INTERNAL_CALL(BoxCollider_IsCollidingWithTag);
+		ADD_INTERNAL_CALL(BoxCollider_GetLayer);
+		ADD_INTERNAL_CALL(BoxCollider_SetLayer);
 		ADD_INTERNAL_CALL(BoxCollider_GetLocalCenter);
 		ADD_INTERNAL_CALL(BoxCollider_SetLocalCenter);
 		ADD_INTERNAL_CALL(BoxCollider_GetLocalExtents);

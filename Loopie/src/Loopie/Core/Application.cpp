@@ -5,6 +5,7 @@
 #include "Loopie/Core/Time.h"
 #include "Loopie/Render/Renderer.h"
 #include "Loopie/Scripting/ScriptingManager.h"
+#include "Loopie/Collisions/CollisionProcessor.h"
 #include "Loopie/Audio/AudioManager.h"
 #include "Loopie/Project/ProjectConfig.h"
 
@@ -20,6 +21,9 @@ namespace Loopie {
 		s_Instance = this;
 
 		Log::Info("Application Started");
+
+		CollisionProcessor::Initialize();
+
 		ProjectConfig::SetProject(m_activeProject);
 
 		//ScriptingManager::Init();

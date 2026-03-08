@@ -25,6 +25,8 @@
 #include "Loopie/Importers/MeshImporter.h"
 #include "Loopie/Importers/MaterialImporter.h"
 
+#include "Loopie/Collisions/CollisionProcessor.h"
+
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Resources/ResourceManager.h"
 
@@ -1494,14 +1496,30 @@ namespace Loopie {
 			if (ImGui::DragFloat3("Extents", &extents.x, 0.01f))
 				boxCollider->SetLocalExtents(extents);
 
-			char tagBuffer[256];
-			memset(tagBuffer, 0, sizeof(tagBuffer));
-			strncpy_s(tagBuffer, boxCollider->GetCollisionTag().c_str(), sizeof(tagBuffer) - 1);
+			int currentLayer = boxCollider->GetLayerIndex();
 
-			if (ImGui::InputText("Collision Tag", tagBuffer, sizeof(tagBuffer)))
+			const auto& layers = CollisionProcessor::GetLayers();
+
+			const char* preview = layers[currentLayer].name.c_str();
+
+			if (ImGui::BeginCombo("Layer", preview))
 			{
-				boxCollider->SetCollisionTag(std::string(tagBuffer));
+				for (int i = 0; i < layers.size(); i++)
+				{
+					bool selected = (currentLayer == i);
+
+					if (ImGui::Selectable(layers[i].name.c_str(), selected))
+					{
+						boxCollider->SetLayer(i);
+					}
+
+					if (selected)
+						ImGui::SetItemDefaultFocus();
+				}
+
+				ImGui::EndCombo();
 			}
+			
 			//if (ImGui::Checkbox("Visible Lines", &draw))
 			//	boxCollider->SetDrawGizmo(draw);
 		}
