@@ -81,15 +81,14 @@ namespace Loopie {
 		s_MatricesUniformBuffer->SetData(&projectionMatrix[0][0], 0);
 		s_MatricesUniformBuffer->SetData(&viewMatrix[0][0], 1);
 
-		if(s_UseGizmos)
+		if (s_UseGizmos)
 			Gizmo::BeginGizmo();
 	}
 
 	void Renderer::EndScene()
 	{
 		FlushRenderQueue();
-		if(s_UseGizmos)
-			Gizmo::EndGizmo();
+		Gizmo::EndGizmo();
 	}
 
 	void Renderer::AddRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones)

@@ -180,6 +180,7 @@ namespace Loopie
 			m_game.StartScene();
 			if (m_game.GetCamera() && m_game.GetCamera()->GetIsActive()) {
 				Renderer::BeginScene(m_game.GetCamera()->GetViewMatrix(), m_game.GetCamera()->GetProjectionMatrix(), false);
+				UpdateComponents(Loopie::GIZMO);
 				RenderWorld(m_game.GetCamera());
 				Renderer::EndScene();
 
@@ -260,6 +261,8 @@ namespace Loopie
 			m_currentScene->SaveScene("recoverScene.scene");
 		}
 
+		if (!ScriptingManager::IsRunning())
+			return true;
 
 
 		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities()) {
@@ -281,6 +284,9 @@ namespace Loopie
 					case Loopie::UPDATING:
 					case Loopie::NEXTFRAME:
 						script->InvokeOnUpdate();
+						break;
+					case Loopie::GIZMO:
+						script->InvokeOnDrawGizmo();
 						break;
 					default:
 						break;

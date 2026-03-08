@@ -7,6 +7,7 @@ namespace Loopie
         public float x, y, z;
 
         public static Vector3 Zero => new Vector3(0.0f);
+        public static Vector3 One => new Vector3(1.0f);
         public static Vector3 Right => new Vector3(1.0f, 0.0f, 0.0f);
         public static Vector3 Up => new Vector3(0.0f, 1.0f, 0.0f);
         public static Vector3 Forward => new Vector3(0.0f, 0.0f, 1.0f);
@@ -73,7 +74,7 @@ namespace Loopie
         public void Normalize()
         {
             float mag = (float)magnitude;
-            if (mag > 1E-05f)
+            if (mag > Mathf.Epsilon)
             {
                 this /= mag;
             }
@@ -91,7 +92,7 @@ namespace Loopie
             get
             {
                 float mag = (float)magnitude;
-                return mag > 1E-05f? this / mag : Zero;
+                return mag > Mathf.Epsilon ? this / mag : Zero;
             }
         }
 
@@ -113,6 +114,20 @@ namespace Loopie
                 a.y + (b.y - a.y) * t,
                 a.z + (b.z - a.z) * t
             );
+        }
+
+        public static float Angle(Vector3 a, Vector3 b)
+        {
+            float dot = Dot(a, b);
+            float mag = (float)(a.magnitude * b.magnitude);
+
+            if (mag == Mathf.Epsilon)
+                return 0.0f;
+
+            float cosTheta = dot / mag;
+            cosTheta = Mathf.Clamp(cosTheta, -1.0f, 1.0f);
+
+            return Mathf.Acos(cosTheta) * Mathf.Rad2Deg;
         }
     }
 }

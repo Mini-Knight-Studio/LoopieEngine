@@ -31,6 +31,7 @@ namespace Loopie
 
 		m_OnCreate = m_scriptingClass->GetMethod("OnCreate", 0);
 		m_OnUpdate = m_scriptingClass->GetMethod("OnUpdate", 0);
+		m_OnDrawGizmo = m_scriptingClass->GetMethod("OnDrawGizmo", 0);
 
 		MonoProperty* entityProperty =
 			mono_class_get_property_from_name(ScriptingManager::s_Data.ComponentClass->GetMonoClass() , "entity");
@@ -65,6 +66,7 @@ namespace Loopie
 		m_instance = nullptr;
 		m_OnCreate = nullptr;
 		m_OnUpdate = nullptr;
+		m_OnDrawGizmo = nullptr;
 	}
 
 	void ScriptClass::InvokeOnCreate()
@@ -77,6 +79,12 @@ namespace Loopie
 	{
 		if (m_OnUpdate)
 			m_scriptingClass->InvokeMethod(m_instance, m_OnUpdate);
+	}
+
+	void ScriptClass::InvokeOnDrawGizmo()
+	{
+		if (m_OnDrawGizmo)
+			m_scriptingClass->InvokeMethod(m_instance, m_OnDrawGizmo);
 	}
 
 	void ScriptClass::SetClass(const std::string& fullName)

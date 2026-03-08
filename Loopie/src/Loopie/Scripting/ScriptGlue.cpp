@@ -16,6 +16,8 @@
 
 #include "Loopie/Collisions/CollisionProcessor.h"
 
+#include "Loopie/Render/Gizmo.h"
+
 #include "Loopie/Core/Application.h"
 #include "Loopie/Scene/Scene.h"
 #include "Loopie/Scene/Entity.h"
@@ -1129,6 +1131,12 @@ namespace Loopie
 	}
 #pragma endregion
 
+#pragma region Gizmo
+	static void Gizmo_DrawLine(vec3* start, vec3* end, vec4* color) {
+		Gizmo::DrawLine(*start, *end, *color);
+	}
+#pragma endregion
+
 
 
 	template<typename Comp, typename = std::enable_if_t<std::is_base_of_v<Component, Comp>>>
@@ -1289,5 +1297,7 @@ namespace Loopie
 		ADD_INTERNAL_CALL(AudioSource_GetSet3DMinMaxDistance);
 
 		ADD_INTERNAL_CALL(Collisions_Raycast);
+
+		ADD_INTERNAL_CALL(Gizmo_DrawLine);
 	}
 }

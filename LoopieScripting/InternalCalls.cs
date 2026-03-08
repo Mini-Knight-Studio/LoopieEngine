@@ -320,5 +320,9 @@ namespace Loopie
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static bool Collisions_Raycast(Vector3 origin, Vector3 direction, float maxDistance, out RaycastHit hit);
         #endregion
+        #region Gizmo
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Gizmo_DrawLine(Vector3 start, Vector3 end, Vector4 color);
+        #endregion
     }
 }
