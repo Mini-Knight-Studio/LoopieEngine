@@ -8,8 +8,7 @@ namespace Loopie
 		obj.CreateField<int>("scale_mode", static_cast<int>(m_scaleMode));
 		obj.CreateField<float>("ref_w", m_referenceResolution.x);
 		obj.CreateField<float>("ref_h", m_referenceResolution.y);
-
-		obj.CreateField<float>("matchWidthOrHeight", m_matchWidthOrHeight);
+		obj.CreateField<float>("match_width_or_height", m_matchWidthOrHeight);
 		return obj;
 	}
 
@@ -20,8 +19,7 @@ namespace Loopie
 
 		m_referenceResolution.x = data.GetValue<float>("ref_w", m_referenceResolution.x).Result;
 		m_referenceResolution.y = data.GetValue<float>("ref_h", m_referenceResolution.y).Result;
-
-		m_matchWidthOrHeight = data.GetValue<float>("matchWidthOrHeight", m_matchWidthOrHeight).Result;
+		m_matchWidthOrHeight = data.GetValue<float>("match_width_or_height", m_matchWidthOrHeight).Result;
 	}
 
 	vec2 CanvasScaler::ComputeScale(const vec2& targetPixels, const vec2& canvasUnits) const

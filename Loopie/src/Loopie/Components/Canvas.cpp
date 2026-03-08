@@ -31,12 +31,6 @@ void Loopie::Canvas::Init()
 		return;
 	}
 
-	CanvasScaler* scaler = owner->GetComponent<CanvasScaler>();
-	if (!scaler)
-	{
-		owner->AddComponent<CanvasScaler>();
-	}
-
 	rectTransform->m_transformNotifier.AddObserver(this);
 	m_cornersDirty = true;
 }
