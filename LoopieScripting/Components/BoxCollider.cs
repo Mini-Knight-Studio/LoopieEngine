@@ -5,6 +5,18 @@ namespace Loopie
     public class BoxCollider : Component
     {
         public Vector3 LocalCenter {get { return GetLocalCenter(); } set { SetLocalCenter(value); }}
+        public string Layer
+        {
+            get
+            {
+                return InternalCalls.BoxCollider_GetLayer(entity.ID, ID);
+            }
+            set
+            {
+                InternalCalls.BoxCollider_SetLayer(entity.ID, ID, value);
+            }
+        }
+       
 
         private Vector3 GetLocalCenter()
         {

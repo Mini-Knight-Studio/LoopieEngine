@@ -41,7 +41,6 @@ namespace Loopie
 			mono_free(cStr);
 			return str;
 		}
-	
 	}
 
 	#define ADD_INTERNAL_CALL(Name) mono_add_internal_call("Loopie.InternalCalls::" #Name, Name)
@@ -868,6 +867,41 @@ namespace Loopie
 #pragma endregion
 
 #pragma region BoxCollider
+
+	static MonoString* BoxCollider_GetLayer(MonoString* entityIDStr, MonoString* componentIDStr)
+	{
+		UUID uuid(Utils::MonoStringToString(entityIDStr));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		if (entity)
+		{
+			BoxCollider* collider = entity->GetComponent<BoxCollider>();
+			if (collider)
+			{
+				unsigned int tagIndex = collider->GetLayerIndex();
+				const CollisionLayer& tag = CollisionProcessor::GetLayer(tagIndex);
+				return ScriptingManager::CreateString(tag.name.c_str());
+			}
+		}
+		return ScriptingManager::CreateString("");
+	}
+
+	static void BoxCollider_SetLayer(MonoString* entityIDStr, MonoString* componentIDStr, MonoString* tagStr)
+	{
+		UUID uuid(Utils::MonoStringToString(entityIDStr));
+		Scene* scene = &Application::GetInstance().GetScene();
+		std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+		if (entity)
+		{
+			BoxCollider* collider = entity->GetComponent<BoxCollider>();
+			if (collider)
+			{
+				std::string targetTag = Utils::MonoStringToString(tagStr);
+				collider->SetLayer(targetTag);
+			}
+		}
+	}
+
 	static void BoxCollider_SetLocalCenter(MonoString* entityID, MonoString* componentID, vec3* center)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
@@ -934,8 +968,8 @@ namespace Loopie
 		if (collider)
 			return collider->CollidedThisFrame();
 		return false;
-	}	
-	
+	}
+
 	static bool BoxCollider_HasEndedCollision(MonoString* entityID, MonoString* componentID)
 	{
 		UUID uuid(Utils::MonoStringToString(entityID));
@@ -1244,8 +1278,6 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Camera_SetProjection);
 		ADD_INTERNAL_CALL(Camera_GetProjection);
 
-
-
 		ADD_INTERNAL_CALL(Input_IsKeyDown);
 		ADD_INTERNAL_CALL(Input_IsKeyUp);
 		ADD_INTERNAL_CALL(Input_IsKeyPressed);
@@ -1267,13 +1299,13 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Input_SetAxisDeadzone);
 		ADD_INTERNAL_CALL(Input_GetAxisDeadzone);
 
-
 		ADD_INTERNAL_CALL(Time_GetDeltaTime);
 		ADD_INTERNAL_CALL(Time_GetFixedDeltaTime);
 		ADD_INTERNAL_CALL(Time_GetTimeScale);
 		ADD_INTERNAL_CALL(Time_SetTimeScale);
 
-
+		ADD_INTERNAL_CALL(BoxCollider_GetLayer);
+		ADD_INTERNAL_CALL(BoxCollider_SetLayer);
 		ADD_INTERNAL_CALL(BoxCollider_GetLocalCenter);
 		ADD_INTERNAL_CALL(BoxCollider_SetLocalCenter);
 		ADD_INTERNAL_CALL(BoxCollider_GetLocalExtents);

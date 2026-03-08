@@ -104,6 +104,12 @@ namespace Loopie
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static bool BoxCollider_HasEndedCollision(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static string BoxCollider_GetLayer(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_SetLayer(string entityID, string componentID, string tag);
         #endregion
         #region Animator
         [MethodImplAttribute(MethodImplOptions.InternalCall)]

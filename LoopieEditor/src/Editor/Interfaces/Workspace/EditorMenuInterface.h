@@ -16,6 +16,7 @@ namespace Loopie {
 	private:
 		void RenderAboutMenu();
 		void RenderInfoConfigMenu();
+		void RenderCollisionMatrixMenu();
 
 		void RenderOpenProjectPopUp();
 		void RenderCreateProjectPopUp();
@@ -32,6 +33,7 @@ namespace Loopie {
 		/// Menus States
 		bool m_showAboutMenu = false;
 		bool m_showInfoConfigMenu = false;
+		bool m_showCollisionMatrixMenu = false;
 
 
 		/// Plot
