@@ -124,6 +124,7 @@ namespace Loopie
 		m_textEditor.Update(inputEvent);
 		m_scene.Update(inputEvent);
 		m_topBar.Update(inputEvent);
+		m_mainMenu.Update(inputEvent);
 		
 
 		/// RenderToTarget

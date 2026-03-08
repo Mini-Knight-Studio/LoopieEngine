@@ -184,7 +184,7 @@ namespace Loopie {
 		}
 		
 		
-		if (inputEvent.GetKeyStatus(SDL_SCANCODE_LCTRL) == KeyState::REPEAT)
+		if (inputEvent.GetKeyStatus(SDL_SCANCODE_LALT) == KeyState::REPEAT)
 			m_temporalSnapEnabled = true;
 		else
 			m_temporalSnapEnabled = false;

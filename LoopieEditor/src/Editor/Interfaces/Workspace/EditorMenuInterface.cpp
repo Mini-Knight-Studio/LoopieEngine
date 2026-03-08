@@ -8,6 +8,7 @@
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Project/ProjectConfig.h"
 #include "Loopie/Collisions/CollisionProcessor.h"
+#include "Loopie/Scripting/ScriptingManager.h"
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -19,6 +20,12 @@
 
 namespace Loopie {
 	EditorMenuInterface::EditorMenuInterface() {
+	}
+
+	void EditorMenuInterface::Update(const InputEventManager& inputEvent)
+	{
+		if(!ScriptingManager::IsRunning())
+			HotKeys(inputEvent);
 	}
 
 	void EditorMenuInterface::Render() {
@@ -427,6 +434,17 @@ namespace Loopie {
 		}
 
 		ImGui::End();
+	}
+
+	void EditorMenuInterface::HotKeys(const InputEventManager& inputEvent)
+	{
+		if (inputEvent.GetKeyWithModifier(SDL_SCANCODE_S, KeyModifier::CTRL) ) {
+			bool existsPath = std::filesystem::exists(Application::GetInstance().GetScene().GetFilePath());
+			if (existsPath)
+			{
+				Application::GetInstance().GetScene().SaveScene(Application::GetInstance().GetScene().GetFilePath());
+			}
+		}
 	}
 
 	void EditorMenuInterface::RenderOpenProjectPopUp()
