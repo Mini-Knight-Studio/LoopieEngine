@@ -121,7 +121,7 @@ namespace Loopie {
             m_localCenter.y = static_cast<float>(centerNode.GetValue<double>("y", 0.0).Result);
             m_localCenter.z = static_cast<float>(centerNode.GetValue<double>("z", 0.0).Result);
         }
-        if (data.Contains("collision_tag")) {
+        if (data.Contains("layer_index")) {
             m_layerIndex = data.GetValue<unsigned int>("layer_index", 0).Result;
         }
         if (data.Contains("extents")) {
