@@ -19,11 +19,25 @@ namespace Loopie
 
 	Material::~Material()
 	{
-		for (auto& [name, texture] : m_textures)
-		{
-			if (texture)
-				texture->DecrementReferenceCount();
+		if (m_textureOwnership) {
+			for (auto& [name, texture] : m_textures)
+			{
+				if (texture)
+					texture->DecrementReferenceCount();
+			}
 		}
+
+		m_textures.clear();
+	}
+
+	void Material::SetTextureBufferOverride(const std::shared_ptr<TextureBuffer>& textureBuffer)
+	{
+		m_textureBufferOverride = textureBuffer;
+	}
+
+	void Material::ClearTextureBufferOverride()
+	{
+		m_textureBufferOverride.reset();
 	}
 
 	std::shared_ptr<Material> Material::GetDefault()
@@ -50,9 +64,21 @@ namespace Loopie
 
 		m_shader.Bind();
 
+		if (m_textureBufferOverride)
+		{
+			m_textureBufferOverride->Bind(0);
+			m_shader.SetUniformInt("u_Albedo", 0);
+			
+			for (const auto& [name, uniformValue] : m_uniformValues)
+			{
+				ApplyUniform(name, uniformValue);
+			}
+
+			return;
+		}
+		
 		// Bind textures
 		int textureSlot = 0;
-
 		for (auto& [name, texture] : m_textures)
 		{
 			if (!texture)
@@ -104,11 +130,12 @@ namespace Loopie
 			Log::Error("Cannot reset material with invalid shader.");
 			return;
 		}
-
-		for (auto& [name, texture] : m_textures)
-		{
-			if (texture)
-				texture->DecrementReferenceCount();
+		if (m_textureOwnership){
+			for (auto& [name, texture] : m_textures)
+			{
+				if (texture)
+					texture->DecrementReferenceCount();
+			}
 		}
 
 		m_uniformValues.clear();
@@ -126,7 +153,8 @@ namespace Loopie
 		for (const auto& sampler : samplers)
 		{
 			m_textures[sampler.name] = Texture::GetDefault();
-			m_textures[sampler.name]->IncrementReferenceCount();
+			if(m_textureOwnership)
+				m_textures[sampler.name]->IncrementReferenceCount();
 		}
 
 		Log::Info("Material reset to shader defaults");
@@ -221,12 +249,12 @@ namespace Loopie
 			return;
 		}
 
-		if (it->second)
+		if (m_textureOwnership && it->second)
 			it->second->DecrementReferenceCount();
 
 		it->second = texture;
 
-		if (it->second)
+		if (m_textureOwnership && it->second)
 			it->second->IncrementReferenceCount();
 	}
 }

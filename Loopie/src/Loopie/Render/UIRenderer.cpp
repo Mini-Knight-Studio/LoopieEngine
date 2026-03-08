@@ -9,6 +9,8 @@
 #include "Loopie/Importers/MaterialImporter.h"
 #include "Loopie/Core/Log.h"
 
+#include "glad/glad.h"
+
 namespace Loopie
 {
 	bool UIRenderer::s_initialized = false;
@@ -53,6 +55,7 @@ namespace Loopie
 		s_material = ResourceManager::GetMaterial(meta);
 		s_material->Load();
 		s_material->SetIfEditable(true);
+		s_material->SetTextureOwnership(false);
 
 		s_shader = new Shader("assets/shaders/UIQuad.shader");
 		s_material->SetShader(*s_shader);
@@ -68,8 +71,6 @@ namespace Loopie
 		s_quadVAO.reset();
 		s_quadVBO.reset();
 		s_quadEBO.reset();
-		
-		//s_material->~Material();
 		
 		s_material.reset();
 		s_initialized = false;
@@ -101,9 +102,6 @@ namespace Loopie
 		if (!s_quadVAO || !s_material || !texture)
 			return;
 
-		//if (s_material->GetTexture() != texture)
-		//	s_material->GetTexture()->DecrementReferenceCount();
-
 		matrix4 model(1.0f);
 		model = glm::translate(model, vec3(posPixels.x, posPixels.y, 0.0f));
 		model = glm::scale(model, vec3(sizePixels.x, sizePixels.y, 1.0f));
@@ -132,6 +130,221 @@ namespace Loopie
 		s_material->SetTexture("u_Albedo",texture);
 		
 		Renderer::FlushRenderItem(s_quadVAO, s_material, modelMatrix);
+	}
+
+	void UIRenderer::DrawText(const vec2& posPixels, const vec2& sizePixels, const std::string& text, const std::shared_ptr<Font>& font, const vec4& color, float scale)
+	{
+		EnsureInit();
+
+		if (!s_quadVAO || !s_material || !font || font->GetRendererId() == 0 || text.empty())
+			return;
+
+		float x = 0.0f;
+		float y = 0.0f;
+
+		float minX = 0.0f;
+		float minY = 0.0f;
+		float maxX = 0.0f;
+		float maxY = 0.0f;
+
+		const float fontScale = (scale <= 0.0f) ? 1.0f : scale;
+
+		for (size_t i = 0; i < text.size(); i++)
+		{
+			const unsigned char ch = (unsigned char)text[i];
+
+			if (ch == '\n')
+			{
+				x = 0.0f;
+				y -= (float)font->GetLineHeight() * fontScale;
+				continue;
+			}
+
+			const FontGlyph* g = font->GetGlyph((int)ch);
+			if (!g)
+				continue;
+
+			const float xpos = x + (float)g->bearing.x * fontScale;
+			const float ypos = y - ((float)g->size.y - (float)g->bearing.y) * fontScale;
+			const float w = (float)g->size.x * fontScale;
+			const float h = (float)g->size.y * fontScale;
+
+			minX = std::min(minX, xpos);
+			minY = std::min(minY, ypos);
+			maxX = std::max(maxX, xpos + w);
+			maxY = std::max(maxY, ypos + h);
+
+			x += ((float)g->advance / 64.0f) * fontScale;
+		}
+
+		const float textW = std::max(1.0f, maxX - minX);
+		const float textH = std::max(1.0f, maxY - minY);
+
+		float fitScale = 1.0f;
+		if (sizePixels.x > 0.0f && sizePixels.y > 0.0f)
+		{
+			const float sx = sizePixels.x / textW;
+			const float sy = sizePixels.y / textH;
+			fitScale = std::min(sx, sy);
+		}
+
+		UniformValue c;
+		c.type = UniformType_vec4;
+		c.value = color;
+		s_material->SetShaderVariable("u_Color", c);
+		s_material->SetTextureBufferOverride(font->GetAtlasTextureBuffer());
+
+		const float ox = -minX * fitScale;
+		const float oy = -minY * fitScale;
+
+		x = 0.0f;
+		y = 0.0f;
+
+		for (size_t i = 0; i < text.size(); i++)
+		{
+			const unsigned char ch = (unsigned char)text[i];
+
+			if (ch == '\n')
+			{
+				x = 0.0f;
+				y -= (float)font->GetLineHeight() * fontScale;
+				continue;
+			}
+
+			const FontGlyph* g = font->GetGlyph((int)ch);
+			if (!g)
+				continue;
+
+			const float xpos = posPixels.x + (x + (float)g->bearing.x * fontScale) * fitScale + ox;
+			const float ypos = posPixels.y + (y - ((float)g->size.y - (float)g->bearing.y) * fontScale) * fitScale + oy;
+
+			const float w = (float)g->size.x * fontScale * fitScale;
+			const float h = (float)g->size.y * fontScale * fitScale;
+
+			UniformValue uv;
+			uv.type = UniformType_vec4;
+			uv.value = vec4(g->uvMin.x, g->uvMin.y, g->uvMax.x, g->uvMax.y);
+			s_material->SetShaderVariable("u_UVRect", uv);
+
+			matrix4 model(1.0f);
+			model = glm::translate(model, vec3(xpos, ypos, 0.0f));
+			model = glm::scale(model, vec3(w, h, 1.0f));
+
+			Renderer::FlushRenderItem(s_quadVAO, s_material, model);
+
+			x += ((float)g->advance / 64.0f) * fontScale;
+		}
+
+		UniformValue uvReset;
+		uvReset.type = UniformType_vec4;
+		uvReset.value = vec4(0.0f, 0.0f, 1.0f, 1.0f);
+		s_material->SetShaderVariable("u_UVRect", uvReset);
+		s_material->ClearTextureBufferOverride();
+	}
+
+	void UIRenderer::DrawTextWorld(const matrix4& modelMatrix, const vec2& sizePixels, const std::string& text, const std::shared_ptr<Font>& font, const vec4& color, float scale)
+	{
+		EnsureInit();
+
+		if (!s_quadVAO || !s_material || !font || font->GetRendererId() == 0 || text.empty())
+			return;
+
+		float x = 0.0f;
+		float y = 0.0f;
+
+		float minX = 0.0f;
+		float minY = 0.0f;
+		float maxX = 0.0f;
+		float maxY = 0.0f;
+
+		const float fontScale = (scale <= 0.0f) ? 1.0f : scale;
+
+		for (size_t i = 0; i < text.size(); i++)
+		{
+			const unsigned char ch = (unsigned char)text[i];
+
+			if (ch == '\n')
+			{
+				x = 0.0f;
+				y -= (float)font->GetLineHeight() * fontScale;
+				continue;
+			}
+
+			const FontGlyph* g = font->GetGlyph((int)ch);
+			if (!g)
+				continue;
+
+			const float xpos = x + (float)g->bearing.x * fontScale;
+			const float ypos = y - ((float)g->size.y - (float)g->bearing.y) * fontScale;
+			const float w = (float)g->size.x * fontScale;
+			const float h = (float)g->size.y * fontScale;
+
+			minX = std::min(minX, xpos);
+			minY = std::min(minY, ypos);
+			maxX = std::max(maxX, xpos + w);
+			maxY = std::max(maxY, ypos + h);
+
+			x += ((float)g->advance / 64.0f) * fontScale;
+		}
+
+		const float textW = std::max(1.0f, maxX - minX);
+		const float textH = std::max(1.0f, maxY - minY);
+
+		const float sx = sizePixels.x / textW;
+		const float sy = sizePixels.y / textH;
+		const float uniformS = std::min(sx, sy);
+
+		UniformValue c;
+		c.type = UniformType_vec4;
+		c.value = color;
+		s_material->SetShaderVariable("u_Color", c);
+		s_material->SetTextureBufferOverride(font->GetAtlasTextureBuffer());
+
+		float rx = -minX * uniformS;
+		float ry = -minY * uniformS;
+
+		x = 0.0f;
+		y = 0.0f;
+
+		for (size_t i = 0; i < text.size(); i++)
+		{
+			const unsigned char ch = (unsigned char)text[i];
+
+			if (ch == '\n')
+			{
+				x = 0.0f;
+				y -= (float)font->GetLineHeight() * fontScale;
+				continue;
+			}
+
+			const FontGlyph* g = font->GetGlyph((int)ch);
+			if (!g)
+				continue;
+
+			const float xpos = (x + (float)g->bearing.x * fontScale) * uniformS + rx;
+			const float ypos = (y - ((float)g->size.y - (float)g->bearing.y) * fontScale) * uniformS + ry;
+			const float w = (float)g->size.x * fontScale * uniformS;
+			const float h = (float)g->size.y * fontScale * uniformS;
+
+			UniformValue uv;
+			uv.type = UniformType_vec4;
+			uv.value = vec4(g->uvMin.x, g->uvMin.y, g->uvMax.x, g->uvMax.y);
+			s_material->SetShaderVariable("u_UVRect", uv);
+
+			matrix4 glyphLocal(1.0f);
+			glyphLocal = glm::translate(glyphLocal, vec3(xpos, ypos, 0.0f));
+			glyphLocal = glm::scale(glyphLocal, vec3(w, h, 1.0f));
+
+			Renderer::FlushRenderItem(s_quadVAO, s_material, modelMatrix * glyphLocal);
+
+			x += ((float)g->advance / 64.0f) * fontScale;
+		}
+
+		UniformValue uvReset;
+		uvReset.type = UniformType_vec4;
+		uvReset.value = vec4(0.0f, 0.0f, 1.0f, 1.0f);
+		s_material->SetShaderVariable("u_UVRect", uvReset);
+		s_material->ClearTextureBufferOverride();
 	}
 
 	void UIRenderer::EnsureInit()

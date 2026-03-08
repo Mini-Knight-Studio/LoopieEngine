@@ -97,15 +97,14 @@ namespace Loopie {
 		s_lightingUniformBuffer->SetData(&directionalLightDir, 1);
 		s_lightingUniformBuffer->SetData(&directionalLightColor, 2);
 
-		if(s_UseGizmos)
+		if (s_UseGizmos)
 			Gizmo::BeginGizmo();
 	}
 
 	void Renderer::EndScene()
 	{
 		FlushRenderQueue();
-		if(s_UseGizmos)
-			Gizmo::EndGizmo();
+		Gizmo::EndGizmo();
 	}
 
 	void Renderer::AddRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones)

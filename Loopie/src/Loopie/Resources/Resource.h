@@ -13,7 +13,8 @@ namespace Loopie {
 		SHADER,
 		SCENE,
 		AUDIO,
-		SCRIPT
+		SCRIPT,
+		FONT
 	};
 
 	class Resource : public  IIdentificable {

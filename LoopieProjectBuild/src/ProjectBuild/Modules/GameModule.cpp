@@ -27,9 +27,12 @@
 #include "Loopie/Components/Transform.h"
 #include "Loopie/Components/RectTransform.h"
 #include "Loopie/Components/Canvas.h"
+#include "Loopie/Components/CanvasScaler.h"
 #include "Loopie/Components/AudioListener.h"
 #include "Loopie/Components/AudioSource.h"
 #include "Loopie/Components/Image.h"
+#include "Loopie/Components/Text.h"
+#include "Loopie/Components/Button.h"
 ///
 
 #include <glad/glad.h>
@@ -147,6 +150,8 @@ namespace Loopie
 		
 		///
 
+		ProcessOverlayButtonsInput();
+
 		m_currentScene->FlushRemovedEntities();
 
 		if(mode == DebugGameMode::START)
@@ -162,17 +167,12 @@ namespace Loopie
 
 			bool errors = false;
 			for (const auto& [uuid, entity] : m_currentScene->GetAllEntities()) {
-				const std::vector<Component*>& components = entity->GetComponents();
-				for (size_t i = 0; i < components.size(); i++)
+				std::vector<ScriptClass*> scripts = entity->GetComponents<ScriptClass>();
+				for (size_t i = 0; i < scripts.size(); i++)
 				{
-					Component* component = components[i];
-					if (component->GetTypeID() == ScriptClass::GetTypeIDStatic())
-					{
-						ScriptClass* script = static_cast<ScriptClass*>(component);
-						if (!script->GetScriptingClass()) {
-							errors = true;
-							Log::Error("Failed to start the game. Check the scripts || Entity: {0}   Component UUID: {1}", script->GetOwner()->GetName(), script->GetUUID().Get());
-						}
+					if (!scripts[i]->GetScriptingClass()) {
+						errors = true;
+						Log::Error("Failed to start the game. Check the scripts || Entity: {0}   Component UUID: {1}", scripts[i]->GetOwner()->GetName(), scripts[i]->GetUUID().Get());
 					}
 				}
 			}
@@ -182,9 +182,9 @@ namespace Loopie
 			}
 
 			ScriptingManager::RuntimeStart();
-			AudioManager::StartSceneAudio(&Application::GetInstance().GetScene());
-			Application::GetInstance().GetScene().SaveScene("recoverScene.scene");
 		}
+
+
 
 		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities()) {
 			if (!entity->GetIsActive())
@@ -202,18 +202,10 @@ namespace Loopie
 					ScriptClass* script = static_cast<ScriptClass*>(component);
 					switch (mode)
 					{
-					case Loopie::START:
-						script->InvokeOnCreate();
-						break;
 					case Loopie::UPDATING:
 					case Loopie::NEXTFRAME:
 						script->InvokeOnUpdate();
 						break;
-					case Loopie::END:
-						script->DestroyInstance();
-						break;
-					case Loopie::PAUSED:
-					case Loopie::DEACTIVATED:
 					default:
 						break;
 					}
@@ -223,7 +215,6 @@ namespace Loopie
 
 		if (mode == DebugGameMode::END) {
 			ScriptingManager::RuntimeStop();
-			Application::GetInstance().GetScene().ReadAndLoadSceneFile("recoverScene.scene", false);
 		}
 
 		return true;
@@ -289,17 +280,44 @@ namespace Loopie
 			return;
 
 		Image* img = entity->GetComponent<Image>();
+		Text* text = entity->GetComponent<Text>();
 		RectTransform* rt = entity->GetComponent<RectTransform>();
 
 		if (img && img->GetIsActive() && rt)
 		{
-			const vec3 p = rt->GetLocalPosition();
+			const vec3 p = rt->GetWorldPosition();
+			const vec3 ws3 = rt->GetWorldScale();
+			const vec2 ws(ws3.x, ws3.y);
+
 			const vec2 s(rt->GetWidth(), rt->GetHeight());
 
-			const vec2 pixelSize(s.x * scale.x, s.y * scale.y);
+			const vec2 pixelSize(s.x * ws.x * scale.x, s.y * ws.y * scale.y);
 			const vec2 pixelPos(p.x * scale.x, p.y * scale.y);
 
-			UIRenderer::DrawImage(pixelPos, pixelSize, img->GetTexture(), img->GetTint());
+			vec4 color = img->GetTint();
+			std::shared_ptr<Texture> texture = img->GetTexture();
+
+			if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
+			{
+				button->GetCurrentColor(color);
+				button->GetCurrentTexture(texture);
+			}
+
+			UIRenderer::DrawImage(pixelPos, pixelSize, texture, color);
+		}
+
+		if (text && text->GetIsActive() && rt)
+		{
+			const vec3 p = rt->GetWorldPosition();
+			const vec3 ws3 = rt->GetWorldScale();
+			const vec2 ws(ws3.x, ws3.y);
+
+			const vec2 s(rt->GetWidth(), rt->GetHeight());
+
+			const vec2 pixelPos(p.x * scale.x, p.y * scale.y);
+			const vec2 pixelSize(s.x * ws.x * scale.x, s.y * ws.y * scale.y);
+
+			UIRenderer::DrawText(pixelPos, pixelSize, text->GetText(), text->GetFont(), text->GetColor(), text->GetScale());
 		}
 
 		for (const auto& child : entity->GetChildren())
@@ -341,16 +359,31 @@ namespace Loopie
 			if (!canvasRt)
 				continue;
 
-			const float cw = canvasRt->GetWidth();
-			const float ch = canvasRt->GetHeight();
+			const vec2 targetPixels(w, h);
 
-			if (cw <= 0.0f || ch <= 0.0f)
+			vec2 canvasUnits(canvasRt->GetWidth(), canvasRt->GetHeight());
+			if (auto* scaler = entity->GetComponent<CanvasScaler>(); scaler && scaler->GetIsActive())
+			{
+				canvasUnits = scaler->ComputeOverlayCanvasSize(targetPixels);
+				if (scaler->GetScaleMode() == CanvasScaleMode::ScaleWithCanvasSize)
+				{
+					scaler->SetReferenceResolution(vec2(canvasRt->GetWidth(), canvasRt->GetHeight()));
+				}
+				else if (scaler->GetScaleMode() == CanvasScaleMode::ConstantPixelSize)
+				{
+					canvasRt->SetWidth(size.x);
+					canvasRt->SetHeight(size.y);
+				}
+			}
+			else
+			{
+				canvasUnits = targetPixels;
+			}
+
+			if (canvasUnits.x <= 0.0f || canvasUnits.y <= 0.0f)
 				continue;
 
-			const float sx = w / cw;
-			const float sy = h / ch;
-
-			RenderUIRecursive(entity, vec2(sx, sy));
+			RenderUIRecursive(entity, vec2(targetPixels.x / canvasUnits.x, targetPixels.y / canvasUnits.y));
 		}
 
 		Renderer::EndScene();
@@ -365,6 +398,7 @@ namespace Loopie
 			return;
 
 		Image* img = entity->GetComponent<Image>();
+		Text* text = entity->GetComponent<Text>();
 		RectTransform* rt = entity->GetComponent<RectTransform>();
 
 		if (img && img->GetIsActive() && rt)
@@ -376,9 +410,27 @@ namespace Loopie
 				const float h = rt->GetHeight();
 
 				matrix4 model = rt->GetLocalToWorldMatrix() * glm::scale(matrix4(1.0f), vec3(w, h, 1.0f));
+				vec4 color = img->GetTint();
+				std::shared_ptr<Texture> texture = img->GetTexture();
 
-				UIRenderer::DrawImageWorld(model, tex, img->GetTint());
+				if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
+				{
+					button->GetCurrentColor(color);
+					button->GetCurrentTexture(texture);
+				}
+
+				UIRenderer::DrawImageWorld(model, texture, color);
 			}
+		}
+
+		if (text && text->GetIsActive() && rt)
+		{
+			const float w = rt->GetWidth();
+			const float h = rt->GetHeight();
+
+			const matrix4 model = rt->GetLocalToWorldMatrix();
+
+			UIRenderer::DrawTextWorld(model, vec2(w, h), text->GetText(), text->GetFont(), text->GetColor(), text->GetScale());
 		}
 
 		for (const auto& child : entity->GetChildren())
@@ -392,6 +444,8 @@ namespace Loopie
 		Renderer::EnableDepth();
 		Renderer::SetDepthWrite(true);
 
+		ivec2 size = Application::GetInstance().GetWindow().GetSize();
+
 		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities())
 		{
 			if (!entity || !entity->GetIsActive())
@@ -404,15 +458,111 @@ namespace Loopie
 			if (canvas->GetRenderMode() == CanvasRenderMode::ScreenSpaceOverlay)
 				continue;
 
+			RectTransform* canvasRt = entity->GetComponent<RectTransform>();
+			if (auto* scaler = entity->GetComponent<CanvasScaler>(); scaler && scaler->GetIsActive())
+			{
+				if (scaler->GetScaleMode() == CanvasScaleMode::ScaleWithCanvasSize)
+				{
+					scaler->SetReferenceResolution(vec2(canvasRt->GetWidth(), canvasRt->GetHeight()));
+				}
+				else if (scaler->GetScaleMode() == CanvasScaleMode::ConstantPixelSize)
+				{
+					canvasRt->SetWidth(size.x);
+					canvasRt->SetHeight(size.y);
+				}
+			}
+
 			RenderSceneUIRecursive(entity);
 		}
 
 		Renderer::DisableBlend();
 	}
 
-	void GameModule::OnNotify(const EngineNotification& type)
+
+	void GameModule::ProcessOverlayButtonsInput()
 	{
-		
+		Application& app = Application::GetInstance();
+		InputEventManager& inputEvent = app.GetInputEvent();
+
+		const vec2 mouseLocalPx = inputEvent.GetMousePosition();
+
+		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities())
+		{
+			if (!entity || !entity->GetIsActive())
+				continue;
+
+			Canvas* canvas = entity->GetComponent<Canvas>();
+			RectTransform* canvasRt = entity->GetComponent<RectTransform>();
+			if (!canvas || !canvasRt || !canvas->GetIsActive())
+				continue;
+			if (canvas->GetRenderMode() != CanvasRenderMode::ScreenSpaceOverlay)
+				continue;
+
+			const float cw = canvasRt->GetWidth();
+			const float ch = canvasRt->GetHeight();
+			if (cw <= 0.0f || ch <= 0.0f)
+				continue;
+
+
+			ivec2 size = Application::GetInstance().GetWindow().GetSize();
+			const float w = static_cast<float>(size.x);
+			const float h = static_cast<float>(size.y);
+
+			const float sx = static_cast<float>(w) / cw;
+			const float sy = static_cast<float>(h) / ch;
+
+			const vec2 mouseCanvas(mouseLocalPx.x / sx, ch - (mouseLocalPx.y / sy));
+
+			static bool s_pressedInside = false;
+			ProcessOverlayButtonsRecursive(entity, mouseCanvas, true, inputEvent, s_pressedInside);
+		}
 	}
 
+	void GameModule::ProcessOverlayButtonsRecursive(const std::shared_ptr<Loopie::Entity>& entity, const vec2& mouseCanvas, bool mouseOverGame, const Loopie::InputEventManager& input, bool& pressedInsideAny)
+	{
+		if (!entity || !entity->GetIsActive())
+			return;
+
+		Button* button = entity->GetComponent<Button>();
+		RectTransform* rt = entity->GetComponent<RectTransform>();
+
+		bool hovered = false;
+		if (mouseOverGame && button && rt && button->GetIsActive())
+		{
+			const vec3 p = rt->GetLocalPosition();
+			const float x = p.x;
+			const float y = p.y;
+			const float w = rt->GetWidth();
+			const float h = rt->GetHeight();
+
+			hovered = (mouseCanvas.x >= x && mouseCanvas.x <= x + w &&
+				mouseCanvas.y >= y && mouseCanvas.y <= y + h);
+
+			button->SetHovered(hovered);
+
+			const bool down = (input.GetMouseButtonStatus(0) == KeyState::DOWN) ||
+				(input.GetMouseButtonStatus(0) == KeyState::REPEAT);
+			const bool justDown = (input.GetMouseButtonStatus(0) == KeyState::DOWN);
+			const bool up = (input.GetMouseButtonStatus(0) == KeyState::UP);
+
+			if (justDown && hovered)
+			{
+				pressedInsideAny = true;
+			}
+
+			button->SetPressed(down && hovered && pressedInsideAny);
+
+			if (up && pressedInsideAny)
+			{
+				if (hovered)
+					button->TriggerClick();
+
+				pressedInsideAny = false;
+				button->SetPressed(false);
+			}
+		}
+
+		for (const auto& child : entity->GetChildren())
+			ProcessOverlayButtonsRecursive(child, mouseCanvas, mouseOverGame, input, pressedInsideAny);
+	}
 }

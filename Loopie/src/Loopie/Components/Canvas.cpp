@@ -1,6 +1,7 @@
 #include "Canvas.h"
 
 #include "Loopie/Components/RectTransform.h"
+#include "Loopie/Components/CanvasScaler.h"
 #include "Loopie/Render/Gizmo.h"
 #include "Loopie/Core/Log.h"
 

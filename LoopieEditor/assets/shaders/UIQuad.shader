@@ -16,10 +16,14 @@ uniform bool lp_Skinned;
 
 out vec2 v_TexCoord;
 
+uniform vec4 u_UVRect = vec4(0.0, 0.0, 1.0, 1.0); // (minU, minV, maxU, maxV)
+
 void main()
 {
     if(!lp_Skinned){
-        v_TexCoord = a_TexCoord;
+        vec2 uvMin = u_UVRect.xy;
+        vec2 uvMax = u_UVRect.zw;
+        v_TexCoord = mix(uvMin,uvMax,a_TexCoord);
         gl_Position = lp_Projection * lp_View * lp_Transform * vec4(a_Position, 1.0);
     }
 }

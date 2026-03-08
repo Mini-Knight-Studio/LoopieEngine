@@ -9,13 +9,19 @@
 #include "Loopie/Components/Animator.h"
 #include "Loopie/Components/ScriptClass.h"
 #include "Loopie/Components/Canvas.h"
+#include "Loopie/Components/CanvasScaler.h"
 #include "Loopie/Components/Image.h"
 #include "Loopie/Helpers/LoopieHelpers.h"
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Components/BoxCollider.h"
 
+#include "Loopie/Scripting/ScriptingManager.h"
+#include "Loopie/Audio/AudioManager.h"
+
 #include "Loopie/Components/AudioSource.h"
 #include "Loopie/Components/AudioListener.h"
+#include "Loopie/Components/Text.h"
+#include "Loopie/Components/Button.h"
 
 #include <unordered_set>
 
@@ -284,16 +290,34 @@ namespace Loopie {
 				bc->Deserialize(componentData.Child("boxcollider"));
 			}
 			//AudioSource
-			else if (componentData.Child("audioSource").IsValid())
+			else if (componentData.Child("audiosource").IsValid())
 			{
 				auto audioSource = clone->AddComponent<AudioSource>();
-				audioSource->Deserialize(componentData.Child("audioSource"));
+				audioSource->Deserialize(componentData.Child("audiosource"));
 			}
 			//AudioListener
-			else if (componentData.Child("audioListener").IsValid())
+			else if (componentData.Child("audiolistener").IsValid())
 			{
 				auto audioListener = clone->AddComponent<AudioListener>();
-				audioListener->Deserialize(componentData.Child("audioListener"));
+				audioListener->Deserialize(componentData.Child("audiolistener"));
+			}
+			// Text
+			else if (componentData.Child("text").IsValid())
+			{
+				auto text = clone->AddComponent<Text>();
+				text->Deserialize(componentData.Child("text"));
+			}
+			// Button
+			else if (componentData.Child("button").IsValid())
+			{
+				auto button = clone->AddComponent<Button>();
+				button->Deserialize(componentData.Child("button"));
+			}
+			// CanvasScaler
+			else if (componentData.Child("canvas_scaler").IsValid())
+			{
+				auto scaler = clone->AddComponent<CanvasScaler>();
+				scaler->Deserialize(componentData.Child("canvas_scaler"));
 			}
 		}
 
@@ -384,6 +408,7 @@ namespace Loopie {
 
 	bool Scene::ReadAndLoadSceneFile(std::string filePath, bool safeSceneAsLastLoaded)
 	{
+		
 		m_entities.clear();
 		m_octree->Clear();
 
@@ -570,6 +595,36 @@ namespace Loopie {
 							audioListener->SetUUID(componentUUID.Get());
 						}
 					}
+					else if (componentNode.Contains("text"))
+					{
+						JsonNode node = componentNode.Child("text");
+						auto text = entity->AddComponent<Text>();
+						if (text)
+						{
+							text->Deserialize(node);
+							text->SetUUID(componentUUID.Get());
+						}
+					}
+					else if (componentNode.Contains("button"))
+					{
+						JsonNode node = componentNode.Child("button");
+						auto button = entity->AddComponent<Button>();
+						if (button)
+						{
+							button->Deserialize(node);
+							button->SetUUID(componentUUID.Get());
+						}
+					}
+					else if (componentNode.Contains("canvas_scaler"))
+					{
+						JsonNode node = componentNode.Child("canvas_scaler");
+						auto scaler = entity->AddComponent<CanvasScaler>();
+						if (scaler)
+						{
+							scaler->Deserialize(node);
+							scaler->SetUUID(componentUUID.Get());
+						}
+					}
 				}
 			}
 		}
@@ -589,6 +644,11 @@ namespace Loopie {
 
 
 		Log::Info("Scene loaded successfully");
+
+		if(ScriptingManager::IsRunning())
+		{
+			Application::GetInstance().m_notifier.Notify(EngineNotification::OnRuntimeStart);
+		}
 
 		if (safeSceneAsLastLoaded) {
 			m_filePath = filePath;
@@ -615,12 +675,23 @@ namespace Loopie {
 	{
 		if(id == EngineNotification::OnRuntimeStart)
 		{
+			AudioManager::StartSceneAudio(this);
+
 			for(const auto& [uuid, entity] : m_entities)
 			{
 				std::vector<ScriptClass*> scripts =entity->GetComponents<ScriptClass>();
 				for (size_t i = 0; i < scripts.size(); i++)
 				{
 					scripts[i]->SetUp();
+				}
+			}
+
+			for (const auto& [uuid, entity] : m_entities)
+			{
+				std::vector<ScriptClass*> scripts = entity->GetComponents<ScriptClass>();
+				for (size_t i = 0; i < scripts.size(); i++)
+				{
+					scripts[i]->InvokeOnCreate();
 				}
 			}
 		}

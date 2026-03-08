@@ -43,10 +43,13 @@ namespace Loopie
 		bool SetShaderVariable(const std::string& name, const UniformValue& value);
 		void SetTexture(const std::string& name, std::shared_ptr<Texture> texture); /// Remove
 
+		void SetTextureBufferOverride(const std::shared_ptr<TextureBuffer>& textureBuffer);
+		void ClearTextureBufferOverride();
 
 		void SetIfEditable(bool isEditable) { m_editable = isEditable; }
 		bool IsEditable() { return m_editable; }
 
+		void SetTextureOwnership(bool ownsTextures) { m_textureOwnership = ownsTextures; }
 
 	private:
 		void ApplyUniform(const std::string& name, const UniformValue& uniformValue);
@@ -58,8 +61,10 @@ namespace Loopie
 		// to be different for all different kinds of textures, which can be changed like this)
 		std::unordered_map<std::string, UniformValue> m_uniformValues;
 		std::unordered_map<std::string, std::shared_ptr<Texture>> m_textures;
+		bool m_textureOwnership = true; // If false, the material won't decrement the reference count of the textures when resetting or being destroyed.
 		bool m_editable = true;
 
+		std::shared_ptr<TextureBuffer> m_textureBufferOverride;
 
 		static std::shared_ptr<Material> s_Material;
 	};

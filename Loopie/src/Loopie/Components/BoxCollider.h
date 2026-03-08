@@ -4,6 +4,7 @@
 #include "Loopie/Events/EventTypes.h"
 #include "Loopie/Math/OBB.h"
 #include "Loopie/Math/AABB.h"
+#include <vector>
 
 namespace Loopie {
 
@@ -18,7 +19,6 @@ namespace Loopie {
         void Init() override;
         void RenderGizmo() override;
 
-
         const OBB& GetWorldOBB() const;
         const AABB& GetWorldAABB() const;
 
@@ -32,10 +32,15 @@ namespace Loopie {
         bool GetDrawGizmo() const { return m_drawGizmo; }
 
         bool Intersects(const BoxCollider* other) const;
-
+        const unsigned int GetLayerIndex() const { return m_layerIndex; }
+        const unsigned int GetLayerBit() const;
+        void SetLayer(const std::string& name);
+        void SetLayer(int index);
         bool IsColliding() const { return m_colliding; }
         bool CollidedThisFrame() const { return m_collided; }
         bool StoppedColliding() const { return m_stopColliding; }
+
+        const std::vector<BoxCollider*>& GetCollidingWith() const { return m_collidingWith; }
 
         JsonNode Serialize(JsonNode& parent) const override;
         void Deserialize(const JsonNode& data) override;
@@ -43,11 +48,12 @@ namespace Loopie {
     private:
         void RecalculateOBB() const;
         void OnNotify(const TransformNotification& id) override;
-
     private:
         vec3 m_localCenter = vec3(0.0f);
         vec3 m_localExtents = vec3(0.5f);
+        unsigned int  m_layerIndex = 0;
 
+        std::vector<BoxCollider*> m_collidingWith;
 
         bool m_wasCollidingLastFrame = false;
         bool m_colliding = false;

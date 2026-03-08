@@ -104,6 +104,12 @@ namespace Loopie
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static bool BoxCollider_HasEndedCollision(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static string BoxCollider_GetLayer(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_SetLayer(string entityID, string componentID, string tag);
         #endregion
         #region Animator
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
@@ -315,6 +321,16 @@ namespace Loopie
         internal extern static bool Entity_IsActive(string entityID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static bool Entity_IsActiveInHierarchy(string entityID);
+        #endregion
+        #region Collisions
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool Collisions_Raycast(Vector3 origin, Vector3 direction, float maxDistance, out RaycastHit hit, int layerMask);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static int Collisions_GetLayerBit(string layerName);
+        #endregion
+        #region Gizmo
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Gizmo_DrawLine(Vector3 start, Vector3 end, Vector4 color);
         #endregion
     }
 }

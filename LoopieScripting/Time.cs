@@ -1,6 +1,6 @@
 namespace Loopie
 {
-    public class Time
+    public static class Time
     {
         public static float deltaTime
         {
