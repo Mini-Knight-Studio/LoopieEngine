@@ -317,7 +317,8 @@ namespace Loopie
 			const vec2 pixelPos(p.x * scale.x, p.y * scale.y);
 			const vec2 pixelSize(s.x * ws.x * scale.x, s.y * ws.y * scale.y);
 
-			UIRenderer::DrawText(pixelPos, pixelSize, text->GetText(), text->GetFont(), text->GetColor(), text->GetScale());
+			UIRenderer::DrawText(pixelPos, pixelSize, text->GetText(), text->GetFont(), text->GetColor(), text->GetScale(),
+				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment());
 		}
 
 		for (const auto& child : entity->GetChildren())
@@ -430,7 +431,8 @@ namespace Loopie
 
 			const matrix4 model = rt->GetLocalToWorldMatrix();
 
-			UIRenderer::DrawTextWorld(model, vec2(w, h), text->GetText(), text->GetFont(), text->GetColor(), text->GetScale());
+			UIRenderer::DrawTextWorld(model, vec2(w, h), text->GetText(), text->GetFont(), text->GetColor(), text->GetScale(),
+				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment());
 		}
 
 		for (const auto& child : entity->GetChildren())

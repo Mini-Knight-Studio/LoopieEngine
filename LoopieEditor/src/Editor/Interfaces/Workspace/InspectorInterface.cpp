@@ -1308,6 +1308,67 @@ namespace Loopie {
 				ImGui::EndDragDropTarget();
 			}
 
+			ImGui::SeparatorText("Layout");
+
+			TextSizeMode sizeMode = text->GetSizeMode();
+			int sizeModeIndex = static_cast<int>(sizeMode);
+			const char* sizeModeLabels[] = { "Auto Size", "Fixed Size" };
+			if (ImGui::Combo("Size Mode", &sizeModeIndex, sizeModeLabels, IM_ARRAYSIZE(sizeModeLabels)))
+			{
+				text->SetSizeMode(static_cast<TextSizeMode>(sizeModeIndex));
+			}
+
+			const bool isFixed = (text->GetSizeMode() == TextSizeMode::FixedSize);
+			if (!isFixed)
+				ImGui::BeginDisabled();
+
+			float fontSize = text->GetFontSize();
+			if (ImGui::DragFloat("Font Size", &fontSize, 1.0f, 1.0f, 512.0f))
+				text->SetFontSize(fontSize);
+
+			if (!isFixed)
+				ImGui::EndDisabled();
+
+			TextHorizontalAlignment hAlign = text->GetHorizontalAlignment();
+			int hAlignIndex = static_cast<int>(hAlign);
+			const char* hAlignLabels[] = { "Left", "Center", "Right" };
+			if (ImGui::Combo("Horizontal", &hAlignIndex, hAlignLabels, IM_ARRAYSIZE(hAlignLabels)))
+			{
+				text->SetHorizontalAlignment(static_cast<TextHorizontalAlignment>(hAlignIndex));
+			}
+
+			TextVerticalAlignment vAlign = text->GetVerticalAlignment();
+			int vAlignIndex = static_cast<int>(vAlign);
+			const char* vAlignLabels[] = { "Top", "Middle", "Bottom" };
+			if (ImGui::Combo("Vertical", &vAlignIndex, vAlignLabels, IM_ARRAYSIZE(vAlignLabels)))
+			{
+				text->SetVerticalAlignment(static_cast<TextVerticalAlignment>(vAlignIndex));
+			}
+
+			ImGui::SeparatorText("Auto Fit Rect (Fixed Size)");
+
+			RectTransform* rt = text->GetOwner() ? text->GetOwner()->GetComponent<RectTransform>() : nullptr;
+			const bool canAutoFit = (rt != nullptr) && (text->GetSizeMode() == TextSizeMode::FixedSize) && (text->GetFont() != nullptr);
+
+			if (!canAutoFit)
+				ImGui::BeginDisabled();
+
+			static bool s_autoFitRect = true;
+			ImGui::Checkbox("Auto Fit Rect to Text", &s_autoFitRect);
+
+			if (s_autoFitRect && canAutoFit)
+			{
+				const vec2 measured = text->MeasureLocalSizeFixed();
+
+				const float paddingX = 2.0f;
+				const float paddingY = 2.0f;
+
+				rt->SetWidth(measured.x + paddingX);
+				rt->SetHeight(measured.y + paddingY);
+			}
+
+			if (!canAutoFit)
+				ImGui::EndDisabled();
 		}
 
 		ImGui::PopID();

@@ -67,6 +67,59 @@ namespace Loopie {
 			m_font->IncrementReferenceCount();
 	}
 
+	vec2 Text::MeasureLocalSizeFixed() const
+	{
+		if (!m_font || m_font->GetRendererId() == 0 || m_text.empty())
+			return vec2(0.0f);
+
+		float x = 0.0f;
+		float y = 0.0f;
+
+		float minX = 0.0f;
+		float minY = 0.0f;
+		float maxX = 0.0f;
+		float maxY = 0.0f;
+
+		const float baseScale = (m_scale <= 0.0f) ? 1.0f : m_scale;
+
+		const float px = (m_fontSize <= 0.0f) ? (float)m_font->GetPixelSize() : m_fontSize;
+		const float denom = (float)std::max(1, m_font->GetPixelSize());
+		const float fontScale = (px / denom) * baseScale;
+
+		for (size_t i = 0; i < m_text.size(); i++)
+		{
+			const unsigned char ch = (unsigned char)m_text[i];
+
+			if (ch == '\n')
+			{
+				x = 0.0f;
+				y -= (float)m_font->GetLineHeight() * fontScale;
+				continue;
+			}
+
+			const FontGlyph* g = m_font->GetGlyph((int)ch);
+			if (!g)
+				continue;
+
+			const float xpos = x + (float)g->bearing.x * fontScale;
+			const float ypos = y - ((float)g->size.y - (float)g->bearing.y) * fontScale;
+			const float w = (float)g->size.x * fontScale;
+			const float h = (float)g->size.y * fontScale;
+
+			minX = std::min(minX, xpos);
+			minY = std::min(minY, ypos);
+			maxX = std::max(maxX, xpos + w);
+			maxY = std::max(maxY, ypos + h);
+
+			x += ((float)g->advance / 64.0f) * fontScale;
+		}
+
+		const float textW = std::max(0.0f, maxX - minX);
+		const float textH = std::max(0.0f, maxY - minY);
+
+		return vec2(textW, textH);
+	}
+
 	JsonNode Text::Serialize(JsonNode& parent) const
 	{
 		JsonNode textNode = parent.CreateObjectField("text");
@@ -80,6 +133,11 @@ namespace Loopie {
 		colorObj.CreateField<float>("a", m_color.a);
 
 		textNode.CreateField<float>("scale", m_scale);
+
+		textNode.CreateField<int>("size_mode", (int)m_sizeMode);
+		textNode.CreateField<float>("font_size", m_fontSize);
+		textNode.CreateField<int>("horizontal_alignment", (int)m_horizontalAlignment);
+		textNode.CreateField<int>("vertical_alignment", (int)m_verticalAlignment);
 
 		if (m_font)
 			textNode.CreateField<std::string>("font_uuid", m_font->GetUUID().Get());
@@ -105,6 +163,11 @@ namespace Loopie {
 		}
 
 		m_scale = data.GetValue<float>("scale", 1.0f).Result;
+
+		m_sizeMode = (TextSizeMode)data.GetValue<int>("size_mode", (int)TextSizeMode::AutoSize).Result;
+		m_fontSize = data.GetValue<float>("font_size", 24.0f).Result;
+		m_horizontalAlignment = (TextHorizontalAlignment)data.GetValue<int>("horizontal_alignment", (int)TextHorizontalAlignment::Left).Result;
+		m_verticalAlignment = (TextVerticalAlignment)data.GetValue<int>("vertical_alignment", (int)TextVerticalAlignment::Top).Result;
 
 		if (data.Contains("font_uuid"))
 		{
