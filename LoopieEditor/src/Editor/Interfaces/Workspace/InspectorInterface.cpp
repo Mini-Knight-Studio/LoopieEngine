@@ -1138,6 +1138,15 @@ namespace Loopie {
 
 				float match = canvasScaler->GetMatchWidthOrHeight();
 
+				const float defaultMatch = 0.5f;
+
+				if (ImGui::Button("D")) {
+					match = defaultMatch;
+					canvasScaler->SetMatchWidthOrHeight(match);
+				}
+
+				ImGui::SameLine();
+
 				if (ImGui::SliderFloat("Width / Height", &match, 0.0f, 1.0f))
 				{
 					canvasScaler->SetMatchWidthOrHeight(match);
