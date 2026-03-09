@@ -1183,6 +1183,13 @@ namespace Loopie
 	}
 #pragma endregion
 
+#pragma region Scene
+	static bool Scene_LoadByID(MonoString* sceneID) {
+		UUID uuid(Utils::MonoStringToString(sceneID));
+		return Application::GetInstance().GetScene().RequestLoad(uuid);
+	}
+#pragma endregion
+
 
 
 	template<typename Comp, typename = std::enable_if_t<std::is_base_of_v<Component, Comp>>>
@@ -1344,5 +1351,7 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Collisions_GetLayerBit);
 
 		ADD_INTERNAL_CALL(Gizmo_DrawLine);
+
+		ADD_INTERNAL_CALL(Scene_LoadByID);
 	}
 }

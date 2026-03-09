@@ -63,6 +63,18 @@ namespace Loopie {
         return font;
     }
 
+    std::shared_ptr<SceneAsset> ResourceManager::GetSceneAsset(const Metadata& metadata)
+    {
+        ResourceKey key{ metadata, 0 };
+        auto resource = GetResource(key);
+        if (resource) {
+            return std::static_pointer_cast<SceneAsset>(resource);
+        }
+        auto sceneAsset = std::make_shared<SceneAsset>(metadata.UUID);
+        m_Resources[key] = sceneAsset;
+        return sceneAsset;
+    }
+
     std::shared_ptr<Resource> ResourceManager::GetResource(const ResourceKey& key) {
         auto it = m_Resources.find(key);
         if (it != m_Resources.end()) {

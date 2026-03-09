@@ -328,6 +328,10 @@ namespace Loopie
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static int Collisions_GetLayerBit(string layerName);
         #endregion
+        #region SceneManager
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool Scene_LoadByID(string sceneID);
+        #endregion
         #region Gizmo
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Gizmo_DrawLine(Vector3 start, Vector3 end, Vector4 color);

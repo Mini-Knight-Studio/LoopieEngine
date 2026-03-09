@@ -17,6 +17,9 @@
 
 #include "Loopie/Scripting/ScriptingManager.h"
 #include "Loopie/Audio/AudioManager.h"
+#include "Loopie/Resources/AssetRegistry.h"
+#include "Loopie/Resources/ResourceManager.h"
+#include "Loopie/Resources/Types/SceneAsset.h"
 
 #include "Loopie/Components/AudioSource.h"
 #include "Loopie/Components/AudioListener.h"
@@ -27,10 +30,8 @@
 
 
 namespace Loopie {
-	Scene::Scene(const std::string& filePath)
+	Scene::Scene()
 	{
-		m_filePath = filePath;
-
 		m_rootEntity = std::make_shared<Entity>("scene");
 		m_rootEntity->AddComponent<Transform>();
 
@@ -406,9 +407,25 @@ namespace Loopie {
 		return siblingEntities;
 	}
 
+	bool Scene::ReadAndLoadSceneFile(const UUID& uuid)
+	{
+		Metadata* metadata = AssetRegistry::GetMetadata(uuid);
+		if (!metadata)
+			return false;
+
+		std::shared_ptr<SceneAsset> sceneAsset = ResourceManager::GetSceneAsset(*metadata);
+		if (!sceneAsset)
+			return false;
+		if (!sceneAsset->Load())
+			return false;
+
+		
+		return ReadAndLoadSceneFile((Application::GetInstance().m_activeProject.GetChachePath() / sceneAsset->GetSceneFilePath()).string(), false);
+	}
+
 	bool Scene::ReadAndLoadSceneFile(std::string filePath, bool safeSceneAsLastLoaded)
 	{
-		
+		m_loadRequest = false;
 		m_entities.clear();
 		m_octree->Clear();
 
@@ -667,6 +684,24 @@ namespace Loopie {
 		}
 
 		m_octree->Rebuild();
+
+		return true;
+	}
+
+	bool Scene::RequestLoad(const UUID& uuid)
+	{
+		Metadata* metadata = AssetRegistry::GetMetadata(uuid);
+		if (!metadata)
+			return false;
+
+		std::shared_ptr<SceneAsset> sceneAsset = ResourceManager::GetSceneAsset(*metadata);
+		if (!sceneAsset)
+			return false;
+		if (!sceneAsset->Load())
+			return false;
+
+		m_loadRequest = true;
+		m_requestedSceneToLoad = uuid;
 
 		return true;
 	}

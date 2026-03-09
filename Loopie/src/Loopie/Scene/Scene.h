@@ -15,7 +15,7 @@ namespace Loopie {
 	class Scene : public IObserver<EngineNotification>
 	{
 	public:
-		Scene(const std::string& filePath);
+		Scene();
 		~Scene();
 
 		void SaveScene(const std::string filePath = nullptr);
@@ -54,8 +54,14 @@ namespace Loopie {
 		const std::unordered_map<UUID, std::shared_ptr<Entity>>& GetAllEntities() const;
 		std::vector<std::shared_ptr<Entity>> GetAllEntitiesHierarchical(std::shared_ptr<Entity> parentEntity = nullptr) const;
 		std::vector<std::shared_ptr<Entity>> GetAllSiblings(std::shared_ptr<Entity> parentEntity = nullptr) const;
+
+		bool ReadAndLoadSceneFile(const UUID& uuid);
 		bool ReadAndLoadSceneFile(std::string filePath, bool safeSceneAsLastLoaded = true);
 
+
+		bool RequestLoad(const UUID& uuid);
+		bool HasLoadRequest() { return m_loadRequest; }
+		const UUID& GetRequestedSceneID() { return m_requestedSceneToLoad; }
 	public:
 
 	private:
@@ -72,5 +78,10 @@ namespace Loopie {
 		std::shared_ptr<Entity> m_rootEntity; // Hierarchy based
 		std::string m_filePath;
 		const AABB DEFAULT_WORLD_BOUNDS = AABB(vec3(-500, -450, -500), vec3(500, 550, 500));
+
+
+
+		bool m_loadRequest = false;
+		UUID m_requestedSceneToLoad;
 	};	
 }

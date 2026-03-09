@@ -443,6 +443,7 @@ namespace Loopie {
 			if (existsPath)
 			{
 				Application::GetInstance().GetScene().SaveScene(Application::GetInstance().GetScene().GetFilePath());
+				AssetRegistry::RefreshAssetRegistry();
 			}
 		}
 	}

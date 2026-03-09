@@ -61,7 +61,7 @@ namespace Loopie
 		Application::GetInstance().GetWindow().SetResizable(true);
 
 		/////SCENE
-		Application::GetInstance().CreateScene(""); /// Maybe default One
+		Application::GetInstance().CreateScene(); /// Just the scene object
 		m_currentScene = &Application::GetInstance().GetScene();
 
 		JsonData data = ProjectConfig::GetData();
@@ -205,11 +205,18 @@ namespace Loopie
 					case Loopie::UPDATING:
 					case Loopie::NEXTFRAME:
 						script->InvokeOnUpdate();
+						if (m_currentScene->HasLoadRequest())
+							break;
 						break;
 					default:
 						break;
 					}
 				}
+			}
+
+			if (m_currentScene->HasLoadRequest()) {
+				m_currentScene->ReadAndLoadSceneFile(m_currentScene->GetRequestedSceneID());
+				break;
 			}
 		}
 
