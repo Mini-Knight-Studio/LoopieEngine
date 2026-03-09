@@ -44,6 +44,6 @@ namespace Loopie {
         static std::shared_ptr<Resource> GetResource(const ResourceKey& key);
 
     private:
-		static std::unordered_map<ResourceKey, std::shared_ptr<Resource>, ResourceKeyHash> m_Resources;
+		static std::unordered_map<ResourceKey, std::weak_ptr<Resource>, ResourceKeyHash> s_Resources;
     };
 }

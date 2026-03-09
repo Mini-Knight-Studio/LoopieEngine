@@ -38,6 +38,36 @@
 
 namespace Loopie {
 
+	std::string ResourceTypeToString(ResourceType type) {
+		switch (type)
+		{
+		case ResourceType::TEXTURE:
+			return "Texture";
+			break;
+		case ResourceType::MESH:
+			return "Mesh";
+			break;
+		case ResourceType::MATERIAL:
+			return "Material";
+			break;
+		case ResourceType::SHADER:
+			return "Shader";
+			break;
+		case ResourceType::SCENE:
+			return "Scene";
+			break;
+		case ResourceType::AUDIO:
+			return "Audio";
+			break;
+		case ResourceType::SCRIPT:
+			return "Script";
+			break;
+		default:
+			return "NONE";
+			break;
+		}
+	}
+
 	bool CheckIfResourceTypeMatchesFileExtension(ResourceType type, const std::string& filepath) {
 		switch (type)
 		{
@@ -214,6 +244,8 @@ namespace Loopie {
 			}
 			ImGui::Separator();
 
+			ImGui::BeginChild("InspectorScroll", ImVec2(0, 0), false, ImGuiWindowFlags_NoBackground);
+
 			switch (m_mode)
 			{
 			case InspectorMode::EntityMode:
@@ -221,17 +253,14 @@ namespace Loopie {
 				break;
 			case InspectorMode::ImportMode:
 			{
-				const bool hasInspectableFile = (!m_currentFile.empty() && m_currentFile.has_extension() && m_currentFile.extension().string() == ".mat");
-				if (hasInspectableFile)
-					DrawFileImportSettings(m_currentFile);
-				else
-					DrawEntityInspector(m_currentEntity.lock());
-
+				DrawFileImportSettings(m_currentFile);
 				break;
 			}
 			default:
 				break;
 			}
+
+			ImGui::EndChild();
 		}
 		ImGui::End();
 	}
@@ -305,7 +334,12 @@ namespace Loopie {
 		{
 			std::shared_ptr<Material> material = ResourceManager::GetMaterial(*metadata);
 			DrawMaterial(material);
+			ImGui::Dummy({ 0.0f, 4.0f }); 
+			ImGui::Separator();
+			ImGui::Dummy({ 0.0f, 4.0f }); 
 		}
+		DrawMetadata(metadata);
+
 	}
 
 	void InspectorInterface::DrawEntityConfig(const std::shared_ptr<Entity>& entity)
@@ -1966,6 +2000,40 @@ namespace Loopie {
 			if(isOpen)
 				filter.Clear();
 			isOpen = false;
+		}
+	}
+
+	void InspectorInterface::DrawMetadata(const Metadata* metadata)
+	{
+		if (!metadata)
+			return;
+
+		char uuidBuffer[128];
+		strcpy(uuidBuffer, metadata->UUID.Get().c_str());
+		ImGui::Text("UUID:");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(-FLT_MIN);
+		ImGui::InputText("##UUID", uuidBuffer, sizeof(uuidBuffer), ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
+
+		ImGui::Text("Type: %s", ResourceTypeToString(metadata->Type).c_str());
+		if (metadata->HasCache)
+		{
+			ImGui::Text("Cached Paths:");
+			ImGui::BeginChild("##Paths", ImVec2{ 0,300 }, true, ImGuiWindowFlags_HorizontalScrollbar);
+			int index = 0;
+			int cacheAmount = (int)metadata->CachesPath.size();
+			for (const std::string& path : metadata->CachesPath)
+			{
+				ImGui::Text((std::to_string(index) + ": %s").c_str(), path.c_str());
+				if (index < cacheAmount - 1)
+					ImGui::Separator();
+				index++;
+			}
+			ImGui::EndChild();
+		}
+		else
+		{
+			ImGui::Text("No cached paths.");
 		}
 	}
 
