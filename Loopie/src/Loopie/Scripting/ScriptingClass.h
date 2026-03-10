@@ -74,7 +74,7 @@ namespace Loopie {
 
 		const std::string& GetClassName() const { return m_className; }
 		const std::string& GetClassNamespace() const { return m_classNamespace; }
-		const std::string GetFullName() const { return m_classNamespace + "." + m_className; }
+		const std::string GetFullName() const;
 
 		_MonoClass* GetMonoClass() const { return m_monoClass; }
 
