@@ -89,13 +89,13 @@ namespace Loopie
 
 		std::vector<ScriptClass*> scriptComponents = entity->GetComponents<ScriptClass>();
 
+		std::string compFullName = Utils::MonoStringToString(componentFullName);
 		for (ScriptClass* script : scriptComponents)
 		{
 			if (!script || !script->GetScriptingClass())
 				continue;
 
-			std::string fullName = script->GetScriptingClass()->GetFullName();
-			if (script->IsSameType(fullName))
+			if (script->IsSameType(compFullName))
 			{
 				return script->GetInstance();
 			}

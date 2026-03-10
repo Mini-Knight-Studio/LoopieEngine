@@ -24,4 +24,10 @@ namespace Loopie {
 		MonoObject* exception = nullptr;
 		return mono_runtime_invoke(method, instance, params, &exception);
 	}
+
+	const std::string ScriptingClass::GetFullName() const{
+		if (m_classNamespace.empty())
+			return m_className;
+		return m_classNamespace + "." + m_className;
+	}
 }
