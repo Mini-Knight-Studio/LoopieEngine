@@ -149,10 +149,41 @@ namespace Loopie {
 		return &clips[index];
 	}
 
-	void Animator::Play(const std::string& clipName)
+	void Animator::Play(const std::string& clipName, float transitionTime)
 	{
-		if (SelectClip(clipName))
-			m_isPlaying = true;
+		if (!m_targetRenderer)
+		{
+			m_targetRenderer = GetFirstMeshRenderer();
+			if (!m_targetRenderer)
+				return;
+		}
+
+		auto mesh = m_targetRenderer->GetMesh();
+		if (!mesh)
+			return;
+
+		int index = 0;
+		for (const auto& clip : mesh->GetData().AnimationClips) {
+			if (clip.Name == clipName) {
+				if (!m_currentClip) {
+					m_currentClip = &clip;
+					m_currentTime = 0.0f;
+					m_currentClipIndex = index;
+				}
+				else {
+					m_nextClip = &clip;
+					m_nextClipIndex = index;
+
+					m_transitionDuration = m_nextClip->Duration;
+					m_transitionTime = 0;
+					m_nextTime = 0;
+					m_inTransition = true;
+				}
+				
+				m_isPlaying = true;
+			}
+			++index;
+		}
 	}
 
 	void Animator::Play()
@@ -175,6 +206,32 @@ namespace Loopie {
 		m_currentClip = &clips[m_currentClipIndex];
 		m_currentTime = 0.0f;
 		m_isPlaying = true;
+	}
+
+	bool Animator::SelectClip(const std::string& clipName)
+	{
+		if (!m_targetRenderer)
+		{
+			m_targetRenderer = GetFirstMeshRenderer();
+			if (!m_targetRenderer)
+				return false;
+		}
+
+		auto mesh = m_targetRenderer->GetMesh();
+		if (!mesh) 
+			return false;
+
+		int index = 0;
+		for (const auto& clip : mesh->GetData().AnimationClips) {
+			if (clip.Name == clipName) {
+				m_currentClip = &clip;
+				m_currentTime = 0.0f;
+				m_currentClipIndex = index;
+				return true;
+			}
+			++index;
+		}
+		return false;
 	}
 
 	void Animator::Stop()
@@ -229,6 +286,7 @@ namespace Loopie {
 			m_nextTime += m_playbackSpeed * dt;
 			if (m_transitionTime >= m_transitionDuration) {
 				m_currentClip = m_nextClip;
+				m_currentClipIndex = m_nextClipIndex;
 				m_inTransition = false;
 			}
 			m_transitionTime += m_playbackSpeed * dt;
@@ -251,32 +309,6 @@ namespace Loopie {
 		
 
 		CalculateBoneTransform();
-	}
-
-	bool Animator::SelectClip(const std::string& clipName)
-	{
-		if (!m_targetRenderer)
-		{
-			m_targetRenderer = GetFirstMeshRenderer();
-			if (!m_targetRenderer)
-				return false;
-		}
-
-		auto mesh = m_targetRenderer->GetMesh();
-		if (!mesh) 
-			return false;
-
-		int index = 0;
-		for (const auto& clip : mesh->GetData().AnimationClips) {
-			if (clip.Name == clipName) {
-				m_currentClip = &clip;
-				m_currentTime = 0.0f;
-				m_currentClipIndex = index;
-				return true;
-			}
-			++index;
-		}
-		return false;
 	}
 
 	JsonNode Animator::Serialize(JsonNode& parent) const
@@ -408,16 +440,17 @@ namespace Loopie {
 
 					if (m_inTransition) {
 
-						float t = std::clamp(0.f,1.f, m_transitionTime / m_transitionDuration);
+						float t = std::clamp(m_transitionTime / m_transitionDuration, 0.f, 1.f);
+						auto nextKeyFrame = m_nextClip->KeyFrames.at(bone.Name);
 
 						vec3 posA = Vec3Key::Interpolate(keyFrame.Positions, m_currentTime);
-						vec3 posB = Vec3Key::Interpolate(keyFrame.Positions, m_nextTime);
+						vec3 posB = Vec3Key::Interpolate(nextKeyFrame.Positions, m_nextTime);
 
 						quaternion rotA = QuaternionKey::Interpolate(keyFrame.Rotations, m_currentTime);
-						quaternion rotB = QuaternionKey::Interpolate(keyFrame.Rotations, m_nextTime);
+						quaternion rotB = QuaternionKey::Interpolate(nextKeyFrame.Rotations, m_nextTime);
 
 						vec3 scaleA = Vec3Key::Interpolate(keyFrame.Scales, m_currentTime);
-						vec3 scaleB = Vec3Key::Interpolate(keyFrame.Scales, m_nextTime);
+						vec3 scaleB = Vec3Key::Interpolate(nextKeyFrame.Scales, m_nextTime);
 
 					
 						pos = mix(posA, posB, t);
