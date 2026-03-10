@@ -100,5 +100,12 @@ namespace Loopie {
 		std::string m_pendingTargetRendererUUID;
 
 		bool m_frameSwitch = true;
+
+		//// Transition
+		bool m_inTransition = false;
+		const AnimationClip* m_nextClip = nullptr;
+		float m_transitionDuration=0;
+		float m_transitionTime=0;
+		float m_nextTime = 0;
 	};
 }

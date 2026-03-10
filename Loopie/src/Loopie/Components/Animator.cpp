@@ -221,11 +221,22 @@ namespace Loopie {
 		if (m_frameSwitch == frameSwitch)
 			return;
 
+		float dt = (float)Time::GetDeltaTime();
+
 		m_frameSwitch = frameSwitch;
+
+		if (m_inTransition) {
+			m_nextTime += m_playbackSpeed * dt;
+			if (m_transitionTime >= m_transitionDuration) {
+				m_currentClip = m_nextClip;
+				m_inTransition = false;
+			}
+			m_transitionTime += m_playbackSpeed * dt;
+		}
 
 		if (m_currentClip && m_isPlaying)
 		{
-			m_currentTime += m_playbackSpeed * (float)Time::GetDeltaTime();
+			m_currentTime += m_playbackSpeed * dt;
 
 			float clipDuration = m_currentClip->Duration;
 
@@ -390,9 +401,35 @@ namespace Loopie {
 				auto keyIt = m_currentClip->KeyFrames.find(bone.Name);
 				if (keyIt != m_currentClip->KeyFrames.end()) {
 					const KeyFrame& keyFrame = keyIt->second;
-					vec3 pos = Vec3Key::Interpolate(keyFrame.Positions, m_currentTime);
-					quaternion rot = QuaternionKey::Interpolate(keyFrame.Rotations, m_currentTime);
-					vec3 scale = Vec3Key::Interpolate(keyFrame.Scales, m_currentTime);
+
+					vec3 pos;
+					quaternion rot;
+					vec3 scale;
+
+					if (m_inTransition) {
+
+						float t = std::clamp(0.f,1.f, m_transitionTime / m_transitionDuration);
+
+						vec3 posA = Vec3Key::Interpolate(keyFrame.Positions, m_currentTime);
+						vec3 posB = Vec3Key::Interpolate(keyFrame.Positions, m_nextTime);
+
+						quaternion rotA = QuaternionKey::Interpolate(keyFrame.Rotations, m_currentTime);
+						quaternion rotB = QuaternionKey::Interpolate(keyFrame.Rotations, m_nextTime);
+
+						vec3 scaleA = Vec3Key::Interpolate(keyFrame.Scales, m_currentTime);
+						vec3 scaleB = Vec3Key::Interpolate(keyFrame.Scales, m_nextTime);
+
+					
+						pos = mix(posA, posB, t);
+						rot = slerp(rotA, rotB, t);
+						scale = mix(scaleA, scaleB,t);
+					}
+					else {
+						pos = Vec3Key::Interpolate(keyFrame.Positions, m_currentTime);
+						rot = QuaternionKey::Interpolate(keyFrame.Rotations, m_currentTime);
+						scale = Vec3Key::Interpolate(keyFrame.Scales, m_currentTime);
+					}
+					
 
 					boneEntities[i]->GetTransform()->SetLocalPosition(pos);
 					boneEntities[i]->GetTransform()->SetLocalRotation(rot);
