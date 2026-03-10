@@ -27,6 +27,8 @@ namespace Loopie {
         bool IntersectsRay(const vec3& rayStart, const vec3& rayEnd) const;
         bool IntersectsRay(const vec3& rayOrigin, const vec3& rayDirection, vec3& hitPoint) const;
 
+        bool GetPenetration(const OBB& other, vec3& pushDir, float& depth) const;
+
         const std::array<vec3, 8>& GetCorners() const;
         void SetCornersDirty() { _cornersDirty = true; }
     };

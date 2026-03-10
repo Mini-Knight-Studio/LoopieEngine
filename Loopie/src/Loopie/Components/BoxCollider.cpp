@@ -109,6 +109,8 @@ namespace Loopie {
         extentsNode.CreateField<double>("y", static_cast<double>(m_localExtents.y));
         extentsNode.CreateField<double>("z", static_cast<double>(m_localExtents.z));
 
+        node.CreateField<bool>("is_trigger", m_isTrigger);
+        node.CreateField<bool>("is_static", m_isStatic);
         node.CreateField<bool>("draw_gizmo", m_drawGizmo);
 
         return node;
@@ -130,6 +132,11 @@ namespace Loopie {
             m_localExtents.y = static_cast<float>(extentsNode.GetValue<double>("y", 0.5).Result);
             m_localExtents.z = static_cast<float>(extentsNode.GetValue<double>("z", 0.5).Result);
         }
+
+        if (data.Contains("is_trigger"))
+            m_isTrigger = data.GetValue<bool>("is_trigger", false).Result;
+        if (data.Contains("is_static"))
+            m_isStatic = data.GetValue<bool>("is_static", false).Result;
 
         if (data.Contains("draw_gizmo")) {
             m_drawGizmo = data.GetValue<bool>("draw_gizmo", true).Result;

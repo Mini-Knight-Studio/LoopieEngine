@@ -1532,6 +1532,14 @@ namespace Loopie {
 			vec3 center = boxCollider->GetLocalCenter();
 			vec3 extents = boxCollider->GetLocalExtents();
 			bool draw = boxCollider->GetDrawGizmo();
+			bool isTrigger = boxCollider->IsTrigger();
+			bool isStatic = boxCollider->IsStatic();
+
+			if (ImGui::Checkbox("Trigger", &isTrigger))
+				boxCollider->SetIsTrigger(isTrigger);
+
+			if (ImGui::Checkbox("Static", &isStatic))
+				boxCollider->SetIsStatic(isStatic);
 
 			if (ImGui::DragFloat3("Center", &center.x, 0.01f))
 				boxCollider->SetLocalCenter(center);
