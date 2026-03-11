@@ -12,7 +12,6 @@ namespace Loopie {
     UUID::UUID(const std::string& id) : m_id(id) {
         if (m_id.size() != UUID_SIZE)
         {
-			Log::Error("UUID id does not have a correct size of {0}, current size is {1}, setting to Invalid UUID", UUID_SIZE, m_id.size(), m_id);
 			m_id = Invalid.Get();
         }
     }

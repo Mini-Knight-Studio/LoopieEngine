@@ -23,11 +23,16 @@ namespace Loopie
         public T GetComponent<T>() where T : Component, new()
         {
             Type componentType = typeof(T);
+
+            T component = new T();
             if (InternalCalls.Entity_HasComponent(ID, componentType))
-            {
+            {      
                 if (!InternalCalls.Entity_GetComponent(ID, componentType, out string componentID))
-                    return null;
-                T component = new T();
+                {  
+                    component.entity = this;
+                    component.ID = "00000000-0000-0000-0000-000000000000";
+                    return component;
+                };
                 component.entity = this;
                 component.ID = componentID;
                 return component;
@@ -35,8 +40,12 @@ namespace Loopie
 
             string typeName = typeof(T).FullName;
             object scriptInstance = InternalCalls.Entity_GetScriptInstance(ID, typeName);
+            if(scriptInstance != null)
+                return scriptInstance as T;
 
-            return scriptInstance as T;
+            component.entity = this;
+            component.ID = "";
+            return component;
         }
 
         public static Entity FindEntityByName(string name)

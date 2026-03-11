@@ -60,12 +60,12 @@ namespace Loopie
 				return nullptr;
 			UUID uuid(MonoStringToString(entityID));
 			if (uuid == UUID::Invalid) {
-				Log::Warn("Invalid UUID: {}", uuid.Get());
+				Log::Error("Object not Found");
 				return nullptr;
 			}
 			std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
 			if (!entity)
-				Log::Warn("Entity {} not found", uuid.Get());
+				Log::Error("Entity {} not found", uuid.Get());
 			return entity;
 		}
 
@@ -76,7 +76,7 @@ namespace Loopie
 				return nullptr;
 			std::shared_ptr<Entity> entity = scene->GetEntity(name);
 			if (!entity)
-				Log::Warn("Entity {} not found", name);
+				Log::Error("Entity {} not found", name);
 			return entity;
 		}
 
@@ -87,12 +87,12 @@ namespace Loopie
 				return nullptr;
 			UUID componentUUID(MonoStringToString(componentID));
 			if (componentUUID == UUID::Invalid) {
-				Log::Warn("Invalid UUID: {}", componentUUID.Get());
+				Log::Error("Object not Found");
 				return nullptr;
 			}
 			T* component = entity->GetComponent<T>(componentUUID);
 			if (!component)
-				Log::Warn("Component {} not found", componentUUID.Get());
+				Log::Error("Component {} not found", componentUUID.Get());
 			return component;
 		}
 
@@ -103,7 +103,7 @@ namespace Loopie
 				return nullptr;
 			T* component = entity->GetComponent<T>();
 			if (!component)
-				Log::Warn("Component {} not found", T::GetIdentificableName());
+				Log::Error("Component {} not found", T::GetIdentificableName());
 			return component;
 		}
 	}
@@ -259,6 +259,9 @@ namespace Loopie
 		if (s_EntityHasComponentFuncs.find(managedType) == s_EntityHasComponentFuncs.end())
 			return false;
 		UUID componentUUID = s_EntityGetComponentFuncs.at(managedType)(entity);
+		if (componentUUID == UUID::Invalid)
+			return false;
+
 		*componentID = ScriptingManager::CreateString(componentUUID.Get().c_str());
 		return true;
 	}
@@ -1237,7 +1240,9 @@ namespace Loopie
 					return;
 				}
 				s_EntityHasComponentFuncs[managedType] = [](std::shared_ptr<Entity> entity) { return entity->HasComponent<Comp>(); };
-				s_EntityGetComponentFuncs[managedType] = [](std::shared_ptr<Entity> entity) { Comp* compo = entity->GetComponent<Comp>(); return compo ? compo->GetUUID() : UUID(nullptr); };
+				s_EntityGetComponentFuncs[managedType] = [](std::shared_ptr<Entity> entity) { 
+					Comp* compo = entity->GetComponent<Comp>(); 
+					return compo ? compo->GetUUID() : UUID::Invalid; };
 			}());
 	}
 
