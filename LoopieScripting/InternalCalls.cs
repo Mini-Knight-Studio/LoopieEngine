@@ -110,6 +110,18 @@ namespace Loopie
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void BoxCollider_SetLayer(string entityID, string componentID, string tag);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool BoxCollider_IsStatic(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_SetStatic(string entityID, string componentID, bool isStatic);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool BoxCollider_IsTrigger(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_SetTrigger(string entityID, string componentID, bool isTrigger);
         #endregion
         #region Animator
         [MethodImplAttribute(MethodImplOptions.InternalCall)]

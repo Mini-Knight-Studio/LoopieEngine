@@ -64,5 +64,29 @@ namespace Loopie
         {
             return InternalCalls.BoxCollider_HasEndedCollision(entity.ID, ID);
         }
+
+        public bool Trigger { get { return IsTrigger(); } set { SetTrigger(value); } }
+
+        private bool IsTrigger()
+        {
+            return InternalCalls.BoxCollider_IsTrigger(entity.ID, ID);
+        }
+
+        private void SetTrigger(bool isTrigger)
+        {
+            InternalCalls.BoxCollider_SetTrigger(entity.ID, ID, isTrigger);
+        }
+
+        public bool Static { get { return IsStatic(); } set { SetStatic(value); } }
+
+        private bool IsStatic()
+        {
+            return InternalCalls.BoxCollider_IsStatic(entity.ID, ID);
+        }
+
+        private void SetStatic(bool isStatic)
+        {
+            InternalCalls.BoxCollider_SetStatic(entity.ID, ID, isStatic);
+        }
     }
 }
