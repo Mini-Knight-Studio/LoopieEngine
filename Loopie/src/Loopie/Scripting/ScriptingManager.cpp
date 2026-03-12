@@ -17,6 +17,7 @@ namespace Loopie {
 	ScriptingContext ScriptingManager::s_Data;
 	bool ScriptingManager::s_IsRunning = false;
 	bool ScriptingManager::s_Initialized = false;
+	_MonoMethod* ScriptingManager::s_UpdateCoroutinesMethod = nullptr;
 
 	static ScriptFieldType MonoTypeToScriptFieldType(_MonoType* monoType)
 	{
@@ -66,6 +67,8 @@ namespace Loopie {
 			s_Data.ScriptingClasses.clear();
 
 		ScriptGlue::RegisterComponents();
+
+		InitCoroutines();
 
 		s_Data.ComponentClass = std::make_shared<ScriptingClass>("Loopie", "Component", true);
 
@@ -128,6 +131,8 @@ namespace Loopie {
 			s_Data.ScriptingClasses.clear();
 
 		ScriptGlue::RegisterComponents();
+
+		InitCoroutines();
 
 		s_Data.ComponentClass = std::make_shared<ScriptingClass>("Loopie", "Component", true);
 
@@ -332,5 +337,33 @@ namespace Loopie {
 			mono_free(err); 
 		} 
 		return success;
+	}
+
+	void ScriptingManager::InitCoroutines()
+	{
+		MonoImage* image = s_Data.CoreImage;
+
+		MonoClass* coroutineClass = mono_class_from_name(image, "Loopie", "CoroutineSystem");
+		if (!coroutineClass)
+		{
+			Log::Error("Failed to find Loopie.CoroutineSystem");
+			return;
+		}
+
+		s_UpdateCoroutinesMethod = mono_class_get_method_from_name(coroutineClass, "UpdateCoroutines", 0);
+		if (!s_UpdateCoroutinesMethod)
+			Log::Error("Failed to find UpdateCoroutines method");
+	}
+
+	void ScriptingManager::UpdateCoroutines()
+	{
+		if (s_UpdateCoroutinesMethod)
+		{
+			MonoObject* exception = nullptr;
+			mono_runtime_invoke(s_UpdateCoroutinesMethod, nullptr, nullptr, &exception);
+
+			if (exception)
+				mono_print_unhandled_exception(exception);
+		}
 	}
 }

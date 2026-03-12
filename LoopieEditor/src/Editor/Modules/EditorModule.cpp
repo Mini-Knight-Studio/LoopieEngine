@@ -265,6 +265,8 @@ namespace Loopie
 		if (!ScriptingManager::IsRunning())
 			return true;
 
+		if(mode == Loopie::UPDATING || mode== Loopie::NEXTFRAME)
+			ScriptingManager::UpdateCoroutines();
 
 		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities()) {
 			if (!entity->GetIsActive())
