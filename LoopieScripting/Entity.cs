@@ -1,5 +1,6 @@
 using System;
-using System.Runtime.CompilerServices;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace Loopie
 {
@@ -26,13 +27,14 @@ namespace Loopie
 
             T component = new T();
             if (InternalCalls.Entity_HasComponent(ID, componentType))
-            {      
+            {
                 if (!InternalCalls.Entity_GetComponent(ID, componentType, out string componentID))
-                {  
+                {
                     component.entity = this;
                     component.ID = "00000000-0000-0000-0000-000000000000";
                     return component;
-                };
+                }
+                ;
                 component.entity = this;
                 component.ID = componentID;
                 return component;
@@ -40,7 +42,7 @@ namespace Loopie
 
             string typeName = typeof(T).FullName;
             object scriptInstance = InternalCalls.Entity_GetScriptInstance(ID, typeName);
-            if(scriptInstance != null)
+            if (scriptInstance != null)
                 return scriptInstance as T;
 
             component.entity = this;
@@ -68,7 +70,7 @@ namespace Loopie
 
         public static Entity Instantiate(string name)
         {
-            string instanceId = InternalCalls.Entity_Create(name,null);
+            string instanceId = InternalCalls.Entity_Create(name, null);
             if (instanceId == "")
                 return null;
 
@@ -78,7 +80,7 @@ namespace Loopie
         public T AddComponent<T>() where T : Component, new()
         {
             string componentType = typeof(T).FullName;
-            if(InternalCalls.Entity_AddComponent(ID, componentType, out string componentID))
+            if (InternalCalls.Entity_AddComponent(ID, componentType, out string componentID))
             {
                 T component = new T();
                 component.entity = this;
@@ -139,6 +141,112 @@ namespace Loopie
         private bool IsActiveInHierarchy()
         {
             return InternalCalls.Entity_IsActiveInHierarchy(ID);
+        }
+
+
+        public Entity Parent
+        {
+            get { return GetParent(); }
+            set { SetParent(value); }
+        }
+
+        private void SetParent(Entity parent)
+        {
+            string parentID = parent != null ? parent.ID : null;
+            InternalCalls.Entity_SetParent(ID, parentID);
+        }
+
+        private Entity GetParent()
+        {
+            string parentID = InternalCalls.Entity_GetParent(ID);
+            if (string.IsNullOrEmpty(parentID))
+                return null;
+
+            return new Entity(parentID);
+        }
+
+        public string Name
+        {
+            get { return GetName(); }
+            set { SetName(value); }
+        }
+
+        private void SetName(string name)
+        {
+            InternalCalls.Entity_SetName(ID, name);
+        }
+
+        private string GetName()
+        {
+            return InternalCalls.Entity_GetName(ID);
+        }
+
+        public int ChildCount
+        {
+            get { return GetChildCount(); }
+        }
+
+        private int GetChildCount()
+        {
+            return InternalCalls.Entity_GetChildCount(ID);
+        }
+
+        public IEnumerable<Entity> Children
+        {
+            get
+            {
+                for (int i = 0; i < ChildCount; i++)
+                    yield return GetChild(i);
+            }
+        }
+
+        public List<Entity> GetChildren()
+        {
+            List<Entity> list = new List<Entity>();
+
+            for (int i = 0; i < ChildCount; i++)
+                list.Add(GetChild(i));
+
+            return list;
+        }
+
+        public Entity GetChild(int index)
+        {
+            string childID = InternalCalls.Entity_GetChild(ID, index);
+
+            if (string.IsNullOrEmpty(childID))
+                return null;
+
+            return new Entity(childID);
+        }
+
+        public static bool operator ==(Entity a, Entity b)
+        {
+            if (ReferenceEquals(a, b))
+                return true;
+
+            if (a is null || b is null)
+                return false;
+
+            return a.ID == b.ID;
+        }
+
+        public static bool operator !=(Entity a, Entity b)
+        {
+            return !(a == b);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is Entity other)
+                return this == other;
+
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return ID != null ? ID.GetHashCode() : 0;
         }
     }
 }

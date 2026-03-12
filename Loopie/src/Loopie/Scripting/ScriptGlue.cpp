@@ -307,6 +307,79 @@ namespace Loopie
 		return entity->GetIsActiveInHierarchy();
 	}
 
+	static MonoString* Entity_GetParent(MonoString* entityID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return ScriptingManager::CreateString("");
+
+		std::shared_ptr<Entity> parent = entity->GetParent().lock();
+		if (!parent)
+			return ScriptingManager::CreateString("");
+
+		return ScriptingManager::CreateString(parent->GetUUID().Get().c_str());
+	}
+
+	static void Entity_SetParent(MonoString* entityID, MonoString* parentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+
+		if (!parentID)
+		{
+			entity->SetParent(nullptr);
+			return;
+		}
+
+		std::shared_ptr<Entity> parent = Utils::GetEntity(parentID);
+		if (!parent)
+			return;
+
+		entity->SetParent(parent);
+	}
+
+	static MonoString* Entity_GetName(MonoString* entityID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return ScriptingManager::CreateString("");
+
+		return ScriptingManager::CreateString(entity->GetName().c_str());
+	}
+
+	static void Entity_SetName(MonoString* entityID, MonoString* name)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+
+		std::string newName = Utils::MonoStringToString(name);
+		entity->SetName(newName);
+	}
+
+	static int Entity_GetChildCount(MonoString* entityID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return 0;
+
+		return entity->GetChildCount();
+	}
+
+	static MonoString* Entity_GetChild(MonoString* entityID, int index)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return ScriptingManager::CreateString("");
+
+		std::shared_ptr<Entity> child = entity->GetChild(index);
+		if (!child)
+			return ScriptingManager::CreateString("");
+
+		return ScriptingManager::CreateString(child->GetUUID().Get().c_str());
+	}
+
 #pragma endregion
 
 #pragma region Transform
@@ -1281,6 +1354,12 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Entity_SetActive);
 		ADD_INTERNAL_CALL(Entity_IsActive);
 		ADD_INTERNAL_CALL(Entity_IsActiveInHierarchy);
+		ADD_INTERNAL_CALL(Entity_GetParent);
+		ADD_INTERNAL_CALL(Entity_SetParent);
+		ADD_INTERNAL_CALL(Entity_GetName);
+		ADD_INTERNAL_CALL(Entity_SetName);
+		ADD_INTERNAL_CALL(Entity_GetChildCount);
+		ADD_INTERNAL_CALL(Entity_GetChild);
 
 		ADD_INTERNAL_CALL(Transform_GetPosition);
 		ADD_INTERNAL_CALL(Transform_SetPosition);
