@@ -167,6 +167,28 @@ namespace Loopie
 		return nullptr;
 	}
 
+	static bool Component_IsActive(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(componentID);
+		if (!entity)
+			return false;
+		Component* component = Utils::GetComponent<Component>(entity, componentID);
+		if (!component)
+			return false;
+		return component->GetIsActive();
+	}
+
+	static void Component_SetActive(MonoString* entityID, MonoString* componentID, MonoBoolean isActive)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(componentID);
+		if (!entity)
+			return;
+		Component* component = Utils::GetComponent<Component>(entity, componentID);
+		if (!component)
+			return;
+		component->SetIsActive(isActive!=0);
+	}
+
 	static MonoString* Entity_Create(MonoString* entityName, MonoString* parentID)
 	{
 		Scene* scene = Utils::GetScene();
@@ -1376,6 +1398,9 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Entity_SetName);
 		ADD_INTERNAL_CALL(Entity_GetChildCount);
 		ADD_INTERNAL_CALL(Entity_GetChild);
+
+		ADD_INTERNAL_CALL(Component_SetActive);
+		ADD_INTERNAL_CALL(Component_IsActive);
 
 		ADD_INTERNAL_CALL(Transform_GetPosition);
 		ADD_INTERNAL_CALL(Transform_SetPosition);

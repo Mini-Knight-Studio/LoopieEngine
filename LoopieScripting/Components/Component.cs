@@ -15,6 +15,22 @@ namespace Loopie
             this.ID = ID;
         }
 
+        public bool Enabled
+        {
+            get { return IsActive(); }
+            set { SetActive(value); }
+        }
+
+        public void SetActive(bool active)
+        {
+            InternalCalls.Component_SetActive(entity.ID, ID, active);
+        }
+
+        private bool IsActive()
+        {
+            return InternalCalls.Component_IsActive(entity.ID, ID);
+        }
+
         public static bool operator ==(Component a, Component b)
         {
             if (ReferenceEquals(a, b))

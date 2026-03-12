@@ -198,7 +198,7 @@ namespace Loopie {
 
 			MonoClass* monoClass = mono_class_from_name(monoImage, nameSpace, className);
 
-			if (monoClass == component)
+			if (!monoClass || monoClass == component)
 				continue;
 
 			bool isComponent = mono_class_is_subclass_of(monoClass, component, false);

@@ -363,6 +363,13 @@ namespace Loopie
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal extern static string Entity_GetChild(string entityID, int index);
         #endregion
+        #region Component
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static object Component_SetActive(string entityID, string componentID, bool isActive);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool Component_IsActive(string entityID, string componentID);
+        #endregion
         #region Collisions
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static bool Collisions_Raycast(Vector3 origin, Vector3 direction, float maxDistance, out RaycastHit hit, int layerMask);
