@@ -74,9 +74,14 @@ namespace Loopie
 
 			ParticleProps& GetEmissionProperties();
 			void SetEmisionProperties(const ParticleProps& partProps);
+
+			unsigned int GetPoolIndex()const;
+			void SetPoolIndex(unsigned int poolIndex);
 			
 			int GetActiveParticles() const;
 			bool IsActive() const;
+			void SetActive(bool isActive);
+
 			void ToggleActive();
 
 

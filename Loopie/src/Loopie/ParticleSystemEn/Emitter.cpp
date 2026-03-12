@@ -207,6 +207,10 @@ namespace Loopie
 	{
 		return m_active;
 	}
+	void Emitter::SetActive(bool isActive) 
+	{
+		m_active = isActive;
+	}
 	void Emitter::ToggleActive()
 	{
 		m_active = !m_active;
@@ -214,6 +218,14 @@ namespace Loopie
 	void Emitter::SetEmisionProperties(const ParticleProps& partProps)
 	{
 		m_particleProperties = partProps;
+	}
+	unsigned int Emitter::GetPoolIndex() const
+	{
+		return m_poolIndex;
+	}
+	void Emitter::SetPoolIndex(unsigned int poolIndex)
+	{
+		m_poolIndex = poolIndex;
 	}
 	ParticleProps& Emitter::GetEmissionProperties()
 	{ 
