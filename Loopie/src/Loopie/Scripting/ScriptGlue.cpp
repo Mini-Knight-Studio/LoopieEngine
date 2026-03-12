@@ -214,6 +214,22 @@ namespace Loopie
 		if (!clone)
 			return nullptr;
 
+		auto setUp = [&](std::vector<ScriptClass*>& components) -> void {
+			for (size_t i = 0; i < components.size(); i++)
+				components[i]->SetUp();
+		};
+		auto create = [&](std::vector<ScriptClass*>& components) -> void {
+			for (size_t i = 0; i < components.size(); i++)
+				components[i]->InvokeOnCreate();
+		};
+
+		setUp(clone->GetComponents<ScriptClass>());
+		for (const auto& child : clone->GetChildren())
+			setUp(child->GetComponents<ScriptClass>());
+		create(clone->GetComponents<ScriptClass>());
+		for (const auto& child : clone->GetChildren())
+			create(child->GetComponents<ScriptClass>());
+
 		return ScriptingManager::CreateString(clone->GetUUID().Get().c_str());
 	}
 
