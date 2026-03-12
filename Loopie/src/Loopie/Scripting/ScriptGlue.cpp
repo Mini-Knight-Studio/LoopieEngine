@@ -169,7 +169,7 @@ namespace Loopie
 
 	static bool Component_IsActive(MonoString* entityID, MonoString* componentID)
 	{
-		std::shared_ptr<Entity> entity = Utils::GetEntity(componentID);
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
 		if (!entity)
 			return false;
 		Component* component = Utils::GetComponent<Component>(entity, componentID);
@@ -180,7 +180,7 @@ namespace Loopie
 
 	static void Component_SetActive(MonoString* entityID, MonoString* componentID, MonoBoolean isActive)
 	{
-		std::shared_ptr<Entity> entity = Utils::GetEntity(componentID);
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
 		if (!entity)
 			return;
 		Component* component = Utils::GetComponent<Component>(entity, componentID);

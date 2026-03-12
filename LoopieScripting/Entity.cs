@@ -26,16 +26,13 @@ namespace Loopie
             Type componentType = typeof(T);
 
             T component = new T();
+            component.entity = this;
+            component.ID = "";
+
             if (InternalCalls.Entity_HasComponent(ID, componentType))
             {
                 if (!InternalCalls.Entity_GetComponent(ID, componentType, out string componentID))
-                {
-                    component.entity = this;
-                    component.ID = "00000000-0000-0000-0000-000000000000";
                     return component;
-                }
-                ;
-                component.entity = this;
                 component.ID = componentID;
                 return component;
             }
@@ -44,50 +41,40 @@ namespace Loopie
             object scriptInstance = InternalCalls.Entity_GetScriptInstance(ID, typeName);
             if (scriptInstance != null)
                 return scriptInstance as T;
-
-            component.entity = this;
-            component.ID = "";
             return component;
         }
 
         public static Entity FindEntityByName(string name)
         {
             string entityID = InternalCalls.Entity_FindEntityByName(name);
-            if (entityID == "")
-                return null;
-
             return new Entity(entityID);
         }
 
         public static Entity FindEntityByID(string entityID)
         {
             entityID = InternalCalls.Entity_FindEntityByID(entityID);
-            if (entityID == "")
-                return null;
-
             return new Entity(entityID);
         }
 
         public static Entity Instantiate(string name)
         {
             string instanceId = InternalCalls.Entity_Create(name, null);
-            if (instanceId == "")
-                return null;
-
             return new Entity(instanceId);
         }
 
         public T AddComponent<T>() where T : Component, new()
         {
             string componentType = typeof(T).FullName;
+
+            T component = new T();
+            component.entity = this;
+            component.ID = "";
             if (InternalCalls.Entity_AddComponent(ID, componentType, out string componentID))
             {
-                T component = new T();
-                component.entity = this;
                 component.ID = componentID;
                 return component;
             }
-            return null;
+            return component;
         }
 
         public static void Destroy(Entity entity)
@@ -103,18 +90,12 @@ namespace Loopie
         public Entity Clone(bool cloneChilds = false)
         {
             string instanceId = InternalCalls.Entity_Clone(ID, cloneChilds); ;
-            if (instanceId == "")
-                return null;
-
             return new Entity(instanceId);
         }
 
         public Entity Clone(Entity entity, bool cloneChilds = false)
         {
             string instanceId = InternalCalls.Entity_Clone(entity.ID, cloneChilds); ;
-            if (instanceId == "")
-                return null;
-
             return new Entity(instanceId);
         }
 
@@ -159,9 +140,6 @@ namespace Loopie
         private Entity GetParent()
         {
             string parentID = InternalCalls.Entity_GetParent(ID);
-            if (string.IsNullOrEmpty(parentID))
-                return null;
-
             return new Entity(parentID);
         }
 
@@ -213,10 +191,6 @@ namespace Loopie
         public Entity GetChild(int index)
         {
             string childID = InternalCalls.Entity_GetChild(ID, index);
-
-            if (string.IsNullOrEmpty(childID))
-                return null;
-
             return new Entity(childID);
         }
 
@@ -226,6 +200,9 @@ namespace Loopie
                 return true;
 
             if (a is null || b is null)
+                return false;
+
+            if (a.IsNullEntity() || b.IsNullEntity())
                 return false;
 
             return a.ID == b.ID;
@@ -247,6 +224,11 @@ namespace Loopie
         public override int GetHashCode()
         {
             return ID != null ? ID.GetHashCode() : 0;
+        }
+
+        private bool IsNullEntity()
+        {       
+            return string.IsNullOrEmpty(ID);
         }
     }
 }

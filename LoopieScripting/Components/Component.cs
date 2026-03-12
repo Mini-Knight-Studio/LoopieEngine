@@ -39,6 +39,9 @@ namespace Loopie
             if (a is null || b is null)
                 return false;
 
+            if (a.IsNullComponent() || b.IsNullComponent())
+                return false;
+
             return a.ID == b.ID && a.entity == b.entity;
         }
 
@@ -58,6 +61,11 @@ namespace Loopie
         public override int GetHashCode()
         {
             return ID != null ? ID.GetHashCode() : 0;
+        }
+
+        private bool IsNullComponent()
+        {
+            return string.IsNullOrEmpty(ID);
         }
     }
 }
