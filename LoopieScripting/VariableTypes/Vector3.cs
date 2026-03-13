@@ -82,6 +82,15 @@ namespace Loopie
                 this = Zero;
         }
 
+        public static Vector3 Cross(Vector3 a, Vector3 b)
+        {
+            return new Vector3(
+                a.y * b.z - a.z * b.y,
+                a.z * b.x - a.x * b.z,
+                a.x * b.y - a.y * b.x
+            );
+        }
+
         public static float Dot(Vector3 a, Vector3 b)
         {
             return a.x * b.x + a.y * b.y + a.z * b.z;
@@ -129,5 +138,31 @@ namespace Loopie
 
             return Mathf.Acos(cosTheta) * Mathf.Rad2Deg;
         }
+
+        public static Vector2 Rotate(Vector2 vector, float angleDegrees)
+        {
+            float rad = angleDegrees * Mathf.Deg2Rad;
+
+            float cos = Mathf.Cos(rad);
+            float sin = Mathf.Sin(rad);
+
+            return new Vector2(
+                vector.x * cos - vector.y * sin,
+                vector.x * sin + vector.y * cos
+            );
+        }
+
+        public static Vector3 RotateAroundAxis(Vector3 vector, Vector3 axis, float angleDegrees)
+        {
+            axis = axis.normalized;
+
+            float rad = angleDegrees * Mathf.Deg2Rad;
+
+            float cos = Mathf.Cos(rad);
+            float sin = Mathf.Sin(rad);
+
+            return vector * cos + Cross(axis, vector) * sin + axis * Dot(axis, vector) * (1 - cos);
+        }
+
     }
 }

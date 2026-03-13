@@ -132,5 +132,23 @@ namespace Loopie
 
             return Mathf.Acos(cosTheta) * Mathf.Rad2Deg;
         }
+
+        public static Vector4 Rotate(Vector4 vector, int axisA, int axisB, float angleDegrees)
+        {
+            float rad = angleDegrees * Mathf.Deg2Rad;
+
+            float cos = Mathf.Cos(rad);
+            float sin = Mathf.Sin(rad);
+
+            float[] c = { vector.x, vector.y, vector.z, vector.w };
+
+            float a = c[axisA];
+            float b = c[axisB];
+
+            c[axisA] = a * cos - b * sin;
+            c[axisB] = a * sin + b * cos;
+
+            return new Vector4(c[0], c[1], c[2], c[3]);
+        }
     }
 }
