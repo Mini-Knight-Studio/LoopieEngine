@@ -17,16 +17,23 @@ layout (std140, binding = 0) uniform Matrices
     mat4 lp_View;
 };
 
+layout (std140, binding = 1) uniform Lighting
+{
+    vec4 lp_CameraWorldPos;
+    vec4 lp_LightDir;
+    vec4 lp_LightCol;
+};
+
 uniform mat4 lp_Transform;
 uniform mat4 lp_Bones[100]; 
 uniform bool lp_Skinned;
 ///
 
-
-out vec2 v_TexCoord;
-out vec3 v_Normal;
 uniform vec2 u_Tiling= vec2(1);
 
+out vec2 v_TexCoord;
+out vec3 v_WorldPos;
+out mat3 v_TBNMatrix;
 
 void main()
 {
@@ -43,21 +50,46 @@ void main()
 
     vec4 localPos = skinMatrix * vec4(a_Position, 1.0);
     vec3 skinnedNormal = mat3(skinMatrix) * a_Normal;
+    vec3 skinnedTangent = mat3(skinMatrix) * a_Tangent;
 
-    gl_Position = lp_Projection * lp_View * lp_Transform * localPos;
+    vec4 worldPos = lp_Transform * localPos;
+    gl_Position = lp_Projection * lp_View * worldPos;
 
-    v_TexCoord = a_TexCoord* u_Tiling;
-    v_Normal = normalize(mat3(lp_Transform) * skinnedNormal);
+    v_TexCoord = a_TexCoord * u_Tiling;
+    vec3 normal = normalize(mat3(lp_Transform) * skinnedNormal);
+    vec3 tangent = normalize(mat3(lp_Transform) * skinnedTangent);
+    v_WorldPos = worldPos.xyz;
+    vec3 biTangent = cross(normal, tangent);
+    v_TBNMatrix = mat3(tangent, biTangent, normal);
 }
 
 
 [fragment]
 #version 460 core
 in vec2 v_TexCoord;
-in vec3 v_Normal;
+
+in vec3 v_WorldPos;
+in mat3 v_TBNMatrix;
+
 out vec4 FragColor;
 
+layout (std140, binding = 0) uniform Matrices
+{
+    mat4 lp_Projection;
+    mat4 lp_View;
+};
+
+layout (std140, binding = 1) uniform Lighting
+{
+    vec4 lp_CameraWorldPos;
+    vec4 lp_LightDir;
+    vec4 lp_LightCol;
+};
+
 uniform sampler2D u_Albedo;
+uniform sampler2D u_Specular;
+uniform sampler2D u_Normal;
+uniform float u_Roughness = 32.0; // highlight, smaller value = broader spotlight (feels more shiny)
 uniform vec4 u_Color = vec4(1.0);
 
 void main()
@@ -68,12 +100,27 @@ void main()
         if (texColor.a < 0.5f)
             discard;
 
-    vec3 lightDir = normalize(vec3(0.3, 0.7, 0.5));
-    vec3 normal = normalize(v_Normal);
+    vec4 texSpecular = texture(u_Specular, v_TexCoord);
 
-    float diff = max(dot(normal, lightDir), 0.4);
-    diff = mix(1.0, diff, 0.8);
+    vec4 texNormal = texture(u_Normal, v_TexCoord);
+    vec3 normal = v_TBNMatrix * (texNormal.xyz * 2.0 - 1.0);
+    normal = normalize(normal);
+    
+    // Ambient
+    vec3 ambient = lp_LightCol.xyz * lp_LightCol.w;
 
-    vec3 litColor = texColor.rgb * diff;
-    FragColor = vec4(litColor, texColor.a) * u_Color;
+    // Diffuse
+    float diff = max(dot(normal, lp_LightDir.xyz), 0.0);
+    vec3 diffuse = diff * lp_LightCol.xyz;
+
+    // Specular
+    vec3 viewDir = normalize(lp_CameraWorldPos.xyz - v_WorldPos);
+    vec3 reflectDir = reflect(-lp_LightDir.xyz, normal);  
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), u_Roughness);
+    vec3 specular = texSpecular.xyz * spec * lp_LightCol.xyz;  
+
+    // Resulting Color with Lighting
+    vec3 result = (ambient + diffuse + specular) * texColor.rgb;
+
+    FragColor = vec4(result, texColor.a) * u_Color;
 }

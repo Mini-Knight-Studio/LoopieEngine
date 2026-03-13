@@ -112,6 +112,7 @@ namespace Loopie {
 		static std::vector<RenderItem> s_RenderQueue;
 		static std::vector<Camera*> s_RenderCameras;
 		static std::shared_ptr<UniformBuffer> s_MatricesUniformBuffer;
+		static std::shared_ptr<UniformBuffer> s_lightingUniformBuffer;
 
 		static bool s_UseGizmos;
 

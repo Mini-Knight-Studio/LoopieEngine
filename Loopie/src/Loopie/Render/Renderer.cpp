@@ -14,6 +14,7 @@ namespace Loopie {
 	std::vector<Renderer::RenderItem> Renderer::s_RenderQueue = std::vector<Renderer::RenderItem>();
 	std::vector<Camera*> Renderer::s_RenderCameras = std::vector<Camera*>();
 	std::shared_ptr<UniformBuffer> Renderer::s_MatricesUniformBuffer = nullptr;
+	std::shared_ptr<UniformBuffer> Renderer::s_lightingUniformBuffer = nullptr;
 	bool Renderer::s_UseGizmos = true;
 	vec4 Renderer::s_CurrentViewport = {0,0,0,0};
 
@@ -39,6 +40,13 @@ namespace Loopie {
 		layout.AddLayoutElement(1, GLVariableType::MATRIX4, 1, "Proj");
 		s_MatricesUniformBuffer = std::make_shared<UniformBuffer>(layout);
 		s_MatricesUniformBuffer->BindToLayout(0);
+
+		BufferLayout lightingLayout;
+		lightingLayout.AddLayoutElement(0, GLVariableType::VEC4, 1, "CameraWorldPos"); // Using vec4 for memory alignment
+		lightingLayout.AddLayoutElement(1, GLVariableType::VEC4, 1, "LightDir");
+		lightingLayout.AddLayoutElement(2, GLVariableType::VEC4, 1, "LightCol");
+		s_lightingUniformBuffer = std::make_shared<UniformBuffer>(lightingLayout);
+		s_lightingUniformBuffer->BindToLayout(1);
 	}
 
 	void Renderer::Shutdown() {
@@ -80,6 +88,14 @@ namespace Loopie {
 		s_UseGizmos = gizmo;
 		s_MatricesUniformBuffer->SetData(&projectionMatrix[0][0], 0);
 		s_MatricesUniformBuffer->SetData(&viewMatrix[0][0], 1);
+		vec3 cameraPos = vec3(glm::inverse(viewMatrix)[3]);
+
+		vec4 nCameraPos = vec4(cameraPos, 1.0);
+		vec4 directionalLightDir = normalize(vec4(0.3, 0.7, 0.5, 0.0)); // toward light
+		vec4 directionalLightColor = vec4(1.0, 1.0, 1.0, 0.1); // last digit = intensity
+		s_lightingUniformBuffer->SetData(&nCameraPos, 0);
+		s_lightingUniformBuffer->SetData(&directionalLightDir, 1);
+		s_lightingUniformBuffer->SetData(&directionalLightColor, 2);
 
 		if (s_UseGizmos)
 			Gizmo::BeginGizmo();
