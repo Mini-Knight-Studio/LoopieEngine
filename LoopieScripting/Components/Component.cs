@@ -70,9 +70,9 @@ namespace Loopie
             return string.IsNullOrEmpty(ID);
         }
 
-        public void StartCoroutine(IEnumerator routine)
+        public Coroutine StartCoroutine(IEnumerator routine)
         {
-            CoroutineSystem.StartCoroutine(ID, routine);
+            return CoroutineSystem.StartCoroutine(ID, routine);
         }
 
         public void StopAllOwnedCoroutines()
