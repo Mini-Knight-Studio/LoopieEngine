@@ -43,6 +43,16 @@
 
 namespace Loopie
 {
+	void EditorModule::OnNotify(const EngineNotification& type)
+	{
+		if (type == EngineNotification::OnProjectChange) {
+			AssetRegistry::Initialize();
+			Application::GetInstance().GetWindow().SetTitle(Application::GetInstance().m_activeProject.GetProjectName().c_str());
+			m_assetsExplorer.Reload();
+			///LOAD SCENE
+		}
+	}
+
 	void EditorModule::OnLoad()
 	{
 		AssetRegistry::Initialize();
@@ -557,15 +567,25 @@ namespace Loopie
 		Text* text = entity->GetComponent<Text>();
 		RectTransform* rt = entity->GetComponent<RectTransform>();
 
-		if (img && img->GetIsActive() && rt)
-		{
-			const std::shared_ptr<Texture> tex = img->GetTexture();
-			if (tex)
-			{
-				const float w = rt->GetWidth();
-				const float h = rt->GetHeight();
 
-				matrix4 model = rt->GetLocalToWorldMatrix() * glm::scale(matrix4(1.0f), vec3(w, h, 1.0f));
+		RectTransform* parentRt = nullptr;
+		if (auto parent = entity->GetParent().lock())
+			parentRt = parent->GetComponent<RectTransform>();
+
+		vec2 parentSize(0.0f);
+		if (parentRt)
+			parentSize = vec2(parentRt->GetWidth(), parentRt->GetHeight());
+
+		if (rt)
+		{
+			const vec2 rectSize = rt->GetRectSizeCanvasSpace(parentSize);
+
+			if (img && img->GetIsActive())
+			{
+				const vec3 pivotOffset = vec3(rt->GetPivot().x * rectSize.x, rt->GetPivot().y * rectSize.y, 0.0f);
+				matrix4 localPivotTranslate = glm::translate(matrix4(1.0f), -pivotOffset);
+				const matrix4 model = rt->GetLocalToWorldMatrix() * localPivotTranslate * glm::scale(matrix4(1.0f), vec3(rectSize.x, rectSize.y, 1.0f));
+
 				vec4 color = img->GetTint();
 				std::shared_ptr<Texture> texture = img->GetTexture();
 
@@ -577,17 +597,25 @@ namespace Loopie
 
 				UIRenderer::DrawImageWorld(model, texture, color);
 			}
-		}
 
-		if (text && text->GetIsActive() && rt)
-		{
-			const float w = rt->GetWidth();
-			const float h = rt->GetHeight();
+			if (text && text->GetIsActive())
+			{
+				const vec3 pivotOffset = vec3(rt->GetPivot().x * rectSize.x, rt->GetPivot().y * rectSize.y, 0.0f);
+				matrix4 localPivotTranslate = glm::translate(matrix4(1.0f), -pivotOffset);
+				const matrix4 model = rt->GetLocalToWorldMatrix() * localPivotTranslate;
 
-			const matrix4 model = rt->GetLocalToWorldMatrix();
-
-			UIRenderer::DrawTextWorld(model, vec2(w, h), text->GetText(), text->GetFont(), text->GetColor(), text->GetScale(),
-				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment());
+				UIRenderer::DrawTextWorld(
+					model,
+					rectSize,
+					text->GetText(),
+					text->GetFont(),
+					text->GetColor(),
+					text->GetScale(),
+					text->GetSizeMode(),
+					text->GetFontSize(),
+					text->GetHorizontalAlignment(),
+					text->GetVerticalAlignment());
+			}
 		}
 
 		for (const auto& child : entity->GetChildren())
@@ -635,14 +663,18 @@ namespace Loopie
 		Renderer::DisableBlend();
 	}
 
-	void EditorModule::OnNotify(const EngineNotification& type)
+	static RectTransform* FindCanvasRectTransform(const std::shared_ptr<Entity>& start)
 	{
-		if (type == EngineNotification::OnProjectChange) {
-			AssetRegistry::Initialize();
-			Application::GetInstance().GetWindow().SetTitle(Application::GetInstance().m_activeProject.GetProjectName().c_str());
-			m_assetsExplorer.Reload();
-			///LOAD SCENE
+		auto current = start;
+		while (current)
+		{
+			if (auto* canvas = current->GetComponent<Canvas>())
+			{
+				return current->GetComponent<RectTransform>();
+			}
+			current = current->GetParent().lock();
 		}
+		return nullptr;
 	}
 
 	void EditorModule::ProcessOverlayButtonsInput()
@@ -713,19 +745,40 @@ namespace Loopie
 		bool hovered = false;
 		if (mouseOverGame && button && rt && button->GetIsActive())
 		{
-			const vec3 p = rt->GetLocalPosition();
-			const float x = p.x;
-			const float y = p.y;
-			const float w = rt->GetWidth();
-			const float h = rt->GetHeight();
+			RectTransform* parentRt = nullptr;
+			if (auto parent = entity->GetParent().lock())
+				parentRt = parent->GetComponent<RectTransform>();
+
+			vec2 parentSize(0.0f);
+
+			if (parentRt)
+			{
+				parentSize = vec2(parentRt->GetWidth(), parentRt->GetHeight());
+			}
+			else
+			{
+				RectTransform* canvasRect = FindCanvasRectTransform(entity);
+				if (canvasRect)
+					parentSize = vec2(canvasRect->GetWidth(), canvasRect->GetHeight());
+				else
+					parentSize = vec2(1.0f, 1.0f); // fallback
+			}
+
+			const vec2 rectMin = rt->GetRectMinCanvasSpace(parentSize);
+			const vec2 rectSize = rt->GetRectSizeCanvasSpace(parentSize);
+
+			const float x = rectMin.x;
+			const float y = rectMin.y;
+			const float w = rectSize.x;
+			const float h = rectSize.y;
 
 			hovered = (mouseCanvas.x >= x && mouseCanvas.x <= x + w &&
-					   mouseCanvas.y >= y && mouseCanvas.y <= y + h);
+				mouseCanvas.y >= y && mouseCanvas.y <= y + h);
 
 			button->SetHovered(hovered);
 
 			const bool down = (input.GetMouseButtonStatus(0) == KeyState::DOWN) ||
-							  (input.GetMouseButtonStatus(0) == KeyState::REPEAT);
+				(input.GetMouseButtonStatus(0) == KeyState::REPEAT);
 			const bool justDown = (input.GetMouseButtonStatus(0) == KeyState::DOWN);
 			const bool up = (input.GetMouseButtonStatus(0) == KeyState::UP);
 

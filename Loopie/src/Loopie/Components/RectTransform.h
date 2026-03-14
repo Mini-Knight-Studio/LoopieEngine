@@ -9,30 +9,49 @@ namespace Loopie
 	public:
 		DEFINE_TYPE(RectTransform)
 
-        RectTransform(float w = 50, float h = 50);
+		RectTransform(float w = 50, float h = 50);
 
 		void Init() override;
 
 		bool IsRectTransform() const override { return true; }
-        bool HasSize() const override { return true; }
+		bool HasSize() const override { return true; }
 
-        vec2 GetSize() const override { return { m_width, m_height }; }
+		// Layout
+		const vec2& GetAnchorMin() const { return m_anchorMin; }
+		const vec2& GetAnchorMax() const { return m_anchorMax; }
+		const vec2& GetPivot() const { return m_pivot; }
+		const vec2& GetSizeDelta() const { return m_sizeDelta; }
 
-        float GetWidth() const override;
-        float GetHeight() const override;
+		void SetAnchorMin(const vec2& v);
+		void SetAnchorMax(const vec2& v);
+		void SetPivot(const vec2& v);
+		void SetSizeDelta(const vec2& v);
 
-        void SetWidth(float w) override;
+		vec2 GetSize() const override;
+		float GetWidth() const override;
+		float GetHeight() const override;
+
+		void SetWidth(float w) override;
 		void SetHeight(float h) override;
 
-        vec3 RectTransform::GetLocalBoundsMin() const override { return { 0.0f, 0.0f, 0.0f }; }
-        vec3 RectTransform::GetLocalBoundsMax() const override { return { m_width,  m_height, 0.0f }; }
+		vec3 GetLocalBoundsMin() const override { return { 0.0f, 0.0f, 0.0f }; }
+		vec3 GetLocalBoundsMax() const override { return { GetWidth(), GetHeight(), 0.0f }; }
 
-        JsonNode Serialize(JsonNode& parent) const override;
-        void Deserialize(const JsonNode& data) override;
+		vec2 GetRectMinCanvasSpace(const vec2& parentSize) const;
+		vec2 GetRectSizeCanvasSpace(const vec2& parentSize) const;
 
-    private:
-        float m_width;
-        float m_height;
-        bool m_inheritedParentSize = false;
+		JsonNode Serialize(JsonNode& parent) const override;
+		void Deserialize(const JsonNode& data) override;
+
+	private:
+		static vec2 Clamp01(const vec2& v);
+
+	private:
+		vec2 m_anchorMin = vec2(0.5f, 0.5f);
+		vec2 m_anchorMax = vec2(0.5f, 0.5f);
+		vec2 m_pivot = vec2(0.5f, 0.5f);
+		vec2 m_sizeDelta = vec2(50.0f, 50.0f);
+
+		bool m_inheritedParentSize = false;
 	};
 }

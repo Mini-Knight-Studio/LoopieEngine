@@ -484,19 +484,50 @@ namespace Loopie {
 
 			if (isRectTransform)
 			{
+				auto* rt = static_cast<RectTransform*>(transform);
+
+				ImGui::SeparatorText("Layout");
+
+				vec2 anchorMin = rt->GetAnchorMin();
+				vec2 anchorMax = rt->GetAnchorMax();
+				vec2 pivot = rt->GetPivot();
+				vec2 sizeDelta = rt->GetSizeDelta();
+
+				if (ImGui::SliderFloat2("Anchor Min", &anchorMin.x, 0.0f, 1.0f))
+				{
+					rt->SetAnchorMin(anchorMin);
+					modified = true;
+				}
+				if (ImGui::SliderFloat2("Anchor Max", &anchorMax.x, 0.0f, 1.0f))
+				{
+					rt->SetAnchorMax(anchorMax);
+					modified = true;
+				}
+				if (ImGui::SliderFloat2("Pivot", &pivot.x, 0.0f, 1.0f))
+				{
+					rt->SetPivot(pivot);
+					modified = true;
+				}
+
+				if (ImGui::DragFloat2("Size Delta", &sizeDelta.x, 1.0f))
+				{
+					rt->SetSizeDelta(sizeDelta);
+					modified = true;
+				}
+
 				ImGui::SeparatorText("Size");
 
-				float w = transform->GetWidth();
-				float h = transform->GetHeight();
+				float w = rt->GetWidth();
+				float h = rt->GetHeight();
 
 				if (ImGui::DragFloat("Width", &w, 1.0f))
 				{
-					transform->SetWidth(w);
+					rt->SetWidth(w);
 					modified = true;
 				}
 				if (ImGui::DragFloat("Height", &h, 1.0f))
 				{
-					transform->SetHeight(h);
+					rt->SetHeight(h);
 					modified = true;
 				}
 			}
