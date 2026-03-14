@@ -71,7 +71,7 @@ namespace Loopie {
 		const std::string& GetClassName() const { return m_className; }
 		std::shared_ptr<ScriptingClass> GetScriptingClass() const { return m_scriptingClass; }
 
-		_MonoObject* GetInstance() const { return m_instance; }
+		_MonoObject* GetInstance() const;
 
 		template<typename T>
 		T GetRuntimeFieldValue(const std::string& name)
@@ -139,6 +139,6 @@ namespace Loopie {
 		_MonoMethod* m_OnDrawGizmo = nullptr;
 		_MonoMethod* m_Constructor = nullptr;
 
-		
+		uint32_t m_gcHandle = 0;
 	};
 }

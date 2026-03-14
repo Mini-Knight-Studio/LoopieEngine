@@ -193,7 +193,7 @@ namespace Loopie
 	{
 		Scene* scene = Utils::GetScene();
 		if(!scene)
-			return nullptr;
+			return ScriptingManager::CreateString("");
 
 		std::shared_ptr<Entity> parent = nullptr;
 		if (parentID !=nullptr)
@@ -201,19 +201,19 @@ namespace Loopie
 			UUID parentUuid(Utils::MonoStringToString(parentID));
 			if (parentUuid == UUID::Invalid) {
 				Log::Warn("Invalid UUID: {}", parentUuid.Get());
-				return nullptr;
+				return ScriptingManager::CreateString("");
 			}
 			parent = scene->GetEntity(parentUuid);
 			if (!parent) {
 				Log::Warn("Parent entity {} not found", parentUuid.Get());
-				return nullptr;
+				return ScriptingManager::CreateString("");
 			}
 		}
 
 		std::string name = Utils::MonoStringToString(entityName);
 		std::shared_ptr<Entity> entity = scene->CreateEntity(name, parent);
 		if(!entity)
-			return nullptr;
+			return ScriptingManager::CreateString("");
 
 		return ScriptingManager::CreateString(entity->GetUUID().Get().c_str());
 	}
@@ -230,11 +230,11 @@ namespace Loopie
 	{
 		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
 		if (!entity)
-			return nullptr;
+			return ScriptingManager::CreateString("");
 
 		std::shared_ptr<Entity> clone = Utils::GetScene()->CloneEntity(entity, nullptr, (cloneChilds != 0));
 		if (!clone)
-			return nullptr;
+			return ScriptingManager::CreateString("");
 
 		auto setUp = [&](std::vector<ScriptClass*>& components) -> void {
 			for (size_t i = 0; i < components.size(); i++)
