@@ -60,6 +60,7 @@ namespace Loopie {
 
 		void InvokeOnCreate();
 		void InvokeOnUpdate();
+		void InvokeOnDestroy();
 
 		void InvokeOnDrawGizmo();
 
@@ -134,6 +135,7 @@ namespace Loopie {
 		_MonoObject* m_instance = nullptr;
 		_MonoMethod* m_OnCreate = nullptr;
 		_MonoMethod* m_OnUpdate = nullptr;
+		_MonoMethod* m_OnDestroy = nullptr;
 		_MonoMethod* m_OnDrawGizmo = nullptr;
 		_MonoMethod* m_Constructor = nullptr;
 

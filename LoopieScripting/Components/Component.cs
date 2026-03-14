@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace Loopie
 {
@@ -67,5 +69,26 @@ namespace Loopie
         {
             return string.IsNullOrEmpty(ID);
         }
+
+        public void StartCoroutine(IEnumerator routine)
+        {
+            CoroutineSystem.StartCoroutine(ID, routine);
+        }
+
+        public void StopAllOwnedCoroutines()
+        {
+            CoroutineSystem.StopCoroutinesByOwner(ID);
+        }
+
+        public void StopAllCoroutines()
+        {
+            CoroutineSystem.StopAllCoroutines();
+        }
+
+        public void StopCoroutine(Coroutine coroutine)
+        {
+            CoroutineSystem.StopCoroutine(coroutine);
+        }
     }
+
 }

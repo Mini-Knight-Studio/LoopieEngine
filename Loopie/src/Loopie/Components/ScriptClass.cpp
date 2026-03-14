@@ -31,6 +31,7 @@ namespace Loopie
 
 		m_OnCreate = m_scriptingClass->GetMethod("OnCreate", 0);
 		m_OnUpdate = m_scriptingClass->GetMethod("OnUpdate", 0);
+		m_OnDestroy = m_scriptingClass->GetMethod("OnDestroy", 0);
 		m_OnDrawGizmo = m_scriptingClass->GetMethod("OnDrawGizmo", 0);
 
 		MonoProperty* entityProperty =
@@ -66,6 +67,7 @@ namespace Loopie
 		m_instance = nullptr;
 		m_OnCreate = nullptr;
 		m_OnUpdate = nullptr;
+		m_OnDestroy = nullptr;
 		m_OnDrawGizmo = nullptr;
 	}
 
@@ -79,6 +81,12 @@ namespace Loopie
 	{
 		if (m_OnUpdate)
 			m_scriptingClass->InvokeMethod(m_instance, m_OnUpdate);
+	}
+
+	void ScriptClass::InvokeOnDestroy()
+	{
+		if(m_OnDestroy)
+			m_scriptingClass->InvokeMethod(m_instance, m_OnDestroy);
 	}
 
 	void ScriptClass::InvokeOnDrawGizmo()
