@@ -197,6 +197,84 @@ namespace Loopie {
         return false;
     }
 
+    bool OBB::GetPenetration(const OBB& other, vec3& pushDir, float& depth) const
+    {
+        const float EPSILON = 1e-6f;
+        vec3 centerDist = other.Center - Center;
+        float minOverlap = std::numeric_limits<float>::max();
+        vec3 bestAxis(0.0f);
+        bool found = false;
+
+        auto halfSize = [&](const vec3& axis) -> float {
+            return Extents.x * std::abs(dot(axis, Axes[0])) +
+                Extents.y * std::abs(dot(axis, Axes[1])) +
+                Extents.z * std::abs(dot(axis, Axes[2]));
+            };
+
+        auto halfSizeOther = [&](const vec3& axis) -> float {
+            return other.Extents.x * std::abs(dot(axis, other.Axes[0])) +
+                other.Extents.y * std::abs(dot(axis, other.Axes[1])) +
+                other.Extents.z * std::abs(dot(axis, other.Axes[2]));
+            };
+
+        for (int i = 0; i < 3; ++i) {
+            vec3 axis = Axes[i];
+            float projA = halfSize(axis);
+            float projB = halfSizeOther(axis);
+            float dist = std::abs(dot(centerDist, axis));
+            float overlap = projA + projB - dist;
+            if (overlap <= EPSILON) 
+                return false;
+            if (overlap < minOverlap) {
+                minOverlap = overlap;
+                bestAxis = axis;
+                found = true;
+            }
+        }
+
+        for (int i = 0; i < 3; ++i) {
+            vec3 axis = other.Axes[i];
+            float projA = halfSize(axis);
+            float projB = halfSizeOther(axis);
+            float dist = std::abs(dot(centerDist, axis));
+            float overlap = projA + projB - dist;
+            if (overlap <= EPSILON) 
+                return false;
+            if (overlap < minOverlap) {
+                minOverlap = overlap;
+                bestAxis = axis;
+                found = true;
+            }
+        }
+
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                vec3 axis = cross(Axes[i], other.Axes[j]);
+                if (glm::length(axis) < EPSILON) 
+                    continue;
+                axis = normalize(axis);
+                float projA = halfSize(axis);
+                float projB = halfSizeOther(axis);
+                float dist = std::abs(dot(centerDist, axis));
+                float overlap = projA + projB - dist;
+                if (overlap <= EPSILON) return false;
+                if (overlap < minOverlap) {
+                    minOverlap = overlap;
+                    bestAxis = axis;
+                    found = true;
+                }
+            }
+        }
+
+        if (!found) 
+            return false;
+
+        float sign = dot(centerDist, bestAxis) > 0 ? -1.0f : 1.0f;
+        pushDir = bestAxis * sign;
+        depth = minOverlap;
+        return true;
+    }
+
     const std::array<vec3, 8>& OBB::GetCorners() const
     {
         if (_cornersDirty) {

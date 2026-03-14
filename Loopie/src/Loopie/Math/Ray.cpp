@@ -13,8 +13,8 @@ namespace Loopie
     Ray::Ray(vec3 startPoint, vec3 direction, float length)
     {
         this->startPoint = startPoint;
-        this->endPoint = startPoint + length * direction;
 		this->direction = normalize(direction);
+        this->endPoint = startPoint + (length * this->direction);
     }
 
     bool Ray::Intersects(const std::vector<vec3>& vertex, bool bounded_by_vertex, vec3& intersection_point)const

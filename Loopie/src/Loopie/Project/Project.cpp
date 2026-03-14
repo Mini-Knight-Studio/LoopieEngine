@@ -7,6 +7,7 @@
 #include "Loopie/Project/ProjectConfig.h"
 
 #include "Loopie/Core/Window.h"
+#include "Loopie/Collisions/CollisionProcessor.h"
 
 #include <fstream>
 #include <sstream>
@@ -117,12 +118,35 @@ namespace Loopie {
 		configData.CreateField<std::string>("project_name", projectName);
 		configData.CreateField<std::string>("last_scene", defaultScenePath);
 		configData.CreateField<std::string>("build_scene", "none");
-		JsonNode config = configData.CreateObjectField("engine_config");
-		config.CreateField<bool>("vsync", true);
-		config.CreateField<bool>("fullscreen", false);
-		config.CreateField<int>("target_framerate", 60);
-		config = configData.CreateObjectField("editor_config");
-		config = configData.CreateObjectField("build_scenes");
+		JsonNode engineConfigNode = configData.CreateObjectField("engine_config");
+		engineConfigNode.CreateField<bool>("vsync", true);
+		engineConfigNode.CreateField<bool>("fullscreen", false);
+		engineConfigNode.CreateField<int>("target_framerate", 60);
+
+		JsonNode collisionLayersNode = engineConfigNode.CreateObjectField("collision_layers");
+		for (size_t i = 0; i < MAX_LAYERS; i++)
+		{
+			if(i == 0)
+				collisionLayersNode.CreateField(std::to_string(i), "Default");
+			else
+				collisionLayersNode.CreateField(std::to_string(i), "Layer " + std::to_string(i));
+		}
+
+		JsonNode collisionMatrixNode = engineConfigNode.CreateObjectField("collision_matrix");
+		for (size_t i = 0; i < MAX_LAYERS; i++)
+		{
+			JsonNode rowNode = collisionMatrixNode.CreateObjectField(std::to_string(i));
+			for (size_t j = 0; j < MAX_LAYERS; j++) {
+				rowNode.CreateField(std::to_string(j), true);
+			}
+		}
+
+		JsonNode editorConfigNode = configData.CreateObjectField("editor_config");
+		/// Nothing now
+
+		JsonNode buildSceneNode = editorConfigNode.CreateObjectField("build_scenes");
+		/// Nothing now
+
 		ProjectConfig::Save(configData);
 
 		m_name = projectName;
@@ -137,32 +161,78 @@ namespace Loopie {
 		if (!configData.HasKey("", "build_scene"))
 			configData.CreateField<std::string>("build_scene", "none");
 
-		JsonNode config;
+		JsonNode engineConfigNode;
+		JsonNode editorConfigNode;
+		JsonNode collisionLayersNode;
+		JsonNode collisionMatrixNode;
+		JsonNode buildSceneNode;
+
 		if (!configData.HasKey("", "engine_config"))
-			config = configData.CreateObjectField("engine_config");
+			engineConfigNode = configData.CreateObjectField("engine_config");
 		else
-			config = configData.Child("engine_config");
+			engineConfigNode = configData.Child("engine_config");
 
-		if (!config.HasKey("vsync"))
-			config.CreateField<bool>("vsync", true);
-		if (!config.HasKey("fullscreen"))
-			config.CreateField<bool>("fullscreen", false);
-		if (!config.HasKey("target_framerate"))
-			config.CreateField<int>("target_framerate", 60);
+		if (!engineConfigNode.HasKey("vsync"))
+			engineConfigNode.CreateField<bool>("vsync", true);
+		if (!engineConfigNode.HasKey("fullscreen"))
+			engineConfigNode.CreateField<bool>("fullscreen", false);
+		if (!engineConfigNode.HasKey("target_framerate"))
+			engineConfigNode.CreateField<int>("target_framerate", 60);
 
-		if (!configData.HasKey("", "editor_config"))
-			config = configData.CreateObjectField("editor_config");
+
+		if (!engineConfigNode.HasKey("collision_layers"))
+			collisionLayersNode = engineConfigNode.CreateObjectField("collision_layers");
 		else
-			config = configData.Child("editor_config");
+			collisionLayersNode = engineConfigNode.Child("collision_layers");
+
+		for (size_t i = 0; i < MAX_LAYERS; i++)
+		{
+			if (!collisionLayersNode.HasKey(std::to_string(i))) {
+				if (i == 0)
+					collisionLayersNode.CreateField(std::to_string(i), "Default");
+				else
+					collisionLayersNode.CreateField(std::to_string(i), "Layer " + std::to_string(i));
+
+			}
+		}
 
 
+		if (!engineConfigNode.HasKey("collision_matrix"))
+			collisionMatrixNode = engineConfigNode.CreateObjectField("collision_matrix");
+		else
+			collisionMatrixNode = engineConfigNode.Child("collision_matrix");
+
+
+
+		if (!configData.HasKey("","editor_config"))
+			editorConfigNode = configData.CreateObjectField("editor_config");
+		else
+			editorConfigNode = configData.Child("editor_config");
+
+		for (size_t i = 0; i < MAX_LAYERS; i++) {
+			JsonNode rowNode;
+			if (!collisionMatrixNode.HasKey(std::to_string(i)))
+				rowNode = collisionMatrixNode.CreateObjectField(std::to_string(i));
+			else
+				rowNode = collisionMatrixNode.Child(std::to_string(i));
+
+			for (size_t j = 0; j < MAX_LAYERS; j++) {
+				bool value = true;
+				if (!rowNode.HasKey(std::to_string(j)))
+					rowNode.CreateField(std::to_string(j), value);
+				else
+					value = rowNode.GetValue<bool>(std::to_string(j), true).Result;
+
+				CollisionProcessor::SetLayerCollision(i, j, value);
+			}
+		}
 
 
 
 		if (!configData.HasKey("", "build_scenes"))
-			config = configData.CreateObjectField("build_scenes");
+			buildSceneNode = configData.CreateObjectField("build_scenes");
 		else
-			config = configData.Child("build_scenes");
+			buildSceneNode = configData.Child("build_scenes");
 
 
 		ProjectConfig::Save(configData);
@@ -174,6 +244,12 @@ namespace Loopie {
 		bool fullscreen = configData.GetValue<bool>("engine_config.fullscreen", false).Result;
 		int targetFramerate = configData.GetValue<int>("engine_config.target_framerate", 60).Result;
 		std::string name = configData.GetValue<std::string>("project_name", m_projectPath.filename().string()).Result;
+
+		for (size_t i = 0; i < MAX_LAYERS; i++)
+		{
+			if (i > 0)
+				CollisionProcessor::SetLayerName(i, collisionLayersNode.GetValue<std::string>(std::to_string(i), "Layer " + std::to_string(i)).Result);
+		}
 
 		window.SetVsync(vsync);
 		window.SetWindowFullscreen(fullscreen);

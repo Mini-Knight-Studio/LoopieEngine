@@ -62,7 +62,7 @@ namespace Loopie
 		Application::GetInstance().GetWindow().SetResizable(true);
 
 		/////SCENE
-		Application::GetInstance().CreateScene(""); /// Maybe default One
+		Application::GetInstance().CreateScene(); /// Just the scene object
 		m_currentScene = &Application::GetInstance().GetScene();
 
 		JsonData data = ProjectConfig::GetData();
@@ -124,6 +124,7 @@ namespace Loopie
 		m_textEditor.Update(inputEvent);
 		m_scene.Update(inputEvent);
 		m_topBar.Update(inputEvent);
+		m_mainMenu.Update(inputEvent);
 		
 
 		/// RenderToTarget
@@ -180,6 +181,7 @@ namespace Loopie
 			m_game.StartScene();
 			if (m_game.GetCamera() && m_game.GetCamera()->GetIsActive()) {
 				Renderer::BeginScene(m_game.GetCamera()->GetViewMatrix(), m_game.GetCamera()->GetProjectionMatrix(), false);
+				UpdateComponents(Loopie::GIZMO);
 				RenderWorld(m_game.GetCamera());
 				Renderer::EndScene();
 
@@ -260,7 +262,11 @@ namespace Loopie
 			m_currentScene->SaveScene("recoverScene.scene");
 		}
 
+		if (!ScriptingManager::IsRunning())
+			return true;
 
+		if(mode == Loopie::UPDATING || mode== Loopie::NEXTFRAME)
+			ScriptingManager::UpdateCoroutines();
 
 		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities()) {
 			if (!entity->GetIsActive())
@@ -281,11 +287,20 @@ namespace Loopie
 					case Loopie::UPDATING:
 					case Loopie::NEXTFRAME:
 						script->InvokeOnUpdate();
+						if (m_currentScene->HasLoadRequest())
+							break;
+						break;
+					case Loopie::GIZMO:
+						script->InvokeOnDrawGizmo();
 						break;
 					default:
 						break;
 					}
 				}
+			}
+			if (m_currentScene->HasLoadRequest()) {
+				m_currentScene->ReadAndLoadSceneFile(m_currentScene->GetRequestedSceneID());
+				break;
 			}
 		}
 

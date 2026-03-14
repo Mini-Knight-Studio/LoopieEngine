@@ -7,6 +7,8 @@
 #include "Loopie/Files/DirectoryManager.h"
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Project/ProjectConfig.h"
+#include "Loopie/Collisions/CollisionProcessor.h"
+#include "Loopie/Scripting/ScriptingManager.h"
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -18,6 +20,12 @@
 
 namespace Loopie {
 	EditorMenuInterface::EditorMenuInterface() {
+	}
+
+	void EditorMenuInterface::Update(const InputEventManager& inputEvent)
+	{
+		if(!ScriptingManager::IsRunning())
+			HotKeys(inputEvent);
 	}
 
 	void EditorMenuInterface::Render() {
@@ -125,6 +133,15 @@ namespace Loopie {
 				ImGui::EndMenu();
 			}
 
+			if (ImGui::BeginMenu("Collisions"))
+			{
+				if(ImGui::MenuItem("Collision Matrix"))
+				{
+					m_showCollisionMatrixMenu = true;
+				}
+				ImGui::EndMenu();
+			}
+
 			if (ImGui::BeginMenu("Help"))
 			{
 				if (ImGui::MenuItem("Documentation"))
@@ -158,6 +175,9 @@ namespace Loopie {
 
 		if (m_showInfoConfigMenu)
 			RenderInfoConfigMenu();
+
+		if (m_showCollisionMatrixMenu)
+			RenderCollisionMatrixMenu();
 
 		ImVec2 center = ImGui::GetMainViewport()->GetCenter();
 		ImGui::SetNextWindowPos(center, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
@@ -304,6 +324,128 @@ namespace Loopie {
 
 		ImGui::InvisibleButton("##", { 310,1 });
 		ImGui::End();
+	}
+
+	void EditorMenuInterface::RenderCollisionMatrixMenu()
+	{
+		ImGui::Begin("Collision Layers", &m_showCollisionMatrixMenu, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize);
+
+		auto& layers = Loopie::CollisionProcessor::GetLayers();
+		size_t layerCount = layers.size();
+
+		ImGui::Text("Layers:");
+
+		if (ImGui::TreeNode("Layer List"))
+		{
+			ImGui::BeginChild("LayersScroll", ImVec2(250, 250), true);
+			for (size_t i = 0; i < layerCount; ++i)
+			{
+				ImGui::PushID((int)i);
+
+				ImGuiInputTextFlags flags = (i == 0) ? ImGuiInputTextFlags_ReadOnly : 0;
+				std::string name = layers[i].name;
+
+				ImGui::Text("%d:", (int)i);
+				ImGui::SameLine();
+				if (ImGui::InputText("##LayerName", &name, flags))
+				{
+					Loopie::CollisionProcessor::SetLayerName((unsigned int)i, name);
+				}
+
+				ImGui::PopID();
+			}
+			ImGui::EndChild();
+			ImGui::TreePop();
+		}
+
+		ImGui::Separator();
+
+		ImGui::Text("Collision Matrix:");
+		if (ImGui::TreeNode("Matrix List"))
+		{
+			float padding = 4.0f;
+			float checkboxSize = 20.0f;
+
+			float firstColWidth = 0.0f;
+			for (auto& layer : layers)
+			{
+				float w = ImGui::CalcTextSize(layer.name.c_str()).x;
+				if (w > firstColWidth) firstColWidth = w;
+			}
+			firstColWidth += padding * 2;
+
+			float maxHeaderHeight = 0.0f;
+			for (auto& layer : layers)
+			{
+				float h = layer.name.size() * ImGui::GetTextLineHeight() + padding * 2;
+				if (h > maxHeaderHeight) maxHeaderHeight = h;
+			}
+
+			ImDrawList* draw_list = ImGui::GetWindowDrawList();
+			ImVec2 origin = ImGui::GetCursorScreenPos();
+
+			for (size_t j = 0; j < layerCount; ++j)
+			{
+				const std::string& name = layers[j].name;
+				float totalTextHeight = (name.size() + 1) * ImGui::GetTextLineHeight();
+
+				float x = origin.x + firstColWidth + j * checkboxSize + (checkboxSize - ImGui::CalcTextSize("A").x) / 2.0f;
+				float yStart = origin.y + padding + (maxHeaderHeight - totalTextHeight) / 2.0f;
+
+				float y = yStart;
+				for (char c : name)
+				{
+					ImGui::SetCursorScreenPos(ImVec2(x, y));
+					ImGui::Text("%c", c);
+					y += ImGui::GetTextLineHeight();
+				}
+			}
+
+			for (size_t i = 0; i < layerCount; ++i)
+			{
+				ImVec2 rowPos(origin.x, origin.y + maxHeaderHeight + i * checkboxSize);
+
+				draw_list->AddText(ImVec2(rowPos.x + padding, rowPos.y), ImGui::GetColorU32(ImGuiCol_Text), layers[i].name.c_str());
+				for (size_t j = 0; j < layerCount; ++j)
+				{
+					ImVec2 boxPos(origin.x + firstColWidth + j * checkboxSize, origin.y + maxHeaderHeight + i * checkboxSize);
+					ImGui::SetCursorScreenPos(boxPos);
+
+					bool collides = Loopie::CollisionProcessor::GetLayerCollision((unsigned int)i, (unsigned int)j);
+					if (ImGui::Checkbox(("##" + std::to_string(i) + "_" + std::to_string(j)).c_str(), &collides))
+						Loopie::CollisionProcessor::SetLayerCollision((unsigned int)i, (unsigned int)j, collides);
+				}
+			}
+
+			if(ImGui::Button("Clear"))
+				CollisionProcessor::ClearMatrix();
+
+			ImGui::TreePop();
+		}
+
+
+		ImGui::Dummy(ImVec2(0, 15));
+		float windowWidth = ImGui::GetContentRegionAvail().x;    
+		float buttonWidth = 100.0f;                              
+		ImGui::SetCursorPosX((windowWidth) - buttonWidth );
+		if (ImGui::Button("Save Changes", ImVec2(buttonWidth, 0)))
+		{
+			CollisionProcessor::SaveLayers();
+		}
+
+		ImGui::End();
+	}
+
+	void EditorMenuInterface::HotKeys(const InputEventManager& inputEvent)
+	{
+		if (inputEvent.GetKeyWithModifier(SDL_SCANCODE_S, KeyModifier::CTRL) ) {
+			bool existsPath = std::filesystem::exists(Application::GetInstance().GetScene().GetFilePath());
+			if (existsPath)
+			{
+				Application::GetInstance().GetScene().SaveScene(Application::GetInstance().GetScene().GetFilePath());
+				AssetRegistry::RefreshAssetRegistry();
+			}
+		}
 	}
 
 	void EditorMenuInterface::RenderOpenProjectPopUp()

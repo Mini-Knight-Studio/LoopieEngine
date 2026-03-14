@@ -5,6 +5,18 @@ namespace Loopie
     public class BoxCollider : Component
     {
         public Vector3 LocalCenter {get { return GetLocalCenter(); } set { SetLocalCenter(value); }}
+        public string Layer
+        {
+            get
+            {
+                return InternalCalls.BoxCollider_GetLayer(entity.ID, ID);
+            }
+            set
+            {
+                InternalCalls.BoxCollider_SetLayer(entity.ID, ID, value);
+            }
+        }
+       
 
         private Vector3 GetLocalCenter()
         {
@@ -51,6 +63,30 @@ namespace Loopie
         private bool GetIfHasEndedCollision()
         {
             return InternalCalls.BoxCollider_HasEndedCollision(entity.ID, ID);
+        }
+
+        public bool Trigger { get { return IsTrigger(); } set { SetTrigger(value); } }
+
+        private bool IsTrigger()
+        {
+            return InternalCalls.BoxCollider_IsTrigger(entity.ID, ID);
+        }
+
+        private void SetTrigger(bool isTrigger)
+        {
+            InternalCalls.BoxCollider_SetTrigger(entity.ID, ID, isTrigger);
+        }
+
+        public bool Static { get { return IsStatic(); } set { SetStatic(value); } }
+
+        private bool IsStatic()
+        {
+            return InternalCalls.BoxCollider_IsStatic(entity.ID, ID);
+        }
+
+        private void SetStatic(bool isStatic)
+        {
+            InternalCalls.BoxCollider_SetStatic(entity.ID, ID, isStatic);
         }
     }
 }

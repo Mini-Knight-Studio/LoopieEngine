@@ -12,6 +12,7 @@ namespace Loopie
 		PAUSED,
 		END,
 		NEXTFRAME,
+		GIZMO,
 		DEACTIVATED,
 	};
 	class TopBarInterface : public Interface

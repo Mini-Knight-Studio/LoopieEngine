@@ -7,6 +7,7 @@ namespace Loopie
         public float x, y, z, w;
 
         public static Vector4 Zero => new Vector4(0.0f);
+        public static Vector4 One => new Vector4(1.0f);
         public static Vector4 Right => new Vector4(1.0f, 0.0f, 0.0f, 0.0f);
         public static Vector4 Up => new Vector4(0.0f, 1.0f, 0.0f, 0.0f);
         public static Vector4 Forward => new Vector4(0.0f, 0.0f, 1.0f, 0.0f);
@@ -76,7 +77,7 @@ namespace Loopie
         public void Normalize()
         {
             float mag = (float)magnitude;
-            if(mag > 1E-05f)
+            if(mag > Mathf.Epsilon)
                 this /= mag;
             else
                 this = Zero;
@@ -92,7 +93,7 @@ namespace Loopie
             get
             {
                 float mag = (float)magnitude;
-                return mag > 1E-05f? this / mag : Zero;
+                return mag > Mathf.Epsilon ? this / mag : Zero;
             }
         }
 
@@ -116,6 +117,38 @@ namespace Loopie
                 a.z + (b.z - a.z) * t,
                 a.w + (b.w - a.w) * t
             );
+        }
+
+        public static float Angle(Vector4 a, Vector4 b)
+        {
+            float dot = Dot(a, b);
+            float mag = (float)(a.magnitude * b.magnitude);
+
+            if (mag == Mathf.Epsilon)
+                return 0.0f;
+
+            float cosTheta = dot / mag;
+            cosTheta = Mathf.Clamp(cosTheta, -1.0f, 1.0f);
+
+            return Mathf.Acos(cosTheta) * Mathf.Rad2Deg;
+        }
+
+        public static Vector4 Rotate(Vector4 vector, int axisA, int axisB, float angleDegrees)
+        {
+            float rad = angleDegrees * Mathf.Deg2Rad;
+
+            float cos = Mathf.Cos(rad);
+            float sin = Mathf.Sin(rad);
+
+            float[] c = { vector.x, vector.y, vector.z, vector.w };
+
+            float a = c[axisA];
+            float b = c[axisB];
+
+            c[axisA] = a * cos - b * sin;
+            c[axisB] = a * sin + b * cos;
+
+            return new Vector4(c[0], c[1], c[2], c[3]);
         }
     }
 }

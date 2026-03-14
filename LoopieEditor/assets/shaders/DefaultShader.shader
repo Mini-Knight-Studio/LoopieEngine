@@ -25,6 +25,7 @@ uniform bool lp_Skinned;
 
 out vec2 v_TexCoord;
 out vec3 v_Normal;
+uniform vec2 u_Tiling= vec2(1);
 
 
 void main()
@@ -45,7 +46,7 @@ void main()
 
     gl_Position = lp_Projection * lp_View * lp_Transform * localPos;
 
-    v_TexCoord = a_TexCoord;
+    v_TexCoord = a_TexCoord* u_Tiling;
     v_Normal = normalize(mat3(lp_Transform) * skinnedNormal);
 }
 
