@@ -29,27 +29,38 @@ namespace Loopie
 		if (!rt)
 			return;
 
-		const matrix4& m = rt->GetLocalToWorldMatrix();
-		const vec3 localMin = rt->GetLocalBoundsMin();
-		const vec3 localMax = rt->GetLocalBoundsMax();
+		RectTransform* parentRt = nullptr;
+		if (auto parent = GetOwner()->GetParent().lock())
+			parentRt = parent->GetComponent<RectTransform>();
 
-		const vec3 corners[8] =
+		vec2 parentSize(0.0f);
+		if (parentRt)
+			parentSize = vec2(parentRt->GetWidth(), parentRt->GetHeight());
+		else
 		{
-			{ localMin.x, localMin.y, 0.0f },
-			{ localMax.x, localMin.y, 0.0f },
-			{ localMin.x, localMax.y, 0.0f },
-			{ localMax.x, localMax.y, 0.0f },
-			{ localMin.x, localMin.y, 0.0f },
-			{ localMax.x, localMin.y, 0.0f },
-			{ localMin.x, localMax.y, 0.0f },
-			{ localMax.x, localMax.y, 0.0f },
+			parentSize = vec2(rt->GetWidth(), rt->GetHeight());
+		}
+
+		const vec2 rectMin = rt->GetRectMinCanvasSpace(parentSize);
+		const vec2 rectSize = rt->GetRectSizeCanvasSpace(parentSize);
+
+		const vec3 pivotOffset = vec3(rt->GetPivot().x * rectSize.x, rt->GetPivot().y * rectSize.y, 0.0f);
+		matrix4 localPivotTranslate = glm::translate(matrix4(1.0f), -pivotOffset);
+		const matrix4 model = rt->GetLocalToWorldMatrix() * localPivotTranslate * glm::scale(matrix4(1.0f), vec3(rectSize.x, rectSize.y, 1.0f));
+
+		const vec4 unitCorners[4] = {
+			vec4(0.0f, 0.0f, 0.0f, 1.0f),
+			vec4(1.0f, 0.0f, 0.0f, 1.0f),
+			vec4(0.0f, 1.0f, 0.0f, 1.0f),
+			vec4(1.0f, 1.0f, 0.0f, 1.0f)
 		};
 
 		AABB aabb;
 		aabb.SetNegativeInfinity();
+
 		for (int i = 0; i < 4; ++i)
 		{
-			const vec3 w = vec3(m * vec4(corners[i], 1.0f));
+			const vec3 w = vec3(model * unitCorners[i]);
 			aabb.Enclose(w);
 		}
 

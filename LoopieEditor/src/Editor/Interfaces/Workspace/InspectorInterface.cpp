@@ -493,25 +493,19 @@ namespace Loopie {
 				vec2 pivot = rt->GetPivot();
 				vec2 sizeDelta = rt->GetSizeDelta();
 
-				if (ImGui::SliderFloat2("Anchor Min", &anchorMin.x, 0.0f, 1.0f))
+				if (ImGui::DragFloat2("Anchor Min", &anchorMin.x, 0.1f, 1.0f))
 				{
 					rt->SetAnchorMin(anchorMin);
 					modified = true;
 				}
-				if (ImGui::SliderFloat2("Anchor Max", &anchorMax.x, 0.0f, 1.0f))
+				if (ImGui::DragFloat2("Anchor Max", &anchorMax.x, 0.1f, 1.0f))
 				{
 					rt->SetAnchorMax(anchorMax);
 					modified = true;
 				}
-				if (ImGui::SliderFloat2("Pivot", &pivot.x, 0.0f, 1.0f))
+				if (ImGui::DragFloat2("Pivot", &pivot.x, 0.1f, 1.0f))
 				{
 					rt->SetPivot(pivot);
-					modified = true;
-				}
-
-				if (ImGui::DragFloat2("Size Delta", &sizeDelta.x, 1.0f))
-				{
-					rt->SetSizeDelta(sizeDelta);
 					modified = true;
 				}
 

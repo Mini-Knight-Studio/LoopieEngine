@@ -434,20 +434,31 @@ namespace Loopie
 		Image* img = entity->GetComponent<Image>();
 		Text* text = entity->GetComponent<Text>();
 		RectTransform* rt = entity->GetComponent<RectTransform>();
+		RectTransform* parentRt = nullptr;
+
+		if (auto parent = entity->GetParent().lock())
+			parentRt = parent->GetComponent<RectTransform>();
+
+		vec2 parentSize(0.0f);
+		if (parentRt)
+			parentSize = vec2(parentRt->GetWidth(), parentRt->GetHeight());
 
 		if (img && img->GetIsActive() && rt)
 		{
-			const vec3 p = rt->GetWorldPosition();
+			const vec2 rectSize = rt->GetRectSizeCanvasSpace(parentSize);
+			const vec3 pivotOffset = vec3(rt->GetPivot().x * rectSize.x, rt->GetPivot().y * rectSize.y, 0.0f);
+			const vec3 p = rt->GetWorldPosition() - pivotOffset;
 			const vec3 ws3 = rt->GetWorldScale();
 			const vec2 ws(ws3.x, ws3.y);
 
-			const vec2 s(rt->GetWidth(), rt->GetHeight());
+			const vec2 s(rectSize.x, rectSize.y);
 
 			const vec2 pixelSize(s.x * ws.x * scale.x, s.y * ws.y * scale.y);
 			const vec2 pixelPos(p.x * scale.x, p.y * scale.y);
 
 			vec4 color = img->GetTint();
 			std::shared_ptr<Texture> texture = img->GetTexture();
+
 
 			if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
 			{
@@ -460,11 +471,13 @@ namespace Loopie
 
 		if (text && text->GetIsActive() && rt)
 		{
-			const vec3 p = rt->GetWorldPosition();
+			const vec2 rectSize = rt->GetRectSizeCanvasSpace(parentSize);
+			const vec3 pivotOffset = vec3(rt->GetPivot().x * rectSize.x, rt->GetPivot().y * rectSize.y, 0.0f);
+			const vec3 p = rt->GetWorldPosition() - pivotOffset;
 			const vec3 ws3 = rt->GetWorldScale();
 			const vec2 ws(ws3.x, ws3.y);
 
-			const vec2 s(rt->GetWidth(), rt->GetHeight());
+			const vec2 s(rectSize.x, rectSize.y);
 
 			const vec2 pixelPos(p.x * scale.x, p.y * scale.y);
 			const vec2 pixelSize(s.x * ws.x * scale.x, s.y * ws.y * scale.y);
