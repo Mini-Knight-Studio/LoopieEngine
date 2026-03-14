@@ -33,9 +33,7 @@ namespace Loopie {
 		void SetInterfaceState(bool enabled) { m_renderInterface = enabled; }
 		bool IsInterfaceVisible() const { return m_renderInterface; }
 
-		void CreateScene(const std::string& filePath);
-		void LoadScene(const std::string& filePath);
-
+		void CreateScene();
 	private:
 		void ProcessEvents(InputEventManager& eventController);
 

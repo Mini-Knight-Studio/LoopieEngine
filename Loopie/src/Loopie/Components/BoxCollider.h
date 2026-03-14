@@ -31,6 +31,12 @@ namespace Loopie {
         void SetDrawGizmo(bool value) { m_drawGizmo = value; }
         bool GetDrawGizmo() const { return m_drawGizmo; }
 
+        void SetIsTrigger(bool trigger) { m_isTrigger = trigger; }
+        bool IsTrigger() const { return m_isTrigger; }
+
+        void SetIsStatic(bool isStatic) { m_isStatic = isStatic; }
+        bool IsStatic() const { return m_isStatic; }
+
         bool Intersects(const BoxCollider* other) const;
         const unsigned int GetLayerIndex() const { return m_layerIndex; }
         const unsigned int GetLayerBit() const;
@@ -62,6 +68,9 @@ namespace Loopie {
 
         mutable AABB m_cachedAABB;
         mutable OBB m_worldOBB;
+
+        bool m_isTrigger = false;
+        bool m_isStatic = false;
 
         mutable bool m_obbDirty = true;
         bool m_drawGizmo = true;

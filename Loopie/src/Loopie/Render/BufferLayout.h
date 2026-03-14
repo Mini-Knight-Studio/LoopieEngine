@@ -31,7 +31,7 @@ namespace Loopie {
 			case GLVariableType::MATRIX2:
 				return 16;
 			case GLVariableType::MATRIX3:
-				return 36;
+				return 32;
 			case GLVariableType::MATRIX4:
 				return 64;
 			default:

@@ -24,6 +24,7 @@ namespace Loopie {
 	class AudioSource;
 	class AudioListener;
 	class FunctionCall;
+	class Metadata;
 
 	class InspectorInterface : public Interface , public IObserver<OnEntityOrFileNotification>{
 	public:
@@ -63,6 +64,7 @@ namespace Loopie {
 		bool ComponentContextMenu(Component* component, bool canRemove = true);
 
 		///FilesRelated
+		void DrawMetadata(const Metadata* metadata);
 		void DrawMaterial(std::shared_ptr<Material> material);
 
 		// Inherited via IObserver

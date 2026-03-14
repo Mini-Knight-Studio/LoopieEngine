@@ -8,6 +8,7 @@
 
 
 struct _MonoDomain;
+struct _MonoMethod;
 struct _MonoAssembly;
 struct _MonoImage;
 struct _MonoObject;
@@ -65,6 +66,8 @@ namespace Loopie {
 		const std::unordered_map<std::string, std::shared_ptr<ScriptingClass>>& GetScriptingClasses() { return s_Data.ScriptingClasses; }
 		static _MonoObject* CreateManagedEntity(const UUID& uuid);
 
+		static void UpdateCoroutines();
+
 		const static bool IsRunning() { return s_IsRunning; }
 		static _MonoString* CreateString(const char* string);
 
@@ -76,9 +79,13 @@ namespace Loopie {
 		static _MonoAssembly* LoadAssembly(const char* path);
 		static bool CompileGameAssembly();
 
+		static void InitCoroutines();
+
 	private:
 		static bool s_IsRunning;
 		static bool s_Initialized;
+
+		static _MonoMethod* s_UpdateCoroutinesMethod;
 	};
 	
 }

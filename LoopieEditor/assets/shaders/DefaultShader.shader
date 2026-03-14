@@ -29,6 +29,7 @@ uniform mat4 lp_Bones[100];
 uniform bool lp_Skinned;
 ///
 
+uniform vec2 u_Tiling= vec2(1);
 
 out vec2 v_TexCoord;
 out vec3 v_WorldPos;
@@ -54,7 +55,7 @@ void main()
     vec4 worldPos = lp_Transform * localPos;
     gl_Position = lp_Projection * lp_View * worldPos;
 
-    v_TexCoord = a_TexCoord;
+    v_TexCoord = a_TexCoord * u_Tiling;
     vec3 normal = normalize(mat3(lp_Transform) * skinnedNormal);
     vec3 tangent = normalize(mat3(lp_Transform) * skinnedTangent);
     v_WorldPos = worldPos.xyz;

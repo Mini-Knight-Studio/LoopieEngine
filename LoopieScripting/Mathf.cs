@@ -155,14 +155,6 @@ namespace Loopie
 
         public static float Hypotenuse(float a, float b) => Sqrt(a * a + b * b);
 
-        // Random (useful for games)
-        private static readonly Random _random = new Random();
-
-        public static float RandomValue() => (float)_random.NextDouble();
-        public static float RandomRange(float min, float max) => min + (float)_random.NextDouble() * (max - min);
-        public static int RandomRange(int min, int max) => _random.Next(min, max);
-        public static bool RandomBool() => _random.Next(2) == 0;
-
         // Missing from .NET 4.7.2
         public static float CopySign(float x, float y) => Math.Abs(x) * (y >= 0 ? 1 : -1);
         public static int CopySign(int x, int y) => Math.Abs(x) * (y >= 0 ? 1 : -1);

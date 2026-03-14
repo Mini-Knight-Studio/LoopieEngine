@@ -108,6 +108,18 @@ namespace Loopie {
 		return nullptr;
 	}
 
+	std::shared_ptr<Entity> Entity::GetChild(int index) const
+	{
+		if(index>=0 && index < GetChildCount())
+			return m_childrenEntities[index];
+		return nullptr;
+	}
+
+	int Entity::GetChildCount() const
+	{
+		return m_childrenEntities.size();
+	}
+
 	const std::vector<std::shared_ptr<Entity>>& Entity::GetChildren() const
 	{
 		return m_childrenEntities;
