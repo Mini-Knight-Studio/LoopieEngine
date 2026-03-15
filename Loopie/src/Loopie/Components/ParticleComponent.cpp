@@ -108,14 +108,14 @@ namespace Loopie
 			pProps.CreateField("r", m_partSystem->GetEmitterArray()[i]->GetEmissionProperties().ColorBegin.x);
 			pProps.CreateField("g", m_partSystem->GetEmitterArray()[i]->GetEmissionProperties().ColorBegin.y);
 			pProps.CreateField("b", m_partSystem->GetEmitterArray()[i]->GetEmissionProperties().ColorBegin.z);
-			pProps.CreateField("a", m_partSystem->GetEmitterArray()[i]->GetEmissionProperties().ColorBegin.z);
+			pProps.CreateField("a", m_partSystem->GetEmitterArray()[i]->GetEmissionProperties().ColorBegin.w);
 
 
 			pProps.CreateObjectField("colorend");
 			pProps.CreateField("r", m_partSystem->GetEmitterArray()[i]->GetEmissionProperties().ColorEnd.x);
 			pProps.CreateField("g", m_partSystem->GetEmitterArray()[i]->GetEmissionProperties().ColorEnd.y);
 			pProps.CreateField("b", m_partSystem->GetEmitterArray()[i]->GetEmissionProperties().ColorEnd.z);
-			pProps.CreateField("a", m_partSystem->GetEmitterArray()[i]->GetEmissionProperties().ColorEnd.z);
+			pProps.CreateField("a", m_partSystem->GetEmitterArray()[i]->GetEmissionProperties().ColorEnd.w);
 		}
 		
 		return particleObj;
@@ -135,9 +135,89 @@ namespace Loopie
 				m_partSystem->GetEmitterArray()[i]->SetActive(node.GetValue<bool>("active").Result);
 				m_partSystem->GetEmitterArray()[i]->SetPoolIndex(node.GetValue<unsigned int>("poolindex").Result);
 
+				JsonNode positionNode = node.Child("position");
+				if (positionNode.IsValid() && positionNode.IsObject())
+				{
+					glm::vec3 position;
+					position.x = positionNode.GetValue<float>("x").Result;
+					position.y = positionNode.GetValue<float>("y").Result;
+					position.z = positionNode.GetValue<float>("z").Result;
+					m_partSystem->GetEmitterArray()[i]->SetPosition(position);
+				}
+
+				JsonNode positionOffsetNode = node.Child("positionoffset");
+				if (positionOffsetNode.IsValid() && positionOffsetNode.IsObject())
+				{
+					glm::vec3 positionOffset;
+					positionOffset.x = positionOffsetNode.GetValue<float>("x").Result;
+					positionOffset.y = positionOffsetNode.GetValue<float>("y").Result;
+					positionOffset.z = positionOffsetNode.GetValue<float>("z").Result;
+					m_partSystem->GetEmitterArray()[i]->SetPositionOffSet(positionOffset);
+				}
+
+				JsonNode pPropsNode = node.Child("particleprops");
+				if (pPropsNode.IsValid() && pPropsNode.IsObject())
+				{
+					ParticleProps props;
+
+					props.SizeBegin = pPropsNode.GetValue<float>("sizebegin").Result;
+					props.SizeEnd = pPropsNode.GetValue<float>("sizeend").Result;
+					props.SizeVariation = pPropsNode.GetValue<float>("sizevariation").Result;
+					props.LifeTime = pPropsNode.GetValue<float>("lifetime").Result;
+
+					JsonNode propPositionNode = pPropsNode.Child("position");
+					if (propPositionNode.IsValid() && propPositionNode.IsObject())
+					{
+						props.Position.x = propPositionNode.GetValue<float>("x").Result;
+						props.Position.y = propPositionNode.GetValue<float>("y").Result;
+						props.Position.z = propPositionNode.GetValue<float>("z").Result;
+					}
+
+					JsonNode posVariationNode = pPropsNode.Child("positionvariation");
+					if (posVariationNode.IsValid() && posVariationNode.IsObject())
+					{
+						props.PositionVariation.x = posVariationNode.GetValue<float>("x").Result;
+						props.PositionVariation.y = posVariationNode.GetValue<float>("y").Result;
+						props.PositionVariation.z = posVariationNode.GetValue<float>("z").Result;
+					}
+
+					JsonNode velocityNode = pPropsNode.Child("velocity");
+					if (velocityNode.IsValid() && velocityNode.IsObject())
+					{
+						props.Velocity.x = velocityNode.GetValue<float>("x").Result;
+						props.Velocity.y = velocityNode.GetValue<float>("y").Result;
+						props.Velocity.z = velocityNode.GetValue<float>("z").Result;
+					}
+
+					JsonNode velVariationNode = pPropsNode.Child("velocityvariation");
+					if (velVariationNode.IsValid() && velVariationNode.IsObject())
+					{
+						props.VelocityVariation.x = velVariationNode.GetValue<float>("x").Result;
+						props.VelocityVariation.y = velVariationNode.GetValue<float>("y").Result;
+						props.VelocityVariation.z = velVariationNode.GetValue<float>("z").Result;
+					}
+
+					JsonNode colorBeginNode = pPropsNode.Child("colorbegin");
+					if (colorBeginNode.IsValid() && colorBeginNode.IsObject())
+					{
+						props.ColorBegin.x = colorBeginNode.GetValue<float>("r").Result;
+						props.ColorBegin.y = colorBeginNode.GetValue<float>("g").Result;
+						props.ColorBegin.z = colorBeginNode.GetValue<float>("b").Result;
+						props.ColorBegin.w = colorBeginNode.GetValue<float>("a").Result;
+					}
+
+					JsonNode colorEndNode = pPropsNode.Child("colorend");
+					if (colorEndNode.IsValid() && colorEndNode.IsObject())
+					{
+						props.ColorEnd.x = colorEndNode.GetValue<float>("r").Result;
+						props.ColorEnd.y = colorEndNode.GetValue<float>("g").Result;
+						props.ColorEnd.z = colorEndNode.GetValue<float>("b").Result;
+						props.ColorEnd.w = colorEndNode.GetValue<float>("a").Result;
+					}
+
+					m_partSystem->GetEmitterArray()[i]->SetEmisionProperties(props);
+				}
 			}
-
-
 		}
 	}
 	std::vector<Emitter*> ParticleComponent::GetEmittersVector()
