@@ -1027,13 +1027,19 @@ namespace Loopie {
 			const std::vector<std::shared_ptr<Emitter>>& emitters = partComponent->GetEmittersVector();
 			for (size_t i = 0; i < emitters.size(); i++)
 			{
-				std::string label = emitters[i]->GetName();
+				auto& emitter = emitters[i];
 
-				if (ImGui::TreeNode(label.c_str()))
+				ImGui::PushID(emitter.get());
+
+				bool open = ImGui::TreeNodeEx("Emitter", true, "%s", emitter->GetName().c_str());
+
+				if (open)
 				{
-					DrawEmitterInspector(emitters[i], partComponent);
+					DrawEmitterInspector(emitter, partComponent);
 					ImGui::TreePop();
 				}
+
+				ImGui::PopID();
 			}
 
 			ImGui::Spacing();
@@ -1111,10 +1117,10 @@ namespace Loopie {
 		ImGui::DragFloat3("Velocity Variation", &props.VelocityVariation.x);
 		ImGui::ColorEdit4("Color Begin", &props.ColorBegin.x);
 		ImGui::ColorEdit4("Color End", &props.ColorEnd.x);
-		ImGui::InputFloat("Size Begin", &props.SizeBegin);
-		ImGui::InputFloat("Size End", &props.SizeEnd);
-		ImGui::InputFloat("Size Variation", &props.SizeVariation);
-		ImGui::InputFloat("Lifetime", &props.LifeTime);
+		ImGui::DragFloat("Size Begin", &props.SizeBegin);
+		ImGui::DragFloat("Size End", &props.SizeEnd);
+		ImGui::DragFloat("Size Variation", &props.SizeVariation);
+		ImGui::DragFloat("Lifetime", &props.LifeTime);
 
 		ImGui::Spacing();
 		if (ImGui::Button("Delete Emitter"))
@@ -2057,30 +2063,6 @@ namespace Loopie {
 					}
 				}
 
-				if (filter.PassFilter("Light"))
-				{
-					if (ImGui::Selectable("Ambient"))
-					{
-						entity->AddComponent<Light>(vec3(1.0f, 1.0f, 1.0f), 0.2f, LightType::Ambient);
-						forceClose = true;
-					}
-					if (ImGui::Selectable("Directional"))
-					{
-						entity->AddComponent<Light>(vec3(1.0f, 1.0f, 1.0f), 0.5f, LightType::Directional);
-						forceClose = true;
-					}
-					if (ImGui::Selectable("Point"))
-					{
-						entity->AddComponent<Light>(vec3(1.0f, 1.0f, 1.0f), 0.5f, LightType::Point);
-						forceClose = true;
-					}
-					if (ImGui::Selectable("Spot"))
-					{
-						entity->AddComponent<Light>(vec3(1.0f, 1.0f, 1.0f), 0.5f, LightType::Spot);
-						forceClose = true;
-					}
-				}
-
 				if (filter.PassFilter("Particle System"))
 				{
 					if (ImGui::Selectable("Particle System")) 
@@ -2155,6 +2137,54 @@ namespace Loopie {
 					if (ImGui::Selectable("Text"))
 					{
 						entity->AddComponent<Text>();
+						forceClose = true;
+					}
+				}
+				ImGui::Unindent(8.0f);
+			}
+
+
+			if (searching)
+				ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+			if (!isOpen)
+				ImGui::SetNextItemOpen(false, ImGuiCond_Always);
+			if (ImGui::CollapsingHeader("Lights"))
+			{
+				ImGui::Indent(8.0f);
+
+				if (filter.PassFilter("Ambient Light"))
+				{
+					if (ImGui::Selectable("Ambient Light"))
+					{
+						entity->AddComponent<Light>(vec3(1.0f, 1.0f, 1.0f), 0.2f, LightType::Ambient);
+						forceClose = true;
+					}
+					
+				}
+
+				if (filter.PassFilter("Directional Light"))
+				{
+					if (ImGui::Selectable("Directional Light"))
+					{
+						entity->AddComponent<Light>(vec3(1.0f, 1.0f, 1.0f), 0.5f, LightType::Directional);
+						forceClose = true;
+					}
+				}
+
+				if (filter.PassFilter("Point Light"))
+				{
+					if (ImGui::Selectable("Point Light"))
+					{
+						entity->AddComponent<Light>(vec3(1.0f, 1.0f, 1.0f), 0.5f, LightType::Point);
+						forceClose = true;
+					}
+				}
+
+				if (filter.PassFilter("Spot Light"))
+				{
+					if (ImGui::Selectable("Spot Light"))
+					{
+						entity->AddComponent<Light>(vec3(1.0f, 1.0f, 1.0f), 0.5f, LightType::Spot);
 						forceClose = true;
 					}
 				}
