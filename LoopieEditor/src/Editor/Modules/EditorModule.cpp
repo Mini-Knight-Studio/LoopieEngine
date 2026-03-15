@@ -521,20 +521,14 @@ namespace Loopie
 			if (auto* scaler = entity->GetComponent<CanvasScaler>(); scaler && scaler->GetIsActive())
 			{
 				canvasUnits = scaler->ComputeOverlayCanvasSize(targetPixels);
-				if (scaler->GetScaleMode() == CanvasScaleMode::ScaleWithCanvasSize)
-				{
-					scaler->SetReferenceResolution(vec2(canvasRt->GetWidth(), canvasRt->GetHeight()));
-				}
-				else if (scaler->GetScaleMode() == CanvasScaleMode::ConstantPixelSize)
-				{
-					canvasRt->SetWidth(m_game.GetGameSize().x);
-					canvasRt->SetHeight(m_game.GetGameSize().y);
-				}
 			}
 			else
 			{
 				canvasUnits = targetPixels;
 			}
+
+			canvasRt->SetWidth(canvasUnits.x);
+			canvasRt->SetHeight(canvasUnits.y);
 
 			if (canvasUnits.x <= 0.0f || canvasUnits.y <= 0.0f)
 				continue;
@@ -626,14 +620,12 @@ namespace Loopie
 			RectTransform* canvasRt = entity->GetComponent<RectTransform>();
 			if (auto* scaler = entity->GetComponent<CanvasScaler>(); scaler && scaler->GetIsActive())
 			{
-				if (scaler->GetScaleMode() == CanvasScaleMode::ScaleWithCanvasSize)
+				if (canvasRt)
 				{
-					scaler->SetReferenceResolution(vec2(canvasRt->GetWidth(), canvasRt->GetHeight()));
-				}
-				else if (scaler->GetScaleMode() == CanvasScaleMode::ConstantPixelSize)
-				{
-					canvasRt->SetWidth(m_game.GetGameSize().x);
-					canvasRt->SetHeight(m_game.GetGameSize().y);
+					const vec2 sceneTargetPixels((float)m_game.GetGameSize().x, (float)m_game.GetGameSize().y);
+					const vec2 canvasUnits = scaler->ComputeOverlayCanvasSize(sceneTargetPixels);
+					canvasRt->SetWidth(canvasUnits.x);
+					canvasRt->SetHeight(canvasUnits.y);
 				}
 			}
 
