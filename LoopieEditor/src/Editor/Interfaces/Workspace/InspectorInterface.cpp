@@ -388,6 +388,7 @@ namespace Loopie {
 		if (open)
 		{
 			const bool isRectTransform = transform->IsRectTransform();
+			RectTransform* rectTransform = isRectTransform ? static_cast<RectTransform*>(transform) : nullptr;
 			const bool isOverlayRectTransform = isRectTransform &&
 				transform->GetOwner() &&
 				transform->GetOwner()->GetComponent<Canvas>() &&
@@ -404,7 +405,10 @@ namespace Loopie {
 			if (ImGui::DragFloat3("Position", &position.x, 0.1f))
 			{
 				modified = true;
-				transform->SetLocalPosition(position);
+				if (rectTransform)
+					rectTransform->SetAnchoredPosition(vec2(position.x, position.y));
+				else
+					transform->SetLocalPosition(position);
 			}
 			if (ImGui::DragFloat3("Rotation", &rotation.x, 0.5f))
 			{
@@ -484,19 +488,58 @@ namespace Loopie {
 
 			if (isRectTransform)
 			{
+				ImGui::SeparatorText("Layout");
+
+				vec2 anchorMin = rectTransform->GetAnchorMin();
+				vec2 anchorMax = rectTransform->GetAnchorMax();
+				vec2 pivot = rectTransform->GetPivot();
+				vec2 anchoredPosition = rectTransform->GetAnchoredPosition();
+				vec2 sizeDelta = rectTransform->GetSize();
+
+				if (ImGui::DragFloat2("Anchor Min", &anchorMin.x, 0.01f, 0.0f, 1.0f))
+				{
+					rectTransform->SetAnchorMin(anchorMin);
+					modified = true;
+				}
+
+				if (ImGui::DragFloat2("Anchor Max", &anchorMax.x, 0.01f, 0.0f, 1.0f))
+				{
+					rectTransform->SetAnchorMax(anchorMax);
+					modified = true;
+				}
+
+				if (ImGui::DragFloat2("Pivot", &pivot.x, 0.01f, 0.0f, 1.0f))
+				{
+					rectTransform->SetPivot(pivot);
+					modified = true;
+				}
+
+				if (ImGui::DragFloat2("Anchored Position", &anchoredPosition.x, 0.1f))
+				{
+					rectTransform->SetAnchoredPosition(anchoredPosition);
+					modified = true;
+				}
+
 				ImGui::SeparatorText("Size");
 
-				float w = transform->GetWidth();
-				float h = transform->GetHeight();
+				if (ImGui::DragFloat2("Size Delta", &sizeDelta.x, 1.0f))
+				{
+					rectTransform->SetWidth(sizeDelta.x);
+					rectTransform->SetHeight(sizeDelta.y);
+					modified = true;
+				}
+
+				float w = rectTransform->GetWidth();
+				float h = rectTransform->GetHeight();
 
 				if (ImGui::DragFloat("Width", &w, 1.0f))
 				{
-					transform->SetWidth(w);
+					rectTransform->SetWidth(w);
 					modified = true;
 				}
 				if (ImGui::DragFloat("Height", &h, 1.0f))
 				{
-					transform->SetHeight(h);
+					rectTransform->SetHeight(h);
 					modified = true;
 				}
 			}
@@ -1829,7 +1872,7 @@ namespace Loopie {
 			ImGui::SeparatorText("Controls");
 
 
-			// --- 6. Controles Rápidos ---
+			// --- 6. Controles Rï¿½pidos ---
 			if (ImGui::Button("Play"))
 				source->Play();
 

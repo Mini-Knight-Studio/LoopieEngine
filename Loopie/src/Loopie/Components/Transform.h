@@ -85,7 +85,7 @@ namespace Loopie
         vec3 GetWorldScale() const;
 
     protected:
-        void RefreshMatrices() const;
+        virtual void RefreshMatrices() const;
 
     public:
         Event<TransformNotification> m_transformNotifier;
