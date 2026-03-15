@@ -14,6 +14,9 @@ namespace Loopie {
 	std::vector<Renderer::RenderItem> Renderer::s_RenderQueue = std::vector<Renderer::RenderItem>();
 	std::vector<Camera*> Renderer::s_RenderCameras = std::vector<Camera*>();
 	std::shared_ptr<UniformBuffer> Renderer::s_MatricesUniformBuffer = nullptr;
+	std::shared_ptr<UniformBuffer> Renderer::s_lightingUniformBuffer = nullptr;
+	Light* Renderer::s_Lights[MAX_LIGHTS] = {};
+	unsigned short Renderer::s_LightCount = 0;
 	bool Renderer::s_UseGizmos = true;
 	vec4 Renderer::s_CurrentViewport = {0,0,0,0};
 
@@ -39,6 +42,20 @@ namespace Loopie {
 		layout.AddLayoutElement(1, GLVariableType::MATRIX4, 1, "Proj");
 		s_MatricesUniformBuffer = std::make_shared<UniformBuffer>(layout);
 		s_MatricesUniformBuffer->BindToLayout(0);
+
+		BufferLayout lightingLayout;
+		lightingLayout.AddLayoutElement(0, GLVariableType::VEC4, 1, "CameraWorldPosLightCount"); // Camera World Position + Light Count
+		for (int i = 0; i < MAX_LIGHTS; ++i)
+		{
+			lightingLayout.AddLayoutElement(4*i+1, GLVariableType::VEC4, 1, "ColorIntensity"); // Color + Intensity
+			lightingLayout.AddLayoutElement(4*i+2, GLVariableType::VEC4, 1, "PositionType"); // Position + Type
+			lightingLayout.AddLayoutElement(4*i+3, GLVariableType::VEC4, 1, "DirectionInnerCone"); // Direction + Inner Cone Angle
+			lightingLayout.AddLayoutElement(4*i+4, GLVariableType::VEC4, 1, "AttenuationOuterCone"); // Attenuation + Outer Cone Angle
+		}
+		s_lightingUniformBuffer = std::make_shared<UniformBuffer>(lightingLayout);
+		s_lightingUniformBuffer->BindToLayout(1);
+
+		s_LightCount = 0;
 	}
 
 	void Renderer::Shutdown() {
@@ -58,6 +75,31 @@ namespace Loopie {
 	{
 		s_CurrentViewport = vec4(x, y, width, height);
 		glViewport(x, y, width, height);
+	}
+
+	void Renderer::RegisterLight(Light* light)
+	{
+		s_Lights[s_LightCount] = light;
+		s_LightCount++;
+	}
+
+	void Renderer::UnregisterLight(Light* light)
+	{
+		for (int i = 0; i < s_LightCount; ++i)
+		{
+			if (s_Lights[i] == light)
+			{
+				s_Lights[i] = s_Lights[s_LightCount - 1];
+				s_LightCount--;
+				return;
+			}
+		}
+		Log::Warn("UnregisterLight: Tried to unregister a non-registered light - Light not found.");
+	}
+
+	void Renderer::RemoveAllLights()
+	{
+		s_LightCount = 0;
 	}
 
 	void Renderer::RegisterCamera(Camera& camera) {
@@ -80,6 +122,25 @@ namespace Loopie {
 		s_UseGizmos = gizmo;
 		s_MatricesUniformBuffer->SetData(&projectionMatrix[0][0], 0);
 		s_MatricesUniformBuffer->SetData(&viewMatrix[0][0], 1);
+		vec3 cameraPos = vec3(glm::inverse(viewMatrix)[3]);
+
+		vec4 cameraPosLightCount = vec4(cameraPos, s_LightCount);
+		s_lightingUniformBuffer->SetData(&cameraPosLightCount, 0);
+
+		for (int i = 0; i < s_LightCount; ++i)
+		{
+			const Light& l = *s_Lights[i];
+
+			vec4 colorIntensity = vec4(l.GetColor(), l.GetIntensity());
+			vec4 positionType = vec4(l.GetTransform()->GetWorldPosition(), l.GetLightType());
+			vec4 directionInnerCone = vec4(l.GetTransform()->Forward(), l.GetInnerConeAngle());
+			vec4 attenuationOuterCone = vec4(l.GetAttenuationConstant(), l.GetAttenuationLinear(), l.GetAttenuationQuadratic(), l.GetOuterConeAngle());
+			
+			s_lightingUniformBuffer->SetData(&colorIntensity,		i * 4 + 1);
+			s_lightingUniformBuffer->SetData(&positionType,			i * 4 + 2);
+			s_lightingUniformBuffer->SetData(&directionInnerCone,	i * 4 + 3);
+			s_lightingUniformBuffer->SetData(&attenuationOuterCone, i * 4 + 4);
+		}
 
 		if (s_UseGizmos)
 			Gizmo::BeginGizmo();

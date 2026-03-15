@@ -5,8 +5,11 @@
 #include "Loopie/Render/VertexArray.h"
 #include "Loopie/Render/UniformBuffer.h"
 #include "Loopie/Components/Camera.h"
+#include "Loopie/Components/Light.h"
 
 #include <filesystem>
+
+#define MAX_LIGHTS 8 // Can be increased if necessary. Watch out that performance though!
 
 namespace Loopie {
 	class Transform;
@@ -71,6 +74,11 @@ namespace Loopie {
 		static void SetViewport(unsigned int x, unsigned int y, unsigned int width, unsigned int height);
 		static const vec4& GetCurrentViewport() { return s_CurrentViewport; }
 
+		static void RegisterLight(Light* light);
+		static void UnregisterLight(Light* light);
+		static void RemoveAllLights();
+		static unsigned short GetLightCount() { return s_LightCount; }
+
 		static void RegisterCamera(Camera& camera);
 		static void UnregisterCamera(Camera& camera);
 		static const std::vector<Camera*>& GetRendererCameras() { return s_RenderCameras; }
@@ -108,12 +116,14 @@ namespace Loopie {
 
 	public:
 	private:
-
+		static Light* s_Lights[MAX_LIGHTS];
 		static std::vector<RenderItem> s_RenderQueue;
 		static std::vector<Camera*> s_RenderCameras;
 		static std::shared_ptr<UniformBuffer> s_MatricesUniformBuffer;
+		static std::shared_ptr<UniformBuffer> s_lightingUniformBuffer;
 
 		static bool s_UseGizmos;
+		static unsigned short s_LightCount;
 
 		static vec4 s_CurrentViewport;
 	};

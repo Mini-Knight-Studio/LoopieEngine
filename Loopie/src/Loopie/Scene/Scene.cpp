@@ -25,6 +25,7 @@
 #include "Loopie/Components/AudioListener.h"
 #include "Loopie/Components/Text.h"
 #include "Loopie/Components/Button.h"
+#include "Loopie/Components/Light.h"
 
 #include <unordered_set>
 
@@ -313,6 +314,12 @@ namespace Loopie {
 			{
 				auto button = clone->AddComponent<Button>();
 				button->Deserialize(componentData.Child("button"));
+			}
+			// Light
+			else if (componentData.Child("light").IsValid())
+			{
+				auto light = clone->AddComponent<Light>();
+				light->Deserialize(componentData.Child("light"));
 			}
 			// CanvasScaler
 			else if (componentData.Child("canvas_scaler").IsValid())
@@ -630,6 +637,16 @@ namespace Loopie {
 						{
 							button->Deserialize(node);
 							button->SetUUID(componentUUID.Get());
+						}
+					}
+					else if (componentNode.Contains("light"))
+					{
+						JsonNode node = componentNode.Child("light");
+						auto light = entity->AddComponent<Light>();
+						if (light)
+						{
+							light->Deserialize(node);
+							light->SetUUID(componentUUID.Get());
 						}
 					}
 					else if (componentNode.Contains("canvas_scaler"))

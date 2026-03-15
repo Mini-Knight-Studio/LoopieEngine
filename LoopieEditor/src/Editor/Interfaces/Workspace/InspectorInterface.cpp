@@ -18,6 +18,7 @@
 #include "Loopie/Components/Text.h"
 #include "Loopie/Components/Button.h"
 #include "Loopie/Components/BoxCollider.h"
+#include "Loopie/Components/Light.h"
 #include "Loopie/Scripting/ScriptingManager.h"
 #include "Loopie/Importers/TextureImporter.h"
 #include "Loopie/Importers/FontImporter.h"
@@ -315,6 +316,9 @@ namespace Loopie {
 			}
 			else if (component->GetTypeID() == Button::GetTypeIDStatic()) {
 				DrawButton(static_cast<Button*>(component));
+			}
+			else if (component->GetTypeID() == Light::GetTypeIDStatic()) {
+				DrawLight(static_cast<Light*>(component));
 			}
 		}
 		AddComponent(entity);
@@ -1517,6 +1521,64 @@ namespace Loopie {
 		ImGui::PopID();
 	}
 
+	void InspectorInterface::DrawLight(Light* light)
+	{
+		ImGui::PushID(light);
+
+		const char* label = "Light";
+		bool open = ImGui::CollapsingHeader(label, ImGuiTreeNodeFlags_DefaultOpen);
+		bool modified = false;
+		ImGui::SetItemTooltip(light->GetUUID().Get().c_str());
+		ComponentContextMenu(light, false);
+
+		static bool uniformScale = false;
+
+		if (open)
+		{
+			LightType type = light->GetLightType();
+			
+			vec3 color = light->GetColor();
+			float intensity = light->GetIntensity();
+
+			vec3 attenuation = vec3(light->GetAttenuationConstant(), light->GetAttenuationLinear(), light->GetAttenuationQuadratic());
+
+			float reachDistance = light->GetReachDistance();
+			vec2 cone = vec2(light->GetInnerConeAngle(), light->GetOuterConeAngle());
+			
+			if (ImGui::DragFloat("Intensity", &intensity, 0.05f))
+			{
+				light->SetIntensity(intensity);
+			}
+			
+			if (type == LightType::Spot || type == LightType::Point)
+			{
+				ImGui::Text("Constant / Linear / Quadratic");
+				if (ImGui::DragFloat3("Attenuation", &attenuation.x, 0.5f))
+				{
+					light->SetAttenuationConstant(attenuation.x);
+					light->SetAttenuationLinear(attenuation.y);
+					light->SetAttenuationQuadratic(attenuation.z);
+				}
+			}
+			if (type == LightType::Spot)
+			{
+				if (ImGui::DragFloat2("Inner / Outer Cone", &cone.x, 0.5f))
+				{
+					light->SetInnerConeAngle(cone.x);
+					light->SetOuterConeAngle(cone.y);
+				}
+			}
+
+			if (ImGui::ColorPicker3("Color", &color.x))
+			{
+				light->SetColor(color);
+			} 
+			
+		}
+
+		ImGui::PopID();
+	}
+
 	void InspectorInterface::DrawBoxCollider(BoxCollider* boxCollider) 
 	{
 
@@ -1866,9 +1928,32 @@ namespace Loopie {
 					}
 				}
 
+				if (filter.PassFilter("Light"))
+				{
+					if (ImGui::Selectable("Ambient"))
+					{
+						entity->AddComponent<Light>(vec3(1.0f, 1.0f, 1.0f), 0.2f, LightType::Ambient);
+						forceClose = true;
+					}
+					if (ImGui::Selectable("Directional"))
+					{
+						entity->AddComponent<Light>(vec3(1.0f, 1.0f, 1.0f), 0.5f, LightType::Directional);
+						forceClose = true;
+					}
+					if (ImGui::Selectable("Point"))
+					{
+						entity->AddComponent<Light>(vec3(1.0f, 1.0f, 1.0f), 0.5f, LightType::Point);
+						forceClose = true;
+					}
+					if (ImGui::Selectable("Spot"))
+					{
+						entity->AddComponent<Light>(vec3(1.0f, 1.0f, 1.0f), 0.5f, LightType::Spot);
+						forceClose = true;
+					}
+				}
+
 				ImGui::Unindent(8.0f);
 			}
-
 
 
 			if (searching)

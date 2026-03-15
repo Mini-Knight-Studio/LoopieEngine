@@ -1,0 +1,4 @@
+// Hint files help the Visual Studio IDE interpret Visual C++ identifiers
+// such as names of functions and macros.
+// For more information see https://go.microsoft.com/fwlink/?linkid=865984
+#define DEFINE_TYPE(Type) static size_t GetTypeIDStatic() { static const char typeUniqueVar = 0; return reinterpret_cast<size_t>(&typeUniqueVar); } size_t GetTypeID() const override { return GetTypeIDStatic(); } static const char* GetIdentificableName() { return #Type; }

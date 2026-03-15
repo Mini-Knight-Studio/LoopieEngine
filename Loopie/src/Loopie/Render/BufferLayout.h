@@ -10,6 +10,9 @@ namespace Loopie {
 		INT,
 		FLOAT,
 		BOOL,
+		VEC2,
+		VEC3,
+		VEC4,
 		MATRIX2,
 		MATRIX3,
 		MATRIX4
@@ -21,10 +24,14 @@ namespace Loopie {
 			case GLVariableType::FLOAT:
 			case GLVariableType::BOOL:
 				return 4;
+			case GLVariableType::VEC2:
+				return 8;
+			case GLVariableType::VEC3:
+			case GLVariableType::VEC4:
 			case GLVariableType::MATRIX2:
 				return 16;
 			case GLVariableType::MATRIX3:
-				return 36;
+				return 32;
 			case GLVariableType::MATRIX4:
 				return 64;
 			default:
