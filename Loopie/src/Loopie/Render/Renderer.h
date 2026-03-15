@@ -128,9 +128,6 @@ namespace Loopie {
 		static void DisableCulling();
 		static void CullFace(CullFaceMode mode);
 
-		static void EnableBlend();
-		static void DisableBlend();
-
 		static void SetDepthWrite(bool enable);
 
 	private:

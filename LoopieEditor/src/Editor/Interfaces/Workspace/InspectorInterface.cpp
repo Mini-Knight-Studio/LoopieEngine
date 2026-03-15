@@ -998,6 +998,46 @@ namespace Loopie {
 		ImGui::PopID();
 	}
 
+
+	void InspectorInterface::DrawParticleSystem(ParticleComponent* partComponent)
+	{
+		ImGui::PushID(partComponent);
+
+		bool open = ImGui::CollapsingHeader("ParticleSystem");
+		ImGui::SetItemTooltip(partComponent->GetUUID().Get().c_str());
+		if (ComponentContextMenu(partComponent)) {
+			ImGui::PopID();
+			return;
+		}
+
+		if (open)
+		{
+			bool active = partComponent->GetIsActive();
+			if (ImGui::Checkbox("Active", &active))
+			{
+				if (active) { partComponent->SetIsActive(true); }
+				else { partComponent->SetIsActive(false); }
+			}
+			
+
+			const std::vector<std::shared_ptr<Emitter>>& emitters = partComponent->GetEmittersVector();
+			for (size_t i = 0; i < emitters.size(); i++)
+			{
+				std::string label = emitters[i]->GetName();
+
+				if (ImGui::TreeNode(label.c_str()))
+				{
+					DrawEmitterInspector(emitters[i]);
+					ImGui::TreePop();
+				}
+			}
+
+		}
+
+		ImGui::PopID();
+
+	}
+
 	void InspectorInterface::DrawEmitterInspector(const std::shared_ptr<Emitter> emitter)
 	{
 
@@ -1032,11 +1072,11 @@ namespace Loopie {
 		}
 
 		bool active = emitter->IsActive();
-		if (ImGui::Checkbox("Active", &active)) 
+		if (ImGui::Checkbox("Active", &active))
 		{
 			emitter->ToggleActive();
 		}
-		
+
 		//PARTICLE PROPERTIES
 		ImGui::Separator();
 		ImGui::Text("Particle Properties");
@@ -1054,46 +1094,6 @@ namespace Loopie {
 		ImGui::InputFloat("Size End", &props.SizeEnd);
 		ImGui::InputFloat("Size Variation", &props.SizeVariation);
 		ImGui::InputFloat("Lifetime", &props.LifeTime);
-	}
-
-
-	void InspectorInterface::DrawParticleSystem(ParticleComponent* partComponent)
-	{
-		ImGui::PushID(scriptClass);
-
-		bool open = ImGui::CollapsingHeader("ParticleSystem");
-		ImGui::SetItemTooltip(scriptClass->GetUUID().Get().c_str());
-		if (ComponentContextMenu(scriptClass)) {
-			ImGui::PopID();
-			return;
-		}
-
-		if (open)
-		{
-			bool active = partComponent->GetIsActive();
-			if (ImGui::Checkbox("Active", &active))
-			{
-				if (active) { partComponent->SetIsActive(true); }
-				else { partComponent->SetIsActive(false); }
-			}
-			
-
-			const std::vector<std::shared_ptr<Emitter>>& emitters = partComponent->GetEmittersVector();
-			for (size_t i = 0; i < emitters.size(); i++)
-			{
-				std::string label = emitters[i]->GetName();
-
-				if (ImGui::TreeNode(label.c_str()))
-				{
-					DrawEmitterInspector(emitters[i]);
-					ImGui::TreePop();
-				}
-			}
-
-		}
-
-		ImGui::PopID();
-
 	}
 
 	void InspectorInterface::DrawScriptClass(ScriptClass* scriptClass)

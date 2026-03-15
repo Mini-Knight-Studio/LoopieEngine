@@ -28,7 +28,7 @@ namespace Loopie {
 		bool GetLocalIsActive() const;
 
 		// Default Calls
-		virtual void Update() {};
+		virtual void OnUpdate() {};
 		virtual void RenderGizmo() {};
 
 		// Setters

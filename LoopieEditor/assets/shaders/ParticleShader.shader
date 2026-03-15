@@ -4,6 +4,7 @@ layout(location = 0) in vec3 a_Position;
 
 
 uniform mat4 lp_Transform;
+uniform bool lp_Skinned;
 
 layout(std140, binding = 0) uniform Matrices 
 {
@@ -15,8 +16,9 @@ layout(std140, binding = 0) uniform Matrices
 
 void main()
 {
-    gl_Position = lp_Projection * lp_View * lp_Transform * vec4(a_Position, 1.0);
-   
+    if(!lp_Skinned){
+        gl_Position = lp_Projection * lp_View * lp_Transform * vec4(a_Position, 1.0);
+    }
 }
 
 [fragment]

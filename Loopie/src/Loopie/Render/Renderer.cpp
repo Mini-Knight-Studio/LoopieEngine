@@ -155,14 +155,6 @@ namespace Loopie {
 		}
 
 	}
-	void Renderer::EnableBlend()
-	{
-		glEnable(GL_BLEND);
-	}
-	void Renderer::DisableBlend()
-	{
-
-	}
 	void Renderer::BlendFunction()
 	{
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

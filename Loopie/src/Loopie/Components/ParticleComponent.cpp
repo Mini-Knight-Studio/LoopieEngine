@@ -24,10 +24,10 @@ namespace Loopie
 	{
 		GetTransform()->m_transformNotifier.AddObserver(this);
 	}
-	void ParticleComponent::Update() 
+	void ParticleComponent::OnUpdate() 
 	{
-		vec3 pos = GetOwner()->GetComponent<Transform>()->GetPosition();
-		vec3 localPos = GetOwner()->GetComponent<Transform>()->GetLocalPosition();
+		vec3 pos = GetTransform()->GetPosition();
+		vec3 localPos = GetTransform()->GetLocalPosition();
 		for (size_t i = 0; i < GetEmittersVector().size(); i++)
 		{
 			GetEmittersVector()[i]->SetPosition(pos + GetEmittersVector()[i]->GetPositionOffSet());

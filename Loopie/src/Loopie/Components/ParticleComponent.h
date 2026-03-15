@@ -24,7 +24,7 @@ namespace Loopie
 		void Save();
 		void Load();
 		void Init() override; 
-		void Update() override;
+		void OnUpdate() override;
 		void Render(Camera* cam);
 		void Reset();
 
