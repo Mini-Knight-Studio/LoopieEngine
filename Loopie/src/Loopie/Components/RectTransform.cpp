@@ -12,7 +12,24 @@ Loopie::RectTransform::RectTransform(float w, float h) : Transform()
 
 void Loopie::RectTransform::Init()
 {
-    Transform::Init();
+	auto parent = GetOwner()->GetParent().lock();
+	if (parent)
+	{
+		Transform* parentTransform = parent->GetTransform();
+		if (parentTransform && parentTransform->HasSize())
+		{
+			const vec2 parentSize = parentTransform->GetSize();
+			const vec2 anchorReference = GetAnchorReferencePoint(parentSize);
+			const vec2 computedSize = GetComputedSize();
+			const vec2 pivotTranslation = ComputePivotTranslation(computedSize);
+
+			m_localPosition.x = -(anchorReference.x + pivotTranslation.x);
+			m_localPosition.y = -(anchorReference.y + pivotTranslation.y);
+			m_localPosition.z = 0.0f;
+
+			MarkLocalDirty();
+		}
+	}
 }
 
 void Loopie::RectTransform::SetAnchorMin(vec2& anchorMin)
