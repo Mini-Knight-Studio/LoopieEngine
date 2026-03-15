@@ -11,6 +11,10 @@
 #include "Loopie/Components/Camera.h"
 #include "Loopie/Components/MeshRenderer.h"
 #include "Loopie/Components/ScriptClass.h"
+
+#include "Loopie/Components/ParticleComponent.h"
+#include "Loopie/ParticleSystemEn/ParticleSystem.h"
+
 #include "Loopie/Components/Animator.h"
 #include "Loopie/Components/Canvas.h"
 #include "Loopie/Components/CanvasScaler.h"
@@ -35,10 +39,11 @@
 #include "Loopie/Components/AudioListener.h"
 
 #include <imgui.h>
+#include <imgui_stdlib.h>
 #include <unordered_map>
 
-namespace Loopie {
 
+namespace Loopie {
 	std::string ResourceTypeToString(ResourceType type) {
 		switch (type)
 		{
@@ -286,6 +291,9 @@ namespace Loopie {
 			}
 			else if (component->GetTypeID() == MeshRenderer::GetTypeIDStatic()) {
 				DrawMeshRenderer(static_cast<MeshRenderer*>(component));
+			}
+			else if (component->GetTypeID() == ParticleComponent::GetTypeIDStatic()) {
+				DrawParticleSystem(static_cast<ParticleComponent*>(component));
 			}
 			else if (component->GetTypeID() == Animator::GetTypeIDStatic()) {
 				DrawAnimator(static_cast<Animator*>(component));
@@ -992,6 +1000,127 @@ namespace Loopie {
 		}
 
 		ImGui::PopID();
+	}
+
+
+	void InspectorInterface::DrawParticleSystem(ParticleComponent* partComponent)
+	{
+		ImGui::PushID(partComponent);
+
+		bool open = ImGui::CollapsingHeader("ParticleSystem");
+		ImGui::SetItemTooltip(partComponent->GetUUID().Get().c_str());
+		if (ComponentContextMenu(partComponent)) {
+			ImGui::PopID();
+			return;
+		}
+
+		if (open)
+		{
+			bool active = partComponent->GetIsActive();
+			if (ImGui::Checkbox("Active", &active))
+			{
+				if (active) { partComponent->SetIsActive(true); }
+				else { partComponent->SetIsActive(false); }
+			}
+			
+
+			const std::vector<std::shared_ptr<Emitter>>& emitters = partComponent->GetEmittersVector();
+			for (size_t i = 0; i < emitters.size(); i++)
+			{
+				std::string label = emitters[i]->GetName();
+
+				if (ImGui::TreeNode(label.c_str()))
+				{
+					DrawEmitterInspector(emitters[i], partComponent);
+					ImGui::TreePop();
+				}
+			}
+
+			ImGui::Spacing();
+			if (ImGui::Button("Add Emitter"))
+			{
+				vec3 entityPos = partComponent->GetOwner()->GetComponent<Transform>()->GetPosition();
+				auto newEmitter = std::make_shared<Emitter>(1000, CAMERA_FACING, entityPos, 50);
+				int emitterCount = partComponent->GetParticleSystem().GetEmitterArray().size();
+				newEmitter.get()->SetName("Emitter_" + std::to_string(emitterCount));
+				partComponent->AddElemToEmitterVector(newEmitter);
+			}
+
+		}
+
+		ImGui::PopID();
+
+	}
+
+	void InspectorInterface::DrawEmitterInspector(const std::shared_ptr<Emitter> emitter, ParticleComponent* partComponent)
+	{
+
+		//EMITTER PROPERTIES
+
+		ImGui::Separator();
+		ImGui::Text("Emitter Properties");
+		ImGui::Separator();
+
+		std::string name = emitter->GetName();
+		if (ImGui::InputText("Name", &name))
+		{
+			emitter->SetName(name);
+		}
+
+		unsigned int spawnRate = emitter->GetSpawnrate();
+		if (ImGui::InputScalar("SpawnRate", ImGuiDataType_U32, &spawnRate))
+		{
+			emitter->SetSpawnRate(spawnRate);
+		}
+
+		unsigned int maxParticles = emitter->GetMaxParticles();
+		if (ImGui::InputScalar("MaxParticles", ImGuiDataType_U32, &maxParticles))
+		{
+			emitter->SetMaxParticles(maxParticles);
+		}
+
+		vec3 positionOffSet = emitter->GetPositionOffSet();
+		if (ImGui::DragFloat3("Emitter Position OffSet", &positionOffSet.x))
+		{
+			emitter->SetPositionOffSet(positionOffSet);
+		}
+
+		bool active = emitter->GetIsActive();
+		if (ImGui::Checkbox("Active", &active))
+		{
+			emitter->ToggleActive();
+		}
+
+		bool followOwner = emitter->GetIsFollowingOwner();
+
+		if (ImGui::Button(followOwner ? "Follow Owner: ON" : "Follow Owner: OFF"))
+		{
+			emitter->SetFollowingOwner(!followOwner);
+		}
+
+		//PARTICLE PROPERTIES
+		ImGui::Separator();
+		ImGui::Text("Particle Properties");
+		ImGui::Separator();
+
+		ParticleProps& props = emitter->GetEmissionProperties();
+
+		ImGui::DragFloat3("Position", &props.Position.x);
+		ImGui::DragFloat3("Position Variation", &props.PositionVariation.x);
+		ImGui::DragFloat3("Velocity", &props.Velocity.x);
+		ImGui::DragFloat3("Velocity Variation", &props.VelocityVariation.x);
+		ImGui::ColorEdit4("Color Begin", &props.ColorBegin.x);
+		ImGui::ColorEdit4("Color End", &props.ColorEnd.x);
+		ImGui::InputFloat("Size Begin", &props.SizeBegin);
+		ImGui::InputFloat("Size End", &props.SizeEnd);
+		ImGui::InputFloat("Size Variation", &props.SizeVariation);
+		ImGui::InputFloat("Lifetime", &props.LifeTime);
+
+		ImGui::Spacing();
+		if (ImGui::Button("Delete Emitter"))
+		{
+			partComponent->GetParticleSystem().DeleteElemFromEmitterArray(emitter);
+		}
 	}
 
 	void InspectorInterface::DrawScriptClass(ScriptClass* scriptClass)
@@ -1829,7 +1958,7 @@ namespace Loopie {
 			ImGui::SeparatorText("Controls");
 
 
-			// --- 6. Controles Rápidos ---
+			// --- 6. Controles Rï¿½pidos ---
 			if (ImGui::Button("Play"))
 				source->Play();
 
@@ -1948,6 +2077,17 @@ namespace Loopie {
 					if (ImGui::Selectable("Spot"))
 					{
 						entity->AddComponent<Light>(vec3(1.0f, 1.0f, 1.0f), 0.5f, LightType::Spot);
+						forceClose = true;
+					}
+				}
+
+				if (filter.PassFilter("Particle System"))
+				{
+					if (ImGui::Selectable("Particle System")) 
+					{
+						ParticleComponent* comp = entity->AddComponent<ParticleComponent>();
+						std::shared_ptr<Emitter> emitter = std::make_shared<Emitter>(1000, CAMERA_FACING, entity->GetTransform()->GetPosition(), 100);
+						comp->AddElemToEmitterVector(emitter);
 						forceClose = true;
 					}
 				}

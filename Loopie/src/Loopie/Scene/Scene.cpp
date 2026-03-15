@@ -6,6 +6,7 @@
 #include "Loopie/Components/RectTransform.h"
 #include "Loopie/Components/Camera.h"
 #include "Loopie/Components/MeshRenderer.h"
+#include "Loopie/Components/ParticleComponent.h"
 #include "Loopie/Components/Animator.h"
 #include "Loopie/Components/ScriptClass.h"
 #include "Loopie/Components/Canvas.h"
@@ -260,6 +261,12 @@ namespace Loopie {
 				auto mr = clone->AddComponent<MeshRenderer>();
 				mr->Deserialize(componentData.Child("meshrenderer"));
 			}
+			// ParticleComponent
+			else if (componentData.Child("particlecomponent").IsValid())
+			{
+				auto pc = clone->AddComponent<ParticleComponent>();
+				pc->Deserialize(componentData.Child("particlecomponent"));
+			}
 			// ScriptClass
 			else if (componentData.Child("script").IsValid())
 			{
@@ -296,6 +303,12 @@ namespace Loopie {
 			{
 				auto audioSource = clone->AddComponent<AudioSource>();
 				audioSource->Deserialize(componentData.Child("audiosource"));
+			}
+			//ParticleComponent
+			else if (componentData.Child("particlecomponent").IsValid())
+			{
+				auto particleComponent = clone->AddComponent<ParticleComponent>();
+				particleComponent->Deserialize(componentData.Child("particlecomponent"));
 			}
 			//AudioListener
 			else if (componentData.Child("audiolistener").IsValid())
@@ -547,6 +560,16 @@ namespace Loopie {
 						{
 							meshRenderer->Deserialize(node);
 							meshRenderer->SetUUID(componentUUID.Get());
+						}
+					}
+					else if (componentNode.Contains("particlecomponent"))
+					{
+						JsonNode node = componentNode.Child("particlecomponent");
+						auto particleComponent = entity->AddComponent<ParticleComponent>();
+						if (particleComponent)
+						{
+							particleComponent->Deserialize(node);
+							particleComponent->SetUUID(componentUUID.Get());
 						}
 					}
 					else if (componentNode.Contains("script"))

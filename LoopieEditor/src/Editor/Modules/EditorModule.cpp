@@ -38,6 +38,8 @@
 #include <memory>
 
 ///
+#include "Loopie/ParticleSystemEn/Emitter.h"
+#include "Loopie/Core/Time.h"
 
 #include <glad/glad.h>
 
@@ -71,6 +73,8 @@ namespace Loopie
 		if (!result.Found || !m_currentScene->ReadAndLoadSceneFile(absolutePath.string()))
 		{
 			m_currentScene->CreateEntity({ 0,1,-10 }, { 1,0,0,0 }, { 1,1,1 }, nullptr, "MainCamera")->AddComponent<Camera>();
+
+			//To check that particle system works:
 		}
 		
 
@@ -153,6 +157,7 @@ namespace Loopie
 			Renderer::SetViewport(0, 0, buffer->GetWidth(), buffer->GetHeight());
 			buffer->Bind();
 			RenderWorld(cam);
+			RenderParticles(cam);
 			Renderer::EndScene();
 
 			if (buffer)
@@ -165,6 +170,7 @@ namespace Loopie
 			m_scene.StartScene();
 			Renderer::BeginScene(m_scene.GetCamera()->GetViewMatrix(), m_scene.GetCamera()->GetProjectionMatrix(), true);
 			RenderWorld(m_scene.GetCamera());
+			RenderParticles(m_scene.GetCamera());
 			Renderer::EndScene();
 
 			const float sw = (float)m_scene.GetFrameBuffer()->GetWidth();
@@ -183,6 +189,7 @@ namespace Loopie
 				Renderer::BeginScene(m_game.GetCamera()->GetViewMatrix(), m_game.GetCamera()->GetProjectionMatrix(), false);
 				UpdateComponents(Loopie::GIZMO);
 				RenderWorld(m_game.GetCamera());
+				RenderParticles(m_game.GetCamera());
 				Renderer::EndScene();
 
 				// UI pass (ortographic overlay)
@@ -414,6 +421,34 @@ namespace Loopie
 			}
 			m_currentScene->GetOctree().DebugDraw(Color::MAGENTA);
 		}
+	}
+	void EditorModule::RenderParticles(Camera* cam)
+	{
+		Renderer::DisableStencil();
+		Renderer::EnableDepth();
+		Renderer::EnableDepthMask();
+		Renderer::EnableBlend();
+		Renderer::BlendFunction();
+
+		auto& particleEntities = m_currentScene->GetAllEntities();
+		for (const auto& [id, entity] : particleEntities)
+		{
+			const std::vector<Component*>& components = entity->GetComponents();
+			for (size_t i = 0; i < components.size(); i++)
+			{
+				Component* component = components[i];
+				if (!component->GetIsActive())
+					continue;
+				if (component->GetTypeID() == ParticleComponent::GetTypeIDStatic())
+				{
+					ParticleComponent* particleSystem = static_cast<ParticleComponent*>(component);
+					particleSystem->Render(cam);
+				}
+			}
+
+		}
+		Renderer::EnableDepthMask();
+		Renderer::DisableBlend();
 	}
 
 	void EditorModule::RenderUIRecursive(const std::shared_ptr<Entity>& entity, vec2& scale)

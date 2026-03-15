@@ -14,6 +14,8 @@
 #include "Editor/Interfaces/Workspace/TopBarInterface.h"
 #include "Editor/Interfaces/Workspace/TextEditorInterface.h"
 
+#include "Loopie/ParticleSystemEn/ParticleSystem.h"  
+#include "Loopie/Components/ParticleComponent.h"
 #include "Loopie/Components/Canvas.h"
 
 namespace Loopie {
@@ -41,7 +43,11 @@ namespace Loopie {
 	private:
 		bool UpdateComponents(DebugGameMode mode);
 		void RenderWorld(Camera* camera);
-		
+		void RenderParticles(Camera* cam);
+		/// Test
+		void CreateBakerHouse();
+		void CreateCity();
+
 		void RenderUIRecursive(const std::shared_ptr<Entity>& entity, vec2& scale);
 		void RenderUI();
 		void RenderSceneUIRecursive(const std::shared_ptr<Entity>& entity);

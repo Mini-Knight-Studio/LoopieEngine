@@ -12,6 +12,9 @@ namespace Loopie {
 	class MeshRenderer;
 	class ScriptClass;
 	class Material;
+	class ParticleComponent;
+	class ParticleSystem;
+	class Emitter;
 	class Texture;
 	class Animator;
 	class BoxCollider;
@@ -51,6 +54,8 @@ namespace Loopie {
 		void DrawTransform(Transform* transform);
 		void DrawCamera(Camera* camera);
 		void DrawMeshRenderer(MeshRenderer* meshRenderer);
+		void DrawEmitterInspector(const std::shared_ptr<Emitter> emitter, ParticleComponent* partComponent);
+		void DrawParticleSystem(ParticleComponent* partComponent);
 		void DrawAnimator(Animator* animator);
 		void DrawScriptClass(ScriptClass* scriptClass);
 		void DrawCanvas(Canvas* canvas);

@@ -12,6 +12,7 @@
 namespace Loopie {
 
 	std::vector<Renderer::RenderItem> Renderer::s_RenderQueue = std::vector<Renderer::RenderItem>();
+	Renderer::RenderParticlesData Renderer::s_ParticlesData = Renderer::RenderParticlesData();
 	std::vector<Camera*> Renderer::s_RenderCameras = std::vector<Camera*>();
 	std::shared_ptr<UniformBuffer> Renderer::s_MatricesUniformBuffer = nullptr;
 	std::shared_ptr<UniformBuffer> Renderer::s_lightingUniformBuffer = nullptr;
@@ -19,6 +20,10 @@ namespace Loopie {
 	unsigned short Renderer::s_LightCount = 0;
 	bool Renderer::s_UseGizmos = true;
 	vec4 Renderer::s_CurrentViewport = {0,0,0,0};
+
+	std::shared_ptr<VertexBuffer> Renderer::s_billboardVBO = nullptr;
+	std::shared_ptr<VertexBuffer> Renderer::s_posSizeVBO = nullptr;
+	std::shared_ptr<VertexBuffer> Renderer::s_colorVBO = nullptr;
 
 	void Renderer::Init(void* context) {
 		ASSERT(!gladLoadGLLoader((GLADloadproc)context), "Failed to Initialize GLAD!");
@@ -209,6 +214,10 @@ namespace Loopie {
 		}
 
 	}
+	void Renderer::BlendFunction()
+	{
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	}
 	void Renderer::EnableDepth()
 	{
 		glEnable(GL_DEPTH_TEST);
@@ -216,6 +225,14 @@ namespace Loopie {
 	void Renderer::DisableDepth()
 	{
 		glDisable(GL_DEPTH_TEST);
+	}
+	void Renderer::EnableDepthMask()
+	{
+		glDepthMask(GL_TRUE);
+	}
+	void Renderer::DisableDepthMask()
+	{
+		glDepthMask(GL_FALSE);
 	}
 	void Renderer::EnableStencil()
 	{
