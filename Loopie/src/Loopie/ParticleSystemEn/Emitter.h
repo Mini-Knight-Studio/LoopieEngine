@@ -37,6 +37,7 @@ namespace Loopie
 			vec3 m_position;
 			vec3 m_positionOffSet;
 			bool m_active;
+			bool m_followOwner;
 
 			std::vector<ParticleModule> m_particlePool;
 			unsigned int m_poolIndex;
@@ -76,8 +77,12 @@ namespace Loopie
 			void SetPoolIndex(unsigned int poolIndex);
 			
 			int GetActiveParticles() const;
-			bool IsActive() const;
-			void SetActive(bool isActive);
+
+			bool GetIsActive() const;
+			void SetActive(const bool isActive);
+
+			bool GetIsFollowingOwner()const;
+			void SetFollowingOwner(const bool isFollowingOwner);
 
 			void ToggleActive();
 

@@ -1027,9 +1027,19 @@ namespace Loopie {
 
 				if (ImGui::TreeNode(label.c_str()))
 				{
-					DrawEmitterInspector(emitters[i]);
+					DrawEmitterInspector(emitters[i], partComponent);
 					ImGui::TreePop();
 				}
+			}
+
+			ImGui::Spacing();
+			if (ImGui::Button("Add Emitter"))
+			{
+				vec3 entityPos = partComponent->GetOwner()->GetComponent<Transform>()->GetPosition();
+				auto newEmitter = std::make_shared<Emitter>(1000, CAMERA_FACING, entityPos, 50);
+				int emitterCount = partComponent->GetParticleSystem().GetEmitterArray().size();
+				newEmitter.get()->SetName("Emitter_" + std::to_string(emitterCount));
+				partComponent->AddElemToEmitterVector(newEmitter);
 			}
 
 		}
@@ -1038,7 +1048,7 @@ namespace Loopie {
 
 	}
 
-	void InspectorInterface::DrawEmitterInspector(const std::shared_ptr<Emitter> emitter)
+	void InspectorInterface::DrawEmitterInspector(const std::shared_ptr<Emitter> emitter, ParticleComponent* partComponent)
 	{
 
 		//EMITTER PROPERTIES
@@ -1071,10 +1081,17 @@ namespace Loopie {
 			emitter->SetPositionOffSet(positionOffSet);
 		}
 
-		bool active = emitter->IsActive();
+		bool active = emitter->GetIsActive();
 		if (ImGui::Checkbox("Active", &active))
 		{
 			emitter->ToggleActive();
+		}
+
+		bool followOwner = emitter->GetIsFollowingOwner();
+
+		if (ImGui::Button(followOwner ? "Follow Owner: ON" : "Follow Owner: OFF"))
+		{
+			emitter->SetFollowingOwner(!followOwner);
 		}
 
 		//PARTICLE PROPERTIES
@@ -1094,6 +1111,12 @@ namespace Loopie {
 		ImGui::InputFloat("Size End", &props.SizeEnd);
 		ImGui::InputFloat("Size Variation", &props.SizeVariation);
 		ImGui::InputFloat("Lifetime", &props.LifeTime);
+
+		ImGui::Spacing();
+		if (ImGui::Button("Delete Emitter"))
+		{
+			partComponent->GetParticleSystem().DeleteElemFromEmitterArray(emitter);
+		}
 	}
 
 	void InspectorInterface::DrawScriptClass(ScriptClass* scriptClass)

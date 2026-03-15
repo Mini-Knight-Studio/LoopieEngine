@@ -21,6 +21,7 @@ namespace Loopie
 		m_positionOffSet = posOffSet;
 		m_active = true;
 		m_poolIndex = 0;
+		m_followOwner = true;
 
 		m_name = "DefaultParticle";
 		m_particleProperties.Velocity = vec3(0, 0, 0);
@@ -182,13 +183,21 @@ namespace Loopie
 		}
 		return count;
 	}
-	bool Emitter::IsActive() const
+	bool Emitter::GetIsActive() const
 	{
 		return m_active;
 	}
 	void Emitter::SetActive(bool isActive) 
 	{
 		m_active = isActive;
+	}
+	bool Emitter::GetIsFollowingOwner() const
+	{
+		return m_followOwner;
+	}
+	void Emitter::SetFollowingOwner(const bool isFollowingOwner)
+	{
+		m_followOwner = isFollowingOwner;
 	}
 	void Emitter::ToggleActive()
 	{

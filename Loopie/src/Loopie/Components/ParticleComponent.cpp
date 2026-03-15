@@ -30,7 +30,11 @@ namespace Loopie
 		vec3 localPos = GetTransform()->GetLocalPosition();
 		for (size_t i = 0; i < GetEmittersVector().size(); i++)
 		{
-			GetEmittersVector()[i]->SetPosition(pos + GetEmittersVector()[i]->GetPositionOffSet());
+			if (GetEmittersVector()[i].get()->GetIsFollowingOwner()) 
+			{
+				GetEmittersVector()[i]->SetPosition(pos + GetEmittersVector()[i]->GetPositionOffSet());
+			}
+
 		}
 		
 		float dt = (float)Time::GetDeltaTime();
@@ -61,8 +65,9 @@ namespace Loopie
 			emitterNode.CreateField("spawnrate", m_partSystem.GetEmitterArray()[i]->GetSpawnrate());
 			emitterNode.CreateField("maxparticles", m_partSystem.GetEmitterArray()[i]->GetMaxParticles());
 			emitterNode.CreateField("emmitertimer", m_partSystem.GetEmitterArray()[i]->GetEmitterTimer());
-			emitterNode.CreateField("active", m_partSystem.GetEmitterArray()[i]->IsActive());
+			emitterNode.CreateField("active", m_partSystem.GetEmitterArray()[i]->GetIsActive());
 			emitterNode.CreateField("poolindex", m_partSystem.GetEmitterArray()[i]->GetPoolIndex());
+			emitterNode.CreateField("followowner", m_partSystem.GetEmitterArray()[i]->GetIsFollowingOwner());
 
 			JsonNode vectorNode = emitterNode.CreateObjectField("position");
 			vectorNode.CreateField("x", m_partSystem.GetEmitterArray()[i]->GetPosition().x);
@@ -136,6 +141,7 @@ namespace Loopie
 				m_partSystem.GetEmitterArray()[i]->SetEmitterTimer(node.GetValue<float>("emmitertimer").Result);
 				m_partSystem.GetEmitterArray()[i]->SetActive(node.GetValue<bool>("active",false).Result);
 				m_partSystem.GetEmitterArray()[i]->SetPoolIndex(node.GetValue<unsigned int>("poolindex").Result);
+				m_partSystem.GetEmitterArray()[i]->SetFollowingOwner(node.GetValue<bool>("followowner", true).Result);
 
 				JsonNode positionNode = node.Child("position");
 				if (positionNode.IsValid() && positionNode.IsObject())
