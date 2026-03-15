@@ -9,6 +9,7 @@
 #include "Loopie/Components/Text.h"
 #include "Loopie/Components/Button.h"
 #include "Loopie/Components/CanvasScaler.h"
+#include "Loopie/Components/Light.h"
 
 #include "Editor/Interfaces/Workspace/SceneInterface.h"
 #include <imgui.h>
@@ -208,6 +209,22 @@ namespace Loopie {
 
 			ImGui::EndMenu();
 		}
+		if (ImGui::BeginMenu("Light"))
+		{
+			if (ImGui::MenuItem("Ambient"))
+				SelectEntity(CreateLight(LightType::Ambient, "Ambient Light", entity));
+
+			if (ImGui::MenuItem("Directional"))
+				SelectEntity(CreateLight(LightType::Directional, "Directional Light", entity));
+
+			if (ImGui::MenuItem("Point"))
+				SelectEntity(CreateLight(LightType::Point, "Point Light", entity));
+
+			if (ImGui::MenuItem("Spot"))
+				SelectEntity(CreateLight(LightType::Spot, "Spot Light", entity));
+
+			ImGui::EndMenu();
+		}
 	}
 
 	void HierarchyInterface::HotKeysSelectedEntiy(const InputEventManager& inputEvent)
@@ -354,6 +371,14 @@ namespace Loopie {
 		newEntity->AddComponent<Button>();
 		newEntity->AddComponent<Image>();
 
+		return newEntity;
+	}
+
+	std::shared_ptr<Entity> HierarchyInterface::CreateLight(LightType type, const std::string& name, const std::shared_ptr<Entity> parent)
+	{
+		std::shared_ptr<Entity> newEntity = m_scene->CreateEntity(name, parent);
+		newEntity->AddComponent<Light>(vec3(1.0f, 1.0f, 1.0f), 0.5f, type);
+	
 		return newEntity;
 	}
 }

@@ -11,6 +11,14 @@ layout (location = 4) in vec4 a_Color;
 layout (location = 5) in vec4 a_BoneIDs;
 layout (location = 6) in vec4 a_Weights;
 
+struct Light
+{
+    vec4 l_ColorIntensity;
+    vec4 l_PositionType;
+    vec4 l_DirectionInnerCone;
+    vec4 l_AttenuationOuterCone;
+};
+
 layout (std140, binding = 0) uniform Matrices
 {
     mat4 lp_Projection;
@@ -19,9 +27,8 @@ layout (std140, binding = 0) uniform Matrices
 
 layout (std140, binding = 1) uniform Lighting
 {
-    vec4 lp_CameraWorldPos;
-    vec4 lp_LightDir;
-    vec4 lp_LightCol;
+    vec4 lp_CameraWorldPosLightCount;
+    Light lp_lights[8];
 };
 
 uniform mat4 lp_Transform;
@@ -73,6 +80,14 @@ in mat3 v_TBNMatrix;
 
 out vec4 FragColor;
 
+struct Light
+{
+    vec4 l_ColorIntensity;
+    vec4 l_PositionType;
+    vec4 l_DirectionInnerCone;
+    vec4 l_AttenuationOuterCone;
+};
+
 layout (std140, binding = 0) uniform Matrices
 {
     mat4 lp_Projection;
@@ -81,9 +96,8 @@ layout (std140, binding = 0) uniform Matrices
 
 layout (std140, binding = 1) uniform Lighting
 {
-    vec4 lp_CameraWorldPos;
-    vec4 lp_LightDir;
-    vec4 lp_LightCol;
+    vec4 lp_CameraWorldPosLightCount;
+    Light lp_lights[8];
 };
 
 uniform sampler2D u_Albedo;
@@ -105,22 +119,44 @@ void main()
     vec4 texNormal = texture(u_Normal, v_TexCoord);
     vec3 normal = v_TBNMatrix * (texNormal.xyz * 2.0 - 1.0);
     normal = normalize(normal);
-    
-    // Ambient
-    vec3 ambient = lp_LightCol.xyz * lp_LightCol.w;
 
-    // Diffuse
-    float diff = max(dot(normal, lp_LightDir.xyz), 0.0);
-    vec3 diffuse = diff * lp_LightCol.xyz;
+    vec3 viewDir = normalize(lp_CameraWorldPosLightCount.xyz - v_WorldPos);
 
-    // Specular
-    vec3 viewDir = normalize(lp_CameraWorldPos.xyz - v_WorldPos);
-    vec3 reflectDir = reflect(-lp_LightDir.xyz, normal);  
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), u_Roughness);
-    vec3 specular = texSpecular.xyz * spec * lp_LightCol.xyz;  
+    vec3 result = vec3(0.0);
+
+
+    for (int i = 0; i < lp_CameraWorldPosLightCount.w; ++i)
+    {
+        if (int(lp_lights[i].l_PositionType.w) == 0) // Ambiental
+        {
+            // Ambient
+            result += lp_lights[i].l_ColorIntensity.xyz * lp_lights[i].l_ColorIntensity.w;
+            
+        }
+        else if (int(lp_lights[i].l_PositionType.w) == 1) // Directional
+        {
+            vec3 lightDir = -lp_lights[i].l_DirectionInnerCone.xyz; // toward the light
+
+            // Diffuse
+            float diff = max(dot(normal, lightDir), 0.0);
+            vec3 diffuse = diff * lp_lights[i].l_ColorIntensity.xyz * lp_lights[i].l_ColorIntensity.w;
+
+            // Specular
+            vec3 reflectDir = reflect(-lightDir, normal);  
+            float spec = pow(max(dot(viewDir, reflectDir), 0.0), u_Roughness);
+            vec3 specular = texSpecular.xyz * spec * lp_lights[i].l_ColorIntensity.xyz * lp_lights[i].l_ColorIntensity.w;  
+            result += (diffuse + specular);
+        }
+        else if (int(lp_lights[i].l_PositionType.w) == 2) // Spot
+        {
+        }
+        else if (int(lp_lights[i].l_PositionType.w) == 3) // Point
+        {
+        }
+    }
 
     // Resulting Color with Lighting
-    vec3 result = (ambient + diffuse + specular) * texColor.rgb;
+    result = result * texColor.rgb;
 
     FragColor = vec4(result, texColor.a) * u_Color;
 }

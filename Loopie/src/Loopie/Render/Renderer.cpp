@@ -15,6 +15,8 @@ namespace Loopie {
 	std::vector<Camera*> Renderer::s_RenderCameras = std::vector<Camera*>();
 	std::shared_ptr<UniformBuffer> Renderer::s_MatricesUniformBuffer = nullptr;
 	std::shared_ptr<UniformBuffer> Renderer::s_lightingUniformBuffer = nullptr;
+	Light* Renderer::s_Lights[MAX_LIGHTS] = {};
+	unsigned short Renderer::s_LightCount = 0;
 	bool Renderer::s_UseGizmos = true;
 	vec4 Renderer::s_CurrentViewport = {0,0,0,0};
 
@@ -122,8 +124,8 @@ namespace Loopie {
 		s_MatricesUniformBuffer->SetData(&viewMatrix[0][0], 1);
 		vec3 cameraPos = vec3(glm::inverse(viewMatrix)[3]);
 
-		vec4 nCameraPos = vec4(cameraPos, s_LightCount);
-		s_lightingUniformBuffer->SetData(&nCameraPos, 0);
+		vec4 cameraPosLightCount = vec4(cameraPos, s_LightCount);
+		s_lightingUniformBuffer->SetData(&cameraPosLightCount, 0);
 
 		for (int i = 0; i < s_LightCount; ++i)
 		{

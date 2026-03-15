@@ -1,25 +1,28 @@
 #include "Light.h"
 #include "Loopie/Core/Log.h"
+#include "Loopie/Render/Renderer.h"
 
 namespace Loopie
 {
+
 	Light::Light(vec3 color, float intensity, LightType type)
 	{
 		m_color = color;
 		m_intensity = intensity;
 		m_type = type;
+		Renderer::RegisterLight(this);
 	}
 
 	Light::~Light()
 	{
-
+		Renderer::UnregisterLight(this);
 	}
 
 	void Light::Init()
 	{
 		switch (m_type)
 		{
-		case LightType::Ambiental:
+		case LightType::Ambient:
 			break;
 		default:
 			Log::Warn("Light didn't have any type. Defaulting to Directional Light.");
@@ -94,7 +97,7 @@ namespace Loopie
 
 	void Light::SetIntensity(float intensity)
 	{
-		m_intensity = intensity;
+		m_intensity = std::max(intensity, 0.0f);
 	}
 	
 	float Light::GetIntensity() const
@@ -132,12 +135,12 @@ namespace Loopie
 		return m_attenuationQuadratic;
 	}
 
-	void Light::SetFadeDistance(float fadeDistance)
+	void Light::SetReachDistance(float fadeDistance)
 	{
 		m_reachDistance = fadeDistance;
 	}
 
-	float Light::GetFadeDistance() const
+	float Light::GetReachDistance() const
 	{
 		return m_reachDistance;
 	}
@@ -183,7 +186,7 @@ namespace Loopie
 
 	void Light::Deserialize(const JsonNode& data)
 	{
-		m_type = (LightType)data.GetValue<int>("type", (int)LightType::Ambiental).Result;
+		m_type = (LightType)data.GetValue<int>("type", (int)LightType::Ambient).Result;
 		JsonNode node = data.Child("color");
 		if (node.IsValid() && node.IsObject())
 		{
@@ -191,7 +194,7 @@ namespace Loopie
 			m_color.y = node.GetValue<float>("g", 1.0f).Result;
 			m_color.z = node.GetValue<float>("b", 1.0f).Result;
 		}
-		m_intensity = data.GetValue<float>("intensity", 0.1f).Result;
+		m_intensity = data.GetValue<float>("intensity", 0.5f).Result;
 		m_attenuationConstant = data.GetValue<float>("attenuation_constant", 0.1f).Result;
 		m_attenuationLinear = data.GetValue<float>("attenuation_linear", 2.0f).Result;
 		m_attenuationQuadratic = data.GetValue<float>("attenuation_quadratic", 2.0f).Result;

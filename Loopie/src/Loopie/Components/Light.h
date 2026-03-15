@@ -7,7 +7,7 @@ namespace Loopie
 {
 	enum class LightType
 	{
-		Ambiental = 0, // Lights all the scene equally, no direction (placed on camera)
+		Ambient = 0, // Lights all the scene equally, no direction (placed on camera)
 		Directional, // Has a direction, color and intensity (sun / moon)
 		Spot, // Has a position, direction, a cone and attenuation (falloff)
 		Point // Has a position and attenuation (falloff), spreads in all directions 
@@ -18,7 +18,7 @@ namespace Loopie
 	public:
 		DEFINE_TYPE(Light)
 
-		Light(vec3 color = vec3(1.0f, 1.0f, 1.0f), float intensity = 1000.0f, LightType type = LightType::Directional);
+		Light(vec3 color = vec3(1.0f, 1.0f, 1.0f), float intensity = 1.0f, LightType type = LightType::Directional);
 		~Light();
 
 		void Init() override;
@@ -46,8 +46,8 @@ namespace Loopie
 		void  SetAttenuationQuadratic(float attenuationQuadratic);
 		float GetAttenuationQuadratic() const;
 
-		void  SetFadeDistance(float fadeDistance);
-		float GetFadeDistance() const;
+		void  SetReachDistance(float fadeDistance);
+		float GetReachDistance() const;
 		void  SetInnerConeAngle(float innerConeAngle);
 		float GetInnerConeAngle() const;
 		void  SetOuterConeAngle(float outerConeAngle);
