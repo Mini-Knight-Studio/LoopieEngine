@@ -788,6 +788,17 @@ namespace Loopie {
 			parent->RemoveChild(entity->GetUUID());
 		}
 
+
+		if (ScriptingManager::IsRunning()) {
+			auto destroy = [&](std::vector<ScriptClass*>& components) -> void {
+				for (size_t i = 0; i < components.size(); i++)
+					components[i]->InvokeOnDestroy();
+			};
+
+			destroy(entity->GetComponents<ScriptClass>());
+		}
+		
+
 		m_octree->Remove(entity);
 		m_entities.erase(entity->GetUUID());
 	}

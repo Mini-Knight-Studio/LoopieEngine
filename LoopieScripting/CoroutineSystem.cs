@@ -15,22 +15,46 @@ namespace Loopie
         }
     }
 
-    class Coroutine
+    public class Coroutine
     {
+        public string OwnerID;
         public IEnumerator Routine;
         public YieldInstruction Yielded;
     }
 
-    public static class CoroutineSystem
+    internal static class CoroutineSystem
     {
         static List<Coroutine> coroutines = new List<Coroutine>();
 
-        public static void StartCoroutine(IEnumerator routine)
+        internal static Coroutine StartCoroutine(string ownerID, IEnumerator routine)
         {
-            coroutines.Add(new Coroutine { Routine = routine, Yielded = null });
+            Coroutine coroutine = new Coroutine {OwnerID = ownerID, Routine = routine, Yielded = null };
+            coroutines.Add(coroutine);
+            return coroutine;
         }
 
-        public static void UpdateCoroutines()
+        internal static void StopCoroutine(Coroutine coroutine)
+        {
+            coroutines.Remove(coroutine);
+        }
+
+        internal static void StopCoroutinesByOwner(string ownerID)
+        {
+            for (int i = coroutines.Count - 1; i >= 0; i--)
+            {
+                if (coroutines[i].OwnerID== ownerID)
+                {
+                    coroutines.RemoveAt(i);
+                }
+            }
+        }
+
+        internal static void StopAllCoroutines()
+        {
+            coroutines.Clear();
+        }
+
+        internal static void UpdateCoroutines()
         {
             for (int i = coroutines.Count - 1; i >= 0; i--)
             {
