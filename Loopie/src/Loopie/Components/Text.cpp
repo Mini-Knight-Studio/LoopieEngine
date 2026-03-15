@@ -10,8 +10,7 @@ namespace Loopie {
 
 	Text::~Text()
 	{
-		if (m_font)
-			m_font->DecrementReferenceCount();
+
 	}
 
 	void Text::Init()
@@ -58,13 +57,7 @@ namespace Loopie {
 		if (m_font == font)
 			return;
 
-		if (m_font)
-			m_font->DecrementReferenceCount();
-
 		m_font = font;
-
-		if (m_font)
-			m_font->IncrementReferenceCount();
 	}
 
 	JsonNode Text::Serialize(JsonNode& parent) const

@@ -332,8 +332,8 @@ namespace Loopie {
 		std::string extension = path.extension().string();
 		if (extension == ".mat") 
 		{
-			std::shared_ptr<Material> material = ResourceManager::GetMaterial(*metadata);
-			DrawMaterial(material);
+			m_currentResource = ResourceManager::GetMaterial(*metadata);
+			DrawMaterial(std::static_pointer_cast<Material>(m_currentResource));
 			ImGui::Dummy({ 0.0f, 4.0f }); 
 			ImGui::Separator();
 			ImGui::Dummy({ 0.0f, 4.0f }); 
@@ -633,7 +633,6 @@ namespace Loopie {
 			}
 
 			if (ImGui::TreeNode("Mesh Info")) {
-				ImGui::Text("Mesh Resource Count: %u", mesh->GetReferenceCount());
 				ImGui::Text("Mesh Vertices: %d", mesh->GetData().VerticesAmount);
 				ImGui::Text("Has Bones: %s", mesh->GetData().HasBones ? "True" : "False");
 
@@ -2220,7 +2219,6 @@ namespace Loopie {
 			}
 
 		}
-		ImGui::Text("Material Resource Count: %u", material->GetReferenceCount());
 	}
 
 	void InspectorInterface::OnNotify(const OnEntityOrFileNotification& id)

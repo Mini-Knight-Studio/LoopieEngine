@@ -25,6 +25,7 @@ namespace Loopie {
 	class AudioListener;
 	class FunctionCall;
 	class Metadata;
+	class Resource;
 
 	class InspectorInterface : public Interface , public IObserver<OnEntityOrFileNotification>{
 	public:
@@ -89,5 +90,7 @@ namespace Loopie {
 
 		std::weak_ptr<Entity> m_currentEntity;
 		std::filesystem::path m_currentFile;
+		std::shared_ptr<Resource> m_currentResource;
+
 	};
 }

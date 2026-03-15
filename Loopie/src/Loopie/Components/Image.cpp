@@ -11,8 +11,7 @@ namespace Loopie
 {
 	Image::~Image()
 	{
-		if (m_texture)
-			m_texture->DecrementReferenceCount();
+
 	}
 	void Image::Init()
 	{

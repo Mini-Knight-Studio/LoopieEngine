@@ -75,15 +75,15 @@ namespace Loopie {
         return sceneAsset;
     }
 
-    std::shared_ptr<Resource> ResourceManager::GetResource(const ResourceKey& key) {
+    std::shared_ptr<Resource> ResourceManager::GetResource(const ResourceKey& key)
+    {
         auto it = s_Resources.find(key);
         if (it != s_Resources.end())
         {
-            auto shared = it->second.lock();
-            if (shared)
+            if (auto shared = it->second.lock())
                 return shared;
-            else
-                s_Resources.erase(it);
+
+            s_Resources.erase(it);
         }
         return nullptr;
     }
