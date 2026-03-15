@@ -75,27 +75,12 @@ namespace Loopie
 		if (!m_emittersArray.empty())
 		{
 			
-			for (auto* emitter : m_emittersArray)
+			for (const auto emitter : m_emittersArray)
 			{
 				if (emitter)
 				{
 					emitter->OnUpdate(dt);
 				}
-			}
-			auto it = m_emittersArray.begin();
-			while (it != m_emittersArray.end())
-			{
-				Emitter* emitter = *it;
-				if ((emitter->GetName() == "Firework") && (emitter->IsActive() == false))
-				{
-					if (emitter->GetActiveParticles() == 0)
-					{
-						delete emitter; 
-						it = m_emittersArray.erase(it); 
-						continue;
-					}
-				}
-				++it;
 			}
 		}
 		else
@@ -113,7 +98,7 @@ namespace Loopie
 		}
 
 		
-		for (auto* emitter : m_emittersArray)
+		for (const auto emitter : m_emittersArray)
 		{
 			if (emitter)
 			{
@@ -124,7 +109,7 @@ namespace Loopie
 	int ParticleSystem::GetActiveParticles() const 
 	{
 		int total = 0;
-		for (auto* emitter : m_emittersArray)
+		for (const auto emitter : m_emittersArray)
 		{
 			if (emitter)
 			{
@@ -133,15 +118,15 @@ namespace Loopie
 		}
 		return total;
 	}
-	std::vector<Emitter*> ParticleSystem::GetEmitterArray()const
+	const std::vector<std::shared_ptr<Emitter>>& ParticleSystem::GetEmitterArray()const
 	{
 		return m_emittersArray;
 	}
-	void ParticleSystem::AddElemToEmitterArray(Emitter* em)
+	void ParticleSystem::AddElemToEmitterArray(const std::shared_ptr<Emitter>& em)
 	{
 		m_emittersArray.push_back(em);
 	}
-	void ParticleSystem::DeleteElemFromEmitterArray(Emitter* em)
+	void ParticleSystem::DeleteElemFromEmitterArray(const std::shared_ptr<Emitter>& em)
 	{
 		auto it = std::find(m_emittersArray.begin(), m_emittersArray.end(), em);
 		if (it != m_emittersArray.end())

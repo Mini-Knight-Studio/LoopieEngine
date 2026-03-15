@@ -43,12 +43,9 @@ namespace Loopie
 
 			ParticleProps m_particleProperties;
 			std::shared_ptr<Billboard> m_billboard;
-
-			void ParticlePresets(ParticleType type);
-
 		public:
 			
-			Emitter(unsigned int maxParticles, ParticleType type, BillboardType bType, vec3 position, unsigned int spawnRate, vec3 posOffSet = vec3(0));
+			Emitter(unsigned int maxParticles, BillboardType bType, vec3 position, unsigned int spawnRate, vec3 posOffSet = vec3(0));
 
 			void OnUpdate(float dt);
 			void OnRender(std::shared_ptr<VertexArray> quadVAO, std::shared_ptr<Material> material, Camera* cam);

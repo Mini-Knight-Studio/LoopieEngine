@@ -4,25 +4,23 @@
 #include "Loopie/Components/Component.h"
 #include "Loopie/ParticleSystemEn/ParticleModule.h"
 #include "Loopie/ParticleSystemEn/Emitter.h"
+#include "Loopie/ParticleSystemEn/ParticleSystem.h"
 #include "Loopie/Events/EventTypes.h"
 
 
 namespace Loopie
 {   
 	class Emitter;
-	class ParticleSystem;
 	class Camera;
 	
 	class ParticleComponent :public Component, public IObserver<TransformNotification>
 	{
 		
 	private:
-		
-		ParticleSystem* m_partSystem;
+		ParticleSystem m_partSystem;
 	public:
 		DEFINE_TYPE(ParticleComponent)
 		ParticleComponent();
-		ParticleComponent(ParticleSystem* pSystem);
 		void Save();
 		void Load();
 		void Init() override; 
@@ -35,11 +33,9 @@ namespace Loopie
 		JsonNode Serialize(JsonNode& parent) const override;
 		void Deserialize(const JsonNode& data) override;
 
-		std::vector<Emitter*> GetEmittersVector();
-		void AddElemToEmitterVector(Emitter* emitter);
+		const std::vector<std::shared_ptr<Emitter>>& GetEmittersVector();
+		void AddElemToEmitterVector(const std::shared_ptr<Emitter>& emitter);
 
-		ParticleSystem* GetParticleSystem();
-		void SetParticleSystem(ParticleSystem* pSystem);
-
+		ParticleSystem& GetParticleSystem();
 	};
 }

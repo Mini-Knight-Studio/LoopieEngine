@@ -11,7 +11,7 @@ namespace Loopie
 		return min + ((float)rand() / (float)RAND_MAX) * (max - min);
 	}
 
-	Emitter::Emitter(unsigned int maxParticles, ParticleType type, BillboardType bType, vec3 position, unsigned int spawnRate, vec3 posOffSet)
+	Emitter::Emitter(unsigned int maxParticles, BillboardType bType, vec3 position, unsigned int spawnRate, vec3 posOffSet)
 	{
 		m_billboard = std::make_shared<Billboard>(position, bType);
 		m_spawnRate = spawnRate;
@@ -22,7 +22,15 @@ namespace Loopie
 		m_active = true;
 		m_poolIndex = 0;
 
-		ParticlePresets(type);
+		m_name = "DefaultParticle";
+		m_particleProperties.Velocity = vec3(0, 0, 0);
+		m_particleProperties.VelocityVariation = vec3(1, 1, 0);
+		m_particleProperties.ColorBegin = vec4(1, 1, 1, 1);
+		m_particleProperties.ColorEnd = vec4(1, 1, 1, 1);
+		m_particleProperties.SizeBegin = 1;
+		m_particleProperties.SizeEnd = 1;
+		m_particleProperties.SizeVariation = 0.5;
+		m_particleProperties.LifeTime = 1;
 		
 		m_particlePool.resize(m_maxParticles);
 		m_poolIndex = m_maxParticles - 1;
@@ -38,49 +46,20 @@ namespace Loopie
 			}
 			particle.Update(dt);
 		}
-		if (m_name != "Firework")
+		if (m_active && m_spawnRate > 0)
 		{
-			if (m_active && m_spawnRate > 0)
+			m_emitterTimer += dt;
+			float emissionInterval = 1.0f / m_spawnRate;
+
+			while (m_emitterTimer >= emissionInterval)
 			{
-				m_emitterTimer += dt;
-				float emissionInterval = 1.0f / m_spawnRate;
-
-				while (m_emitterTimer >= emissionInterval)
-				{
-					ParticleProps props = m_particleProperties;
-					props.Position = m_position;
-					Emit(props);
-					m_emitterTimer -= emissionInterval;
-				}
+				ParticleProps props = m_particleProperties;
+				props.Position = m_position;
+				Emit(props);
+				m_emitterTimer -= emissionInterval;
 			}
-
 		}
-		else if (m_name == "Firework")
-		{
-			if (m_active)
-			{
-				
-				for (unsigned int i = 0; i < m_spawnRate; i++)
-				{
-					ParticleProps props = m_particleProperties;
-					props.Position = m_position;
-
-					float angle = RandomFloat(0, (2 * Math::PI));
-					float impulse = RandomFloat(5, 12);
-
-					props.Velocity.x = cos(angle) * impulse;
-					props.Velocity.y = sin(angle) * impulse ;
-					props.Velocity.z = 0.0f;
-
-					Emit(props);
-				}
-
-				m_active = false;
-
-			}
-
-		}
-		
+	
 	}
 	void Emitter::OnRender(std::shared_ptr<VertexArray> quadVAO, std::shared_ptr<Material> material, Camera* cam)
 	{
@@ -232,55 +211,4 @@ namespace Loopie
 		return m_particleProperties;
 	}
 
-	void Emitter::ParticlePresets(ParticleType type)
-	{
-		float rand1 = RandomFloat(0.1f, 1.0f);
-		float rand2 = RandomFloat(0.1f, 1.0f);
-		float rand3 = RandomFloat(0.1f, 1.0f);
-		switch (type)
-		{
-		case Loopie::SMOKE:
-			m_name = "Smoke";
-			m_particleProperties.Velocity = vec3(0.0f, 4.0f, 0.0f);
-			m_particleProperties.VelocityVariation = vec3(0.5f, 0.3f, 0.0f);
-			m_particleProperties.PositionVariation = vec3(0.8f, 0.0f, 0.8f);
-			m_particleProperties.SizeVariation = 0.5f;
-			m_particleProperties.ColorBegin = vec4(0.1f, 0.1f, 0.1f, 1.0f);
-			m_particleProperties.ColorEnd = vec4(1.0f, 1.0f, 1.0f, 0.0f);
-			m_particleProperties.SizeBegin = 0.7f;
-			m_particleProperties.SizeEnd = 0.2f;
-			m_particleProperties.LifeTime = 2;
-			
-			break;
-		case Loopie::FIREWORK:
-			m_name = "Firework";
-			m_particleProperties.Velocity = vec3(0.0f, 10.0f, 0.0f);
-			m_particleProperties.VelocityVariation = vec3(0.5f, 0.3f, 0.5f);
-			m_particleProperties.PositionVariation = vec3(0.1f, 0.0f, 0.1f);
-			m_particleProperties.SizeVariation = 0.3f;
-
-			vec4 colorIn = vec4(rand1, rand2, rand3, 1.0f);
-			m_particleProperties.ColorBegin = colorIn; 
-			vec4 colorOut = vec4(rand1, rand2, rand3, 0.1f);
-			m_particleProperties.ColorEnd = colorOut;
-
-			m_particleProperties.SizeBegin = 0.6f;
-			m_particleProperties.SizeEnd = 0.0f;
-			m_particleProperties.LifeTime = 2.0f;
-			
-			break;
-		default:
-			m_name = "DefaultParticle";
-			m_particleProperties.Velocity = vec3(0, 0, 0);
-			m_particleProperties.VelocityVariation = vec3(1, 1, 0);
-			m_particleProperties.ColorBegin = vec4(1, 1, 1, 1);
-			m_particleProperties.ColorEnd = vec4(1, 1, 1, 1);
-			m_particleProperties.SizeBegin = 1;
-			m_particleProperties.SizeEnd = 1;
-			m_particleProperties.SizeVariation = 0.5;
-			m_particleProperties.LifeTime = 1;
-			
-			break;
-		}
-	}
 }

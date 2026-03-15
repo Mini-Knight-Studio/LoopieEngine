@@ -49,16 +49,6 @@ namespace Loopie
 			m_currentScene->CreateEntity({ 0,1,-10 }, { 1,0,0,0 }, { 1,1,1 }, nullptr, "MainCamera")->AddComponent<Camera>();
 
 			//To check that particle system works:
-			ParticleSystem* partSystem = new(ParticleSystem);
-			ParticleSystem* partSystemFirework = new(ParticleSystem);
-
-			std::shared_ptr<Entity> smokeEntity = m_currentScene->CreateEntity({ 16,8,16 }, { 1,0,0,0 }, { 1,1,1 }, nullptr, "Smoke");
-			smokeEntity->AddComponent<ParticleComponent>(partSystem);
-			Emitter* smokeEmitter1 = new Emitter(1000, SMOKE, CAMERA_FACING, smokeEntity->GetTransform()->GetPosition(), 50);
-			smokeEntity->GetComponent<ParticleComponent>()->AddElemToEmitterVector(smokeEmitter1);
-
-			std::shared_ptr<Entity> fireworkEntity = m_currentScene->CreateEntity({ 0,8,50 }, { 1,0,0,0 }, { 1,1,1 }, nullptr, "ParticleSystemFirework");
-			fireworkEntity->AddComponent<ParticleComponent>(partSystemFirework);
 		}
 		
 
@@ -106,13 +96,6 @@ namespace Loopie
 
 
 		//Launch Firework
-		if (inputEvent.GetKeyStatus(SDL_SCANCODE_1) == KeyState::DOWN)
-		{
-			Emitter* firework = new Emitter(1000, FIREWORK, CAMERA_FACING, vec3(0.0f, 5.0f, 10.0f), 20);
-			m_currentScene->GetEntity("ParticleSystemFirework")->GetComponent<ParticleComponent>()->AddElemToEmitterVector(firework);
-
-
-		}
 		const std::vector<Camera*>& cameras = Renderer::GetRendererCameras();
 		for (const auto cam : cameras)
 		{

@@ -238,7 +238,7 @@ namespace Loopie {
 		ImGui::PopID();
 	}
 
-	void InspectorInterface::DrawEmitterInspector(Emitter* emitter)
+	void InspectorInterface::DrawEmitterInspector(const std::shared_ptr<Emitter> emitter)
 	{
 
 		//EMITTER PROPERTIES
@@ -266,7 +266,7 @@ namespace Loopie {
 		}
 
 		vec3 positionOffSet = emitter->GetPositionOffSet();
-		if (ImGui::InputFloat3("Emitter Position OffSet", &positionOffSet.x))
+		if (ImGui::DragFloat3("Emitter Position OffSet", &positionOffSet.x))
 		{
 			emitter->SetPositionOffSet(positionOffSet);
 		}
@@ -284,10 +284,10 @@ namespace Loopie {
 
 		ParticleProps& props = emitter->GetEmissionProperties();
 
-		ImGui::InputFloat3("Position", &props.Position.x);
-		ImGui::InputFloat3("Position Variation", &props.PositionVariation.x);
-		ImGui::InputFloat3("Velocity", &props.Velocity.x);
-		ImGui::InputFloat3("Velocity Variation", &props.VelocityVariation.x);
+		ImGui::DragFloat3("Position", &props.Position.x);
+		ImGui::DragFloat3("Position Variation", &props.PositionVariation.x);
+		ImGui::DragFloat3("Velocity", &props.Velocity.x);
+		ImGui::DragFloat3("Velocity Variation", &props.VelocityVariation.x);
 		ImGui::ColorEdit4("Color Begin", &props.ColorBegin.x);
 		ImGui::ColorEdit4("Color End", &props.ColorEnd.x);
 		ImGui::InputFloat("Size Begin", &props.SizeBegin);
@@ -317,7 +317,7 @@ namespace Loopie {
 			}
 			
 
-			std::vector <Emitter*> emitters = partComponent->GetEmittersVector();
+			const std::vector<std::shared_ptr<Emitter>>& emitters = partComponent->GetEmittersVector();
 			for (size_t i = 0; i < emitters.size(); i++)
 			{
 				std::string label = emitters[i]->GetName();
@@ -468,10 +468,9 @@ namespace Loopie {
 
 			if (ImGui::Selectable("Particle Component")) 
 			{
-				ParticleSystem* pSystem = new(ParticleSystem);
-				entity->AddComponent<ParticleComponent>(pSystem);
-				Emitter* emitter = new Emitter(1000, DEFAULT, CAMERA_FACING, entity->GetTransform()->GetPosition(), 100);
-				pSystem->AddElemToEmitterArray(emitter);
+				ParticleComponent* comp = entity->AddComponent<ParticleComponent>();
+				std::shared_ptr<Emitter> emitter = std::make_shared<Emitter>(1000, CAMERA_FACING, entity->GetTransform()->GetPosition(), 100);
+				comp->AddElemToEmitterVector(emitter);
 				ImGui::EndCombo();
 				return;
 			}

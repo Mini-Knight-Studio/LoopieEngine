@@ -9,10 +9,11 @@ namespace Loopie
 {
 	class Emitter;
 	class Camera;
+
 	class ParticleSystem
 	{
 		private:
-			std::vector <Emitter*> m_emittersArray;
+			std::vector <std::shared_ptr<Emitter>> m_emittersArray;
 
 			std::shared_ptr<VertexArray> m_quadVAO;
 			std::shared_ptr<VertexBuffer> m_quadVBO;
@@ -31,10 +32,10 @@ namespace Loopie
 			void OnUpdate(float dt);
 			void OnRender(Camera* cam);
 
-			void AddElemToEmitterArray(Emitter* em);
-			void DeleteElemFromEmitterArray(Emitter* em);
+			void AddElemToEmitterArray(const std::shared_ptr<Emitter>& em);
+			void DeleteElemFromEmitterArray(const std::shared_ptr<Emitter>& em);
 
-			std::vector<Emitter*>GetEmitterArray()const;
+			const std::vector<std::shared_ptr<Emitter>>& GetEmitterArray() const;
 			std::shared_ptr<VertexArray> GetQuadVAO() const;
 			std::shared_ptr<Material> GetMaterial() const;	
 			int GetActiveParticles() const;	

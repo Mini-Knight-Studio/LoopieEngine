@@ -5,7 +5,6 @@ namespace Loopie
 {
 	ParticleModule::ParticleModule()
 	{
-		m_partType = SMOKE;
 		m_position = vec3(0, 0, 0);
 		m_rotation = 0;
 		m_velocity = vec3(0, 0, 0);
@@ -71,15 +70,6 @@ namespace Loopie
 		
 	}
 	
-	
-	ParticleType ParticleModule::GetParticleType()const
-	{
-		return m_partType;
-	}
-	void ParticleModule::SetParticleType(ParticleType t)
-	{
-		m_partType = t;
-	}
 	vec3 ParticleModule::GetPosition() const
 	{
 		return m_position;

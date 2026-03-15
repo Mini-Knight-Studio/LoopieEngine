@@ -8,18 +8,10 @@
 
 namespace Loopie
 {
-	
-	enum ParticleType
-	{
-		SMOKE,
-		FIREWORK,
-		DEFAULT
-	};
 
 	class ParticleModule
 	{
 		private:
-			ParticleType m_partType;
 			vec3 m_position;
 			vec3 m_velocity;
 			vec4 m_colorBegin;
@@ -36,10 +28,6 @@ namespace Loopie
 			ParticleModule();
 			void Update(float dt);
 			void Render(std::shared_ptr<VertexArray> quadVAO, std::shared_ptr<Material> material, const matrix4& billboardTransform);
-
-			
-			ParticleType GetParticleType()const;
-			void SetParticleType(ParticleType t);
 
 			vec3 GetPosition() const;
 			void SetPosition(const vec3& pos);

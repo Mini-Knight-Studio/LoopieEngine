@@ -37,7 +37,7 @@ namespace Loopie {
 		void DrawTransform(Transform* transform);
 		void DrawCamera(Camera* camera);
 		void DrawMeshRenderer(MeshRenderer* meshRenderer);
-		void DrawEmitterInspector(Emitter* emitter);
+		void DrawEmitterInspector(const std::shared_ptr<Emitter> emitter);
 		void DrawParticleSystem(ParticleComponent* partComponent);
 		void DrawScriptClass(ScriptClass* scriptClass);
 		void AddComponent(const std::shared_ptr<Entity>& entity);
