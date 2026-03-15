@@ -58,10 +58,15 @@ namespace Loopie {
 		
 
 			ImVec2 size = ImGui::GetContentRegionAvail();
-			//ImGui::SetCursorPos(cursorPos);  /// And move up the avail
-			ImGui::SetNextItemAllowOverlap();
-			ImGui::InvisibleButton("##DropTarget", size, ImGuiButtonFlags_None);
-			Drop(m_scene->GetRootEntity());
+			if(size.x !=0 && size.y != 0)
+			{
+				//ImGui::SetCursorPos(cursorPos);  /// And move up the avail
+				ImGui::SetNextItemAllowOverlap();
+				ImGui::InvisibleButton("##DropTarget", size, ImGuiButtonFlags_None);
+				Drop(m_scene->GetRootEntity());
+			}
+
+			
 		}
 		ImGui::End();
 	}
