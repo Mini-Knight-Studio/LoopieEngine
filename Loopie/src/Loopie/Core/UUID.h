@@ -6,16 +6,18 @@ namespace Loopie {
     class UUID {
     public:
         UUID();
+        UUID(std::nullptr_t) : m_id(Invalid.Get()) {}
         UUID(const std::string& id);
 
         const std::string& Get() const;
         static std::string Generate();
+        static bool IsValid(const std::string& id);
 
         bool operator==(const UUID& other) const;
 
     public:
         static const unsigned int UUID_SIZE = 36;
-
+        static const UUID Invalid;
     private:
         std::string m_id;
     };

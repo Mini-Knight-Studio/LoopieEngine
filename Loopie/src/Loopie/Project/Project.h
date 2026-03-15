@@ -13,6 +13,7 @@ namespace Loopie {
 		bool Open(const std::filesystem::path& pathPath);
 
 		const std::string GetProjectName() const { return m_projectPath.filename().string(); }
+		const std::string GetNameFromConfig() const { return m_name; }
 		bool IsEmpty() const { return m_projectPath.empty() || !std::filesystem::exists(m_projectPath); }
 		
 		const std::filesystem::path& GetProjectPath() const { return m_projectPath; }
@@ -24,7 +25,9 @@ namespace Loopie {
 	private:
 		const void CreateDefaultPaths();
 		const void CreateProjFiles();
-		const void RefreshProjFiles();
+
+		const void CreateConfigFile(const std::string& projectName, const std::string defaultScenePath);
+		const void ReadConfigFile();
 	private:
 		std::filesystem::path m_projectPath;
 		std::filesystem::path m_assetsPath;
@@ -32,5 +35,7 @@ namespace Loopie {
 
 		std::filesystem::path m_congifPath;
 		std::filesystem::path m_gameDLLPath;
+
+		std::string m_name;
 	};
 }

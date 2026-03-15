@@ -3,9 +3,11 @@
 #include "Editor/Interfaces/Workspace/AssetsExplorerInterface.h"
 
 #include "Loopie/Core/Log.h"
+#include "Loopie/Core/Application.h"
 #include "Loopie/Math/MathTypes.h"
 
 #include "Loopie/Components/Transform.h"
+#include "Loopie/Components/RectTransform.h"
 #include "Loopie/Components/Camera.h"
 #include "Loopie/Components/MeshRenderer.h"
 #include "Loopie/Components/ScriptClass.h"
@@ -13,10 +15,27 @@
 #include "Loopie/Components/ParticleComponent.h"
 #include "Loopie/ParticleSystemEn/ParticleSystem.h"
 
+#include "Loopie/Components/Animator.h"
+#include "Loopie/Components/Canvas.h"
+#include "Loopie/Components/CanvasScaler.h"
+#include "Loopie/Components/Image.h"
+#include "Loopie/Components/Text.h"
+#include "Loopie/Components/Button.h"
+#include "Loopie/Components/BoxCollider.h"
 #include "Loopie/Scripting/ScriptingManager.h"
+#include "Loopie/Importers/TextureImporter.h"
+#include "Loopie/Importers/FontImporter.h"
+#include "Loopie/Importers/AudioImporter.h"
+#include "Loopie/Importers/MeshImporter.h"
+#include "Loopie/Importers/MaterialImporter.h"
+
+#include "Loopie/Collisions/CollisionProcessor.h"
 
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Resources/ResourceManager.h"
+
+#include "Loopie/Components/AudioSource.h"
+#include "Loopie/Components/AudioListener.h"
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -24,6 +43,186 @@
 
 
 namespace Loopie {
+	std::string ResourceTypeToString(ResourceType type) {
+		switch (type)
+		{
+		case ResourceType::TEXTURE:
+			return "Texture";
+			break;
+		case ResourceType::MESH:
+			return "Mesh";
+			break;
+		case ResourceType::MATERIAL:
+			return "Material";
+			break;
+		case ResourceType::SHADER:
+			return "Shader";
+			break;
+		case ResourceType::SCENE:
+			return "Scene";
+			break;
+		case ResourceType::AUDIO:
+			return "Audio";
+			break;
+		case ResourceType::SCRIPT:
+			return "Script";
+			break;
+		default:
+			return "NONE";
+			break;
+		}
+	}
+
+	bool CheckIfResourceTypeMatchesFileExtension(ResourceType type, const std::string& filepath) {
+		switch (type)
+		{
+		case ResourceType::TEXTURE:
+			return TextureImporter::CheckIfIsImage(filepath.c_str());
+		case ResourceType::MESH:
+			return MeshImporter::CheckIfIsModel(filepath.c_str());
+			break;
+		case ResourceType::MATERIAL:
+			return MaterialImporter::CheckIfIsMaterial(filepath.c_str());
+			break;
+		case ResourceType::SHADER:
+			// Check if it's a shader file
+			break;
+		case ResourceType::SCENE:
+			// Check if it's a scene file
+			break;
+		case ResourceType::AUDIO:
+			return AudioImporter::CheckIfIsAudio(filepath.c_str());
+			break;
+		case ResourceType::SCRIPT:
+			// Check if it's a script file
+			break;
+		default:
+			return false;
+		}
+		return false;
+	}
+
+	void ImportResourceByType(ResourceType type, const std::string& filepath, Metadata& metadata) {
+		switch (type)
+		{
+			case ResourceType::TEXTURE:
+				TextureImporter::ImportImage(filepath, metadata);
+				break;
+			case ResourceType::MESH:
+				MeshImporter::ImportModel(filepath, metadata);
+				break;
+			case ResourceType::MATERIAL:
+				MaterialImporter::ImportMaterial(filepath, metadata);
+				break;
+			case ResourceType::SHADER:
+				// Handle shader import
+				break;
+			case ResourceType::SCENE:
+				// Handle scene import
+				break;
+			case ResourceType::AUDIO:
+				AudioImporter::ImportAudio(filepath, metadata);
+				break;
+			case ResourceType::SCRIPT:
+				// Handle script import
+				break;
+		default:
+			break;
+		}
+	}
+
+	std::shared_ptr<Resource> GetResourceByType(ResourceType type,Metadata& metadata) {
+		std::shared_ptr<Resource> resource;
+		switch (type)
+		{
+		case ResourceType::TEXTURE:
+			resource = ResourceManager::GetTexture(metadata);
+			break;
+		case ResourceType::MESH:
+			resource = ResourceManager::GetMesh(metadata,0);
+			break;
+		case ResourceType::MATERIAL:
+			resource = ResourceManager::GetMaterial(metadata);
+			break;
+		case ResourceType::SHADER:
+			// Handle shader import
+			break;
+		case ResourceType::SCENE:
+			// Handle scene import
+			break;
+		case ResourceType::AUDIO:
+			resource = ResourceManager::GetAudioClip(metadata);
+			break;
+		case ResourceType::SCRIPT:
+			// Handle script import
+			break;
+		default:
+			break;
+		}
+
+		if (resource)
+			resource->Load();
+		return resource;
+	}
+
+	std::shared_ptr<Resource> GetDragDropResource(ResourceType type) {
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_EXPLORER_FILE"))
+			{
+				const char* droppedPath = (const char*)payload->Data;
+				if (droppedPath && CheckIfResourceTypeMatchesFileExtension(type, droppedPath))
+				{
+					Metadata& droppedMeta = AssetRegistry::GetOrCreateMetadata(droppedPath);
+					ImportResourceByType(type,droppedPath, droppedMeta);
+
+					return GetResourceByType(type, droppedMeta);
+				}
+			}
+			ImGui::EndDragDropTarget();
+		}
+		return nullptr;
+	}
+
+	std::shared_ptr<Resource> GetPastedResource(ResourceType type) {
+
+
+		std::string uuid = Application::GetInstance().m_clipboard.PasteFirst();
+		if (UUID::IsValid(uuid))
+		{
+			Metadata* data = AssetRegistry::GetMetadata(UUID(uuid));
+			if (data && data->Type == type)
+			{
+				std::shared_ptr<Resource> resource = GetResourceByType(type, *data);
+				if (resource)
+				{
+					return resource;
+				}
+			}
+		}
+
+		return nullptr;
+	}
+
+	std::shared_ptr<Entity> GetDragDropEntity() {
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY_UUID"))
+			{
+				const char* uuidChars = static_cast<const char*>(payload->Data);
+
+				std::string uuidStr(uuidChars);
+
+				if (!UUID::IsValid(uuidStr))
+					return nullptr;
+
+				return Application::GetInstance().GetScene().GetEntity(UUID(uuidStr));
+			}
+			ImGui::EndDragDropTarget();
+		}
+		return nullptr;
+	}
+
 	InspectorInterface::InspectorInterface() {
 		
 	}
@@ -42,17 +241,31 @@ namespace Loopie {
 	void InspectorInterface::Render() {
 		if (ImGui::Begin("Inspector")) {
 
+			if (ImGui::Checkbox("Lock Inspector", &m_locked)) {
+				if (!m_locked) {
+					m_currentEntity = HierarchyInterface::s_SelectedEntity;
+					m_currentFile = AssetsExplorerInterface::s_SelectedFile;
+				}
+			}
+			ImGui::Separator();
+
+			ImGui::BeginChild("InspectorScroll", ImVec2(0, 0), false, ImGuiWindowFlags_NoBackground);
+
 			switch (m_mode)
 			{
 			case InspectorMode::EntityMode:
-				DrawEntityInspector(HierarchyInterface::s_SelectedEntity.lock());
+				DrawEntityInspector(m_currentEntity.lock());
 				break;
 			case InspectorMode::ImportMode:
-				DrawFileImportSettings(AssetsExplorerInterface::s_SelectedFile);
+			{
+				DrawFileImportSettings(m_currentFile);
 				break;
+			}
 			default:
 				break;
 			}
+
+			ImGui::EndChild();
 		}
 		ImGui::End();
 	}
@@ -69,6 +282,9 @@ namespace Loopie {
 			if (component->GetTypeID() == Transform::GetTypeIDStatic()) {
 				DrawTransform(static_cast<Transform*>(component));
 			}
+			else if (component->GetTypeID() == RectTransform::GetTypeIDStatic()) {
+				DrawTransform(static_cast<RectTransform*>(component));
+			}
 			else if (component->GetTypeID() == Camera::GetTypeIDStatic()) {
 				DrawCamera(static_cast<Camera*>(component));
 			}
@@ -78,8 +294,35 @@ namespace Loopie {
 			else if (component->GetTypeID() == ParticleComponent::GetTypeIDStatic()) {
 				DrawParticleSystem(static_cast<ParticleComponent*>(component));
 			}
+			else if (component->GetTypeID() == Animator::GetTypeIDStatic()) {
+				DrawAnimator(static_cast<Animator*>(component));
+			}
 			else if (component->GetTypeID() == ScriptClass::GetTypeIDStatic()) {
 				DrawScriptClass(static_cast<ScriptClass*>(component));
+			}
+			else if (component->GetTypeID() == Canvas::GetTypeIDStatic()) {
+				DrawCanvas(static_cast<Canvas*>(component));
+			}
+			else if (component->GetTypeID() == CanvasScaler::GetTypeIDStatic()) {
+				DrawCanvasScaler(static_cast<CanvasScaler*>(component));
+			}
+			else if (component->GetTypeID() == Image::GetTypeIDStatic()) {
+				DrawImage(static_cast<Image*>(component));
+			}
+			else if (component->GetTypeID() == BoxCollider::GetTypeIDStatic()) {
+				DrawBoxCollider(static_cast<BoxCollider*>(component));
+			}
+			else if (component->GetTypeID() == AudioSource::GetTypeIDStatic()) {
+				DrawAudioSource(static_cast<AudioSource*>(component));
+			}
+			else if (component->GetTypeID() == AudioListener::GetTypeIDStatic()) {
+				DrawAudioListener(static_cast<AudioListener*>(component));
+			}
+			else if (component->GetTypeID() == Text::GetTypeIDStatic()) {
+				DrawText(static_cast<Text*>(component));
+			}
+			else if (component->GetTypeID() == Button::GetTypeIDStatic()) {
+				DrawButton(static_cast<Button*>(component));
 			}
 		}
 		AddComponent(entity);
@@ -97,9 +340,14 @@ namespace Loopie {
 		std::string extension = path.extension().string();
 		if (extension == ".mat") 
 		{
-			std::shared_ptr<Material> material = ResourceManager::GetMaterial(*metadata);
-			DrawMaterial(material);
+			m_currentResource = ResourceManager::GetMaterial(*metadata);
+			DrawMaterial(std::static_pointer_cast<Material>(m_currentResource));
+			ImGui::Dummy({ 0.0f, 4.0f }); 
+			ImGui::Separator();
+			ImGui::Dummy({ 0.0f, 4.0f }); 
 		}
+		DrawMetadata(metadata);
+
 	}
 
 	void InspectorInterface::DrawEntityConfig(const std::shared_ptr<Entity>& entity)
@@ -108,7 +356,7 @@ namespace Loopie {
 		memset(nameBuffer, 0, sizeof(nameBuffer));
 		strncpy_s(nameBuffer, entity->GetName().c_str(), sizeof(nameBuffer) - 1);
 
-		bool isActive = entity->GetIsActive();
+		bool isActive = entity->GetIsActiveInHierarchy();
 		if (ImGui::Checkbox("##", &isActive)) {
 			entity->SetIsActive(isActive);
 		}
@@ -117,6 +365,13 @@ namespace Loopie {
 		
 		if (ImGui::InputText("Name", nameBuffer, sizeof(nameBuffer))) {
 			entity->SetName(std::string(nameBuffer));
+		}
+
+		ImGui::SameLine();
+
+		if (ImGui::Button("UUID"))
+		{
+			Application::GetInstance().m_clipboard.Copy(entity->GetUUID().Get());
 		}
 		
 		ImGui::Separator();
@@ -130,29 +385,134 @@ namespace Loopie {
 	{
 		ImGui::PushID(transform);
 
-		bool open = ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen);
+		const char* label = transform->IsRectTransform() ? "Rect Transform" : "Transform";
+		bool open = ImGui::CollapsingHeader(label, ImGuiTreeNodeFlags_DefaultOpen);
 		bool modified = false;
-		if (open) {
+		ImGui::SetItemTooltip(transform->GetUUID().Get().c_str());
+		ComponentContextMenu(transform, false);
+
+		static bool uniformScale = false;
+
+		if (open)
+		{
+			const bool isRectTransform = transform->IsRectTransform();
+			const bool isOverlayRectTransform = isRectTransform &&
+				transform->GetOwner() &&
+				transform->GetOwner()->GetComponent<Canvas>() &&
+				transform->GetOwner()->GetComponent<Canvas>()->GetRenderMode() == CanvasRenderMode::ScreenSpaceOverlay;
+
 			vec3 position = transform->GetLocalPosition();
 			vec3 rotation = transform->GetLocalEulerAngles();
 			vec3 scale = transform->GetLocalScale();
+			vec3 oldScale = scale;
 
-			if (ImGui::DragFloat3("Position", &position.x, 0.1f)) {
+			if (isOverlayRectTransform)
+				ImGui::BeginDisabled();
+
+			if (ImGui::DragFloat3("Position", &position.x, 0.1f))
+			{
 				modified = true;
 				transform->SetLocalPosition(position);
 			}
-			if (ImGui::DragFloat3("Rotation", &rotation.x, 0.5f)) {
+			if (ImGui::DragFloat3("Rotation", &rotation.x, 0.5f))
+			{
 				modified = true;
 				transform->SetLocalEulerAngles(rotation);
 			}
-			if (ImGui::DragFloat3("Scale", &scale.x, 0.1f)) {
+
+			bool scaleChanged = ImGui::DragFloat3("Scale", &scale.x, 0.1f);
+
+			if (ImGui::IsItemActive()) {
+				if (scale.x == 0.0f) 
+					scale.x = 0.0001f;
+				if (scale.y == 0.0f) 
+					scale.y = 0.0001f;
+				if (scale.z == 0.0f) 
+					scale.z = 0.0001f;
+			}
+
+			if (scaleChanged) {
 				modified = true;
+				if (uniformScale) {
+					if (oldScale.x == 0.0f && oldScale.y == 0.0f && oldScale.z == 0.0f) {
+						if (scale.x != oldScale.x){
+							scale.y = scale.x; 
+							scale.z = scale.x;
+						}
+						else if (scale.y != oldScale.y) {
+							scale.x = scale.y; 
+							scale.z = scale.y;
+						}
+						else if (scale.z != oldScale.z) {
+							scale.x = scale.z; 
+							scale.y = scale.z; 
+						}
+					}
+					else {
+						if (scale.x != oldScale.x && oldScale.x != 0.0f) {
+							float ratio = scale.x / oldScale.x;
+							scale.y = oldScale.y * ratio;
+							scale.z = oldScale.z * ratio;
+						}
+						else if (scale.y != oldScale.y && oldScale.y != 0.0f) {
+							float ratio = scale.y / oldScale.y;
+							scale.x = oldScale.x * ratio;
+							scale.z = oldScale.z * ratio;
+						}
+						else if (scale.z != oldScale.z && oldScale.z != 0.0f) {
+							float ratio = scale.z / oldScale.z;
+							scale.x = oldScale.x * ratio;
+							scale.y = oldScale.y * ratio;
+						}
+					}
+				}
 				transform->SetLocalScale(scale);
 			}
+
+			if (ImGui::IsItemDeactivatedAfterEdit()) {
+				if (scale.x == 0.0f || scale.y == 0.0f || scale.z == 0.0f) {
+					scale = vec3(0.0f, 0.0f, 0.0f);
+					transform->SetLocalScale(scale);
+					modified = true;
+				}
+			}
+
+			ImGui::SameLine();
+
+			bool hasStyle = uniformScale;
+			if (hasStyle)
+				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0, 0.5, 0.75, 1.0));
+			if (ImGui::Button("U"))
+				uniformScale = !uniformScale;
+			if (hasStyle)
+				ImGui::PopStyleColor();
+
+			if (isOverlayRectTransform)
+				ImGui::EndDisabled();
+
+			if (isRectTransform)
+			{
+				ImGui::SeparatorText("Size");
+
+				float w = transform->GetWidth();
+				float h = transform->GetHeight();
+
+				if (ImGui::DragFloat("Width", &w, 1.0f))
+				{
+					transform->SetWidth(w);
+					modified = true;
+				}
+				if (ImGui::DragFloat("Height", &h, 1.0f))
+				{
+					transform->SetHeight(h);
+					modified = true;
+				}
+			}
 		}
+
 		ImGui::PopID();
 
-		if(modified)
+		if (modified)
 			Application::GetInstance().GetScene().GetOctree().Rebuild();
 	}
 
@@ -161,8 +521,8 @@ namespace Loopie {
 		ImGui::PushID(camera);
 
 		bool open = ImGui::CollapsingHeader("Camera");
-
-		if (RemoveComponent(camera)) {
+		ImGui::SetItemTooltip(camera->GetUUID().Get().c_str());
+		if (ComponentContextMenu(camera)) {
 			ImGui::PopID();
 			return;
 		}
@@ -173,8 +533,25 @@ namespace Loopie {
 			float farPlane = camera->GetFarPlane();
 			bool isMainCamera = Camera::GetMainCamera() == camera;
 
-			if (ImGui::DragFloat("Fov", &fov, 1.0f, 1.0f, 179.0f))
-				camera->SetFov(fov);
+			CameraProjection projection = camera->GetProjection();
+			int projIndex = (int)projection;
+			const char* projectionLabels[] = { "Perspective", "Orthographic" };
+
+			if (ImGui::Combo("Projection", &projIndex, projectionLabels, IM_ARRAYSIZE(projectionLabels))) {
+				camera->SetProjection((CameraProjection)projIndex);
+			}
+
+			if (camera->GetProjection() == CameraProjection::Perspective)
+			{
+				if (ImGui::DragFloat("Fov", &fov, 1.0f, 1.0f, 179.0f))
+					camera->SetFov(fov);
+			}
+			else
+			{
+				float orthoSize = camera->GetOrthoSize();
+				if (ImGui::DragFloat("Ortho Size", &orthoSize, 0.1f, 0.1f, 100000.0f))
+					camera->SetOrthoSize(orthoSize);
+			}
 
 			if (ImGui::DragFloat("Near Plane", &nearPlane, 0.01f, 0.01f, farPlane - 0.01f))
 				camera->SetNearPlane(nearPlane);
@@ -182,6 +559,7 @@ namespace Loopie {
 			if (ImGui::DragFloat("Far Plane", &farPlane, 1.0f, nearPlane + 0.1f, 10000.0f))
 				camera->SetFarPlane(farPlane);
 
+			ImGui::Separator();
 			if (ImGui::Checkbox("Main Camera", &isMainCamera)) {
 				if(isMainCamera)
 					camera->SetAsMainCamera();
@@ -195,46 +573,428 @@ namespace Loopie {
 		ImGui::PushID(meshRenderer);
 
 		bool open = ImGui::CollapsingHeader("Mesh Renderer");
-
-		if (RemoveComponent(meshRenderer)) {
+		ImGui::SetItemTooltip(meshRenderer->GetUUID().Get().c_str());
+		if (ComponentContextMenu(meshRenderer)) {
 			ImGui::PopID();
 			return;
 		}
 
 		if (open) {
 			auto mesh = meshRenderer->GetMesh();
+			int prevMeshIndex = 0;
+			int meshIndex = 0;
+			if (mesh)
+			{
+				prevMeshIndex = mesh->GetMeshIndex();
+				meshIndex = prevMeshIndex;
+			}
+
+			ImGui::SeparatorText("Mesh");
+
 			ImGui::Text("Mesh: %s", mesh ? "Assigned" : "None");
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(80);
+			ImGui::InputInt("", &meshIndex,1,0);
+			if (meshIndex < 0)
+				meshIndex = 0;
+			if (meshIndex != prevMeshIndex && mesh)
+			{
+				Metadata* data = AssetRegistry::GetMetadata(mesh->GetUUID());
+				if (data && data->Type == ResourceType::MESH)
+				{
+					int maxIndex = (int)data->CachesPath.size();
+					if (meshIndex >= maxIndex)
+						meshIndex = maxIndex - 1;
+					std::shared_ptr<Mesh> newMesh = ResourceManager::GetMesh(*data, meshIndex);
+					if (newMesh)
+					{
+						mesh = newMesh;
+						meshRenderer->SetMesh(mesh);
+					}
+				}
+			}
+
+			ImGui::Button(" [ Drop Mesh Here ] ", ImVec2(ImGui::GetContentRegionAvail().x, 30));
+
+			if (ImGui::BeginPopupContextItem())
+			{
+				if (ImGui::MenuItem("Paste"))
+				{
+					std::shared_ptr<Resource> resource = GetPastedResource(ResourceType::MESH);
+					if (resource) {
+						mesh = (std::static_pointer_cast<Mesh>(resource));
+						meshRenderer->SetMesh(mesh);
+					}
+				}
+				ImGui::EndPopup();
+			}
+
+			std::shared_ptr<Resource> resource = GetDragDropResource(ResourceType::MESH);
+			if (resource) {
+				mesh = (std::static_pointer_cast<Mesh>(resource));
+				meshRenderer->SetMesh(mesh);
+			}
+
 			if (!mesh) {
 				ImGui::PopID();
 				return;
 			}
-			ImGui::Text("Mesh Resource Count: %u", mesh->GetReferenceCount());
-			ImGui::Text("Mesh Vertices: %d", mesh->GetData().VerticesAmount);
 
-			ImGui::Separator();
+			if (ImGui::TreeNode("Mesh Info")) {
+				ImGui::Text("Mesh Vertices: %d", mesh->GetData().VerticesAmount);
+				ImGui::Text("Has Bones: %s", mesh->GetData().HasBones ? "True" : "False");
 
-			bool drawFN = meshRenderer->GetDrawNormalsPerFace();
-			bool drawTN = meshRenderer->GetDrawNormalsPerTriangle();
-			bool drawAABB = meshRenderer->GetDrawAABB();
-			bool drawOBB = meshRenderer->GetDrawOBB();
-			if (ImGui::Checkbox("Draw Face Normals", &drawFN))
-				meshRenderer->SetDrawNormalsPerFace(drawFN);
-			if (ImGui::Checkbox("Draw Triangle Normals", &drawTN))
-				meshRenderer->SetDrawNormalsPerTriangle(drawTN);
-			if (ImGui::Checkbox("Draw AABB", &drawAABB))
+				ImGui::TreePop();
+			}
+
+
+			if (ImGui::TreeNode("Mesh Options")) {
+				bool drawFN = meshRenderer->GetDrawNormalsPerFace();
+				bool drawTN = meshRenderer->GetDrawNormalsPerTriangle();
+				bool drawAABB = meshRenderer->GetDrawAABB();
+				bool drawOBB = meshRenderer->GetDrawOBB();
+				if (ImGui::Checkbox("Draw Face Normals", &drawFN))
+					meshRenderer->SetDrawNormalsPerFace(drawFN);
+				if (ImGui::Checkbox("Draw Triangle Normals", &drawTN))
+					meshRenderer->SetDrawNormalsPerTriangle(drawTN);
+				if (ImGui::Checkbox("Draw AABB", &drawAABB))
 					meshRenderer->SetDrawAABB(drawAABB);
-			if (ImGui::Checkbox("Draw OBB", &drawOBB))
-				meshRenderer->SetDrawOBB(drawOBB);
-			//ImGui::Text("Shader: %s", meshRenderer->GetShader().GetName().c_str()); ????
+				if (ImGui::Checkbox("Draw OBB", &drawOBB))
+					meshRenderer->SetDrawOBB(drawOBB);
+				//ImGui::Text("Shader: %s", meshRenderer->GetShader().GetName().c_str()); ????
 
-			ImGui::Separator();
-			ImGui::Separator();
+				ImGui::TreePop();
+			}
+
+			ImGui::SeparatorText("Material");
 			std::shared_ptr<Material> material = meshRenderer->GetMaterial();
+
+			ImGui::Button(" [ Drop Material Here ] ", ImVec2(ImGui::GetContentRegionAvail().x, 30));
+
+			if (ImGui::BeginPopupContextItem())
+			{
+				if (ImGui::MenuItem("Paste"))
+				{
+					resource = GetPastedResource(ResourceType::MATERIAL);
+					if (resource) {
+						material = std::static_pointer_cast<Material>(resource);
+						meshRenderer->SetMaterial(material);
+					}
+				}
+				ImGui::EndPopup();
+			}
+
+			resource = GetDragDropResource(ResourceType::MATERIAL);
+			if (resource) {
+				material = std::static_pointer_cast<Material>(resource);
+				meshRenderer->SetMaterial(material);
+			}
+
 			DrawMaterial(material);
-			
 		}
 
-		RemoveComponent(meshRenderer);	
+		ImGui::PopID();
+	}
+
+	void InspectorInterface::DrawAnimator(Animator* animator)
+	{
+		ImGui::PushID(animator);
+
+		bool open = ImGui::CollapsingHeader("Animator");
+		ImGui::SetItemTooltip(animator->GetUUID().Get().c_str());
+		if (ComponentContextMenu(animator)) {
+			ImGui::PopID();
+			return;
+		}
+
+		if (open) {
+
+
+			const auto& renderers = animator->GetRenderers();
+
+			static Entity* selectedEntity = nullptr;
+			static MeshRenderer* selectedRenderer = nullptr;
+
+			ImGui::SeparatorText("Set Up Renderers");
+
+			if (ImGui::BeginCombo("Target", selectedRenderer ? selectedRenderer->GetOwner()->GetName().c_str() : "Select..."))
+			{
+				std::shared_ptr<Entity> owner = animator->GetOwner()->shared_from_this();
+				std::vector<Entity*> candidates;
+				candidates.push_back(owner.get());
+
+				std::function<void(Entity*)> collect = [&](Entity* e) {
+					for (auto& child : e->GetChildren())
+					{
+						candidates.push_back(child.get());
+						collect(child.get());
+					}
+					};
+				collect(owner.get());
+
+				for (Entity* entity : candidates)
+				{
+					std::vector<MeshRenderer*> renderersInEntity = entity->GetComponents<MeshRenderer>();
+					if (renderersInEntity.empty())
+						continue;
+
+					int index = 0;
+					bool requiresIndex = renderersInEntity.size() > 1;
+					for (const auto renderer : renderersInEntity) {
+						if (renderers.find(renderer->GetUUID()) != renderers.end()) {
+							index++;
+							continue;
+						}
+						bool isSelected = (selectedRenderer == renderer);
+						std::string displayName = entity->GetName();
+						if (requiresIndex) {
+							displayName += fmt::format(" [{}]", index);
+						}
+
+						if (ImGui::Selectable((displayName + "##" + renderer->GetUUID().Get()).c_str(), isSelected))
+						{
+							selectedRenderer = renderer;
+							selectedEntity = entity;
+						}
+						index++;
+					}
+
+				}
+				ImGui::EndCombo();
+			}
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Add") && selectedRenderer)
+			{
+				animator->AddMeshRenderer(selectedRenderer);
+				selectedRenderer = nullptr;
+			}
+
+			if (animator->GetOwner()->HasComponent<MeshRenderer>()) {
+				if (ImGui::Button("Get Self"))
+				{
+					std::vector<MeshRenderer*> renderersInEntity = animator->GetOwner()->GetComponents<MeshRenderer>();
+					for (const auto renderer : renderersInEntity)
+						animator->AddMeshRenderer(renderer);
+				}
+				ImGui::SameLine();
+			}
+
+			if (ImGui::Button("Add All Childs"))
+			{
+				std::shared_ptr<Entity> owner = animator->GetOwner();
+
+				std::function<void(Entity*)> addFrom = [&](Entity* entity) {
+					std::vector<MeshRenderer*> renderersInEntity = entity->GetComponents<MeshRenderer>();
+					for (const auto renderer : renderersInEntity)
+						animator->AddMeshRenderer(renderer);
+
+					for (auto& child : entity->GetChildren())
+						addFrom(child.get());
+					};
+
+				addFrom(owner.get());
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Clear"))
+			{
+				animator->ClearRenderers();
+			}
+			
+			ImGui::Dummy({ 0,3 });
+
+			if (ImGui::TreeNode("Linked Renderers")) {
+
+				if (renderers.empty())
+				{
+					ImGui::TextColored(ImVec4(1, 1, 0, 1), "None");
+				}
+				else
+				{
+					int index = 0;
+					for (const auto& [uuid, data] : renderers)
+					{
+						MeshRenderer* renderer = data.Renderer;
+						if (!renderer) continue;
+
+						ImGui::PushID(index++);
+						std::shared_ptr<Entity> owner = renderer->GetOwner();
+						auto allRenderersInEntity = owner->GetComponents<MeshRenderer>();
+						int rendererIndex = 0;
+						for (int i = 0; i < allRenderersInEntity.size(); i++) {
+							if (allRenderersInEntity[i] == renderer) {
+								rendererIndex = i;
+								break;
+							}
+						}
+
+						if (ImGui::SmallButton("X"))
+						{
+							animator->RemoveMeshRenderer(renderer);
+							ImGui::PopID();
+							break;
+						}
+						ImGui::SameLine();
+
+						bool isTarget = (animator->GetTargetRenderer() == renderer);
+						std::string label;
+						if (allRenderersInEntity.size() > 1) {
+							label = fmt::format("{} [{}] : {}...", owner->GetName(), rendererIndex, renderer->GetUUID().Get().substr(0, 8));
+						}
+						else {
+							label = fmt::format("{} : {}...", owner->GetName(), renderer->GetUUID().Get().substr(0, 8));
+						}
+
+						if (isTarget)
+							ImGui::TextColored(ImVec4(0, 1, 0, 1), "%s", label.c_str());
+						else
+							ImGui::Text("%s", label.c_str());
+
+						ImGui::SameLine();
+
+						if (!isTarget && ImGui::SmallButton("Select"))
+						{
+							animator->SetTargetRenderer(renderer);
+						}
+						if (!isTarget)
+							ImGui::SameLine();
+
+						if (ImGui::SmallButton("Copy"))
+						{
+							Application::GetInstance().m_clipboard.Copy(renderer->GetOwner()->GetUUID().Get(), renderer->GetUUID().Get());
+						}
+						ImGui::PopID();
+					}
+				}
+
+				ImGui::TreePop();
+			}
+
+
+
+			static std::unordered_map<Animator*, std::string> s_selectedTargetUUID;
+
+			if (!renderers.empty())
+			{
+				ImGui::Spacing();
+				ImGui::Separator();
+				ImGui::SeparatorText("Configuration");
+				
+				MeshRenderer* targetRenderer = animator->GetTargetRenderer();
+
+				if (!targetRenderer)
+				{
+					targetRenderer = animator->GetFirstMeshRenderer();
+					if (targetRenderer)
+					{
+						ImGui::TextColored(ImVec4(1, 1, 0, 1), "No target renderer selected. Using first.");
+						ImGui::SameLine();
+						if (ImGui::SmallButton("Set as Target"))
+						{
+							animator->SetTargetRenderer(targetRenderer);
+						}
+					}
+				}
+
+				if (targetRenderer)
+				{
+					std::shared_ptr<Entity> owner = targetRenderer->GetOwner();
+					auto allRenderersInEntity = owner->GetComponents<MeshRenderer>();
+
+					std::string targetLabel = owner->GetName();
+					if (allRenderersInEntity.size() > 1) {
+						int idx = 0;
+						for (int i = 0; i < allRenderersInEntity.size(); i++) {
+							if (allRenderersInEntity[i] == targetRenderer) {
+								idx = i;
+								break;
+							}
+						}
+						targetLabel += fmt::format(" [{}]", idx);
+					}
+					ImGui::Text("Active Target: %s", targetLabel.c_str());
+
+					if (ImGui::BeginCombo("Switch Target", "Select..."))
+					{
+						for (const auto& [uuid, data] : renderers)
+						{
+							MeshRenderer* renderer = data.Renderer;
+							if (!renderer || renderer == targetRenderer) 
+								continue;
+
+							std::shared_ptr<Entity> rOwner = renderer->GetOwner();
+							auto rRenderers = rOwner->GetComponents<MeshRenderer>();
+
+							std::string displayName = rOwner->GetName();
+							if (rRenderers.size() > 1) {
+								int idx = 0;
+								for (int i = 0; i < rRenderers.size(); i++) {
+									if (rRenderers[i] == renderer) {
+										idx = i;
+										break;
+									}
+								}
+								displayName += fmt::format(" [{}]", idx);
+							}
+
+							if (ImGui::Selectable(displayName.c_str()))
+							{
+								animator->SetTargetRenderer(renderer);
+							}
+						}
+						ImGui::EndCombo();
+					}
+
+					std::shared_ptr<Mesh> mesh = targetRenderer->GetMesh();
+					if (mesh)
+					{
+						auto& clips = mesh->GetData().AnimationClips;
+						int totalClips = static_cast<int>(clips.size());
+
+						if (totalClips > 0)
+						{
+							int selectedClipIndex = animator->GetCurrentClipIndex();
+							if (selectedClipIndex >= totalClips)
+								selectedClipIndex = 0;
+
+							const char* currentClipName = clips[selectedClipIndex].Name.c_str();
+
+							if (ImGui::BeginCombo("Animation Clip", currentClipName))
+							{
+								for (int i = 0; i < totalClips; i++)
+								{
+									bool isSelected = (selectedClipIndex == i);
+									if (ImGui::Selectable(clips[i].Name.c_str(), isSelected))
+									{
+										selectedClipIndex = i;
+										animator->SelectClip(clips[i].Name);
+									}
+									if (isSelected)
+										ImGui::SetItemDefaultFocus();
+								}
+								ImGui::EndCombo();
+							}
+
+							if (ImGui::Button("Play")) animator->Play();
+							ImGui::SameLine();
+							if (ImGui::Button("Pause")) animator->Pause();
+							ImGui::SameLine();
+							if (ImGui::Button("Resume")) animator->Resume();
+							ImGui::SameLine();
+							if (ImGui::Button("Stop")) animator->Stop();
+						}
+						else
+							ImGui::TextColored({ 0,255,255,255 }, "No animation clips in target mesh.");
+					}
+					else
+						ImGui::TextColored({ 255,0,0,255 }, "Target renderer has no mesh.");
+				}
+			}
+			else
+				ImGui::TextColored({255,0,0,255}, "Add a MeshRenderer to enable animation controls.");
+		}
+
 		ImGui::PopID();
 	}
 
@@ -299,14 +1059,15 @@ namespace Loopie {
 
 	void InspectorInterface::DrawParticleSystem(ParticleComponent* partComponent)
 	{
-		ImGui::PushID(partComponent);
-		bool open = ImGui::CollapsingHeader("ParticleSystem");
+		ImGui::PushID(scriptClass);
 
-		if (RemoveComponent(partComponent))
-		{
+		bool open = ImGui::CollapsingHeader("ParticleSystem");
+		ImGui::SetItemTooltip(scriptClass->GetUUID().Get().c_str());
+		if (ComponentContextMenu(scriptClass)) {
 			ImGui::PopID();
 			return;
 		}
+
 		if (open)
 		{
 			bool active = partComponent->GetIsActive();
@@ -340,8 +1101,8 @@ namespace Loopie {
 		ImGui::PushID(scriptClass);
 
 		bool open = ImGui::CollapsingHeader(scriptClass->GetClassName().c_str());
-
-		if (RemoveComponent(scriptClass)) {
+		ImGui::SetItemTooltip(scriptClass->GetUUID().Get().c_str());
+		if (ComponentContextMenu(scriptClass)) {
 			ImGui::PopID();
 			return;
 		}
@@ -352,6 +1113,12 @@ namespace Loopie {
 			/// Get Fields and show (one runtime version, and one editor version) -> For now, this is only editor version
 
 			std::shared_ptr<ScriptingClass> scriptingClass = ScriptingManager::s_Data.ScriptingClasses[scriptClass->GetClassName()];
+			if (!scriptingClass)
+			{
+				ImGui::Text("Script ERROR (Not Found)");
+				ImGui::PopID();
+				return;
+			}
 			const std::map<std::string, ScriptField>& fields = scriptingClass->GetFields();
 			for (const auto& [name, field] : fields)
 			{
@@ -367,7 +1134,7 @@ namespace Loopie {
 				case ScriptFieldType::Double:
 				{
 					double v = isRuntime ? scriptClass->GetRuntimeFieldValue<double>(name) : scriptClass->GetFieldValue<double>(name);
-					if (ImGui::DragScalar(name.c_str(), ImGuiDataType_Double, &v, 0.1))
+					if (ImGui::DragScalar(name.c_str(), ImGuiDataType_Double, &v, 0.1f))
 						isRuntime ? scriptClass->SetRuntimeFieldValue(name, v) : scriptClass->SetFieldValue(name, v);
 					break;
 				}
@@ -428,6 +1195,16 @@ namespace Loopie {
 					break;
 				}
 
+				case ScriptFieldType::Entity:
+				{
+					ImGui::Text("Entity Field (Not working)");
+					break;
+				}
+				case ScriptFieldType::Component:
+				{
+					ImGui::Text("Component Field (Not working)");
+					break;
+				}
 				default:
 					ImGui::Text("Unsupported Field: %s", name.c_str());
 					break;
@@ -437,84 +1214,950 @@ namespace Loopie {
 		ImGui::PopID();
 	}
 
+	void InspectorInterface::DrawCanvas(Canvas* canvas)
+	{
+		ImGui::PushID(canvas);
+
+		bool open = ImGui::CollapsingHeader("Canvas");
+		ImGui::SetItemTooltip(canvas->GetUUID().Get().c_str());
+		if (ComponentContextMenu(canvas)) {
+			ImGui::PopID();
+			return;
+		}
+
+		if (open) {
+			CanvasRenderMode renderMode = canvas->GetRenderMode();
+			int modeIndex = (int)renderMode;
+			const char* modeLabels[] = { "World", "Overlay" };
+			if (ImGui::Combo("Render Mode", &modeIndex, modeLabels, IM_ARRAYSIZE(modeLabels))) {
+				canvas->SetRenderMode((CanvasRenderMode)modeIndex);
+			}
+			if (canvas->GetRenderMode() == CanvasRenderMode::ScreenSpaceOverlay)
+			{
+				//.............
+			}
+		}
+		ImGui::PopID();
+	}
+
+	void InspectorInterface::DrawCanvasScaler(CanvasScaler* canvasScaler)
+	{
+		if (!canvasScaler)
+			return;
+
+		ImGui::PushID(canvasScaler);
+
+		const bool open = ImGui::CollapsingHeader("Canvas Scaler");
+		ImGui::SetItemTooltip(canvasScaler->GetUUID().Get().c_str());
+		if (ComponentContextMenu(canvasScaler))
+		{
+			ImGui::PopID();
+			return;
+		}
+
+		if (open)
+		{
+			ImGui::SeparatorText("Scale");
+
+			CanvasScaleMode mode = canvasScaler->GetScaleMode();
+			int modeIndex = static_cast<int>(mode);
+			const char* modeLabels[] = { "Constant Pixel Size", "Scale With Canvas Size" };
+
+			if (ImGui::Combo("Mode", &modeIndex, modeLabels, IM_ARRAYSIZE(modeLabels)))
+			{
+				canvasScaler->SetScaleMode(static_cast<CanvasScaleMode>(modeIndex));
+				
+			}
+
+			if (canvasScaler->GetScaleMode() == CanvasScaleMode::ScaleWithCanvasSize)
+			{
+				vec2 refRes = canvasScaler->GetReferenceResolution();
+				
+				ImGui::BeginDisabled();
+				(void)ImGui::DragFloat2("Reference Resolution", &refRes.x, 1.0f, 1.0f, 16384.0f);
+				ImGui::EndDisabled();
+
+				float match = canvasScaler->GetMatchWidthOrHeight();
+
+				const float defaultMatch = 0.5f;
+
+				if (ImGui::Button("D")) {
+					match = defaultMatch;
+					canvasScaler->SetMatchWidthOrHeight(match);
+				}
+
+				ImGui::SameLine();
+
+				if (ImGui::SliderFloat("Width / Height", &match, 0.0f, 1.0f))
+				{
+					canvasScaler->SetMatchWidthOrHeight(match);
+				}
+			}
+		}
+
+		ImGui::PopID();
+	}
+
+	void InspectorInterface::DrawImage(Image* image)
+	{
+		ImGui::PushID(image);
+
+		bool open = ImGui::CollapsingHeader("Image");
+		ImGui::SetItemTooltip(image->GetUUID().Get().c_str());
+		if (ComponentContextMenu(image)) {
+			ImGui::PopID();
+			return;
+		}
+
+		if (open)
+		{
+			vec4 color = image->GetTint();
+			ImVec4 imColor(color.r, color.g, color.b, color.a);
+
+			ImGui::SeparatorText("Tint");
+
+			if (ImGui::ColorEdit4("##ImageTint", (float*)&imColor))
+			{
+				image->SetTint(vec4(imColor.x, imColor.y, imColor.z, imColor.w));
+			}
+
+			ImGui::SeparatorText("Texture");
+
+			std::shared_ptr<Texture> texture = image->GetTexture();
+
+			ImGui::Button(" [ Drop Texture Here ] ", ImVec2(ImGui::GetContentRegionAvail().x, 30));
+			if (ImGui::BeginPopupContextItem())
+			{
+				if (ImGui::MenuItem("Paste"))
+				{
+					std::shared_ptr<Resource> resource = GetPastedResource(ResourceType::TEXTURE);
+					if (resource) {
+						image->SetTexture(std::static_pointer_cast<Texture>(resource));
+					}
+				}
+				ImGui::EndPopup();
+			}
+
+			std::shared_ptr<Resource> resource = GetDragDropResource(ResourceType::TEXTURE);
+			Metadata* meta = texture ? AssetRegistry::GetMetadata(texture->GetUUID()) : nullptr;
+			if (resource) {
+				image->SetTexture(std::static_pointer_cast<Texture>(resource));
+				image->GetTransform()->SetWidth((float)image->GetTexture()->GetSize().x);
+				image->GetTransform()->SetHeight((float)image->GetTexture()->GetSize().y);
+			}
+
+			ImGui::Text("Texture: %s", meta ? "Assigned" : "None / Unknown");
+
+			texture = image->GetTexture();
+			if (texture)
+			{
+				meta = AssetRegistry::GetMetadata(texture->GetUUID());
+				ivec2 texSize = texture->GetSize();
+
+				if (ImGui::TreeNode("Texture Info")) {
+
+					if (meta && !meta->CachesPath.empty())
+						ImGui::Text("Path: %s", meta->CachesPath[0].c_str());
+
+					ImGui::Text("Size: %d x %d", texSize.x, texSize.y);
+					ImGui::TreePop();
+				}
+
+				const float maxSizeNormal = 64.0f;
+				const float maxSizeWide = 128.0f;
+
+				bool isWide = texSize.x > texSize.y * 1.5f;
+
+				float maxWidth = isWide ? maxSizeWide : maxSizeNormal;
+				float maxHeight = maxSizeNormal;
+				float scale = std::min(maxWidth / static_cast<float>(texSize.x), maxHeight / static_cast<float>(texSize.y));
+				ImVec2 previewSize(texSize.x * scale, texSize.y * scale);
+
+				ImGui::Text("Preview:");
+				ImGui::Image((ImTextureID)texture->GetRendererId(), previewSize, ImVec2(0, 0), ImVec2(1, 1));
+			}
+
+			ImGui::TextDisabled("Drag & drop an image from Assets Explorer onto the texture field/preview.");
+		}
+
+		ImGui::PopID();
+	}
+
+	void InspectorInterface::DrawText(Text* text)
+	{
+		ImGui::PushID(text);
+
+		bool open = ImGui::CollapsingHeader("Text");
+		ImGui::SetItemTooltip(text->GetUUID().Get().c_str());
+		if (ComponentContextMenu(text)) {
+			ImGui::PopID();
+			return;
+		}
+
+		if (open)
+		{
+			std::string value = text->GetText();
+			char buffer[512];
+			memset(buffer, 0, sizeof(buffer));
+			strncpy_s(buffer, value.c_str(), sizeof(buffer) - 1);
+
+			ImGui::SeparatorText("Value");
+
+			if (ImGui::InputTextMultiline("##Value", buffer, sizeof(buffer), ImVec2(0, 60)))
+				text->SetText(std::string(buffer));
+
+			vec4 c = text->GetColor();
+			ImVec4 imColor(c.r, c.g, c.b, c.a);
+
+			ImGui::SeparatorText("Tint");
+
+			if (ImGui::ColorEdit4("##Tint", (float*)&imColor))
+				text->SetColor(vec4(imColor.x, imColor.y, imColor.z, imColor.w));
+
+			ImGui::SeparatorText("Font");
+
+			std::shared_ptr<Font> font = text->GetFont();
+			Metadata* meta = font ? AssetRegistry::GetMetadata(font->GetUUID()) : nullptr;
+
+			ImGui::Text("Font: %s", meta ? "Assigned" : "None / Unknown");
+			if (meta && meta->HasCache && !meta->CachesPath.empty()) {
+				if (ImGui::TreeNode("Info")) {
+					ImGui::TextDisabled("Cache: %s", meta->CachesPath[0].c_str());
+					ImGui::TreePop();
+				}
+			}
+
+			ImGui::Button("[ Drop Font Here ]", ImVec2(ImGui::GetContentRegionAvail().x, 30));
+
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_EXPLORER_FILE"))
+				{
+					const char* droppedPath = (const char*)payload->Data;
+					if (droppedPath && FontImporter::CheckIfIsFont(droppedPath))
+					{
+						Metadata& droppedMeta = AssetRegistry::GetOrCreateMetadata(droppedPath);
+						FontImporter::ImportFont(droppedPath, droppedMeta);
+
+						std::shared_ptr<Font> droppedFont = ResourceManager::GetFont(droppedMeta);
+						if (droppedFont)
+							droppedFont->Load();
+
+						text->SetFont(droppedFont);
+					}
+				}
+				ImGui::EndDragDropTarget();
+			}
+
+		}
+
+		ImGui::PopID();
+	}
+
+	void InspectorInterface::DrawButton(Button* button)
+	{
+		ImGui::PushID(button);
+
+		bool open = ImGui::CollapsingHeader("Button");
+		ImGui::SetItemTooltip(button->GetUUID().Get().c_str());
+		if (ComponentContextMenu(button)) {
+			ImGui::PopID();
+			return;
+		}
+
+		if (open) {
+			bool interactable = button->IsInteractable();
+			if (ImGui::Checkbox("Interactable", &interactable))
+				button->SetInteractable(interactable);
+
+			ImGui::SeparatorText("Transition");
+
+			Button::VisualTransitionMode mode = button->GetTransitionMode();
+			int modeIndex = static_cast<int>(mode);
+			const char* modeLabels[] = { "Color Tint", "Image Swap" };
+
+			if (ImGui::Combo("Mode", &modeIndex, modeLabels, IM_ARRAYSIZE(modeLabels)))
+				button->SetTransitionMode(static_cast<Button::VisualTransitionMode>(modeIndex));
+
+			if (button->GetTransitionMode() == Button::VisualTransitionMode::ColorTint)
+			{
+				ImGui::SeparatorText("Tints");
+
+				if (ImGui::TreeNode("Colors")) {
+					vec4 normal = button->GetNormalColor();
+					if (ImGui::ColorEdit4("Normal", &normal.x))
+						button->SetNormalColor(normal);
+
+					vec4 hovered = button->GetHoveredColor();
+					if (ImGui::ColorEdit4("Hovered", &hovered.x))
+						button->SetHoveredColor(hovered);
+
+					vec4 pressed = button->GetPressedColor();
+					if (ImGui::ColorEdit4("Pressed", &pressed.x))
+						button->SetPressedColor(pressed);
+
+					vec4 disabled = button->GetDisabledColor();
+					if (ImGui::ColorEdit4("Disabled", &disabled.x))
+						button->SetDisabledColor(disabled);
+					
+					ImGui::TreePop();
+				}
+			}
+			else
+			{
+				ImGui::SeparatorText("Images");
+
+				if (ImGui::TreeNode("Sprites")) {
+					DrawImageButtonSlot(button, ButtonImageSlot::Normal);
+					DrawImageButtonSlot(button, ButtonImageSlot::Hovered);
+					DrawImageButtonSlot(button, ButtonImageSlot::Pressed);
+					DrawImageButtonSlot(button, ButtonImageSlot::Disabled);
+					ImGui::TreePop();
+				}
+			}
+
+			ImGui::SeparatorText("");
+
+			Scene& scene = Application::GetInstance().GetScene();
+			std::vector<FunctionCall> functionCalls = button->GetFlattenedOnClickFunctionCalls();
+			bool modified = false;
+
+			if (ImGui::TreeNode("Callbakcs")) {
+
+				if (functionCalls.empty())
+				{
+					ImGui::TextDisabled("No callbacks configured.");
+				}
+
+				for (size_t i = 0; i < functionCalls.size();)
+				{
+					ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+					if (ImGui::TreeNode(std::to_string(i).c_str())) {
+
+						FunctionCall& functionCall = functionCalls[i];
+						ImGui::PushID(static_cast<int>(i));
+
+						std::shared_ptr<Entity> selectedEntity = scene.GetEntity(functionCall.EntityUUID);
+						const std::string entityPreview = selectedEntity ? selectedEntity->GetName() : "Missing Entity";
+
+						ImGui::Button(entityPreview.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 20));
+						if(selectedEntity && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && ImGui::IsItemHovered())
+							HierarchyInterface::SelectEntity(selectedEntity);
+
+						std::shared_ptr<Entity> entity = GetDragDropEntity();
+						if (entity) {
+							functionCall.EntityUUID = entity->GetUUID();
+							std::vector<ScriptClass*> scriptComponents = entity->GetComponents<ScriptClass>();
+							if (!scriptComponents.empty())
+								functionCall.ComponentUUID = scriptComponents.front()->GetUUID();
+							modified = true;
+						}
+
+						if (modified)
+							selectedEntity = scene.GetEntity(functionCall.EntityUUID);
+
+						ScriptClass* selectedComponent = nullptr;
+						if (selectedEntity)
+							selectedComponent = selectedEntity->GetComponent<ScriptClass>(functionCall.ComponentUUID);
+
+						const std::string componentPreview = selectedComponent ? selectedComponent->GetClassName() : "Missing ScriptClass";
+
+
+						if (ImGui::BeginCombo("Component##", componentPreview.c_str()))
+						{
+							if (selectedEntity)
+							{
+								for (ScriptClass* scriptComponent : selectedEntity->GetComponents<ScriptClass>())
+								{
+									if (!scriptComponent)
+										continue;
+
+									const bool isSelected = (scriptComponent->GetUUID() == functionCall.ComponentUUID);
+									const std::string displayName = scriptComponent->GetClassName() + "##" + scriptComponent->GetUUID().Get();
+									if (ImGui::Selectable(displayName.c_str(), isSelected))
+									{
+										functionCall.ComponentUUID = scriptComponent->GetUUID();
+										modified = true;
+									}
+								}
+							}
+							ImGui::EndCombo();
+						}
+
+						char methodBuf[256]{};
+						(void)std::snprintf(methodBuf, sizeof(methodBuf), "%s", functionCall.Function.c_str());
+						if (ImGui::InputText("Function", methodBuf, sizeof(methodBuf)))
+						{
+							functionCall.Function = methodBuf;
+							modified = true;
+						}
+
+						if (ImGui::Button("Remove"))
+						{
+							functionCalls.erase(functionCalls.begin() + i);
+							modified = true;
+							ImGui::PopID();
+							ImGui::TreePop();
+							break;
+						}
+
+						ImGui::PopID();
+						ImGui::TreePop();
+					}
+					++i;
+				}
+
+				if (ImGui::Button("+"))
+				{
+					functionCalls.push_back(FunctionCall{ UUID(), UUID(), std::string() });
+					modified = true;
+				}
+
+				ImGui::TreePop();
+			}
+
+			if (modified)
+				button->SetOnClickFunctionCalls(functionCalls);
+		}
+		
+		ImGui::PopID();
+	}
+
+	void InspectorInterface::DrawBoxCollider(BoxCollider* boxCollider) 
+	{
+
+		ImGui::PushID(boxCollider);
+		bool open = ImGui::CollapsingHeader("Box Collider");
+		ImGui::SetItemTooltip(boxCollider->GetUUID().Get().c_str());
+		if (ComponentContextMenu(boxCollider)) {
+			ImGui::PopID();
+			return;
+		}
+		if (open) {
+			vec3 center = boxCollider->GetLocalCenter();
+			vec3 extents = boxCollider->GetLocalExtents();
+			bool draw = boxCollider->GetDrawGizmo();
+			bool isTrigger = boxCollider->IsTrigger();
+			bool isStatic = boxCollider->IsStatic();
+
+			if (ImGui::Checkbox("Trigger", &isTrigger))
+				boxCollider->SetIsTrigger(isTrigger);
+
+			if (ImGui::Checkbox("Static", &isStatic))
+				boxCollider->SetIsStatic(isStatic);
+
+			if (ImGui::DragFloat3("Center", &center.x, 0.01f))
+				boxCollider->SetLocalCenter(center);
+
+			if (ImGui::DragFloat3("Extents", &extents.x, 0.01f))
+				boxCollider->SetLocalExtents(extents);
+
+			int currentLayer = boxCollider->GetLayerIndex();
+
+			const auto& layers = CollisionProcessor::GetLayers();
+
+			const char* preview = layers[currentLayer].name.c_str();
+
+			if (ImGui::BeginCombo("Layer", preview))
+			{
+				for (int i = 0; i < layers.size(); i++)
+				{
+					bool selected = (currentLayer == i);
+
+					if (ImGui::Selectable(layers[i].name.c_str(), selected))
+					{
+						boxCollider->SetLayer(i);
+					}
+
+					if (selected)
+						ImGui::SetItemDefaultFocus();
+				}
+
+				ImGui::EndCombo();
+			}
+			
+			//if (ImGui::Checkbox("Visible Lines", &draw))
+			//	boxCollider->SetDrawGizmo(draw);
+		}
+		ImGui::PopID();
+	}
+
+	void InspectorInterface::DrawAudioSource(AudioSource* source)
+	{
+		ImGui::PushID(source);
+		bool open = ImGui::CollapsingHeader("Audio Source", ImGuiTreeNodeFlags_DefaultOpen);
+		ImGui::SetItemTooltip(source->GetUUID().Get().c_str());
+		if (ComponentContextMenu(source)) {
+			ImGui::PopID();
+			return;
+		}
+
+		if (open)
+		{
+			int currentClipIndex = source->GetCurrentClipIndex();
+			std::vector<std::shared_ptr<AudioClip>>& clips = source->GetAudioClips();
+			// --- 2. Bucle ---
+			bool loop = source->IsLooping(); 
+
+			// --- 3. Estrategias ---
+
+			ImGui::SeparatorText("Mode");
+
+			if (loop) {
+				const char* loopStrategyNames[] = { "Repetitive", "Sequential", "Random", "Random No Repetitive" };
+				int currentLoopItem = static_cast<int>(source->GetLoopStrategy());
+				if (ImGui::Combo("Loop Strategy", &currentLoopItem, loopStrategyNames, IM_ARRAYSIZE(loopStrategyNames))) {
+					source->SetLoopStrategy(static_cast<Loopie::AudioLoopStrategy>(currentLoopItem));
+				}
+			}
+			else {
+				const char* noLoopStrategyNames[] = { "First", "Random" };
+				int currentNoLoopItem = static_cast<int>(source->GetNoLoopStrategy());
+				if (ImGui::Combo("No-Loop Strategy", &currentNoLoopItem, noLoopStrategyNames, IM_ARRAYSIZE(noLoopStrategyNames))) {
+					source->SetNoLoopStrategy(static_cast<Loopie::AudioNoLoopStrategy>(currentNoLoopItem));
+				}
+			}
+
+			ImGui::SeparatorText("Configurations");
+
+			// --- 4. Propiedades Generales ---
+
+			if (ImGui::Checkbox("Loop Audio", &loop)) {
+				source->SetLoop(loop);
+			}
+
+			bool playOnAwake = source->GetIfPlayOnAwake();
+			if (ImGui::Checkbox("Play On Awake", &playOnAwake)) {
+				source->SetIfPlayOnAwake(playOnAwake);
+			}
+
+			float pitch = source->GetPitch();
+			if (ImGui::SliderFloat("Pitch", &pitch, 0.1f, 3.0f))
+				source->SetPitch(pitch);
+
+			float volume = source->GetVolume();
+			if (ImGui::SliderFloat("Volume", &volume, 0.0f, 1.0f))
+				source->SetVolume(volume);
+
+			float pan = source->GetPan();
+			if (ImGui::SliderFloat("Pan", &pan, -1.0f, 1.0f))
+				source->SetPan(pan);
+
+
+			bool spatial = source->GetIfSpatial();
+			if (ImGui::Checkbox("Is Spatial (3D)", &spatial)) {
+				source->SetSpatial(spatial);
+			}
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("Si se desactiva, el audio sera 2D.");
+			}
+
+			if (spatial) {
+				vec2 distanceRange;
+				source->Get3DMinMaxDistance(distanceRange.x, distanceRange.y);
+				if (ImGui::DragFloat2("3D Min/Max Distance", &distanceRange.x, 0.1f, 0.0f))
+					source->Set3DMinMaxDistance(distanceRange.x, distanceRange.y);
+			}
+
+
+			// --- 5. Playlist ---
+			ImGui::SeparatorText("Playlist");
+
+			std::string previewValue = "None";
+
+			
+
+			if (currentClipIndex >= 0 &&
+				currentClipIndex < (int)clips.size())
+			{
+				auto clip = clips[currentClipIndex];
+				if (clip)
+				{
+					Metadata* meta = AssetRegistry::GetMetadata(clip->GetUUID());
+					if (meta && meta->HasCache)
+					{
+						std::filesystem::path p(meta->CachesPath[0]);
+						previewValue = p.filename().string();
+					}
+				}
+			}
+
+			if (ImGui::BeginCombo("Current Clip", previewValue.c_str()))
+			{
+				for (int i = 0; i < (int)clips.size(); i++)
+				{
+					auto clip = clips[i];
+
+					std::string name = "Invalid";
+					if (clip)
+					{
+						Metadata* meta = AssetRegistry::GetMetadata(clip->GetUUID());
+						if (meta && meta->HasCache)
+						{
+							std::filesystem::path p(meta->CachesPath[0]);
+							name = p.filename().string();
+						}
+					}
+
+					bool isSelected = (currentClipIndex == i);
+					if (ImGui::Selectable(name.c_str(), isSelected))
+						source->SetCurrentClip(i);
+
+					if (isSelected)
+						ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+			}
+
+			ImGui::TextDisabled("Audio Library:");
+			for (int i = 0; i < (int)clips.size(); i++)
+			{
+				ImGui::PushID(i);
+
+				if (ImGui::Button("X"))
+				{
+					source->RemoveClip(i);
+
+					if (currentClipIndex >= i && currentClipIndex > 0) {
+						currentClipIndex--;
+						source->SetCurrentClip(currentClipIndex);
+					}
+
+					ImGui::PopID();
+					continue;
+				}
+
+				ImGui::SameLine();
+
+				auto clip = clips[i];
+				std::string name = "Invalid";
+
+				if (clip)
+				{
+					Metadata* meta = AssetRegistry::GetMetadata(clip->GetUUID());
+					if (meta && meta->HasCache)
+					{
+						std::filesystem::path p(meta->CachesPath[0]);
+						name = p.filename().string();
+					}
+				}
+
+				ImGui::Text("%d: %s", i, name.c_str());
+				ImGui::PopID();
+			}
+
+			ImGui::Button(" [ Drop Audio Here ] ", ImVec2(ImGui::GetContentRegionAvail().x, 30));
+
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_EXPLORER_FILE"))
+				{
+					const char* path = (const char*)payload->Data;
+
+					Metadata* meta = AssetRegistry::GetMetadata(path);
+					if (meta && meta->Type == ResourceType::AUDIO)
+					{
+						auto clip = ResourceManager::GetAudioClip(*meta);
+						if (clip)
+						{
+							clips.push_back(clip);
+
+							if (clips.size() == 1)
+								source->SetCurrentClip(0);
+						}
+					}
+				}
+				ImGui::EndDragDropTarget();
+			}
+
+			ImGui::SeparatorText("Controls");
+
+
+			// --- 6. Controles R�pidos ---
+			if (ImGui::Button("Play"))
+				source->Play();
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Stop"))
+				source->Stop();
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Preload"))
+				source->LoadResource();
+		}
+
+		ImGui::PopID();
+	}
+
+	void InspectorInterface::DrawAudioListener(AudioListener* listener)
+	{
+		ImGui::PushID(listener);
+		bool open = ImGui::CollapsingHeader("Audio Listener");
+		ImGui::SetItemTooltip(listener->GetUUID().Get().c_str());
+		if (ComponentContextMenu(listener)) {
+			ImGui::PopID();
+			return;
+		}
+		if (open) {
+			ImGui::Text("Audio Listener Active");
+			ImGui::TextDisabled("(No editable properties)");
+		}
+		ImGui::PopID();
+	}
+
 	void InspectorInterface::AddComponent(const std::shared_ptr<Entity>& entity)
 	{
 		if (!entity)
 			return;
 
-		ImGui::Separator();
+		ImGui::Dummy(ImVec2{ 0,8 });
 
-		static const char* previewLabel = "Add Component...";
-		static int selectedIndex = -1;
+		static ImGuiTextFilter filter;
+		static bool isOpen = false;
 
-		if (ImGui::BeginCombo("##AddComponentCombo", previewLabel))
+		bool forceClose = false;
+
+
+
+		ImGui::SetNextWindowSizeConstraints(ImVec2(350, 300),ImVec2(350, 600));
+
+		if (ImGui::BeginCombo("##AddComponentCombo", "Add Component..."))
 		{
-			if (!entity->HasComponent<Camera>())
+			ImGui::Text("Search");
+			ImGui::SameLine();
+			filter.Draw("Search", -1.0f);
+			ImGui::Separator();
+
+			ImVec4 windowBg = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
+			ImGui::PushStyleColor(ImGuiCol_ChildBg, windowBg);
+			ImGui::BeginChild("ComponentScrollRegion", ImVec2(0, 0), false);
+
+			bool searching = strlen(filter.InputBuf) > 0;
+
+			if (searching)
+				ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+			if(!isOpen)
+				ImGui::SetNextItemOpen(false, ImGuiCond_Always);
+			if (ImGui::CollapsingHeader("General"))
 			{
-				if (ImGui::Selectable("Camera"))
+				ImGui::Indent(8.0f);
+
+
+				if (filter.PassFilter("Animator"))
 				{
-					entity->AddComponent<Camera>();
-					ImGui::EndCombo();
-					return;
+					if (ImGui::Selectable("Animator"))
+					{
+						entity->AddComponent<Animator>();
+						forceClose = true;
+					}
 				}
-			}
 
-			if (ImGui::Selectable("Mesh Renderer"))
-			{
-				entity->AddComponent<MeshRenderer>();
-				ImGui::EndCombo();
-				return;
-			}
-
-			if (ImGui::Selectable("Particle Component")) 
-			{
-				ParticleComponent* comp = entity->AddComponent<ParticleComponent>();
-				std::shared_ptr<Emitter> emitter = std::make_shared<Emitter>(1000, CAMERA_FACING, entity->GetTransform()->GetPosition(), 100);
-				comp->AddElemToEmitterVector(emitter);
-				ImGui::EndCombo();
-				return;
-			}
-
-			///// How To Add More Components
-			// 
-			//if (ImGui::Selectable(""))
-			//{
-			//    entity->AddComponent<>();
-			//    ImGui::EndCombo();
-			//    return;
-			//}
-
-			const std::unordered_map<std::string, std::shared_ptr<ScriptingClass>>& scriptingClasses = ScriptingManager::s_Data.ScriptingClasses;
-			for(const auto& scriptClass : scriptingClasses)
-			{
-				if (ImGui::Selectable(scriptClass.second->GetClassName().c_str()))
+				if (!entity->HasComponent<Camera>() && filter.PassFilter("Camera"))
 				{
-					entity->AddComponent<ScriptClass>(scriptClass.first);
-					ImGui::EndCombo();
-					return;
+					if (ImGui::Selectable("Camera"))
+					{
+						entity->AddComponent<Camera>();
+						forceClose = true;
+					}
 				}
+
+				if (filter.PassFilter("Mesh Renderer"))
+				{
+					if (ImGui::Selectable("Mesh Renderer"))
+					{
+						entity->AddComponent<MeshRenderer>();
+						forceClose = true;
+					}
+				}
+
+				if (filter.PassFilter("Particle System"))
+				{
+					if (ImGui::Selectable("Particle System")) 
+					{
+						ParticleComponent* comp = entity->AddComponent<ParticleComponent>();
+						std::shared_ptr<Emitter> emitter = std::make_shared<Emitter>(1000, CAMERA_FACING, entity->GetTransform()->GetPosition(), 100);
+						comp->AddElemToEmitterVector(emitter);
+						forceClose = true;
+					}
 			}
 
-			
+				ImGui::Unindent(8.0f);
+			}
 
-			ImGui::EndCombo();
+
+
+			if (searching)
+				ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+			if (!isOpen)
+				ImGui::SetNextItemOpen(false, ImGuiCond_Always);
+			if (ImGui::CollapsingHeader("Collisions"))
+			{
+				ImGui::Indent(8.0f);
+
+				if (filter.PassFilter("Box Collider")) {
+					if (ImGui::Selectable("Box Collider")) {
+						entity->AddComponent<BoxCollider>();
+						forceClose = true;
+					}
+				}
+
+				ImGui::Unindent(8.0f);
+			}
+
+
+
+			if (searching)
+				ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+			if (!isOpen)
+				ImGui::SetNextItemOpen(false, ImGuiCond_Always);
+			if (ImGui::CollapsingHeader("UI"))
+			{
+				ImGui::Indent(8.0f);
+				if (filter.PassFilter("Canvas"))
+				{
+					if (ImGui::Selectable("Canvas"))
+					{
+						entity->AddComponent<Canvas>();
+						forceClose = true;
+					}
+				}
+
+				if (filter.PassFilter("Image"))
+				{
+					if (ImGui::Selectable("Image"))
+					{
+						entity->AddComponent<Image>();
+						forceClose = true;
+					}
+				}
+
+				if (filter.PassFilter("Button"))
+				{
+					if (ImGui::Selectable("Button"))
+					{
+						entity->AddComponent<Button>();
+						forceClose = true;
+					}
+				}
+
+				if (filter.PassFilter("Text"))
+				{
+					if (ImGui::Selectable("Text"))
+					{
+						entity->AddComponent<Text>();
+						forceClose = true;
+					}
+				}
+				ImGui::Unindent(8.0f);
+			}
+
+
+			if (searching)
+				ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+			if (!isOpen)
+				ImGui::SetNextItemOpen(false, ImGuiCond_Always);
+			if (ImGui::CollapsingHeader("Audio"))
+			{
+				ImGui::Indent(8.0f);
+
+				if (filter.PassFilter("Audio Listener")) {
+					if (ImGui::Selectable("Audio Listener")) {
+						entity->AddComponent<AudioListener>();
+						forceClose = true;
+					}
+				}
+
+				if (filter.PassFilter("Audio Source")) {
+					if (ImGui::Selectable("Audio Source")) {
+						entity->AddComponent<AudioSource>();
+						forceClose = true;
+					}
+				}
+
+				ImGui::Unindent(8.0f);
+			}
+
+
+
+			if (searching)
+				ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+			if (!isOpen)
+				ImGui::SetNextItemOpen(false, ImGuiCond_Always);
+			if (ImGui::CollapsingHeader("Scripts"))
+			{
+				ImGui::Indent(8.0f);
+				const auto& scriptingClasses = ScriptingManager::s_Data.ScriptingClasses;
+
+				for (const auto& scriptClass : scriptingClasses)
+				{
+					if (!scriptClass.second)
+						continue;
+
+					const std::string& className = scriptClass.second->GetClassName();
+
+					if (!filter.PassFilter(className.c_str()))
+						continue;
+
+					if (ImGui::Selectable(className.c_str()))
+					{
+						entity->AddComponent<ScriptClass>(scriptClass.first);
+						forceClose = true;
+					}
+				}
+				ImGui::Unindent(8.0f);
+			}
+
+			if (forceClose) {
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::EndChild();
+			ImGui::PopStyleColor();
+			ImGui::EndCombo();	
+
+			isOpen = true;
+		}
+		else
+		{
+			if(isOpen)
+				filter.Clear();
+			isOpen = false;
 		}
 	}
 
-	bool InspectorInterface::RemoveComponent(Component* component)
+	void InspectorInterface::DrawMetadata(const Metadata* metadata)
 	{
-		if (!component)
-			return false;
+		if (!metadata)
+			return;
 
-		if (ImGui::BeginPopupContextItem())
+		char uuidBuffer[128];
+		strcpy(uuidBuffer, metadata->UUID.Get().c_str());
+		ImGui::Text("UUID:");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(-FLT_MIN);
+		ImGui::InputText("##UUID", uuidBuffer, sizeof(uuidBuffer), ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
+
+		ImGui::Text("Type: %s", ResourceTypeToString(metadata->Type).c_str());
+		if (metadata->HasCache)
 		{
-			if (ImGui::MenuItem("Remove Component"))
+			ImGui::Text("Cached Paths:");
+			ImGui::BeginChild("##Paths", ImVec2{ 0,300 }, true, ImGuiWindowFlags_HorizontalScrollbar);
+			int index = 0;
+			int cacheAmount = (int)metadata->CachesPath.size();
+			for (const std::string& path : metadata->CachesPath)
 			{
-				component->GetOwner()->RemoveComponent(component);
-				ImGui::EndPopup();
-				return true;
+				ImGui::Text((std::to_string(index) + ": %s").c_str(), path.c_str());
+				if (index < cacheAmount - 1)
+					ImGui::Separator();
+				index++;
 			}
-			ImGui::EndPopup();
+			ImGui::EndChild();
+		}
+		else
+		{
+			ImGui::Text("No cached paths.");
 		}
 	}
 
@@ -525,20 +2168,30 @@ namespace Loopie {
 		std::string materialName = "Material";
 		if (!isEditable)
 			materialName += " (Read-Only -> EngineDefault)";
-		ImGui::Text(materialName.c_str());
-		ImGui::Text("Material Resource Count: %u", material->GetReferenceCount());
+		//ImGui::Text(materialName.c_str());
+		
 		const std::unordered_map<std::string, UniformValue> properties = material->GetUniforms();
 
-		std::shared_ptr<Texture> texture = material->GetTexture();
-		if (texture) {
-			Metadata* metadata = AssetRegistry::GetMetadata(material->GetTexture()->GetUUID());
-			ImGui::Text("Path: %s", metadata->CachesPath[0].c_str());
-			ImGui::Text("Texture Resource Count: %u", material->GetTexture()->GetReferenceCount());
-			ivec2 texSize = material->GetTexture()->GetSize();
-			ImGui::Text("Size: %d x %d", texSize.x, texSize.y);
-			ImGui::Separator();
-		}
+		auto& textures = material->GetTextures();
 
+		for (auto& [slotName, texture] : textures)
+		{
+			
+			ImGui::Text("%s", slotName.c_str());
+			ImGui::SameLine();
+			ImGui::ImageButton(("##" + slotName).c_str(), (ImTextureID)texture->GetRendererId(), ImVec2(20, 20));
+			std::shared_ptr<Resource> resource = GetDragDropResource(ResourceType::TEXTURE);
+
+			ImGui::SameLine();
+			if (ImGui::Button(("Set Default##" + slotName).c_str())) {
+				resource = Texture::GetDefault();
+			}
+			if (resource)
+			{
+				material->SetTexture(slotName, std::static_pointer_cast<Texture>(resource));
+			}
+			
+		}
 
 
 		if (!isEditable)
@@ -681,16 +2334,146 @@ namespace Loopie {
 			if (ImGui::Button("Apply")) {
 				material->Save();
 			}
+
 		}
 	}
 
 	void InspectorInterface::OnNotify(const OnEntityOrFileNotification& id)
 	{
+		if (m_locked) return;
+
 		if (id == OnEntityOrFileNotification::OnEntitySelect) {
 			m_mode = InspectorMode::EntityMode;
+			m_currentEntity = HierarchyInterface::s_SelectedEntity;
 		}
 		else if (id == OnEntityOrFileNotification::OnFileSelect) {
 			m_mode = InspectorMode::ImportMode;
+			m_currentFile = AssetsExplorerInterface::s_SelectedFile;
 		}
+	}
+
+	bool InspectorInterface::ComponentContextMenu(Component* component, bool canRemove)
+	{
+		if (ImGui::BeginPopupContextItem("Component Options"))
+		{
+			if (ImGui::MenuItem("Copy UUID"))
+			{
+				Application::GetInstance().m_clipboard.Copy(component->GetOwner()->GetUUID().Get(), component->GetUUID().Get());
+			}
+			if (canRemove && ImGui::MenuItem("Remove Component"))
+			{
+				component->GetOwner()->RemoveComponent(component);
+				ImGui::EndPopup();
+				return true;
+			}
+			ImGui::EndPopup();
+		}
+		return false;
+	}
+
+	void InspectorInterface::DrawImageButtonSlot(Button* button, ButtonImageSlot slot)
+	{
+		if (!button)
+			return;
+
+		const char* label = "";
+		std::shared_ptr<Texture> current;
+
+		switch (slot)
+		{
+			case ButtonImageSlot::Normal:
+			label = "Normal";
+			current = button->GetNormalTexture();
+			break;
+
+			case ButtonImageSlot::Hovered:
+			label = "Hovered";
+			current = button->GetHoveredTexture();
+			break;
+
+			case ButtonImageSlot::Pressed:
+			label = "Pressed";
+			current = button->GetPressedTexture();
+			break;
+
+			case ButtonImageSlot::Disabled:
+			label = "Disabled";
+			current = button->GetDisabledTexture();
+			break;
+		}
+
+		ImGui::Text("%s", label);
+
+		const char* previewText = current ? "Assigned" : "None";
+		ImGui::SameLine();
+		ImGui::TextDisabled("%s", previewText);
+
+		ImGui::Button((" [ Drop Texture Here ] ##" + std::string(label)).c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 30));
+
+		if (ImGui::BeginPopupContextItem())
+		{
+			if (ImGui::MenuItem("Paste"))
+			{
+				std::shared_ptr<Resource> resource = GetPastedResource(ResourceType::TEXTURE);
+				if (resource)
+					current = std::static_pointer_cast<Texture>(resource);
+			}
+
+			if (ImGui::MenuItem("Set Default"))
+			{
+				current = Texture::GetDefault();
+			}
+
+			ImGui::EndPopup();
+		}
+
+		std::shared_ptr<Resource> dd = GetDragDropResource(ResourceType::TEXTURE);
+		if (dd)
+			current = std::static_pointer_cast<Texture>(dd);
+
+		if (current)
+		{
+			switch (slot)
+			{
+			case ButtonImageSlot::Normal:
+				button->SetNormalTexture(current);
+				break;
+			case ButtonImageSlot::Hovered:
+				button->SetHoveredTexture(current);
+				break;
+			case ButtonImageSlot::Pressed:
+				button->SetPressedTexture(current);
+				break;
+			case ButtonImageSlot::Disabled:
+				button->SetDisabledTexture(current);
+				break;
+			}
+
+			Metadata* meta = AssetRegistry::GetMetadata(current->GetUUID());
+			ivec2 texSize = current->GetSize();
+			if (ImGui::TreeNode(("Texture Info ##" + std::string(label)).c_str())) {
+				if (meta && !meta->CachesPath.empty())
+					ImGui::TextDisabled("Path: %s", meta->CachesPath[0].c_str());
+
+				ImGui::TextDisabled("Size: %d x %d", texSize.x, texSize.y);
+
+				ImGui::TreePop();
+			}
+
+			const float maxSizeNormal = 64.0f;
+			const float maxSizeWide = 128.0f;
+
+			bool isWide = texSize.x > texSize.y * 1.5f;
+
+			float maxWidth = isWide ? maxSizeWide : maxSizeNormal;
+			float maxHeight = maxSizeNormal;
+			float scale = std::min(maxWidth / static_cast<float>(texSize.x), maxHeight / static_cast<float>(texSize.y));
+			ImVec2 previewSize(texSize.x * scale, texSize.y * scale);
+
+			ImGui::Text("Preview:");
+			ImGui::Image((ImTextureID)current->GetRendererId(), previewSize, ImVec2(0, 0), ImVec2(1, 1));
+		}
+
+		ImGui::Separator();
 	}
 }

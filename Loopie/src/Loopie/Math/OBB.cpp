@@ -56,7 +56,78 @@ namespace Loopie {
         }
         return true;
     }
+    bool OBB::Intersects(const OBB& other) const {
+        vec3 t = other.Center - Center;
 
+        vec3 T(
+            dot(t, Axes[0]),
+            dot(t, Axes[1]),
+            dot(t, Axes[2])
+        );
+
+        matrix3 R, absR;
+        const float EPSILON = 1e-6f;
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                R[i][j] = dot(Axes[i], other.Axes[j]);
+                absR[i][j] = std::abs(R[i][j]) + EPSILON;
+            }
+        }
+
+        float ra, rb;
+
+        // --- EJES DE LA CAJA A (3 pruebas) ---
+        for (int i = 0; i < 3; i++) {
+            ra = Extents[i];
+            rb = other.Extents[0] * absR[i][0] + other.Extents[1] * absR[i][1] + other.Extents[2] * absR[i][2];
+            if (std::abs(T[i]) > ra + rb) return false;
+        }
+
+        // --- EJES DE LA CAJA B (3 pruebas) ---
+        for (int i = 0; i < 3; i++) {
+            ra = Extents[0] * absR[0][i] + Extents[1] * absR[1][i] + Extents[2] * absR[2][i];
+            rb = other.Extents[i];
+            if (std::abs(T[0] * R[0][i] + T[1] * R[1][i] + T[2] * R[2][i]) > ra + rb) return false;
+        }
+
+        ra = Extents[1] * absR[2][0] + Extents[2] * absR[1][0];
+        rb = other.Extents[1] * absR[0][2] + other.Extents[2] * absR[0][1];
+        if (std::abs(T[2] * R[1][0] - T[1] * R[2][0]) > ra + rb) return false;
+
+        ra = Extents[1] * absR[2][1] + Extents[2] * absR[1][1];
+        rb = other.Extents[0] * absR[0][2] + other.Extents[2] * absR[0][0];
+        if (std::abs(T[2] * R[1][1] - T[1] * R[2][1]) > ra + rb) return false;
+
+        ra = Extents[1] * absR[2][2] + Extents[2] * absR[1][2];
+        rb = other.Extents[0] * absR[0][1] + other.Extents[1] * absR[0][0];
+        if (std::abs(T[2] * R[1][2] - T[1] * R[2][2]) > ra + rb) return false;
+
+        ra = Extents[0] * absR[2][0] + Extents[2] * absR[0][0];
+        rb = other.Extents[1] * absR[1][2] + other.Extents[2] * absR[1][1];
+        if (std::abs(T[0] * R[2][0] - T[2] * R[0][0]) > ra + rb) return false;
+
+        ra = Extents[0] * absR[2][1] + Extents[2] * absR[0][1];
+        rb = other.Extents[0] * absR[1][2] + other.Extents[2] * absR[1][0];
+        if (std::abs(T[0] * R[2][1] - T[2] * R[0][1]) > ra + rb) return false;
+
+        ra = Extents[0] * absR[2][2] + Extents[2] * absR[0][2];
+        rb = other.Extents[0] * absR[1][1] + other.Extents[1] * absR[1][0];
+        if (std::abs(T[0] * R[2][2] - T[2] * R[0][2]) > ra + rb) return false;
+
+        ra = Extents[0] * absR[1][0] + Extents[1] * absR[0][0];
+        rb = other.Extents[1] * absR[2][2] + other.Extents[2] * absR[2][1];
+        if (std::abs(T[1] * R[0][0] - T[0] * R[1][0]) > ra + rb) return false;
+
+        ra = Extents[0] * absR[1][1] + Extents[1] * absR[0][1];
+        rb = other.Extents[0] * absR[2][2] + other.Extents[2] * absR[2][0];
+        if (std::abs(T[1] * R[0][1] - T[0] * R[1][1]) > ra + rb) return false;
+
+        ra = Extents[0] * absR[1][2] + Extents[1] * absR[0][2];
+        rb = other.Extents[0] * absR[2][1] + other.Extents[1] * absR[2][0];
+        if (std::abs(T[1] * R[0][2] - T[0] * R[1][2]) > ra + rb) return false;
+
+        return true;
+    }
     bool OBB::IntersectsRay(const vec3& rayStart, const vec3& rayEnd) const {
         vec3 localStart = rayStart - Center;
         vec3 localEnd = rayEnd - Center;
@@ -124,6 +195,84 @@ namespace Loopie {
         }
 
         return false;
+    }
+
+    bool OBB::GetPenetration(const OBB& other, vec3& pushDir, float& depth) const
+    {
+        const float EPSILON = 1e-6f;
+        vec3 centerDist = other.Center - Center;
+        float minOverlap = std::numeric_limits<float>::max();
+        vec3 bestAxis(0.0f);
+        bool found = false;
+
+        auto halfSize = [&](const vec3& axis) -> float {
+            return Extents.x * std::abs(dot(axis, Axes[0])) +
+                Extents.y * std::abs(dot(axis, Axes[1])) +
+                Extents.z * std::abs(dot(axis, Axes[2]));
+            };
+
+        auto halfSizeOther = [&](const vec3& axis) -> float {
+            return other.Extents.x * std::abs(dot(axis, other.Axes[0])) +
+                other.Extents.y * std::abs(dot(axis, other.Axes[1])) +
+                other.Extents.z * std::abs(dot(axis, other.Axes[2]));
+            };
+
+        for (int i = 0; i < 3; ++i) {
+            vec3 axis = Axes[i];
+            float projA = halfSize(axis);
+            float projB = halfSizeOther(axis);
+            float dist = std::abs(dot(centerDist, axis));
+            float overlap = projA + projB - dist;
+            if (overlap <= EPSILON) 
+                return false;
+            if (overlap < minOverlap) {
+                minOverlap = overlap;
+                bestAxis = axis;
+                found = true;
+            }
+        }
+
+        for (int i = 0; i < 3; ++i) {
+            vec3 axis = other.Axes[i];
+            float projA = halfSize(axis);
+            float projB = halfSizeOther(axis);
+            float dist = std::abs(dot(centerDist, axis));
+            float overlap = projA + projB - dist;
+            if (overlap <= EPSILON) 
+                return false;
+            if (overlap < minOverlap) {
+                minOverlap = overlap;
+                bestAxis = axis;
+                found = true;
+            }
+        }
+
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                vec3 axis = cross(Axes[i], other.Axes[j]);
+                if (glm::length(axis) < EPSILON) 
+                    continue;
+                axis = normalize(axis);
+                float projA = halfSize(axis);
+                float projB = halfSizeOther(axis);
+                float dist = std::abs(dot(centerDist, axis));
+                float overlap = projA + projB - dist;
+                if (overlap <= EPSILON) return false;
+                if (overlap < minOverlap) {
+                    minOverlap = overlap;
+                    bestAxis = axis;
+                    found = true;
+                }
+            }
+        }
+
+        if (!found) 
+            return false;
+
+        float sign = dot(centerDist, bestAxis) > 0 ? -1.0f : 1.0f;
+        pushDir = bestAxis * sign;
+        depth = minOverlap;
+        return true;
     }
 
     const std::array<vec3, 8>& OBB::GetCorners() const

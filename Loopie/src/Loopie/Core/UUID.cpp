@@ -4,12 +4,16 @@
 
 namespace Loopie {
 
+    const UUID UUID::Invalid("00000000-0000-0000-0000-000000000000");
+
     UUID::UUID() : m_id(Generate()) {
     }
 
-    UUID::UUID(const std::string& id)
-        : m_id(id) {
-        ASSERT(m_id.size() != UUID_SIZE, "UUID id does not have a correct size of {0}, current size is {1}", UUID_SIZE, m_id.size());
+    UUID::UUID(const std::string& id) : m_id(id) {
+        if (m_id.size() != UUID_SIZE)
+        {
+			m_id = Invalid.Get();
+        }
     }
 
     const std::string& UUID::Get() const {
@@ -28,7 +32,19 @@ namespace Loopie {
             res += v[Random::Get(0, 15)];
             res += v[Random::Get(0, 15)];
         }
+
+        if(res == Invalid.Get()) {
+            return Generate();
+		}
+
         return res;
+    }
+
+    bool UUID::IsValid(const std::string& id)
+    {
+        if (id.size() != UUID_SIZE)
+            return false;
+        return true;
     }
 
     bool UUID::operator==(const UUID& other) const {

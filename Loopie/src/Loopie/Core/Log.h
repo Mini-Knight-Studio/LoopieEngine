@@ -2,12 +2,17 @@
 
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
-#include <vector>
+#include <deque>
+
+#define LOOPIE_ENABLE_LOG
 
 namespace Loopie {
 	class Log
 	{
 	public:
+
+        const static unsigned int MAX_LOGS = 1000;
+
         struct LogEntry {
             int level;
             std::string msg;
@@ -50,16 +55,25 @@ namespace Loopie {
             LogMessage(spdlog::level::critical, fmt::format(msg, std::forward<Args>(args)...));
         }
 
-		static const std::vector<LogEntry>& GetLogEntries() { return s_LogEntries; }
-		static void Clear() { s_LogEntries.clear(); }
+        template <typename... Args>
+        static void ByType(int level, const char* msg, Args&&... args) {
+            LogMessage((spdlog::level::level_enum)level, fmt::format(msg, std::forward<Args>(args)...));
+        }
+
+		static const std::deque<LogEntry>& GetLogEntries() { return s_LogEntries; }
+        static void Clear() { s_LogEntries.clear(); }
 
 	private:
 		static void LogMessage(spdlog::level::level_enum level, const std::string& text) {
+            #ifdef LOOPIE_ENABLE_LOG
 			spdlog::log(level, text);
-			s_LogEntries.emplace_back(LogEntry(level, fmt::format("[{}] {}", spdlog::level::to_string_view(level), text)));
+            if (s_LogEntries.size() >= MAX_LOGS)
+                s_LogEntries.pop_front();
+			s_LogEntries.push_back(LogEntry(level, fmt::format("[{}] {}", spdlog::level::to_string_view(level), text)));
+            #endif
 		}
 
 	private:
-		static std::vector<LogEntry> s_LogEntries;
+		static std::deque<LogEntry> s_LogEntries;
 	};
 }

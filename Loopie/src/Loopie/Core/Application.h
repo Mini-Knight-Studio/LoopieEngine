@@ -9,6 +9,7 @@
 #include "Loopie/Project/Project.h"
 #include "Loopie/ImGui/ImGuiManager.h"
 #include "Loopie/Scene/Scene.h"
+#include "Loopie/Core/Clipboard.h"
 
 #include <vector>
 
@@ -32,9 +33,7 @@ namespace Loopie {
 		void SetInterfaceState(bool enabled) { m_renderInterface = enabled; }
 		bool IsInterfaceVisible() const { return m_renderInterface; }
 
-		void CreateScene(const std::string& filePath);
-		void LoadScene(const std::string& filePath);
-
+		void CreateScene();
 	private:
 		void ProcessEvents(InputEventManager& eventController);
 
@@ -43,6 +42,7 @@ namespace Loopie {
 	public:
 		Project m_activeProject;
 		Event<EngineNotification> m_notifier;
+		Clipboard<std::string> m_clipboard;
 	private:
 		static Application* s_Instance;
 		Scene* m_scene = nullptr;

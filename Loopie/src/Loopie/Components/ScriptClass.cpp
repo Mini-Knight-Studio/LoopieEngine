@@ -26,18 +26,31 @@ namespace Loopie
 	void ScriptClass::SetUp()
 	{
 		m_scriptingClass = ScriptingManager::GetScriptingClass(m_className);
+
 		m_instance = m_scriptingClass->Instantiate();
+
+		m_gcHandle = mono_gchandle_new(m_instance, false);
 
 		m_OnCreate = m_scriptingClass->GetMethod("OnCreate", 0);
 		m_OnUpdate = m_scriptingClass->GetMethod("OnUpdate", 0);
+		m_OnDestroy = m_scriptingClass->GetMethod("OnDestroy", 0);
+		m_OnDrawGizmo = m_scriptingClass->GetMethod("OnDrawGizmo", 0);
 
 		MonoProperty* entityProperty =
 			mono_class_get_property_from_name(ScriptingManager::s_Data.ComponentClass->GetMonoClass() , "entity");
 
-		MonoObject* entityInstance = ScriptingManager::CreateManagedEntity(GetOwner()->GetUUID());
+		MonoProperty* idProperty =
+			mono_class_get_property_from_name(ScriptingManager::s_Data.ComponentClass->GetMonoClass(), "ID");
 
-		void* args[1] = { entityInstance };
+		MonoObject* entityInstance = ScriptingManager::CreateManagedEntity(GetOwner()->GetUUID());
+		MonoObject* componentInstance = ScriptingManager::CreateManagedEntity(GetUUID());
+
+		void* args[1] = { nullptr };
+		args[0] = entityInstance;
 		mono_property_set_value(entityProperty, m_instance, args, nullptr);
+
+		args[0] = componentInstance;
+		mono_property_set_value(idProperty, m_instance, args, nullptr);
 
 		// Restore fields
 		for (const auto& [name, field] : m_scriptingClass->GetFields())
@@ -51,11 +64,27 @@ namespace Loopie
 		}
 	}
 
+	_MonoObject* ScriptClass::GetInstance() const
+	{
+		if (!m_gcHandle)
+			return nullptr;
+
+		return mono_gchandle_get_target(m_gcHandle);
+	}
+
 	void ScriptClass::DestroyInstance()
 	{
+		if (m_gcHandle)
+		{
+			mono_gchandle_free(m_gcHandle);
+			m_gcHandle = 0;
+		}
+
 		m_instance = nullptr;
 		m_OnCreate = nullptr;
 		m_OnUpdate = nullptr;
+		m_OnDestroy = nullptr;
+		m_OnDrawGizmo = nullptr;
 	}
 
 	void ScriptClass::InvokeOnCreate()
@@ -68,6 +97,18 @@ namespace Loopie
 	{
 		if (m_OnUpdate)
 			m_scriptingClass->InvokeMethod(m_instance, m_OnUpdate);
+	}
+
+	void ScriptClass::InvokeOnDestroy()
+	{
+		if(m_OnDestroy)
+			m_scriptingClass->InvokeMethod(m_instance, m_OnDestroy);
+	}
+
+	void ScriptClass::InvokeOnDrawGizmo()
+	{
+		if (m_OnDrawGizmo)
+			m_scriptingClass->InvokeMethod(m_instance, m_OnDrawGizmo);
 	}
 
 	void ScriptClass::SetClass(const std::string& fullName)
@@ -153,11 +194,12 @@ namespace Loopie
 		JsonNode scriptObj = parent.CreateObjectField("script");
 
 		scriptObj.CreateField("class_id", GetClassName());
-
-		const auto& fields = m_scriptingClass->GetFields();
-
 		JsonNode node = scriptObj.CreateObjectField("fields");
 
+		if (!m_scriptingClass)
+			return scriptObj;
+
+		const auto& fields = m_scriptingClass->GetFields();
 		for (const auto& [name, field] : fields)
 		{
 			switch (field.Type)
@@ -218,6 +260,8 @@ namespace Loopie
 		m_className = classID;
 		m_scriptingClass = ScriptingManager::GetScriptingClass(m_className);
 
+		if (!m_scriptingClass)
+			return;
 
 		JsonNode node = data.Child("fields");
 		const auto& fields = m_scriptingClass->GetFields();

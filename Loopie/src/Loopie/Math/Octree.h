@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <array>
+#include <unordered_map>
 
 
 namespace Loopie {
@@ -38,9 +39,9 @@ namespace Loopie {
 		Octree(const AABB& rootBounds);
 		~Octree() = default;
 
-		void Insert(std::shared_ptr<Entity> entity);
-		void Remove(std::shared_ptr<Entity> entity);
-		void Update(std::shared_ptr<Entity> entity);
+		void Insert(const std::shared_ptr<Entity>& entity);
+		void Remove(const std::shared_ptr<Entity>& entity);
+		void Update(const std::shared_ptr<Entity>& entity);
 		void Clear();
 		void Rebuild();
 		void DebugDraw(const vec4& color);
@@ -48,16 +49,16 @@ namespace Loopie {
 		void DebugPrintOctreeHierarchy();
 		OctreeStatistics GetStatistics() const;
 		void CollectIntersectingObjectsWithRay(vec3 rayOrigin, vec3 rayDirection,
-											   std::unordered_set<std::shared_ptr<Entity>>& entities);
+			std::unordered_set<std::shared_ptr<Entity>>& entities);
 
 		void CollectIntersectingObjectsWithAABB(const AABB& queryBox,
-												std::unordered_set<std::shared_ptr<Entity>>& entities);
+			std::unordered_set<std::shared_ptr<Entity>>& entities);
 
 		void CollectIntersectingObjectsWithSphere(const vec3& center, const float& radius,
-												  std::unordered_set<std::shared_ptr<Entity>>& entities);
+			std::unordered_set<std::shared_ptr<Entity>>& entities);
 
-		void CollectVisibleEntitiesFrustum(const Frustum& frustum, 
-										   std::unordered_set<std::shared_ptr<Entity>>& visibleEntities);
+		void CollectVisibleEntitiesFrustum(const Frustum& frustum,
+			std::unordered_set<std::shared_ptr<Entity>>& visibleEntities);
 
 		void CollectAllEntities(std::unordered_set<std::shared_ptr<Entity>>& entities);
 		void SetShouldDraw(bool value);
@@ -67,11 +68,11 @@ namespace Loopie {
 
 	private:
 		AABB GetEntityAABB(const std::shared_ptr<Entity>& entity) const;
-		void InsertRecursively(OctreeNode* node, std::shared_ptr<Entity> entity, const AABB& entityAABB, int depth);
-		void RemoveRecursively(OctreeNode* node, std::shared_ptr<Entity> entity, const AABB& entityAABB);
+		void InsertRecursively(OctreeNode* node, const std::shared_ptr<Entity>& entity, const AABB& entityAABB, int depth);
+		void RemoveRecursively(OctreeNode* node, const std::shared_ptr<Entity>& entity, const AABB& entityAABB);
 		void Subdivide(OctreeNode* node);
 		void RedistributeEntities(OctreeNode* node, int depth);
-		std::array<AABB, MAX_ENTITIES_PER_NODE> ComputeChildAABBs(const AABB& parentAABB) const;
+		std::array<AABB, NUM_CHILDREN> ComputeChildAABBs(const AABB& parentAABB) const;
 		void DebugDrawRecursively(OctreeNode* node, const vec4& color, int depth);
 		void DebugPrintOctreeHierarchyRecursively(OctreeNode* node, int depth) const;
 		void GatherStatisticsRecursively(OctreeNode* node, OctreeStatistics& stats, int depth) const;
@@ -79,19 +80,27 @@ namespace Loopie {
 		void CollectAllEntitiesFromNode(OctreeNode* node, std::unordered_set<std::shared_ptr<Entity>>& entities);
 
 		void CollectIntersectingObjectsWithRayRecursively(OctreeNode* node, vec3 rayOrigin, vec3 rayDirection, vec3& rayHit,
-														  std::unordered_set<std::shared_ptr<Entity>>& entities);
+			std::unordered_set<std::shared_ptr<Entity>>& entities);
 
 		void CollectIntersectingObjectsWithAABBRecursively(OctreeNode* node, const AABB& queryBox,
-														   std::unordered_set<std::shared_ptr<Entity>>& entities);
+			std::unordered_set<std::shared_ptr<Entity>>& entities);
 
 		void CollectIntersectingObjectsWithSphereRecursively(OctreeNode* node, const vec3& center, const float& radius,
-															 std::unordered_set<std::shared_ptr<Entity>>& entities);
+			std::unordered_set<std::shared_ptr<Entity>>& entities);
 
 		void CollectVisibleEntitiesFrustumRecursively(OctreeNode* node, const Frustum& frustum,
-													  std::unordered_set<std::shared_ptr<Entity>>& visibleEntities);
+			std::unordered_set<std::shared_ptr<Entity>>& visibleEntities);
 
 	private:
 		std::unique_ptr<OctreeNode> m_rootNode;
-		bool m_shouldDraw = true;
+		AABB m_rootBounds; // Stored so Clear() can recreate the root node
+		bool m_shouldDraw = false;
+
+		// *** Entity-to-Node Lookup *** - PSS 22/02/2026
+		// Maps each entity to the node it's stored in.
+		// This allows O(1) removal regardless of whether the entity has moved,
+		// fixing the bug where Remove() would fail to find moved entities
+		// because it traversed using the entity's current (new) AABB.
+		std::unordered_map<Entity*, OctreeNode*> m_entityToNode;
 	};
 }

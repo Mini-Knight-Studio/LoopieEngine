@@ -60,6 +60,7 @@ namespace Loopie {
 
 			std::shared_ptr<Material> Material;
 			const Transform* Transform;
+			std::vector<matrix4> Bones;
 		};
 
 		struct RenderParticlesData
@@ -104,9 +105,9 @@ namespace Loopie {
 		static void BeginScene(const matrix4& viewMatrix, const matrix4& projectionMatrix, bool gizmo = true);
 		static void EndScene();
 
-		static void AddRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const Transform* transform);
-		static void FlushRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const Transform* transform);
-		static void FlushRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const matrix4& modelMatrix);
+		static void AddRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones = {});
+		static void FlushRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones = {});
+		static void FlushRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const matrix4& modelMatrix, const std::vector<matrix4>& bones = {});
 
 		static void EnableDepth();
 		static void DisableDepth();
@@ -127,9 +128,14 @@ namespace Loopie {
 		static void DisableCulling();
 		static void CullFace(CullFaceMode mode);
 
+		static void EnableBlend();
+		static void DisableBlend();
+
+		static void SetDepthWrite(bool enable);
+
 	private:
-		static void SetRenderUniforms(std::shared_ptr<Material> material, const Transform* transform);
-		static void SetRenderUniforms(std::shared_ptr<Material> material, const matrix4& modelMatrix);
+		static void SetRenderUniforms(std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones = {});
+		static void SetRenderUniforms(std::shared_ptr<Material> material, const matrix4& modelMatrix, const std::vector<matrix4>& bones = {});
 		static void FlushRenderQueue();
 
 

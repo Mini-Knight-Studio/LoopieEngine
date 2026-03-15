@@ -5,6 +5,9 @@
 #include "Loopie/Core/Time.h"
 #include "Loopie/Render/Renderer.h"
 #include "Loopie/Scripting/ScriptingManager.h"
+#include "Loopie/Collisions/CollisionProcessor.h"
+#include "Loopie/Audio/AudioManager.h"
+#include "Loopie/Project/ProjectConfig.h"
 
 namespace Loopie {
 	Application* Application::s_Instance = nullptr;
@@ -19,6 +22,10 @@ namespace Loopie {
 
 		Log::Info("Application Started");
 
+		CollisionProcessor::Initialize();
+
+		ProjectConfig::SetProject(m_activeProject);
+
 		//ScriptingManager::Init();
 		//Log::Info("Scripting created successfully.");
 
@@ -26,7 +33,10 @@ namespace Loopie {
 		m_window = new Window();
 		Log::Info("Window created successfully.");
 
+		AudioManager::Init();
+
 		m_imguiManager.Init();
+
 
 		m_notifier.AddObserver(this);
 
@@ -42,6 +52,8 @@ namespace Loopie {
 			delete(module);
 		}
 		m_modules.clear();
+
+		AudioManager::Shutdown();
 
 		ScriptingManager::Shutdown();
 
@@ -106,6 +118,8 @@ namespace Loopie {
 
 			Time::CalculateFrame();
 
+			AudioManager::Update();
+
 			m_imguiManager.StartFrame();
 
 			m_inputEvent.Update();
@@ -133,15 +147,9 @@ namespace Loopie {
 		}
 	}
 
-	void Application::CreateScene(const std::string& filePath)
+	void Application::CreateScene()
 	{
-		m_scene = new Scene(filePath);
-	}
-
-	void Application::LoadScene(const std::string& filePath)
-	{
-		delete m_scene;
-		m_scene = new Scene(filePath);
+		m_scene = new Scene();
 	}
 
 	void Application::ProcessEvents(InputEventManager& eventController)

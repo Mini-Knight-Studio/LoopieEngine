@@ -3,6 +3,7 @@
 #include "Loopie/Core/Log.h"
 #include "Loopie/Core/Application.h"
 #include "Loopie/Render/Renderer.h"
+#include "Loopie/Render/Gizmo.h"
 #include "Loopie/Components/Transform.h"
 
 #include "Loopie/Resources/AssetRegistry.h"
@@ -31,7 +32,10 @@ namespace Loopie {
 			"assets/icons/icon_move.png",
 			"assets/icons/icon_rotate.png",
 			"assets/icons/icon_scale.png",
-			"assets/icons/icon_trs.png"
+			"assets/icons/icon_trs.png",
+			"assets/icons/icon_grid.png",
+			"assets/icons/icon_octree.png",
+			"assets/icons/icon_snap.png"
 		};
 
 		std::vector<Metadata> iconsToLoadMetadatas;
@@ -46,6 +50,9 @@ namespace Loopie {
 		m_rotateIcon = ResourceManager::GetTexture(iconsToLoadMetadatas[1]);
 		m_scaleIcon = ResourceManager::GetTexture(iconsToLoadMetadatas[2]);
 		m_trsIcon = ResourceManager::GetTexture(iconsToLoadMetadatas[3]);
+		m_gridIcon = ResourceManager::GetTexture(iconsToLoadMetadatas[4]);
+		m_octreeIcon = ResourceManager::GetTexture(iconsToLoadMetadatas[5]);
+		m_snapIcon = ResourceManager::GetTexture(iconsToLoadMetadatas[6]);
 
 
 		m_gizmoOperation = ImGuizmo::TRANSLATE;
@@ -60,9 +67,16 @@ namespace Loopie {
 		
 		m_camera->ProcessEvent(inputEvent);
 		m_camera->Update();
-		if (inputEvent.GetMouseButtonStatus(0) == KeyState::DOWN && !m_usingGuizmo)
-			MousePick();
 
+		if (inputEvent.GetMouseButtonStatus(0) == KeyState::DOWN && !m_usingGuizmo) {
+			if(inputEvent.GetKeyStatus(SDL_SCANCODE_LCTRL) == KeyState::REPEAT)
+				MousePick(true);
+			else
+				MousePick();
+
+		}
+
+		HotKeysBasic(inputEvent);
 		HotKeysSelectedEntiy(inputEvent);
 	}
 
@@ -106,7 +120,26 @@ namespace Loopie {
 				Renderer::DisableDepth();
 				ImGuizmo::SetRect(cursorScreenPos.x, cursorScreenPos.y, (float)m_windowSize.x, (float)m_windowSize.y);
 				ImGuizmo::SetDrawlist();
-				if (ImGuizmo::Manipulate(&m_camera->GetCamera()->GetViewMatrix()[0][0], &m_camera->GetCamera()->GetProjectionMatrix()[0][0], (ImGuizmo::OPERATION)m_gizmoOperation, (ImGuizmo::MODE)m_gizmoMode, &worldMatrix[0][0])) {
+
+				bool allowSnap = (m_snapEnabled || m_temporalSnapEnabled) && (m_gizmoOperation != (int)ImGuizmo::UNIVERSAL);
+				if (allowSnap) {
+					switch (m_gizmoOperation)
+					{
+					case ImGuizmo::TRANSLATE:
+						m_snap[0] = m_snap[1] = m_snap[2] = m_translationSnap;
+						break;
+
+					case ImGuizmo::ROTATE:
+						m_snap[0] = m_snap[1] = m_snap[2] = m_rotationSnap;
+						break;
+
+					case ImGuizmo::SCALE:
+						m_snap[0] = m_snap[1] = m_snap[2] = m_scaleSnap;
+						break;
+					}
+				}
+
+				if (ImGuizmo::Manipulate(&m_camera->GetCamera()->GetViewMatrix()[0][0], &m_camera->GetCamera()->GetProjectionMatrix()[0][0], (ImGuizmo::OPERATION)m_gizmoOperation, (ImGuizmo::MODE)m_gizmoMode, &worldMatrix[0][0],nullptr, allowSnap ? m_snap : nullptr)) {
 					transform->SetWorldMatrix(worldMatrix);
 					Application::GetInstance().GetScene().GetOctree().Rebuild();				
 				}
@@ -137,6 +170,26 @@ namespace Loopie {
 		m_buffer->Unbind();
 	}
 
+	void SceneInterface::HotKeysBasic(const InputEventManager& inputEvent)
+	{
+		if (!m_camera->IsMoving() && !m_temporalSnapEnabled) {
+			if (inputEvent.GetKeyStatus(SDL_SCANCODE_W) == KeyState::DOWN)
+				m_gizmoOperation = (int)ImGuizmo::TRANSLATE;
+			if (inputEvent.GetKeyStatus(SDL_SCANCODE_E) == KeyState::DOWN)
+				m_gizmoOperation = (int)ImGuizmo::ROTATE;
+			if (inputEvent.GetKeyStatus(SDL_SCANCODE_R) == KeyState::DOWN)
+				m_gizmoOperation = (int)ImGuizmo::SCALE;
+			if (inputEvent.GetKeyStatus(SDL_SCANCODE_T) == KeyState::DOWN)
+				m_gizmoOperation = (int)ImGuizmo::UNIVERSAL;
+		}
+		
+		
+		if (inputEvent.GetKeyStatus(SDL_SCANCODE_LCTRL) == KeyState::REPEAT)
+			m_temporalSnapEnabled = true;
+		else
+			m_temporalSnapEnabled = false;
+	}
+
 	void SceneInterface::HotKeysSelectedEntiy(const InputEventManager& inputEvent)
 	{
 		auto selectedEntity = HierarchyInterface::s_SelectedEntity.lock();
@@ -160,7 +213,6 @@ namespace Loopie {
 		if (inputEvent.GetKeyWithModifier(SDL_SCANCODE_X, KeyModifier::CTRL)) {
 			/// Cut
 		}
-
 	}
 
 	void SceneInterface::Drop()
@@ -170,10 +222,7 @@ namespace Loopie {
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_EXPLORER_FILE"))
 			{
 				std::string path = (const char*)payload->Data;
-				if (TextureImporter::CheckIfIsImage(path.c_str())) {
-					ChargeTexture(path);
-				}
-				else if (MeshImporter::CheckIfIsModel(path.c_str())) {
+				if (MeshImporter::CheckIfIsModel(path.c_str())) {
 					ChargeModel(path);
 				}
 				else if (MaterialImporter::CheckIfIsMaterial(path.c_str())) {
@@ -185,26 +234,94 @@ namespace Loopie {
 	}
 	void SceneInterface::DrawHelperBar()
 	{
+		ImVec2 buttonsSize = ImVec2(15, 15);
+		ImVec2 framePadding = ImVec2(4, 4);
+		ImVec2 itemSpacing = ImVec2(15, 8);
 		
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 8));
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 4));
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, itemSpacing);
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, framePadding);
+
 
 		int currentMode = (m_gizmoMode == ImGuizmo::WORLD) ? 0 : 1;
 		ImGui::SetNextItemWidth(65);
 		if (ImGui::Combo("##mode", &currentMode, m_gizmoModes.data(), (int)m_gizmoModes.size()))
 			m_gizmoMode = (currentMode == 0) ? (int)ImGuizmo::WORLD : (int)ImGuizmo::LOCAL;
 
-		if (ImGui::ImageButton("move",(ImTextureID)m_moveIcon->GetRendererId(), ImVec2(15, 15)))
+		ImGui::SameLine();
+		ImGui::Text("Movement Scale: %.1f", m_camera->GetMovementScale());
+		ImGui::SameLine();
+
+		float availableWidth = ImGui::GetContentRegionAvail().x - buttonsSize.x - framePadding.x*2;
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + availableWidth);
+		bool hasStyle = AddStyleButton(Gizmo::GetGridVisibility());
+		if (ImGui::ImageButton("grid", (ImTextureID)m_gridIcon->GetRendererId(), buttonsSize)) {
+			Gizmo::SetGridVisibility(!Gizmo::GetGridVisibility());
+		}
+		RemoveStyleButton(hasStyle);
+
+		hasStyle = AddStyleButton(m_gizmoOperation == (int)ImGuizmo::TRANSLATE);
+		if (ImGui::ImageButton("move", (ImTextureID)m_moveIcon->GetRendererId(), buttonsSize)) {
 			m_gizmoOperation = (int)ImGuizmo::TRANSLATE;
+		}
+		RemoveStyleButton(hasStyle);
 
-		if (ImGui::ImageButton("rotate", (ImTextureID)m_rotateIcon->GetRendererId(), ImVec2(15, 15)))
+		ImGui::SameLine();
+		availableWidth = ImGui::GetContentRegionAvail().x - buttonsSize.x - framePadding.x * 2;
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + availableWidth);
+
+		Octree& octree = Application::GetInstance().GetScene().GetOctree();
+		hasStyle = AddStyleButton(octree.GetShouldDraw());
+		if (ImGui::ImageButton("octree", (ImTextureID)m_octreeIcon->GetRendererId(), buttonsSize)) {
+			octree.SetShouldDraw(!octree.GetShouldDraw());
+		}
+		RemoveStyleButton(hasStyle);
+
+		hasStyle = AddStyleButton(m_gizmoOperation == (int)ImGuizmo::ROTATE);
+		if (ImGui::ImageButton("rotate", (ImTextureID)m_rotateIcon->GetRendererId(), buttonsSize)) {
 			m_gizmoOperation = (int)ImGuizmo::ROTATE;
+		}
+		RemoveStyleButton(hasStyle);
 
-		if (ImGui::ImageButton("scale", (ImTextureID)m_scaleIcon->GetRendererId(), ImVec2(15, 15)))
+		if (m_gizmoOperation != (int)ImGuizmo::UNIVERSAL) {
+			ImGui::SameLine();
+			availableWidth = ImGui::GetContentRegionAvail().x - buttonsSize.x - framePadding.x * 2;
+			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + availableWidth);
+			hasStyle = AddStyleButton(m_snapEnabled || m_temporalSnapEnabled);
+			if (ImGui::ImageButton("snap", (ImTextureID)m_snapIcon->GetRendererId(), buttonsSize))
+			{
+				ImGui::OpenPopup("SnapSettings");
+			}
+			RemoveStyleButton(hasStyle);
+
+			if (ImGui::BeginPopup("SnapSettings", ImGuiWindowFlags_AlwaysAutoResize))
+			{
+				ImGui::Checkbox("Enable Snap", &m_snapEnabled);
+
+				ImGui::Separator();
+
+				ImGui::Text("Translation");
+				ImGui::DragFloat("Step##trans", &m_translationSnap, 0.1f, 0.01f, 100.0f);
+
+				ImGui::Text("Rotation");
+				ImGui::DragFloat("Step##rot", &m_rotationSnap, 1.0f, 1.0f, 180.0f);
+
+				ImGui::Text("Scale");
+				ImGui::DragFloat("Step##scale", &m_scaleSnap, 0.01f, 0.001f, 10.0f);
+
+				ImGui::EndPopup();
+			}
+		}
+		
+		hasStyle = AddStyleButton(m_gizmoOperation == (int)ImGuizmo::SCALE);
+		if (ImGui::ImageButton("scale", (ImTextureID)m_scaleIcon->GetRendererId(), buttonsSize)) {
 			m_gizmoOperation = (int)ImGuizmo::SCALE;
+		}
+		RemoveStyleButton(hasStyle);
 
-		if (ImGui::ImageButton("all", (ImTextureID)m_trsIcon->GetRendererId(), ImVec2(15, 15)))
+		hasStyle = AddStyleButton(m_gizmoOperation == (int)ImGuizmo::UNIVERSAL);
+		if (ImGui::ImageButton("all", (ImTextureID)m_trsIcon->GetRendererId(), buttonsSize))
 			m_gizmoOperation = (int)ImGuizmo::UNIVERSAL;
+		RemoveStyleButton(hasStyle);
 
 		if(!m_usingGuizmo)
 			m_usingGuizmo = ImGui::IsAnyItemHovered();
@@ -234,61 +351,88 @@ namespace Loopie {
 		return Ray{ origin, normalize(end - origin), std::numeric_limits<float>::max()};
 	}
 
+	void SceneInterface::RemoveStyleButton(bool hasStyle)
+	{
+		if (hasStyle)
+			ImGui::PopStyleColor();
+	}
+
+	bool SceneInterface::AddStyleButton(bool add)
+	{
+		if(add)
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0, 0.5, 0.75, 1.0));
+		return add;
+	}
+
+	
 	void SceneInterface::ChargeModel(const std::string& modelPath)
 	{
+		std::filesystem::path path(modelPath);
 		Metadata& meta = AssetRegistry::GetOrCreateMetadata(modelPath);
 		MeshImporter::ImportModel(modelPath, meta);
-		std::shared_ptr<Entity> parent;
 
 		auto selected = HierarchyInterface::s_SelectedEntity.lock();
-		if (meta.CachesPath.size() > 0) {
-			parent = Application::GetInstance().GetScene().CreateEntity("ModelEntity", selected);
-		}
-		for (size_t i = 0; i < meta.CachesPath.size(); i++)
-		{			
-			std::shared_ptr<Mesh> mesh = ResourceManager::GetMesh(meta, (int)i);
-			if (mesh) {
-				std::shared_ptr<Entity> newEntity;
-				if (!parent) {
-					newEntity = Application::GetInstance().GetScene().CreateEntity(mesh->GetData().Name, selected);
-				}else
-					newEntity = Application::GetInstance().GetScene().CreateEntity(mesh->GetData().Name, parent);
+		if (meta.CachesPath.empty()) return;
 
-				MeshRenderer* renderer = newEntity->AddComponent<MeshRenderer>();
-				renderer->SetMesh(mesh);
-				renderer->GetTransform()->SetLocalPosition(mesh->GetData().Position);
-				renderer->GetTransform()->SetLocalRotation(mesh->GetData().Rotation);
-				renderer->GetTransform()->SetLocalScale(mesh->GetData().Scale);
-			}
-		}
-	}
-	void SceneInterface::ChargeTexture(const std::string& texturePath)
-	{
-		Metadata& meta = AssetRegistry::GetOrCreateMetadata(texturePath);
+		auto modelRoot = Application::GetInstance().GetScene().CreateEntity(path.stem().string(), selected);
 
-		TextureImporter::ImportImage(texturePath, meta);
-		std::shared_ptr<Texture> texture = ResourceManager::GetTexture(meta);
-		if (texture) {
-			auto selectedEntity = HierarchyInterface::s_SelectedEntity.lock();
-			if (selectedEntity != nullptr) {
-				MeshRenderer* renderer = selectedEntity->GetComponent<MeshRenderer>();
-				if (renderer) {
-					if (renderer->GetMaterial())
-						renderer->GetMaterial()->SetTexture(texture);
-				}
-			}
-			else {
-				for (const auto& [uuid, entity] : Application::GetInstance().GetScene().GetAllEntities())
+		std::vector<std::shared_ptr<Entity>> boneEntities;
+		Animator* animator = nullptr;
+
+		for (size_t i = 0; i < meta.CachesPath.size(); ++i)
+		{
+			auto mesh = ResourceManager::GetMesh(meta, (int)i);
+			if (mesh && !mesh->GetData().Skeleton.empty())
+			{
+				const auto& skeleton = mesh->GetData().Skeleton;
+				boneEntities.reserve(skeleton.size());
+
+				for (const auto& bone : skeleton)
 				{
-					MeshRenderer* renderer = entity->GetComponent<MeshRenderer>();
-					if (renderer) {
-						if(renderer->GetMaterial())
-							renderer->GetMaterial()->SetTexture(texture);
+					auto boneEntity = Application::GetInstance().GetScene().CreateEntity(bone.Name, modelRoot);
+
+					glm::vec3 position, scale;
+					glm::quat rotation;
+					glm::vec3 skew;
+					glm::vec4 perspective;
+					glm::decompose(bone.LocalBindTransform, scale, rotation, position, skew, perspective);
+					rotation = glm::normalize(rotation);
+
+					boneEntity->GetTransform()->SetLocalPosition(position);
+					boneEntity->GetTransform()->SetLocalRotation(rotation);
+					boneEntity->GetTransform()->SetLocalScale(scale);
+					boneEntities.push_back(boneEntity);
+				}
+
+				for (size_t j = 0; j < skeleton.size(); ++j)
+				{
+					int parentID = skeleton[j].ParentID;
+					if (parentID >= 0 && parentID < static_cast<int>(skeleton.size()))
+					{
+						boneEntities[j]->SetParent(boneEntities[parentID]);
 					}
 				}
+				break;
 			}
 		}
+
+		for (size_t i = 0; i < meta.CachesPath.size(); ++i)
+		{
+			auto mesh = ResourceManager::GetMesh(meta, (int)i);
+			if (!mesh) continue;
+
+			auto meshEntity = Application::GetInstance().GetScene().CreateEntity(mesh->GetData().Name, modelRoot);
+
+			MeshRenderer* renderer = meshEntity->AddComponent<MeshRenderer>();
+			renderer->SetMesh(mesh);
+			renderer->GetTransform()->SetLocalPosition(mesh->GetData().Position);
+			renderer->GetTransform()->SetLocalRotation(mesh->GetData().Rotation);
+			renderer->GetTransform()->SetLocalScale(mesh->GetData().Scale);
+
+		}
+
 	}
+
 	void SceneInterface::ChargeMaterial(const std::string& materialPath)
 	{
 		Metadata& meta = AssetRegistry::GetOrCreateMetadata(materialPath);
@@ -314,7 +458,7 @@ namespace Loopie {
 			}
 		}
 	}
-	void SceneInterface::MousePick()
+	void SceneInterface::MousePick(bool getParent)
 	{
 		Ray mouseRay = MouseRay();
 		float minDistance = std::numeric_limits<float>::max();
@@ -332,7 +476,7 @@ namespace Loopie {
 			if (!entity->GetIsActive())
 				continue;
 			MeshRenderer* renderer = entity->GetComponent<MeshRenderer>();
-			if (!renderer || !renderer->GetIsActive() || !renderer->GetMesh())
+			if (!renderer || !renderer->GetLocalIsActive() || !renderer->GetMesh())
 				continue;
 			const AABB& aabb = renderer->GetWorldAABB();
 			if(!aabb.IntersectsRay(mouseRay.StartPoint(), mouseRay.EndPoint()))
@@ -358,6 +502,13 @@ namespace Loopie {
 				}
 			}
 		}
+		if (selectedEntity && getParent) {
+			std::shared_ptr<Entity> parent = selectedEntity->GetParent().lock();
+			if(parent && parent != Application::GetInstance().GetScene().GetRootEntity())
+				selectedEntity = parent;
+		}
+
+
 		HierarchyInterface::SelectEntity(selectedEntity);
 	}
 }

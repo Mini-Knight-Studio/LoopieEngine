@@ -19,8 +19,18 @@ namespace Loopie
 
 	Material::~Material()
 	{
-		if (m_texture)
-			m_texture->DecrementReferenceCount();
+
+		m_textures.clear();
+	}
+
+	void Material::SetTextureBufferOverride(const std::shared_ptr<TextureBuffer>& textureBuffer)
+	{
+		m_textureBufferOverride = textureBuffer;
+	}
+
+	void Material::ClearTextureBufferOverride()
+	{
+		m_textureBufferOverride.reset();
 	}
 
 	std::shared_ptr<Material> Material::GetDefault()
@@ -47,15 +57,33 @@ namespace Loopie
 
 		m_shader.Bind();
 
-		if (m_texture)
+		if (m_textureBufferOverride)
 		{
-			m_texture->m_tb->Bind();
+			m_textureBufferOverride->Bind(0);
+			m_shader.SetUniformInt("u_Albedo", 0);
+			
+			for (const auto& [name, uniformValue] : m_uniformValues)
+			{
+				ApplyUniform(name, uniformValue);
+			}
+
+			return;
 		}
-		else
+		
+		// Bind textures
+		int textureSlot = 0;
+		for (auto& [name, texture] : m_textures)
 		{
-			Texture::GetDefault()->m_tb->Bind();
+			if (!texture)
+				texture = Texture::GetDefault();
+
+			texture->m_tb->Bind(textureSlot);
+			m_shader.SetUniformInt(name, textureSlot);
+
+			textureSlot++;
 		}
 
+		// Apply numeric uniforms
 		for (const auto& [name, uniformValue] : m_uniformValues)
 		{
 			ApplyUniform(name, uniformValue);
@@ -97,14 +125,23 @@ namespace Loopie
 		}
 
 		m_uniformValues.clear();
+		m_textures.clear();
+
 		const auto& uniforms = m_shader.GetUniforms();
+		const auto& samplers = m_shader.GetSamplers();
+
 		for (const auto& uniform : uniforms)
 		{
 			m_uniformValues[uniform.id].type = uniform.type;
 			m_uniformValues[uniform.id].value = uniform.defaultValue;
 		}
 
-		Log::Info("Material reset to default values");
+		for (const auto& sampler : samplers)
+		{
+			m_textures[sampler.name] = Texture::GetDefault();
+		}
+
+		Log::Info("Material reset to shader defaults");
 	}
 
 	void Material::ApplyUniform(const std::string& name, const UniformValue& uniformValue)
@@ -172,15 +209,29 @@ namespace Loopie
 		return true;
 	}
 
-	void Material::SetTexture(std::shared_ptr<Texture> texture)
+	std::shared_ptr<Texture> Material::GetTexture(const std::string& name) const
+	{
+		auto it = m_textures.find(name);
+		if (it != m_textures.end())
+			return it->second;
+
+		return nullptr;
+	}
+
+
+
+	void Material::SetTexture(const std::string& name, std::shared_ptr<Texture> texture)
 	{
 		if (!m_editable)
 			return;
 
-		if (m_texture)
-			m_texture->DecrementReferenceCount();
-		m_texture = texture;
-		if (m_texture)
-			m_texture->IncrementReferenceCount();
+		auto it = m_textures.find(name);
+
+		if (it == m_textures.end())
+		{
+			Log::Warn("Texture slot '{}' not found in shader.", name);
+			return;
+		}
+		it->second = texture;
 	}
 }

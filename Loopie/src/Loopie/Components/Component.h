@@ -25,6 +25,7 @@ namespace Loopie {
 		std::shared_ptr<Entity> GetOwner() const { return m_owner.lock(); }
 		const UUID& GetUUID() const;
 		bool GetIsActive() const;
+		bool GetLocalIsActive() const;
 
 		// Default Calls
 		virtual void Update() {};
@@ -37,6 +38,7 @@ namespace Loopie {
 		// Serialize & Deserialize
 		virtual JsonNode Serialize(JsonNode& parent) const = 0;
 		virtual void Deserialize(const JsonNode& data) = 0;
+		virtual void OnSceneDeserialized() {};
 
 		virtual void Init() = 0;
 

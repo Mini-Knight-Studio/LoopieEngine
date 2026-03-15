@@ -45,6 +45,13 @@ namespace Loopie {
 		std::variant<int, float, bool, unsigned int, vec2, vec3, vec4, matrix2, matrix3, matrix4> defaultValue;
 	};
 
+	struct SamplerSlot
+	{
+		std::string name;
+		unsigned int slot;
+		UniformType type;
+	};
+
 	class Shader
 	{
 	public:
@@ -64,6 +71,7 @@ namespace Loopie {
 		void SetUniformMat2(const std::string& name, const Loopie::matrix2& matrix);
 		void SetUniformMat3(const std::string& name, const Loopie::matrix3& matrix);
 		void SetUniformMat4(const std::string& name, const Loopie::matrix4& matrix);
+		void SetUniformMat4Array(const std::string& name, const Loopie::matrix4* matrices, int count);
 		void SetUniformVec2(const std::string& name, const Loopie::vec2& vector);
 		void SetUniformVec3(const std::string& name, const Loopie::vec3& vector);
 		void SetUniformVec4(const std::string& name, const Loopie::vec4& vector);
@@ -81,6 +89,7 @@ namespace Loopie {
 		const std::string& GetGeometrySource() const;
 		const std::string& GetFilePath() const;
 		const std::vector<Uniform>& GetUniforms() const;
+		const std::vector<SamplerSlot>& GetSamplers() const { return m_samplers; }
 
 		// Setters
 		void SetPath(const std::string& path);
@@ -108,6 +117,7 @@ namespace Loopie {
 		GLuint m_rendererID = 0;
 		std::vector<Uniform> m_uniforms;
 		std::unordered_map<std::string, GLint> m_uniformLocationCache;
+		std::vector<SamplerSlot> m_samplers;
 		mutable bool m_uniformsCached = false;
 		mutable bool m_attributesCached = false;
 

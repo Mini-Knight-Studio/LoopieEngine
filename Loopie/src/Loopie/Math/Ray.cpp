@@ -13,11 +13,11 @@ namespace Loopie
     Ray::Ray(vec3 startPoint, vec3 direction, float length)
     {
         this->startPoint = startPoint;
-        this->endPoint = startPoint + length * direction;
 		this->direction = normalize(direction);
+        this->endPoint = startPoint + (length * this->direction);
     }
 
-    bool Ray::Intersects(const std::vector<vec3>& vertex, bool bounded_by_vertex, vec3& intersection_point)
+    bool Ray::Intersects(const std::vector<vec3>& vertex, bool bounded_by_vertex, vec3& intersection_point)const
     {
         if (vertex.size() < 2)
         {
@@ -34,7 +34,7 @@ namespace Loopie
         }
     }
 
-    bool Ray::IntersectsLine(const vec3 lineStart, const vec3 lineEnd, vec3& intersectionPoint, bool only_hits_segment)
+    bool Ray::IntersectsLine(const vec3 lineStart, const vec3 lineEnd, vec3& intersectionPoint, bool only_hits_segment)const
     {
         vec3 ldir = lineEnd - lineStart;
         vec3 rdir = endPoint - startPoint;
@@ -67,7 +67,7 @@ namespace Loopie
         return true;
     }
 
-    bool Ray::IntersectsPlane(const std::vector<vec3>& vertex_array, vec3& intersectionPoint, bool only_hits_polygon)
+    bool Ray::IntersectsPlane(const std::vector<vec3>& vertex_array, vec3& intersectionPoint, bool only_hits_polygon)const
     {
         vec3 rdir = endPoint - startPoint;
 

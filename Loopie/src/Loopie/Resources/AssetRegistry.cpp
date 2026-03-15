@@ -9,6 +9,9 @@
 #include "Loopie/Importers/MeshImporter.h"
 #include "Loopie/Importers/MaterialImporter.h"
 #include "Loopie/Importers/ScriptImporter.h"
+#include "Loopie/Importers/AudioImporter.h"
+#include "Loopie/Importers/FontImporter.h"
+#include "Loopie/Importers/SceneImporter.h"
 
 #include <filesystem>
 #include <unordered_set>
@@ -43,6 +46,10 @@ namespace Loopie {
 			
 			const std::string& pathString = s_UUIDToPath[metadata.UUID];
 			bool updated = false;
+
+			if(std::filesystem::is_directory(pathString))
+				continue;
+
 			if (metadata.IsOutdated) {
 				metadata.LastModified = MetadataRegistry::GetLastModifiedFromPath(pathString);			
 				updated = true;
@@ -74,6 +81,24 @@ namespace Loopie {
 					scriptReloadRequired = true;
 				}
 				scriptFiles++;
+			}
+			else if (metadata.Type == ResourceType::AUDIO || AudioImporter::CheckIfIsAudio(pathString.c_str())) {
+				if (metadata.IsOutdated || metadata.CachesPath.size() == 0) {
+					AudioImporter::ImportAudio(pathString, metadata);
+					updated = true; 
+				}
+			}
+			else if (metadata.Type == ResourceType::FONT || FontImporter::CheckIfIsFont(pathString.c_str())) {
+				if (metadata.IsOutdated || metadata.CachesPath.size() == 0) {
+					FontImporter::ImportFont(pathString, metadata);
+					updated = true;
+				}
+			}
+			else if (metadata.Type == ResourceType::SCENE || SceneImporter::CheckIfIsSceneAsset(pathString.c_str())) {
+				if (metadata.IsOutdated || metadata.CachesPath.size() == 0) {
+					SceneImporter::ImportSceneAsset(pathString, metadata);
+					updated = true;
+				}
 			}
 
 			///

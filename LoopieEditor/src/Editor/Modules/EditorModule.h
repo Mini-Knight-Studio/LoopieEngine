@@ -16,6 +16,7 @@
 
 #include "Loopie/ParticleSystemEn/ParticleSystem.h"  
 #include "Loopie/Components/ParticleComponent.h"
+#include "Loopie/Components/Canvas.h"
 
 namespace Loopie {
 
@@ -36,14 +37,25 @@ namespace Loopie {
 		void OnUpdate() override;
 
 		void OnInterfaceRender()override;
+		
+		static Canvas* FindCanvasInParents(const std::shared_ptr<Loopie::Entity>& entity);
+
 	private:
+		bool UpdateComponents(DebugGameMode mode);
 		void RenderWorld(Camera* camera);
 		void RenderParticles(Camera* cam);
 		/// Test
 		void CreateBakerHouse();
 		void CreateCity();
-		//void MousePick(Camera* camera);
-		///
+
+		void RenderUIRecursive(const std::shared_ptr<Entity>& entity, vec2& scale);
+		void RenderUI();
+		void RenderSceneUIRecursive(const std::shared_ptr<Entity>& entity);
+		void RenderSceneUI(Camera* camera);
+
+		void ProcessOverlayButtonsInput();
+		static void ProcessOverlayButtonsRecursive(const std::shared_ptr<Loopie::Entity>& entity, const vec2& mouseCanvas, bool mouseOverGame, const Loopie::InputEventManager& input, bool& pressedInsideAny);
+
 	private:
 		InspectorInterface m_inspector;
 		ConsoleInterface m_console;

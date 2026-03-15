@@ -8,10 +8,43 @@
 #include "Loopie/Render/VertexBuffer.h"
 #include "Loopie/Render/VertexArray.h"
 
+#include "Loopie/Animations/AnimationClip.h"
+
 #include <vector>
 #include <memory>
 
 namespace Loopie {
+
+	constexpr int MAX_BONE_INFLUENCE = 4;
+
+
+	struct Bone
+	{
+		int ID = -1;
+		int ParentID = -1;
+		std::string Name;
+		matrix4 OffsetMatrix = matrix4(1);
+		matrix4 LocalBindTransform = matrix4(1);
+
+	};
+
+	struct VertexBoneData
+	{
+		int IDs[MAX_BONE_INFLUENCE] = { 0,0,0,0 };
+		float Weights[MAX_BONE_INFLUENCE] = { 0,0,0,0 };
+
+		int Index = 0;
+
+		void AddBoneData(int id, float weight)
+		{
+			if (Index == MAX_BONE_INFLUENCE)
+				return;
+
+			IDs[Index] = id;
+			Weights[Index] = weight;
+			Index++;
+		}
+	};
 
 	struct MeshData {
 		std::string Name;
@@ -19,7 +52,7 @@ namespace Loopie {
 		AABB BoundingBox;
 		vec3 Position = vec3(0); /// Still NotWorking
 		quaternion Rotation = quaternion(1,0,0,0); /// Still NotWorking
-		vec3 Scale = vec3(0); /// Still NotWorking
+		vec3 Scale = vec3(1); /// Still NotWorking
 
 		unsigned int VerticesAmount = 0;
 		unsigned int VertexElements = 0;
@@ -30,9 +63,24 @@ namespace Loopie {
 		bool HasNormal = false;
 		bool HasTangent = false;
 		bool HasColor = false;
+		bool HasBones = false;
 
 		std::vector<float> Vertices;
 		std::vector<unsigned int> Indices;
+
+		std::vector<VertexBoneData> Bones;
+		std::vector<Bone> Skeleton;
+
+		matrix4 GlobalInverseTransform = matrix4(1);
+		std::vector<AnimationClip> AnimationClips;
+		const AnimationClip* GetAnimationClip(const std::string& name) const {
+			for (const auto& clip : AnimationClips) {
+				if (clip.Name == name) {
+					return &clip;
+				}
+			}
+			return nullptr;
+		}
 
 	};
 	
@@ -55,6 +103,7 @@ namespace Loopie {
 
 		std::shared_ptr<VertexArray> m_vao;
 		std::shared_ptr<VertexBuffer> m_vbo;
+		std::shared_ptr<VertexBuffer> m_boneIDVBO;
 		std::shared_ptr<IndexBuffer> m_ebo;
 
 		unsigned int m_meshIndex = 0;

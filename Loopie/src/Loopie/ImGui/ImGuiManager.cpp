@@ -36,7 +36,7 @@ namespace Loopie {
 		ImGui_ImplSDL3_InitForOpenGL(window.GetSDLWindow(), window.GetSDL_GL_Context());
 		ImGui_ImplOpenGL3_Init();
 
-		ImGuizmo::AllowAxisFlip(false);
+		//ImGuizmo::AllowAxisFlip(false);
 
 		CustomImGui();
 	}

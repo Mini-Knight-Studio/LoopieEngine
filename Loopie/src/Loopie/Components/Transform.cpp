@@ -116,25 +116,22 @@ namespace Loopie
 
     void Transform::SetWorldMatrix(const matrix4& worldMatrix)
     {
-        vec3 position, scale;
-        quaternion rotation;
-
-        Math::DecomposeMatrix(worldMatrix, position, rotation, scale);
+        matrix4 localMatrix = worldMatrix;
 
         if (auto parent = GetOwner()->GetParent().lock())
         {
             Transform* parentTransform = parent->GetTransform();
+            localMatrix = parentTransform->GetWorldToLocalMatrix() * worldMatrix;
+        }
 
-            SetLocalPosition(vec3(parentTransform->GetWorldToLocalMatrix() * vec4(position, 1.0f)));
-            SetLocalRotation(inverse(parentTransform->GetWorldRotation()) * rotation);
-            SetLocalScale(scale / parentTransform->GetWorldScale());
-        }
-        else
-        {
-            SetLocalPosition(position);
-            SetLocalRotation(rotation);
-            SetLocalScale(scale);
-        }
+        vec3 position, scale;
+        quaternion rotation;
+
+        Math::DecomposeMatrix(localMatrix, position, rotation, scale);
+
+        SetLocalPosition(position);
+        SetLocalRotation(rotation);
+        SetLocalScale(scale);
     }
 
     const matrix4& Transform::GetLocalToWorldMatrix() const
@@ -147,6 +144,12 @@ namespace Loopie
     {
         RefreshMatrices();
         return m_worldToLocal;
+    }
+
+    const matrix4& Transform::GetLocalMatrix() const
+    {
+        RefreshMatrices();
+        return m_localMatrix;
     }
 
     vec3 Transform::GetWorldPosition() const
@@ -376,6 +379,7 @@ namespace Loopie
             m_localRotation.x = node.GetValue<float>("x", 0.0f).Result;
             m_localRotation.y = node.GetValue<float>("y", 0.0f).Result;
             m_localRotation.z = node.GetValue<float>("z", 0.0f).Result;
+            m_localRotation.w = node.GetValue<float>("w", 0.0f).Result;
         }
 
         node = data.Child("scale");
@@ -389,7 +393,7 @@ namespace Loopie
         node = data.Child("euler_angles");
         if (node.IsValid() && node.IsObject())
         {
-            SetEulerAngles({node.GetValue<float>("x", 0.0f).Result,
+            SetLocalEulerAngles({node.GetValue<float>("x", 0.0f).Result,
                             node.GetValue<float>("y", 0.0f).Result,
                             node.GetValue<float>("z", 0.0f).Result });
         }
@@ -399,23 +403,24 @@ namespace Loopie
     {
         if (!IsDirty()) return;
 
-        matrix4 localMat = translate(matrix4(1.0f), m_localPosition) * toMat4(m_localRotation) * scale(matrix4(1.0f), m_localScale);
+        m_localMatrix = translate(matrix4(1.0f), m_localPosition) * toMat4(m_localRotation) * scale(matrix4(1.0f), m_localScale);
 
         if (auto parent = GetOwner()->GetParent().lock())
         {
             Transform* transform = parent->GetTransform();
             transform->RefreshMatrices();
-            m_localToWorld = transform->m_localToWorld * localMat;
+            m_localToWorld = transform->m_localToWorld * m_localMatrix;
         }
         else
         {
-            m_localToWorld = localMat;
+            m_localToWorld = m_localMatrix;
         }
 
         m_worldToLocal = inverse(m_localToWorld);
 
         m_localDirty = false;
         m_worldDirty = false;
+
 
         m_transformNotifier.Notify(TransformNotification::OnChanged);
     }

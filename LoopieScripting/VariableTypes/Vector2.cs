@@ -7,6 +7,7 @@ namespace Loopie
         public float x, y;
 
         public static Vector2 Zero => new Vector2(0.0f);
+        public static Vector2 One => new Vector2(1.0f);
         public static Vector2 Right => new Vector2(1.0f, 0.0f);
         public static Vector2 Up => new Vector2(0.0f, 1.0f);
         public double magnitude => Math.Sqrt(x * x + y * y);
@@ -42,15 +43,25 @@ namespace Loopie
         {
             return new Vector2(v.x / scalar, v.y / scalar);
         }
-        
+
         public static bool operator ==(Vector2 a, Vector2 b)
         {
-            return (Math.Sqrt(a.x - b.x + a.y - b.y) < 1e-10f) ? true : false;
+            return Math.Abs(a.x - b.x) < 1e-10f && Math.Abs(a.y - b.y) < 1e-10f;
         }
 
         public static bool operator !=(Vector2 a, Vector2 b)
         {
             return !(a == b);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is Vector2 v && this == v;
+        }
+
+        public override int GetHashCode()
+        {
+            return x.GetHashCode() ^ y.GetHashCode();
         }
 
         public static double Distance(Vector2 a, Vector2 b)
@@ -61,7 +72,7 @@ namespace Loopie
         public void Normalize()
         {
             float mag = (float)magnitude;
-            if (mag > 1E-05f)
+            if (mag > Mathf.Epsilon)
             {
                 this /= mag;
             }
@@ -79,8 +90,53 @@ namespace Loopie
             get
             {
                 float mag = (float)magnitude;
-                return mag > 1E-05f? this / mag : Zero;
+                return mag > Mathf.Epsilon ? this / mag : Zero;
             }
         }
+
+        public static Vector2 Lerp(Vector2 a, Vector2 b, float t)
+        {
+            t = Mathf.Clamp01(t);
+            return new Vector2(
+                a.x + (b.x - a.x) * t,
+                a.y + (b.y - a.y) * t
+            );
+        }
+
+        public static Vector2 LerpUnclamped(Vector2 a, Vector2 b, float t)
+        {
+            return new Vector2(
+                a.x + (b.x - a.x) * t,
+                a.y + (b.y - a.y) * t
+            );
+        }
+
+        public static float Angle(Vector2 a, Vector2 b)
+        {
+            float dot = Dot(a, b);
+            float mag = (float)(a.magnitude * b.magnitude);
+
+            if (mag == Mathf.Epsilon)
+                return 0.0f;
+
+            float cosTheta = dot / mag;
+            cosTheta = Mathf.Clamp(cosTheta, -1.0f, 1.0f);
+
+            return Mathf.Acos(cosTheta) * Mathf.Rad2Deg;
+        }
+
+        public static Vector2 Rotate(Vector2 vector, float angleDegrees)
+        {
+            float rad = angleDegrees * Mathf.Deg2Rad;
+
+            float cos = Mathf.Cos(rad);
+            float sin = Mathf.Sin(rad);
+
+            return new Vector2(
+                vector.x * cos - vector.y * sin,
+                vector.x * sin + vector.y * cos
+            );
+        }
+
     }
 }

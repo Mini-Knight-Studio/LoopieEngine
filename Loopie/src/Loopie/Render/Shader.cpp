@@ -115,6 +115,18 @@ namespace Loopie {
 		glUniformMatrix4fv(location, 1, GL_FALSE, &matrix[0][0]);
 	}
 
+	void Shader::SetUniformMat4Array(const std::string& name, const Loopie::matrix4* matrices, int count)
+	{
+		if (!CheckIfShaderIsBoundAndWarn()) return;
+		GLint location = GetUniformLocation(name);
+		if (location == -1)
+		{
+			Log::Warn("Uniform '{0}' not found in shader.", name);
+			return;
+		}
+		glUniformMatrix4fv(location, count, GL_FALSE, &matrices[0][0][0]);
+	}
+
 	void Shader::SetUniformVec2(const std::string& name, const Loopie::vec2& vector)
 	{
 		if (!CheckIfShaderIsBoundAndWarn()) return;
@@ -464,6 +476,7 @@ namespace Loopie {
 		glGetProgramiv(m_rendererID, GL_ACTIVE_UNIFORM_MAX_LENGTH, &maxNameLength);
 		std::vector<char> nameBuffer(maxNameLength);
 
+		int currentSlot = 0;
 		for (GLint i = 0; i < numUniforms; ++i) 
 		{
 			GLsizei length = 0;
@@ -483,6 +496,16 @@ namespace Loopie {
 			{
 				m_uniforms.push_back(Uniform{ name, typeIt->second });
 				GetUniformDefaultValue(m_uniforms.back());
+
+				if (typeIt->second == UniformType_Sampler2D || typeIt->second == UniformType_Sampler3D) {
+					SamplerSlot sampler;
+					sampler.name = name;
+					sampler.slot = currentSlot++;
+					sampler.type = typeIt->second;
+
+					m_samplers.push_back(sampler);
+				}
+				
 			}
 			else
 			{

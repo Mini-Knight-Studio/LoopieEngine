@@ -28,7 +28,9 @@ namespace Loopie {
 		UShort,
 		UInt,
 		ULong,
-		String
+		String,
+		Entity,
+		Component
 	};
 
 	static std::unordered_map<std::string, ScriptFieldType> s_ScriptFieldTypeMap =
@@ -44,17 +46,19 @@ namespace Loopie {
 		{ "System.UInt16", ScriptFieldType::UShort },
 		{ "System.UInt32", ScriptFieldType::UInt },
 		{ "System.UInt64", ScriptFieldType::ULong },
-		{ "System.String",  ScriptFieldType::String }
+		{ "System.String",  ScriptFieldType::String },
+		{ "Loopie.Entity",  ScriptFieldType::Entity },
+		{ "Loopie.Component",  ScriptFieldType::Component }
 	};
 
 	
 
 	struct ScriptField
 	{
-		ScriptFieldType Type;
+		ScriptFieldType Type = ScriptFieldType::Byte;
 		std::string Name;
 
-		_MonoClassField* ClassField;
+		_MonoClassField* ClassField = nullptr;
 	};
 
 	class ScriptingClass {
@@ -70,7 +74,7 @@ namespace Loopie {
 
 		const std::string& GetClassName() const { return m_className; }
 		const std::string& GetClassNamespace() const { return m_classNamespace; }
-		const std::string GetFullName() const { return m_classNamespace + "." + m_className; }
+		const std::string GetFullName() const;
 
 		_MonoClass* GetMonoClass() const { return m_monoClass; }
 

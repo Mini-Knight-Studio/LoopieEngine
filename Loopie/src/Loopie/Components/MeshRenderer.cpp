@@ -5,6 +5,7 @@
 #include "Loopie/Render/Gizmo.h"
 #include "Loopie/Math/MathTypes.h"
 #include "Loopie/Components/Transform.h"
+#include "Loopie/Components/Animator.h"
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Resources/ResourceManager.h"
 
@@ -19,10 +20,8 @@ namespace Loopie {
 		if (GetOwner() && GetTransform())
 			GetTransform()->m_transformNotifier.RemoveObserver(this);
 
-		if (m_mesh)
-			m_mesh->DecrementReferenceCount();
-		if (m_material)
-			m_material->DecrementReferenceCount();
+		if (m_linkedAnimator)
+			m_linkedAnimator->RemoveMeshRenderer(this);
 	}
 
 	void MeshRenderer::Init()
@@ -58,21 +57,13 @@ namespace Loopie {
 
 	void MeshRenderer::SetMesh(std::shared_ptr<Mesh> mesh)
 	{
-		if (m_mesh)
-			m_mesh->DecrementReferenceCount();
 		m_mesh = mesh;
-		if (m_mesh)
-			m_mesh->IncrementReferenceCount();
 		SetBoundingBoxesDirty();
 	}
 
 	void MeshRenderer::SetMaterial(std::shared_ptr<Material> material)
 	{
-		if(m_material)
-			m_material->DecrementReferenceCount();
 		m_material = material;
-		if(m_material)
-			m_material->IncrementReferenceCount();
 	}
 
 	std::shared_ptr<Material> MeshRenderer::GetMaterial() {
