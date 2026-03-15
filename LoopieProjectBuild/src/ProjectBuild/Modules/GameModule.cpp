@@ -295,11 +295,12 @@ namespace Loopie
 			const vec3 p = rt->GetWorldPosition();
 			const vec3 ws3 = rt->GetWorldScale();
 			const vec2 ws(ws3.x, ws3.y);
-
-			const vec2 s(rt->GetWidth(), rt->GetHeight());
+			const vec3 bmin = rt->GetLocalBoundsMin();
+			const vec3 bmax = rt->GetLocalBoundsMax();
+			const vec2 s(bmax.x - bmin.x, bmax.y - bmin.y);
 
 			const vec2 pixelSize(s.x * ws.x * scale.x, s.y * ws.y * scale.y);
-			const vec2 pixelPos(p.x * scale.x, p.y * scale.y);
+			const vec2 pixelPos((p.x + bmin.x * ws.x) * scale.x, (p.y + bmin.y * ws.y) * scale.y);
 
 			vec4 color = img->GetTint();
 			std::shared_ptr<Texture> texture = img->GetTexture();
@@ -318,10 +319,11 @@ namespace Loopie
 			const vec3 p = rt->GetWorldPosition();
 			const vec3 ws3 = rt->GetWorldScale();
 			const vec2 ws(ws3.x, ws3.y);
+			const vec3 bmin = rt->GetLocalBoundsMin();
+			const vec3 bmax = rt->GetLocalBoundsMax();
+			const vec2 s(bmax.x - bmin.x, bmax.y - bmin.y);
 
-			const vec2 s(rt->GetWidth(), rt->GetHeight());
-
-			const vec2 pixelPos(p.x * scale.x, p.y * scale.y);
+			const vec2 pixelPos((p.x + bmin.x * ws.x) * scale.x, (p.y + bmin.y * ws.y) * scale.y);
 			const vec2 pixelSize(s.x * ws.x * scale.x, s.y * ws.y * scale.y);
 
 			UIRenderer::DrawText(pixelPos, pixelSize, text->GetText(), text->GetFont(), text->GetColor(), text->GetScale(),
@@ -414,10 +416,14 @@ namespace Loopie
 			const std::shared_ptr<Texture> tex = img->GetTexture();
 			if (tex)
 			{
-				const float w = rt->GetWidth();
-				const float h = rt->GetHeight();
+				const vec3 bmin = rt->GetLocalBoundsMin();
+				const vec3 bmax = rt->GetLocalBoundsMax();
+				const float w = bmax.x - bmin.x;
+				const float h = bmax.y - bmin.y;
 
-				matrix4 model = rt->GetLocalToWorldMatrix() * glm::scale(matrix4(1.0f), vec3(w, h, 1.0f));
+				matrix4 model = rt->GetLocalToWorldMatrix()
+					* glm::translate(matrix4(1.0f), vec3(bmin.x, bmin.y, 0.0f))
+					* glm::scale(matrix4(1.0f), vec3(w, h, 1.0f));
 				vec4 color = img->GetTint();
 				std::shared_ptr<Texture> texture = img->GetTexture();
 
@@ -433,10 +439,12 @@ namespace Loopie
 
 		if (text && text->GetIsActive() && rt)
 		{
-			const float w = rt->GetWidth();
-			const float h = rt->GetHeight();
+			const vec3 bmin = rt->GetLocalBoundsMin();
+			const vec3 bmax = rt->GetLocalBoundsMax();
+			const float w = bmax.x - bmin.x;
+			const float h = bmax.y - bmin.y;
 
-			const matrix4 model = rt->GetLocalToWorldMatrix();
+			const matrix4 model = rt->GetLocalToWorldMatrix() * glm::translate(matrix4(1.0f), vec3(bmin.x, bmin.y, 0.0f));
 
 			UIRenderer::DrawTextWorld(model, vec2(w, h), text->GetText(), text->GetFont(), text->GetColor(), text->GetScale(),
 				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment());
