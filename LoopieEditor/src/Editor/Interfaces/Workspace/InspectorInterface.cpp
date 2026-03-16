@@ -1074,13 +1074,19 @@ namespace Loopie {
 		}
 
 		unsigned int spawnRate = emitter->GetSpawnrate();
-		if (ImGui::InputScalar("SpawnRate", ImGuiDataType_U32, &spawnRate))
+		unsigned int spawnMin = 0;
+		unsigned int spawnMax = 100000;
+		unsigned int spawnSpeed = 1;
+		if (ImGui::DragScalar("Spawn Rate", ImGuiDataType_U32, &spawnRate, spawnSpeed, &spawnMin, &spawnMax, "%u", ImGuiSliderFlags_AlwaysClamp))
 		{
 			emitter->SetSpawnRate(spawnRate);
 		}
 
 		unsigned int maxParticles = emitter->GetMaxParticles();
-		if (ImGui::InputScalar("MaxParticles", ImGuiDataType_U32, &maxParticles))
+		unsigned int maxMin = 1;
+		unsigned int maxMax = 1000000;
+		unsigned int maxSpeed = 10;
+		if (ImGui::DragScalar("Max Particles", ImGuiDataType_U32, &maxParticles, maxSpeed, &maxMin, &maxMax, "%u", ImGuiSliderFlags_AlwaysClamp))
 		{
 			emitter->SetMaxParticles(maxParticles);
 		}
@@ -1097,14 +1103,6 @@ namespace Loopie {
 			emitter->ToggleActive();
 		}
 
-		bool followOwner = emitter->GetIsFollowingOwner();
-
-		if (ImGui::Button(followOwner ? "Follow Owner: ON" : "Follow Owner: OFF"))
-		{
-			emitter->SetFollowingOwner(!followOwner);
-		}
-
-
 		bool particlesFollow = emitter->GetParticlesFollowEmitter();
 		if (ImGui::Button(particlesFollow ? "Particles Follow Emitter: ON" : "Particles Follow Emitter: OFF"))
 		{
@@ -1117,16 +1115,16 @@ namespace Loopie {
 
 		ParticleProps& props = emitter->GetEmissionProperties();
 
-		ImGui::DragFloat3("Position", &props.Position.x);
-		ImGui::DragFloat3("Position Variation", &props.PositionVariation.x);
-		ImGui::DragFloat3("Velocity", &props.Velocity.x);
-		ImGui::DragFloat3("Velocity Variation", &props.VelocityVariation.x);
+		ImGui::DragFloat3("Position", &props.Position.x, 0.1f, -1000.0f, 1000.0f, "%.2f");
+		ImGui::DragFloat3("Position Variation", &props.PositionVariation.x, 0.1f, 0.0f, 500.0f, "%.2f");
+		ImGui::DragFloat3("Velocity", &props.Velocity.x, 0.1f, -500.0f, 500.0f, "%.2f");
+		ImGui::DragFloat3("Velocity Variation", &props.VelocityVariation.x, 0.1f, 0.0f, 200.0f, "%.2f");
 		ImGui::ColorEdit4("Color Begin", &props.ColorBegin.x);
 		ImGui::ColorEdit4("Color End", &props.ColorEnd.x);
-		ImGui::DragFloat("Size Begin", &props.SizeBegin);
-		ImGui::DragFloat("Size End", &props.SizeEnd);
-		ImGui::DragFloat("Size Variation", &props.SizeVariation);
-		ImGui::DragFloat("Lifetime", &props.LifeTime);
+		ImGui::DragFloat("Size Begin", &props.SizeBegin, 0.01f, 0.0f, 100.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+		ImGui::DragFloat("Size End", &props.SizeEnd, 0.01f, 0.0f, 100.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+		ImGui::DragFloat("Size Variation", &props.SizeVariation, 0.01f, 0.0f, 50.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+		ImGui::DragFloat("Lifetime", &props.LifeTime, 0.01f, 0.01f, 60.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
 
 
 		ImGui::Spacing();

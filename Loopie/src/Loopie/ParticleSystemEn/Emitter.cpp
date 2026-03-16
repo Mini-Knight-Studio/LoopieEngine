@@ -21,7 +21,6 @@ namespace Loopie
 		m_positionOffSet = posOffSet;
 		m_active = true;
 		m_poolIndex = 0;
-		m_followOwner = true;
 
 		m_name = "DefaultParticle";
 		m_particleProperties.Velocity = vec3(0, 0, 0);
@@ -70,7 +69,7 @@ namespace Loopie
 	{
 		if (!cam)
 		{
-			Log::Error("no camera passed to particle billboard!");
+			Log::Error("No camera passed to particle billboard!");
 			return;
 		}
 
@@ -205,14 +204,7 @@ namespace Loopie
 	{
 		m_active = isActive;
 	}
-	bool Emitter::GetIsFollowingOwner() const
-	{
-		return m_followOwner;
-	}
-	void Emitter::SetFollowingOwner(const bool isFollowingOwner)
-	{
-		m_followOwner = isFollowingOwner;
-	}
+
 	bool Emitter::GetParticlesFollowEmitter() const
 	{
 		return m_particleFollowEmitter;

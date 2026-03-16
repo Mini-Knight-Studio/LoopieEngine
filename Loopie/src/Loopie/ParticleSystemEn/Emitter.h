@@ -37,7 +37,6 @@ namespace Loopie
 			vec3 m_position;
 			vec3 m_positionOffSet;
 			bool m_active;
-			bool m_followOwner;
 			bool m_particleFollowEmitter;
 
 			std::vector<ParticleModule> m_particlePool;
@@ -81,9 +80,6 @@ namespace Loopie
 
 			bool GetIsActive() const;
 			void SetActive(const bool isActive);
-
-			bool GetIsFollowingOwner()const;
-			void SetFollowingOwner(const bool isFollowingOwner);
 
 			bool GetParticlesFollowEmitter() const;
 			void SetParticlesFollowEmitter(bool follow);
