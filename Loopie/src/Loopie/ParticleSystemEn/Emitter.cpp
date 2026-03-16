@@ -41,10 +41,14 @@ namespace Loopie
 		
 		for (auto& particle : m_particlePool)
 		{
-			if (particle.GetActive() == false)
+			if (!particle.GetActive())
+				continue;
+
+			if (m_particleFollowEmitter)
 			{
-                continue;
+				particle.SetEmitterPosition(m_position);
 			}
+
 			particle.Update(dt);
 		}
 		if (m_active && m_spawnRate > 0)
@@ -67,57 +71,67 @@ namespace Loopie
 		if (!cam)
 		{
 			Log::Error("no camera passed to particle billboard!");
+			return;
 		}
 
 		m_billboard->SetPosition(m_position);
-		matrix4 billboardTransform = m_billboard->UpdateCalc(cam);
+		matrix4 billboardRotation = m_billboard.get()->UpdateCalcRotation(cam);
 
 		for (auto it = m_particlePool.rbegin(); it != m_particlePool.rend(); ++it)
 		{
 			auto& particle = *it;
-
 			if (!particle.GetActive())
-			{
 				continue;
-			}
-				
-			particle.Render(quadVAO, material, billboardTransform);
+
+			particle.Render(quadVAO, material, billboardRotation);
 		}
 	}
 	void Emitter::Emit(const ParticleProps& particleProps)
 	{
 		ParticleModule& particle = m_particlePool[m_poolIndex];
-		
+
 		particle.SetActive(true);
-		particle.SetPosition(particleProps.Position);
-		particle.SetRotation(RandomFloat(0, (2 *Math::PI)));
+		particle.SetVelocityOffset(vec3(0.0f));
+		particle.SetRotation(RandomFloat(0, (2 * Math::PI)));
 
-		//position
-		vec3 position = vec3(0.0f);
-		position.x += RandomFloat(-particleProps.PositionVariation.x, particleProps.PositionVariation.x);
-		position.z += RandomFloat(-particleProps.PositionVariation.z, particleProps.PositionVariation.z);
-		particle.SetPosition(position);
+		//Position
+		vec3 spawnOffset = vec3(0.0f);
+		spawnOffset.x = RandomFloat(-particleProps.PositionVariation.x, particleProps.PositionVariation.x);
+		spawnOffset.z = RandomFloat(-particleProps.PositionVariation.z, particleProps.PositionVariation.z);
 
-		// velocity
+		if (m_particleFollowEmitter)
+		{
+			particle.SetFollowEmitter(true);
+			particle.SetLocalOffset(spawnOffset);
+			particle.SetEmitterPosition(m_position); 
+			particle.SetPosition(m_position + spawnOffset);
+		}
+		else
+		{
+			particle.SetFollowEmitter(false);
+			particle.SetLocalOffset(vec3(0.0f));
+			particle.SetPosition(particleProps.Position + spawnOffset);
+		}
+
+		//velocity
 		vec3 finalVelocity = particleProps.Velocity;
-		finalVelocity.x += RandomFloat(-particleProps.VelocityVariation.x * 1.5, particleProps.VelocityVariation.x * 1.5);
-		finalVelocity.y += RandomFloat(-particleProps.VelocityVariation.y * 1.5, particleProps.VelocityVariation.y * 1.5);
+		finalVelocity.x += RandomFloat(-particleProps.VelocityVariation.x * 1.5f, particleProps.VelocityVariation.x * 1.5f);
+		finalVelocity.y += RandomFloat(-particleProps.VelocityVariation.y * 1.5f, particleProps.VelocityVariation.y * 1.5f);
 		particle.SetVelocity(finalVelocity);
 
-		// colors
+
+		//color
 		particle.SetColorBegin(particleProps.ColorBegin);
 		particle.SetColorEnd(particleProps.ColorEnd);
 
-		// size
+		//size
 		float sizeBegin = particleProps.SizeBegin + RandomFloat(-particleProps.SizeVariation * 0.5f, particleProps.SizeVariation * 0.5f);
 		particle.SetSizeBegin(sizeBegin);
 		particle.SetSizeEnd(particleProps.SizeEnd);
-		
 		particle.SetLifetime(particleProps.LifeTime);
-		
+
 		m_poolIndex = (m_poolIndex - 1) % m_particlePool.size();
 	}
-
 	std::string Emitter::GetName()const
 	{
 		return m_name;
@@ -198,6 +212,14 @@ namespace Loopie
 	void Emitter::SetFollowingOwner(const bool isFollowingOwner)
 	{
 		m_followOwner = isFollowingOwner;
+	}
+	bool Emitter::GetParticlesFollowEmitter() const
+	{
+		return m_particleFollowEmitter;
+	}
+	void Emitter::SetParticlesFollowEmitter(bool follow)
+	{
+		m_particleFollowEmitter = follow;
 	}
 	void Emitter::ToggleActive()
 	{

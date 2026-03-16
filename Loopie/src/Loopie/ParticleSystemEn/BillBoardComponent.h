@@ -17,11 +17,12 @@ namespace Loopie
 			vec3 m_position;
 			matrix4 m_transform;
 			AABB m_Bbox;
+			vec3 m_axisAlignedAxis = vec3(0.0f, 1.0f, 0.0f); //I leave Y-axis for now
 
 		public:
 			Billboard(vec3 pos, BillboardType t);
 			matrix4  UpdateCalc(Camera* cam);
-			void DrawDebug();
+			matrix4 UpdateCalcRotation(Camera* cam);
 
 			BillboardType GetType()const;
 			void SetType(BillboardType t);

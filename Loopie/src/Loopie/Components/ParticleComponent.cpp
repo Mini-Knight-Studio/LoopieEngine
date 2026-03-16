@@ -68,6 +68,7 @@ namespace Loopie
 			emitterNode.CreateField("active", m_partSystem.GetEmitterArray()[i]->GetIsActive());
 			emitterNode.CreateField("poolindex", m_partSystem.GetEmitterArray()[i]->GetPoolIndex());
 			emitterNode.CreateField("followowner", m_partSystem.GetEmitterArray()[i]->GetIsFollowingOwner());
+			emitterNode.CreateField("particlefollowemitter", m_partSystem.GetEmitterArray()[i]->GetParticlesFollowEmitter());
 
 			JsonNode vectorNode = emitterNode.CreateObjectField("position");
 			vectorNode.CreateField("x", m_partSystem.GetEmitterArray()[i]->GetPosition().x);
@@ -142,6 +143,7 @@ namespace Loopie
 				m_partSystem.GetEmitterArray()[i]->SetActive(node.GetValue<bool>("active",false).Result);
 				m_partSystem.GetEmitterArray()[i]->SetPoolIndex(node.GetValue<unsigned int>("poolindex").Result);
 				m_partSystem.GetEmitterArray()[i]->SetFollowingOwner(node.GetValue<bool>("followowner", true).Result);
+				m_partSystem.GetEmitterArray()[i]->SetParticlesFollowEmitter(node.GetValue<bool>("particlefollowemitter", false).Result);
 
 				JsonNode positionNode = node.Child("position");
 				if (positionNode.IsValid() && positionNode.IsObject())

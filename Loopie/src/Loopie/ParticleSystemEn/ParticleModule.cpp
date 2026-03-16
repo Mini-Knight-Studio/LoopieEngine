@@ -15,6 +15,10 @@ namespace Loopie
 		m_lifetime = 1;
 		m_lifeRemaining = 0;
 		m_active = false;
+		m_localOffset = vec3(0.0f);
+		m_emitterPos = vec3(0.0f);
+		m_followEmitter = false;
+		m_velocityOffset = vec3(0.0f);
 	}
 	
 	void ParticleModule::Update(float dt)
@@ -30,11 +34,21 @@ namespace Loopie
 		}
 
 		m_lifeRemaining -= dt;
-		m_position += m_velocity * dt;
 		m_rotation += 0.01 * dt;
 
+		if (m_followEmitter)
+		{
+
+			m_velocityOffset += m_velocity * dt;
+			m_position = m_emitterPos + m_localOffset + m_velocityOffset;
+		}
+		else
+		{
+			m_position += m_velocity * dt;
+		}
+
 	}
-	void ParticleModule::Render(std::shared_ptr<VertexArray> quadVAO, std::shared_ptr<Material> material, const matrix4& billboardTransform)
+	void ParticleModule::Render(std::shared_ptr<VertexArray> quadVAO, std::shared_ptr<Material> material, const matrix4& billboardRotation)
 	{
 			if (!m_active)
 			{
@@ -54,10 +68,12 @@ namespace Loopie
 			float size = mix(m_sizeEnd, m_sizeBegin, life);
 
 		    // transform 
-			matrix4 transform = billboardTransform;
-			transform = translate(transform, m_position);
+			matrix4 transform = matrix4(1.0f);
+			transform = translate(transform, m_position);         
+			transform = transform * billboardRotation;
 			transform = rotate(transform, m_rotation, vec3(0.0f, 0.0f, 1.0f));
 			transform = scale(transform, vec3(size, size, 1.0f));
+
 
 			//material
 			UniformValue colorUni;
@@ -86,6 +102,14 @@ namespace Loopie
 	void ParticleModule::SetVelocity(const vec3& vel)
 	{
 		m_velocity = vel; 
+	}
+	vec3 ParticleModule::GetVelocityOffset() const
+	{
+		return m_velocityOffset;
+	}
+	void ParticleModule::SetVelocityOffset(const vec3& velOffset)
+	{
+		m_velocityOffset = velOffset;
 	}
 	float ParticleModule::GetRotation() const
 	{
@@ -157,5 +181,37 @@ namespace Loopie
 	void ParticleModule::SetActive(bool act)
 	{
 		m_active = act;
+		if (!act)
+		{
+			m_velocityOffset = vec3(0.0f);
+			m_followEmitter = false;
+			m_localOffset = vec3(0.0f);
+		}
+	}
+	vec3 ParticleModule::GetLocalOffset() const 
+	{
+		return m_localOffset; 
+	}
+	void ParticleModule::SetLocalOffset(const vec3& offset) 
+	{ 
+		m_localOffset = offset;
+	}
+
+	vec3 ParticleModule::GetEmitterPosition() const 
+	{ 
+		return m_emitterPos; 
+	}
+	void ParticleModule::SetEmitterPosition(const vec3& pos) 
+	{ 
+		m_emitterPos = pos;
+	}
+
+	bool ParticleModule::GetFollowEmitter() const 
+	{
+		return m_followEmitter;
+	}
+	void ParticleModule::SetFollowEmitter(bool follow)
+	{ 
+		m_followEmitter = follow; 
 	}
 }
