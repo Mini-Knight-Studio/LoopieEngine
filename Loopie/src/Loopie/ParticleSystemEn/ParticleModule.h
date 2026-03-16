@@ -22,18 +22,25 @@ namespace Loopie
 			float m_lifetime;
 			float m_lifeRemaining;
 			bool m_active;
+			vec3 m_localOffset; 
+			vec3 m_emitterPos; 
+			bool m_followEmitter;
+			vec3 m_velocityOffset;
 
 		public:
 
 			ParticleModule();
 			void Update(float dt);
-			void Render(std::shared_ptr<VertexArray> quadVAO, std::shared_ptr<Material> material, const matrix4& billboardTransform);
+			void Render(std::shared_ptr<VertexArray> quadVAO, std::shared_ptr<Material> material, const matrix4& billboardRotation);
 
 			vec3 GetPosition() const;
 			void SetPosition(const vec3& pos);
 
 			vec3 GetVelocity() const;
 			void SetVelocity(const vec3& vel);
+
+			vec3 GetVelocityOffset() const;
+			void SetVelocityOffset(const vec3& velOffset);
 
 			float GetRotation() const;
 			void SetRotation(float rot);
@@ -59,5 +66,13 @@ namespace Loopie
 			bool GetActive()const;
 			void SetActive(bool act);
 
+			vec3 GetLocalOffset() const;
+			void SetLocalOffset(const vec3& offset);
+
+			vec3 GetEmitterPosition() const;
+			void SetEmitterPosition(const vec3& pos);
+
+			bool GetFollowEmitter() const;
+			void SetFollowEmitter(bool follow);
 	};
 }

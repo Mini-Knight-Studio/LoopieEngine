@@ -1104,6 +1104,12 @@ namespace Loopie {
 			emitter->SetFollowingOwner(!followOwner);
 		}
 
+
+		bool particlesFollow = emitter->GetParticlesFollowEmitter();
+		if (ImGui::Button(particlesFollow ? "Particles Follow Emitter: ON" : "Particles Follow Emitter: OFF"))
+		{
+			emitter->SetParticlesFollowEmitter(!particlesFollow);
+		}
 		//PARTICLE PROPERTIES
 		ImGui::Separator();
 		ImGui::Text("Particle Properties");
@@ -1121,6 +1127,7 @@ namespace Loopie {
 		ImGui::DragFloat("Size End", &props.SizeEnd);
 		ImGui::DragFloat("Size Variation", &props.SizeVariation);
 		ImGui::DragFloat("Lifetime", &props.LifeTime);
+
 
 		ImGui::Spacing();
 		if (ImGui::Button("Delete Emitter"))
