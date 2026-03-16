@@ -384,5 +384,12 @@ namespace Loopie
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Gizmo_DrawLine(Vector3 start, Vector3 end, Vector4 color);
         #endregion
+        #region Image
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Image_GetTint(string entityID, string componentID, out Vector4 tint);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Image_SetTint(string entityID, string componentID, ref Vector4 tint);
+        #endregion
     }
 }

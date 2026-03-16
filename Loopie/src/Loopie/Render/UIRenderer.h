@@ -2,6 +2,7 @@
 #include "Loopie/Render/VertexArray.h"
 #include "Loopie/Resources/Types/Material.h"
 #include "Loopie/Resources/Types/Font.h"
+#include "Loopie/Components/Text.h"
 
 #include <memory>
 
@@ -17,12 +18,18 @@ namespace Loopie {
 		static void DrawImage(const vec2& posPixels, const vec2& sizePixels, const std::shared_ptr<Texture>& texture, const vec4& tint);
 		static void DrawImageWorld(const matrix4& modelMatrix, const std::shared_ptr<Texture>& texture, const vec4& tint);
 
-		static void DrawText(const vec2& posPixels, const vec2& sizePixels, const std::string& text, const std::shared_ptr<Font>& font, const vec4& color, float scale);
-		static void DrawTextWorld(const matrix4& modelMatrix, const vec2& sizePixels, const std::string& text, const std::shared_ptr<Font>& font, const vec4& color, float scale);
+		static void DrawText(const vec2& posPixels, const vec2& sizePixels, const std::string& text, const std::shared_ptr<Font>& font, const vec4& color, float scale,
+			TextSizeMode sizeMode, float fontSize, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign);
+
+		static void DrawTextWorld(const matrix4& modelMatrix, const vec2& sizePixels, const std::string& text, const std::shared_ptr<Font>& font, const vec4& color, float scale,
+			TextSizeMode sizeMode, float fontSize, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign);
 
 	private:
 		static void EnsureInit();
-	
+
+		static float AlignFactor(TextHorizontalAlignment alignment);
+		static float AlignFactor(TextVerticalAlignment alignment);
+
 	private:
 		static bool s_initialized;
 		static std::shared_ptr<VertexArray> s_quadVAO;

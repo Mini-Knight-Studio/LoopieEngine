@@ -35,6 +35,7 @@ namespace Loopie {
 
 	private:
 		void RebuildWorldCornersIfNeeded() const;
+		void SyncOverlayRectSizeIfNeeded();
 
 	private:
 		vec4 m_color = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -44,5 +45,6 @@ namespace Loopie {
 		mutable vec3 m_worldCorners[4]{};
 
 		CanvasRenderMode m_renderMode = CanvasRenderMode::ScreenSpaceOverlay;
+		mutable ivec2 m_lastOverlayTargetPixels = ivec2(-1, -1);
 	};
 }

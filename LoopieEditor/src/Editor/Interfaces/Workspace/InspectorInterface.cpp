@@ -400,24 +400,38 @@ namespace Loopie {
 		if (open)
 		{
 			const bool isRectTransform = transform->IsRectTransform();
-			const bool isOverlayRectTransform = isRectTransform &&
-				transform->GetOwner() &&
-				transform->GetOwner()->GetComponent<Canvas>() &&
-				transform->GetOwner()->GetComponent<Canvas>()->GetRenderMode() == CanvasRenderMode::ScreenSpaceOverlay;
+			RectTransform* rectTransform = isRectTransform ? static_cast<RectTransform*>(transform) : nullptr;
+
+			const bool isCanvas = isRectTransform && transform->GetOwner()->GetComponent<Canvas>();
+			const bool isOverlay = isRectTransform && isCanvas && transform->GetOwner()->GetComponent<Canvas>()->GetRenderMode() == CanvasRenderMode::ScreenSpaceOverlay;
 
 			vec3 position = transform->GetLocalPosition();
 			vec3 rotation = transform->GetLocalEulerAngles();
 			vec3 scale = transform->GetLocalScale();
 			vec3 oldScale = scale;
 
-			if (isOverlayRectTransform)
+			if (isOverlay)
 				ImGui::BeginDisabled();
+
+			if (isRectTransform && !isCanvas)
+			{
+				ImGui::BeginDisabled();
+			}
 
 			if (ImGui::DragFloat3("Position", &position.x, 0.1f))
 			{
 				modified = true;
-				transform->SetLocalPosition(position);
+				if (rectTransform)
+					rectTransform->SetAnchoredPosition(vec2(position.x, position.y));
+				else
+					transform->SetLocalPosition(position);
 			}
+
+			if (isRectTransform && !isCanvas)
+			{
+				ImGui::EndDisabled();
+			}
+
 			if (ImGui::DragFloat3("Rotation", &rotation.x, 0.5f))
 			{
 				modified = true;
@@ -491,24 +505,56 @@ namespace Loopie {
 			if (hasStyle)
 				ImGui::PopStyleColor();
 
-			if (isOverlayRectTransform)
+			if (isOverlay)
 				ImGui::EndDisabled();
 
 			if (isRectTransform)
 			{
-				ImGui::SeparatorText("Size");
+				ImGui::SeparatorText("Layout");
 
-				float w = transform->GetWidth();
-				float h = transform->GetHeight();
-
-				if (ImGui::DragFloat("Width", &w, 1.0f))
+				vec2 anchorMin = rectTransform->GetAnchorMin();
+				vec2 anchorMax = rectTransform->GetAnchorMax();
+				vec2 pivot = rectTransform->GetPivot();
+				vec2 anchoredPosition = rectTransform->GetAnchoredPosition();
+				vec2 sizeDelta = rectTransform->GetSize();
+				
+				if (ImGui::DragFloat2("Anchored Position", &anchoredPosition.x, 0.1f))
 				{
-					transform->SetWidth(w);
+					rectTransform->SetAnchoredPosition(anchoredPosition);
 					modified = true;
 				}
-				if (ImGui::DragFloat("Height", &h, 1.0f))
+
+				if (!isCanvas) {
+					DrawAnchorPresets(rectTransform, modified);
+					ImGui::SameLine();
+				}
+				if(ImGui::TreeNode("Anchors")){
+					if (ImGui::DragFloat2("Min", &anchorMin.x, 0.01f, 0.0f, 1.0f))
+					{
+						rectTransform->SetAnchorMin(anchorMin);
+						modified = true;
+					}
+
+					if (ImGui::DragFloat2("Max", &anchorMax.x, 0.01f, 0.0f, 1.0f))
+					{
+						rectTransform->SetAnchorMax(anchorMax);
+						modified = true;
+					}
+					ImGui::TreePop();
+				}
+		
+				if (ImGui::DragFloat2("Pivot", &pivot.x, 0.01f, 0.0f, 1.0f))
 				{
-					transform->SetHeight(h);
+					rectTransform->SetPivot(pivot);
+					modified = true;
+				}
+
+				ImGui::SeparatorText("Size");
+
+				if (ImGui::DragFloat2("Size Delta", &sizeDelta.x, 1.0f))
+				{
+					rectTransform->SetWidth(sizeDelta.x);
+					rectTransform->SetHeight(sizeDelta.y);
 					modified = true;
 				}
 			}
@@ -518,6 +564,57 @@ namespace Loopie {
 
 		if (modified)
 			Application::GetInstance().GetScene().GetOctree().Rebuild();
+	}
+
+	void InspectorInterface::DrawAnchorPresets(RectTransform* rt, bool& modified)
+	{
+		if (ImGui::Button("Anchor Presets"))
+		{
+			ImGui::OpenPopup("AnchorPresetsPopup");
+
+		}
+
+		if (ImGui::BeginPopup("AnchorPresetsPopup"))
+		{
+			const ImVec2 btnSize(28, 28);
+
+			auto SetPreset = [&](float minX, float minY, float maxX, float maxY)
+			{
+				rt->SetAnchorMin(vec2{ minX, minY });
+				rt->SetAnchorMax(vec2{ maxX, maxY });
+				modified = true;
+				ImGui::CloseCurrentPopup();
+			};
+
+			if (ImGui::Button("TL", btnSize)) 
+				SetPreset(0, 1, 0, 1);
+			ImGui::SameLine();
+			if (ImGui::Button("T", btnSize)) 
+				SetPreset(0.5f, 1, 0.5f, 1);
+			ImGui::SameLine();
+			if (ImGui::Button("TR", btnSize)) 
+				SetPreset(1, 1, 1, 1);
+
+			if (ImGui::Button("L", btnSize))  
+				SetPreset(0, 0.5f, 0, 0.5f);
+			ImGui::SameLine();
+			if (ImGui::Button("C", btnSize))  
+				SetPreset(0.5f, 0.5f, 0.5f, 0.5f);
+			ImGui::SameLine();
+			if (ImGui::Button("R", btnSize))  
+				SetPreset(1, 0.5f, 1, 0.5f);
+
+			if (ImGui::Button("BL", btnSize)) 
+				SetPreset(0, 0, 0, 0);
+			ImGui::SameLine();
+			if (ImGui::Button("B", btnSize)) 
+				SetPreset(0.5f, 0, 0.5f, 0);
+			ImGui::SameLine();
+			if (ImGui::Button("BR", btnSize)) 
+				SetPreset(1, 0, 1, 0);
+
+			ImGui::EndPopup();
+		}
 	}
 
 	void InspectorInterface::DrawCamera(Camera* camera)
@@ -1310,10 +1407,10 @@ namespace Loopie {
 			if (canvasScaler->GetScaleMode() == CanvasScaleMode::ScaleWithCanvasSize)
 			{
 				vec2 refRes = canvasScaler->GetReferenceResolution();
-				
-				ImGui::BeginDisabled();
-				(void)ImGui::DragFloat2("Reference Resolution", &refRes.x, 1.0f, 1.0f, 16384.0f);
-				ImGui::EndDisabled();
+				if (ImGui::DragFloat2("Reference Resolution", &refRes.x, 1.0f, 1.0f, 16384.0f))
+				{
+					canvasScaler->SetReferenceResolution(refRes);
+				}
 
 				float match = canvasScaler->GetMatchWidthOrHeight();
 
@@ -1487,6 +1584,67 @@ namespace Loopie {
 				ImGui::EndDragDropTarget();
 			}
 
+			ImGui::SeparatorText("Layout");
+
+			TextSizeMode sizeMode = text->GetSizeMode();
+			int sizeModeIndex = static_cast<int>(sizeMode);
+			const char* sizeModeLabels[] = { "Auto Size", "Fixed Size" };
+			if (ImGui::Combo("Size Mode", &sizeModeIndex, sizeModeLabels, IM_ARRAYSIZE(sizeModeLabels)))
+			{
+				text->SetSizeMode(static_cast<TextSizeMode>(sizeModeIndex));
+			}
+
+			const bool isFixed = (text->GetSizeMode() == TextSizeMode::FixedSize);
+			if (!isFixed)
+				ImGui::BeginDisabled();
+
+			float fontSize = text->GetFontSize();
+			if (ImGui::DragFloat("Font Size", &fontSize, 1.0f, 1.0f, 512.0f))
+				text->SetFontSize(fontSize);
+
+			if (!isFixed)
+				ImGui::EndDisabled();
+
+			TextHorizontalAlignment hAlign = text->GetHorizontalAlignment();
+			int hAlignIndex = static_cast<int>(hAlign);
+			const char* hAlignLabels[] = { "Left", "Center", "Right" };
+			if (ImGui::Combo("Horizontal", &hAlignIndex, hAlignLabels, IM_ARRAYSIZE(hAlignLabels)))
+			{
+				text->SetHorizontalAlignment(static_cast<TextHorizontalAlignment>(hAlignIndex));
+			}
+
+			TextVerticalAlignment vAlign = text->GetVerticalAlignment();
+			int vAlignIndex = static_cast<int>(vAlign);
+			const char* vAlignLabels[] = { "Top", "Middle", "Bottom" };
+			if (ImGui::Combo("Vertical", &vAlignIndex, vAlignLabels, IM_ARRAYSIZE(vAlignLabels)))
+			{
+				text->SetVerticalAlignment(static_cast<TextVerticalAlignment>(vAlignIndex));
+			}
+
+			ImGui::SeparatorText("Auto Fit Rect (Fixed Size)");
+
+			RectTransform* rt = text->GetOwner() ? text->GetOwner()->GetComponent<RectTransform>() : nullptr;
+			const bool canAutoFit = (rt != nullptr) && (text->GetSizeMode() == TextSizeMode::FixedSize) && (text->GetFont() != nullptr);
+
+			if (!canAutoFit)
+				ImGui::BeginDisabled();
+
+			static bool s_autoFitRect = true;
+			ImGui::Checkbox("Auto Fit Rect to Text", &s_autoFitRect);
+
+			if (s_autoFitRect && canAutoFit)
+			{
+				const vec2 measured = text->MeasureLocalSizeFixed();
+
+				const float paddingX = 2.0f;
+				const float paddingY = 2.0f;
+
+				rt->SetWidth(measured.x + paddingX);
+				rt->SetHeight(measured.y + paddingY);
+			}
+
+			if (!canAutoFit)
+				ImGui::EndDisabled();
 		}
 
 		ImGui::PopID();

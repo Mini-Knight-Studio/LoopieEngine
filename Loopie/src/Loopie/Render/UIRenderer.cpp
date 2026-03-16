@@ -76,6 +76,36 @@ namespace Loopie
 		s_initialized = false;
 	}
 
+	float UIRenderer::AlignFactor(TextHorizontalAlignment alignment)
+	{
+		switch (alignment)
+		{
+		case TextHorizontalAlignment::Left:
+			return 0.0f;
+		case TextHorizontalAlignment::Center:
+			return 0.5f;
+		case TextHorizontalAlignment::Right:
+			return 1.0f;
+		default:
+			return 0.0f;
+		}
+	}
+
+	float UIRenderer::AlignFactor(TextVerticalAlignment alignment)
+	{
+		switch (alignment)
+		{
+		case TextVerticalAlignment::Top:
+			return 0.0f;
+		case TextVerticalAlignment::Middle:
+			return 0.5f;
+		case TextVerticalAlignment::Bottom:
+			return 1.0f;
+		default:
+			return 0.0f;
+		}
+	}
+
 	void UIRenderer::DrawRect(const vec2& posPixels, const vec2& sizePixels, const vec4& color)
 	{
 		EnsureInit();
@@ -132,7 +162,8 @@ namespace Loopie
 		Renderer::FlushRenderItem(s_quadVAO, s_material, modelMatrix);
 	}
 
-	void UIRenderer::DrawText(const vec2& posPixels, const vec2& sizePixels, const std::string& text, const std::shared_ptr<Font>& font, const vec4& color, float scale)
+	void UIRenderer::DrawText(const vec2& posPixels, const vec2& sizePixels, const std::string& text, const std::shared_ptr<Font>& font, const vec4& color, float scale,
+							  TextSizeMode sizeMode, float fontSize, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign)
 	{
 		EnsureInit();
 
@@ -147,7 +178,15 @@ namespace Loopie
 		float maxX = 0.0f;
 		float maxY = 0.0f;
 
-		const float fontScale = (scale <= 0.0f) ? 1.0f : scale;
+		const float baseScale = (scale <= 0.0f) ? 1.0f : scale;
+
+		float fontScale = baseScale;
+		if (sizeMode == TextSizeMode::FixedSize)
+		{
+			const float px = (fontSize <= 0.0f) ? (float)font->GetPixelSize() : fontSize;
+			const float denom = (float)std::max(1, font->GetPixelSize());
+			fontScale = (px / denom) * baseScale;
+		}
 
 		for (size_t i = 0; i < text.size(); i++)
 		{
@@ -181,11 +220,14 @@ namespace Loopie
 		const float textH = std::max(1.0f, maxY - minY);
 
 		float fitScale = 1.0f;
-		if (sizePixels.x > 0.0f && sizePixels.y > 0.0f)
+		if (sizeMode == TextSizeMode::AutoSize)
 		{
-			const float sx = sizePixels.x / textW;
-			const float sy = sizePixels.y / textH;
-			fitScale = std::min(sx, sy);
+			if (sizePixels.x > 0.0f && sizePixels.y > 0.0f)
+			{
+				const float sx = sizePixels.x / textW;
+				const float sy = sizePixels.y / textH;
+				fitScale = std::min(sx, sy);
+			}
 		}
 
 		UniformValue c;
@@ -194,8 +236,17 @@ namespace Loopie
 		s_material->SetShaderVariable("u_Color", c);
 		s_material->SetTextureBufferOverride(font->GetAtlasTextureBuffer());
 
-		const float ox = -minX * fitScale;
-		const float oy = -minY * fitScale;
+		const float contentW = textW * fitScale;
+		const float contentH = textH * fitScale;
+
+		const float ax = AlignFactor(hAlign);
+		const float ay = AlignFactor(vAlign);
+
+		const float alignOffsetX = ax * (sizePixels.x - contentW);
+		const float alignOffsetY = ay * (sizePixels.y - contentH);
+
+		const float ox = (- minX * fitScale) + alignOffsetX;
+		const float oy = (- minY * fitScale) + alignOffsetY;
 
 		x = 0.0f;
 		y = 0.0f;
@@ -242,7 +293,8 @@ namespace Loopie
 		s_material->ClearTextureBufferOverride();
 	}
 
-	void UIRenderer::DrawTextWorld(const matrix4& modelMatrix, const vec2& sizePixels, const std::string& text, const std::shared_ptr<Font>& font, const vec4& color, float scale)
+	void UIRenderer::DrawTextWorld(const matrix4& modelMatrix, const vec2& sizePixels, const std::string& text, const std::shared_ptr<Font>& font, const vec4& color, float scale,
+								   TextSizeMode sizeMode, float fontSize, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign)
 	{
 		EnsureInit();
 
@@ -257,7 +309,15 @@ namespace Loopie
 		float maxX = 0.0f;
 		float maxY = 0.0f;
 
-		const float fontScale = (scale <= 0.0f) ? 1.0f : scale;
+		const float baseScale = (scale <= 0.0f) ? 1.0f : scale;
+
+		float fontScale = baseScale;
+		if (sizeMode == TextSizeMode::FixedSize)
+		{
+			const float px = (fontSize <= 0.0f) ? (float)font->GetPixelSize() : fontSize;
+			const float denom = (float)std::max(1, font->GetPixelSize());
+			fontScale = (px / denom) * baseScale;
+		}
 
 		for (size_t i = 0; i < text.size(); i++)
 		{
@@ -290,9 +350,16 @@ namespace Loopie
 		const float textW = std::max(1.0f, maxX - minX);
 		const float textH = std::max(1.0f, maxY - minY);
 
-		const float sx = sizePixels.x / textW;
-		const float sy = sizePixels.y / textH;
-		const float uniformS = std::min(sx, sy);
+		float fitScale = 1.0f;
+		if (sizeMode == TextSizeMode::AutoSize)
+		{
+			if (sizePixels.x > 0.0f && sizePixels.y > 0.0f)
+			{
+				const float sx = sizePixels.x / textW;
+				const float sy = sizePixels.y / textH;
+				fitScale = std::min(sx, sy);
+			}
+		}
 
 		UniformValue c;
 		c.type = UniformType_vec4;
@@ -300,8 +367,17 @@ namespace Loopie
 		s_material->SetShaderVariable("u_Color", c);
 		s_material->SetTextureBufferOverride(font->GetAtlasTextureBuffer());
 
-		float rx = -minX * uniformS;
-		float ry = -minY * uniformS;
+		const float contentW = textW * fitScale;
+		const float contentH = textH * fitScale;
+
+		const float ax = AlignFactor(hAlign);
+		const float ay = AlignFactor(vAlign);
+
+		const float alignOffsetX = ax * (sizePixels.x - contentW);
+		const float alignOffsetY = ay * (sizePixels.y - contentH);
+
+		const float ox = (-minX * fitScale) + alignOffsetX;
+		const float oy = (-minY * fitScale) + alignOffsetY;
 
 		x = 0.0f;
 		y = 0.0f;
@@ -321,10 +397,11 @@ namespace Loopie
 			if (!g)
 				continue;
 
-			const float xpos = (x + (float)g->bearing.x * fontScale) * uniformS + rx;
-			const float ypos = (y - ((float)g->size.y - (float)g->bearing.y) * fontScale) * uniformS + ry;
-			const float w = (float)g->size.x * fontScale * uniformS;
-			const float h = (float)g->size.y * fontScale * uniformS;
+			const float xpos = (x + (float)g->bearing.x * fontScale) * fitScale + ox;
+			const float ypos = (y - ((float)g->size.y - (float)g->bearing.y) * fontScale) * fitScale + oy;
+
+			const float w = (float)g->size.x * fontScale * fitScale;
+			const float h = (float)g->size.y * fontScale * fitScale;
 
 			UniformValue uv;
 			uv.type = UniformType_vec4;

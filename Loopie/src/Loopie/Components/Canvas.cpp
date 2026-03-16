@@ -2,6 +2,7 @@
 
 #include "Loopie/Components/RectTransform.h"
 #include "Loopie/Components/CanvasScaler.h"
+#include "Loopie/Core/Application.h"
 #include "Loopie/Render/Gizmo.h"
 #include "Loopie/Core/Log.h"
 
@@ -32,6 +33,7 @@ void Loopie::Canvas::Init()
 	}
 
 	rectTransform->m_transformNotifier.AddObserver(this);
+	SyncOverlayRectSizeIfNeeded();
 	m_cornersDirty = true;
 }
 
@@ -81,6 +83,41 @@ void Loopie::Canvas::RebuildWorldCornersIfNeeded() const
 	m_worldCorners[3] = vec3(m * vec4(tl, 1.0f));
 
 	m_cornersDirty = false;
+}
+
+void Loopie::Canvas::SyncOverlayRectSizeIfNeeded()
+{
+	if (m_renderMode != CanvasRenderMode::ScreenSpaceOverlay)
+		return;
+
+	auto owner = GetOwner();
+	if (!owner)
+		return;
+
+	auto rectTransform = owner->GetComponent<RectTransform>();
+	if (!rectTransform)
+		return;
+
+	const auto parent = owner->GetParent().lock();
+	if (parent && parent->GetTransform() && parent->GetTransform()->HasSize())
+		return;
+
+	const ivec2 targetPixels = Application::GetInstance().GetWindow().GetSize();
+	if (targetPixels.x <= 0 || targetPixels.y <= 0)
+		return;
+
+	if (targetPixels == m_lastOverlayTargetPixels)
+		return;
+
+	vec2 canvasSize = vec2((float)targetPixels.x, (float)targetPixels.y);
+	if (auto* scaler = owner->GetComponent<CanvasScaler>())
+		canvasSize = scaler->ComputeOverlayCanvasSize(canvasSize);
+
+	rectTransform->SetWidth(canvasSize.x);
+	rectTransform->SetHeight(canvasSize.y);
+
+	m_lastOverlayTargetPixels = targetPixels;
+	m_cornersDirty = true;
 }
 
 Loopie::JsonNode Loopie::Canvas::Serialize(JsonNode& parent) const

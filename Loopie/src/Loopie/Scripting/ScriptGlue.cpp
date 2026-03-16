@@ -10,6 +10,7 @@
 #include "Loopie/Components/BoxCollider.h"
 #include "Loopie/Components/AudioSource.h"
 #include "Loopie/Components/AudioListener.h"
+#include "Loopie/Components/Image.h"
 
 #include "Loopie/Core/UUID.h"
 #include "Loopie/Core/InputEventManager.h"
@@ -1334,7 +1335,35 @@ namespace Loopie
 	}
 #pragma endregion
 
+#pragma region Image
+	static void Image_GetTint(MonoString* entityID, MonoString* componentID, vec4* outTint)
+	{
+		*outTint = vec4(1.0f);
 
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+
+		Image* image = Utils::GetComponent<Image>(entity, componentID);
+		if (!image)
+			return;
+
+		*outTint = image->GetTint();
+	}
+
+	static void Image_SetTint(MonoString* entityID, MonoString* componentID, vec4* tint)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+
+		Image* image = Utils::GetComponent<Image>(entity, componentID);
+		if (!image)
+			return;
+
+		image->SetTint(*tint);
+	}
+#pragma endregion
 
 	template<typename Comp, typename = std::enable_if_t<std::is_base_of_v<Component, Comp>>>
 	static void RegisterComponent()
@@ -1369,6 +1398,7 @@ namespace Loopie
 		RegisterComponent<BoxCollider>();
 		RegisterComponent<AudioSource>();
 		RegisterComponent<AudioListener>();
+		RegisterComponent<Image>();
 	}
 
 
@@ -1512,5 +1542,7 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Gizmo_DrawLine);
 
 		ADD_INTERNAL_CALL(Scene_LoadByID);
+		ADD_INTERNAL_CALL(Image_GetTint);
+		ADD_INTERNAL_CALL(Image_SetTint);
 	}
 }

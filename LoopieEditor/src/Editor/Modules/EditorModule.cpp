@@ -465,11 +465,12 @@ namespace Loopie
 			const vec3 p = rt->GetWorldPosition();
 			const vec3 ws3 = rt->GetWorldScale();
 			const vec2 ws(ws3.x, ws3.y);
-
-			const vec2 s(rt->GetWidth(), rt->GetHeight());
+			const vec3 bmin = rt->GetLocalBoundsMin();
+			const vec3 bmax = rt->GetLocalBoundsMax();
+			const vec2 s(bmax.x - bmin.x, bmax.y - bmin.y);
 
 			const vec2 pixelSize(s.x * ws.x * scale.x, s.y * ws.y * scale.y);
-			const vec2 pixelPos(p.x * scale.x, p.y * scale.y);
+			const vec2 pixelPos((p.x + bmin.x * ws.x) * scale.x, (p.y + bmin.y * ws.y) * scale.y);
 
 			vec4 color = img->GetTint();
 			std::shared_ptr<Texture> texture = img->GetTexture();
@@ -488,13 +489,15 @@ namespace Loopie
 			const vec3 p = rt->GetWorldPosition();
 			const vec3 ws3 = rt->GetWorldScale();
 			const vec2 ws(ws3.x, ws3.y);
+			const vec3 bmin = rt->GetLocalBoundsMin();
+			const vec3 bmax = rt->GetLocalBoundsMax();
+			const vec2 s(bmax.x - bmin.x, bmax.y - bmin.y);
 
-			const vec2 s(rt->GetWidth(), rt->GetHeight());
-
-			const vec2 pixelPos(p.x * scale.x, p.y * scale.y);
+			const vec2 pixelPos((p.x + bmin.x * ws.x) * scale.x, (p.y + bmin.y * ws.y) * scale.y);
 			const vec2 pixelSize(s.x * ws.x * scale.x, s.y * ws.y * scale.y);
 
-			UIRenderer::DrawText(pixelPos, pixelSize, text->GetText(), text->GetFont(), text->GetColor(), text->GetScale());
+			UIRenderer::DrawText(pixelPos, pixelSize, text->GetText(), text->GetFont(), text->GetColor(), text->GetScale(),
+				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment());
 		}
 
 		for (const auto& child : entity->GetChildren())
@@ -553,20 +556,14 @@ namespace Loopie
 			if (auto* scaler = entity->GetComponent<CanvasScaler>(); scaler && scaler->GetIsActive())
 			{
 				canvasUnits = scaler->ComputeOverlayCanvasSize(targetPixels);
-				if (scaler->GetScaleMode() == CanvasScaleMode::ScaleWithCanvasSize)
-				{
-					scaler->SetReferenceResolution(vec2(canvasRt->GetWidth(), canvasRt->GetHeight()));
-				}
-				else if (scaler->GetScaleMode() == CanvasScaleMode::ConstantPixelSize)
-				{
-					canvasRt->SetWidth(m_game.GetGameSize().x);
-					canvasRt->SetHeight(m_game.GetGameSize().y);
-				}
 			}
 			else
 			{
 				canvasUnits = targetPixels;
 			}
+
+			canvasRt->SetWidth(canvasUnits.x);
+			canvasRt->SetHeight(canvasUnits.y);
 
 			if (canvasUnits.x <= 0.0f || canvasUnits.y <= 0.0f)
 				continue;
@@ -596,10 +593,14 @@ namespace Loopie
 			const std::shared_ptr<Texture> tex = img->GetTexture();
 			if (tex)
 			{
-				const float w = rt->GetWidth();
-				const float h = rt->GetHeight();
+				const vec3 bmin = rt->GetLocalBoundsMin();
+				const vec3 bmax = rt->GetLocalBoundsMax();
+				const float w = bmax.x - bmin.x;
+				const float h = bmax.y - bmin.y;
 
-				matrix4 model = rt->GetLocalToWorldMatrix() * glm::scale(matrix4(1.0f), vec3(w, h, 1.0f));
+				matrix4 model = rt->GetLocalToWorldMatrix()
+					* glm::translate(matrix4(1.0f), vec3(bmin.x, bmin.y, 0.0f))
+					* glm::scale(matrix4(1.0f), vec3(w, h, 1.0f));
 				vec4 color = img->GetTint();
 				std::shared_ptr<Texture> texture = img->GetTexture();
 
@@ -615,12 +616,15 @@ namespace Loopie
 
 		if (text && text->GetIsActive() && rt)
 		{
-			const float w = rt->GetWidth();
-			const float h = rt->GetHeight();
+			const vec3 bmin = rt->GetLocalBoundsMin();
+			const vec3 bmax = rt->GetLocalBoundsMax();
+			const float w = bmax.x - bmin.x;
+			const float h = bmax.y - bmin.y;
 
-			const matrix4 model = rt->GetLocalToWorldMatrix();
+			const matrix4 model = rt->GetLocalToWorldMatrix() * glm::translate(matrix4(1.0f), vec3(bmin.x, bmin.y, 0.0f));
 
-			UIRenderer::DrawTextWorld(model, vec2(w,h), text->GetText(), text->GetFont(), text->GetColor(), text->GetScale());
+			UIRenderer::DrawTextWorld(model, vec2(w, h), text->GetText(), text->GetFont(), text->GetColor(), text->GetScale(),
+				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment());
 		}
 
 		for (const auto& child : entity->GetChildren())
@@ -651,14 +655,12 @@ namespace Loopie
 			RectTransform* canvasRt = entity->GetComponent<RectTransform>();
 			if (auto* scaler = entity->GetComponent<CanvasScaler>(); scaler && scaler->GetIsActive())
 			{
-				if (scaler->GetScaleMode() == CanvasScaleMode::ScaleWithCanvasSize)
+				if (canvasRt)
 				{
-					scaler->SetReferenceResolution(vec2(canvasRt->GetWidth(), canvasRt->GetHeight()));
-				}
-				else if (scaler->GetScaleMode() == CanvasScaleMode::ConstantPixelSize)
-				{
-					canvasRt->SetWidth(m_game.GetGameSize().x);
-					canvasRt->SetHeight(m_game.GetGameSize().y);
+					const vec2 sceneTargetPixels((float)m_game.GetGameSize().x, (float)m_game.GetGameSize().y);
+					const vec2 canvasUnits = scaler->ComputeOverlayCanvasSize(sceneTargetPixels);
+					canvasRt->SetWidth(canvasUnits.x);
+					canvasRt->SetHeight(canvasUnits.y);
 				}
 			}
 
@@ -746,14 +748,24 @@ namespace Loopie
 		bool hovered = false;
 		if (mouseOverGame && button && rt && button->GetIsActive())
 		{
-			const vec3 p = rt->GetLocalPosition();
-			const float x = p.x;
-			const float y = p.y;
-			const float w = rt->GetWidth();
-			const float h = rt->GetHeight();
+			const vec3 p = rt->GetWorldPosition();
+			const vec3 ws3 = rt->GetWorldScale();
+			const vec2 ws(ws3.x, ws3.y);
+			const vec3 bmin = rt->GetLocalBoundsMin();
+			const vec3 bmax = rt->GetLocalBoundsMax();
 
-			hovered = (mouseCanvas.x >= x && mouseCanvas.x <= x + w &&
-					   mouseCanvas.y >= y && mouseCanvas.y <= y + h);
+			const float x0 = p.x + bmin.x * ws.x;
+			const float y0 = p.y + bmin.y * ws.y;
+			const float x1 = p.x + bmax.x * ws.x;
+			const float y1 = p.y + bmax.y * ws.y;
+
+			const float minX = glm::min(x0, x1);
+			const float maxX = glm::max(x0, x1);
+			const float minY = glm::min(y0, y1);
+			const float maxY = glm::max(y0, y1);
+
+			hovered = (mouseCanvas.x >= minX && mouseCanvas.x <= maxX &&
+					   mouseCanvas.y >= minY && mouseCanvas.y <= maxY);
 
 			button->SetHovered(hovered);
 
