@@ -505,10 +505,6 @@ namespace Loopie {
 				vec2 pivot = rectTransform->GetPivot();
 				vec2 anchoredPosition = rectTransform->GetAnchoredPosition();
 				vec2 sizeDelta = rectTransform->GetSize();
-
-				if (!isCanvas) {
-					DrawAnchorPresets(rectTransform, modified);
-				}
 				
 				if (ImGui::DragFloat2("Anchored Position", &anchoredPosition.x, 0.1f))
 				{
@@ -516,6 +512,10 @@ namespace Loopie {
 					modified = true;
 				}
 
+				if (!isCanvas) {
+					DrawAnchorPresets(rectTransform, modified);
+					ImGui::SameLine();
+				}
 				if(ImGui::TreeNode("Anchors")){
 					if (ImGui::DragFloat2("Min", &anchorMin.x, 0.01f, 0.0f, 1.0f))
 					{
@@ -556,7 +556,7 @@ namespace Loopie {
 
 	void InspectorInterface::DrawAnchorPresets(RectTransform* rt, bool& modified)
 	{
-		if (ImGui::Button("AnchorPresets"))
+		if (ImGui::Button("Anchor Presets"))
 		{
 			ImGui::OpenPopup("AnchorPresetsPopup");
 
