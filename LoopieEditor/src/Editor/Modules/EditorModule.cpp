@@ -713,14 +713,24 @@ namespace Loopie
 		bool hovered = false;
 		if (mouseOverGame && button && rt && button->GetIsActive())
 		{
-			const vec3 p = rt->GetLocalPosition();
-			const float x = p.x;
-			const float y = p.y;
-			const float w = rt->GetWidth();
-			const float h = rt->GetHeight();
+			const vec3 p = rt->GetWorldPosition();
+			const vec3 ws3 = rt->GetWorldScale();
+			const vec2 ws(ws3.x, ws3.y);
+			const vec3 bmin = rt->GetLocalBoundsMin();
+			const vec3 bmax = rt->GetLocalBoundsMax();
 
-			hovered = (mouseCanvas.x >= x && mouseCanvas.x <= x + w &&
-					   mouseCanvas.y >= y && mouseCanvas.y <= y + h);
+			const float x0 = p.x + bmin.x * ws.x;
+			const float y0 = p.y + bmin.y * ws.y;
+			const float x1 = p.x + bmax.x * ws.x;
+			const float y1 = p.y + bmax.y * ws.y;
+
+			const float minX = glm::min(x0, x1);
+			const float maxX = glm::max(x0, x1);
+			const float minY = glm::min(y0, y1);
+			const float maxY = glm::max(y0, y1);
+
+			hovered = (mouseCanvas.x >= minX && mouseCanvas.x <= maxX &&
+					   mouseCanvas.y >= minY && mouseCanvas.y <= maxY);
 
 			button->SetHovered(hovered);
 

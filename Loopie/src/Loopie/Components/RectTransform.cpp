@@ -151,13 +151,13 @@ void Loopie::RectTransform::RefreshMatrices() const
 void Loopie::RectTransform::SetWidth(float w)
 {
 	m_sizeDelta.x = w;
-    MarkWorldDirty();
+	MarkLocalDirty();
 }
 
 void Loopie::RectTransform::SetHeight(float h)
 {
 	m_sizeDelta.y = h;
-    MarkWorldDirty();
+	MarkLocalDirty();
 }
 
 Loopie::JsonNode Loopie::RectTransform::Serialize(JsonNode& parent) const

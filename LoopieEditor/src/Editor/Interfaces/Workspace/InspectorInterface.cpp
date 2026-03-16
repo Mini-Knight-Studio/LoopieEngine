@@ -1210,10 +1210,10 @@ namespace Loopie {
 			if (canvasScaler->GetScaleMode() == CanvasScaleMode::ScaleWithCanvasSize)
 			{
 				vec2 refRes = canvasScaler->GetReferenceResolution();
-				
-				ImGui::BeginDisabled();
-				(void)ImGui::DragFloat2("Reference Resolution", &refRes.x, 1.0f, 1.0f, 16384.0f);
-				ImGui::EndDisabled();
+				if (ImGui::DragFloat2("Reference Resolution", &refRes.x, 1.0f, 1.0f, 16384.0f))
+				{
+					canvasScaler->SetReferenceResolution(refRes);
+				}
 
 				float match = canvasScaler->GetMatchWidthOrHeight();
 
