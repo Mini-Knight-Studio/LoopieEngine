@@ -11,6 +11,7 @@
 #include "Loopie/Components/AudioSource.h"
 #include "Loopie/Components/AudioListener.h"
 #include "Loopie/Components/Image.h"
+#include "Loopie/Components/Text.h"
 
 #include "Loopie/Core/UUID.h"
 #include "Loopie/Core/InputEventManager.h"
@@ -1335,19 +1336,20 @@ namespace Loopie
 	}
 #pragma endregion
 
+#pragma region ParticleSystem
+
+#pragma endregion
+
 #pragma region Image
 	static void Image_GetTint(MonoString* entityID, MonoString* componentID, vec4* outTint)
 	{
 		*outTint = vec4(1.0f);
-
 		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
 		if (!entity)
 			return;
-
 		Image* image = Utils::GetComponent<Image>(entity, componentID);
 		if (!image)
 			return;
-
 		*outTint = image->GetTint();
 	}
 
@@ -1356,12 +1358,35 @@ namespace Loopie
 		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
 		if (!entity)
 			return;
-
 		Image* image = Utils::GetComponent<Image>(entity, componentID);
 		if (!image)
 			return;
-
 		image->SetTint(*tint);
+	}
+#pragma endregion
+
+#pragma region Text
+	static MonoString* Text_GetText(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return ScriptingManager::CreateString("");
+		Text* text = Utils::GetComponent<Text>(entity, componentID);
+		if (text) {
+			return ScriptingManager::CreateString(text->GetText().c_str());
+		}
+		return ScriptingManager::CreateString("");
+	}
+
+	static void Text_SetText(MonoString* entityID, MonoString* componentID, MonoString* textValue)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		Text* text = Utils::GetComponent<Text>(entity, componentID);
+		if (text) {
+			text->SetText(Utils::MonoStringToString(textValue));
+		}
 	}
 #pragma endregion
 
@@ -1399,6 +1424,7 @@ namespace Loopie
 		RegisterComponent<AudioSource>();
 		RegisterComponent<AudioListener>();
 		RegisterComponent<Image>();
+		RegisterComponent<Text>();
 	}
 
 
@@ -1542,7 +1568,11 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Gizmo_DrawLine);
 
 		ADD_INTERNAL_CALL(Scene_LoadByID);
+
 		ADD_INTERNAL_CALL(Image_GetTint);
 		ADD_INTERNAL_CALL(Image_SetTint);
+
+		ADD_INTERNAL_CALL(Text_GetText);
+		ADD_INTERNAL_CALL(Text_SetText);
 	}
 }

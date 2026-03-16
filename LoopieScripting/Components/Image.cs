@@ -2,7 +2,7 @@ using System;
 
 namespace Loopie
 {
-    public sealed class Image : Component
+    public class Image : Component
     {
         public Vector4 Tint
         {
