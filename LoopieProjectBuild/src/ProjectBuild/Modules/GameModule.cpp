@@ -33,8 +33,14 @@
 #include "Loopie/Components/Image.h"
 #include "Loopie/Components/Text.h"
 #include "Loopie/Components/Button.h"
+
+#include "Loopie/ParticleSystemEn/ParticleSystem.h"  
+#include "Loopie/Components/ParticleComponent.h"
+#include "Loopie/ParticleSystemEn/Emitter.h"
+#include "Loopie/Core/Time.h"
 ///
 
+#include <memory>
 #include <glad/glad.h>
 
 namespace Loopie
@@ -125,6 +131,7 @@ namespace Loopie
 			Renderer::SetViewport(0, 0, buffer->GetWidth(), buffer->GetHeight());
 			buffer->Bind();
 			RenderWorld(cam);
+			RenderParticles(cam);
 			Renderer::EndScene();
 
 			if (buffer)
@@ -143,6 +150,7 @@ namespace Loopie
 			if (cam && cam->GetIsActive()) {
 				Renderer::BeginScene(cam->GetViewMatrix(), cam->GetProjectionMatrix(), false);
 				RenderWorld(cam);
+				RenderParticles(cam);
 				Renderer::EndScene();
 				RenderUI();
 			}
@@ -267,7 +275,7 @@ namespace Loopie
 				std::vector<matrix4> bones = {};
 				if (data.HasBones) {
 					Animator* animator = renderer->GetLinkedAnimator();
-					if (animator && animator->HasAnimation()) {
+					if (animator) {
 						bones = animator->GetRendererData(renderer->GetUUID()).FinalBoneMatrices;
 					}
 				}
@@ -279,6 +287,34 @@ namespace Loopie
 		RenderSceneUI(camera);
 
 		Renderer::DisableStencil();
+	}
+
+	void GameModule::RenderParticles(Camera* cam) {
+		Renderer::DisableStencil();
+		Renderer::EnableDepth();
+		Renderer::EnableDepthMask();
+		Renderer::EnableBlend();
+		Renderer::BlendFunction();
+
+		auto& particleEntities = m_currentScene->GetAllEntities();
+		for (const auto& [id, entity] : particleEntities)
+		{
+			const std::vector<Component*>& components = entity->GetComponents();
+			for (size_t i = 0; i < components.size(); i++)
+			{
+				Component* component = components[i];
+				if (!component->GetIsActive())
+					continue;
+				if (component->GetTypeID() == ParticleComponent::GetTypeIDStatic())
+				{
+					ParticleComponent* particleSystem = static_cast<ParticleComponent*>(component);
+					particleSystem->Render(cam);
+				}
+			}
+
+		}
+		Renderer::EnableDepthMask();
+		Renderer::DisableBlend();
 	}
 
 	void GameModule::RenderUIRecursive(const std::shared_ptr<Entity>& entity, vec2& scale)
@@ -494,6 +530,8 @@ namespace Loopie
 		InputEventManager& inputEvent = app.GetInputEvent();
 
 		const vec2 mouseLocalPx = inputEvent.GetMousePosition();
+		ivec2 size = Application::GetInstance().GetWindow().GetSize();
+		const vec2 targetPixels(static_cast<float>(size.x), static_cast<float>(size.y));
 
 		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities())
 		{
@@ -507,18 +545,23 @@ namespace Loopie
 			if (canvas->GetRenderMode() != CanvasRenderMode::ScreenSpaceOverlay)
 				continue;
 
-			const float cw = canvasRt->GetWidth();
-			const float ch = canvasRt->GetHeight();
+			vec2 canvasUnits(canvasRt->GetWidth(), canvasRt->GetHeight());
+			if (auto* scaler = entity->GetComponent<CanvasScaler>(); scaler && scaler->GetIsActive())
+			{
+				canvasUnits = scaler->ComputeOverlayCanvasSize(targetPixels);
+			}
+			else
+			{
+				canvasUnits = targetPixels;
+			}
+
+			const float cw = canvasUnits.x;
+			const float ch = canvasUnits.y;
 			if (cw <= 0.0f || ch <= 0.0f)
 				continue;
 
-
-			ivec2 size = Application::GetInstance().GetWindow().GetSize();
-			const float w = static_cast<float>(size.x);
-			const float h = static_cast<float>(size.y);
-
-			const float sx = static_cast<float>(w) / cw;
-			const float sy = static_cast<float>(h) / ch;
+			const float sx = targetPixels.x / cw;
+			const float sy = targetPixels.y / ch;
 
 			const vec2 mouseCanvas(mouseLocalPx.x / sx, ch - (mouseLocalPx.y / sy));
 
@@ -538,14 +581,24 @@ namespace Loopie
 		bool hovered = false;
 		if (mouseOverGame && button && rt && button->GetIsActive())
 		{
-			const vec3 p = rt->GetLocalPosition();
-			const float x = p.x;
-			const float y = p.y;
-			const float w = rt->GetWidth();
-			const float h = rt->GetHeight();
+			const vec3 p = rt->GetWorldPosition();
+			const vec3 ws3 = rt->GetWorldScale();
+			const vec2 ws(ws3.x, ws3.y);
+			const vec3 bmin = rt->GetLocalBoundsMin();
+			const vec3 bmax = rt->GetLocalBoundsMax();
 
-			hovered = (mouseCanvas.x >= x && mouseCanvas.x <= x + w &&
-				mouseCanvas.y >= y && mouseCanvas.y <= y + h);
+			const float x0 = p.x + bmin.x * ws.x;
+			const float y0 = p.y + bmin.y * ws.y;
+			const float x1 = p.x + bmax.x * ws.x;
+			const float y1 = p.y + bmax.y * ws.y;
+
+			const float minX = glm::min(x0, x1);
+			const float maxX = glm::max(x0, x1);
+			const float minY = glm::min(y0, y1);
+			const float maxY = glm::max(y0, y1);
+
+			hovered = (mouseCanvas.x >= minX && mouseCanvas.x <= maxX &&
+				mouseCanvas.y >= minY && mouseCanvas.y <= maxY);
 
 			button->SetHovered(hovered);
 

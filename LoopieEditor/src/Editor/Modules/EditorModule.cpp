@@ -34,13 +34,18 @@
 #include "Loopie/Components/Text.h"
 #include "Loopie/Components/Button.h"
 #include "Loopie/Components/CanvasScaler.h"
+#include "Loopie/Components/Canvas.h"
 
-#include <memory>
 
-///
+#include "Loopie/ParticleSystemEn/ParticleSystem.h"  
+#include "Loopie/Components/ParticleComponent.h"
 #include "Loopie/ParticleSystemEn/Emitter.h"
 #include "Loopie/Core/Time.h"
 
+///
+
+
+#include <memory>
 #include <glad/glad.h>
 
 namespace Loopie
@@ -317,19 +322,6 @@ namespace Loopie
 		}
 
 		return true;
-	}
-
-	Canvas* EditorModule::FindCanvasInParents(const std::shared_ptr<Loopie::Entity>& entity)
-	{
-		auto current = entity;
-		while (current)
-		{
-			if (auto* c = current->GetComponent<Loopie::Canvas>())
-				return c;
-
-			current = current->GetParent().lock();
-		}
-		return nullptr;
 	}
 
 	void EditorModule::RenderWorld(Camera* camera)
