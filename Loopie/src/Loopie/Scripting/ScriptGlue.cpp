@@ -12,6 +12,7 @@
 #include "Loopie/Components/AudioListener.h"
 #include "Loopie/Components/Image.h"
 #include "Loopie/Components/Text.h"
+#include "Loopie/Components/ParticleComponent.h"
 
 #include "Loopie/Core/UUID.h"
 #include "Loopie/Core/InputEventManager.h"
@@ -1423,6 +1424,7 @@ namespace Loopie
 		RegisterComponent<BoxCollider>();
 		RegisterComponent<AudioSource>();
 		RegisterComponent<AudioListener>();
+		RegisterComponent<ParticleComponent>();
 		RegisterComponent<Image>();
 		RegisterComponent<Text>();
 	}
