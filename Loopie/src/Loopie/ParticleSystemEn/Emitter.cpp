@@ -97,6 +97,7 @@ namespace Loopie
 		vec3 spawnOffset = vec3(0.0f);
 		spawnOffset.x = RandomFloat(-particleProps.PositionVariation.x, particleProps.PositionVariation.x);
 		spawnOffset.z = RandomFloat(-particleProps.PositionVariation.z, particleProps.PositionVariation.z);
+		spawnOffset.y = RandomFloat(-particleProps.PositionVariation.y, particleProps.PositionVariation.y);
 
 		if (m_particleFollowEmitter)
 		{
