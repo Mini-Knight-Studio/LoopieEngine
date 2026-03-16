@@ -47,6 +47,7 @@ namespace Loopie {
 		///EntityRelated
 		void DrawEntityConfig(const std::shared_ptr<Entity>& entity);
 		void DrawTransform(Transform* transform);
+		void DrawAnchorPresets(RectTransform* rt, bool& modified);
 		void DrawCamera(Camera* camera);
 		void DrawMeshRenderer(MeshRenderer* meshRenderer);
 		void DrawAnimator(Animator* animator);
