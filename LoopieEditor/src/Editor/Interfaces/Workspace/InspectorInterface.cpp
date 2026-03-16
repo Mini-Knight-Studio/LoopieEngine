@@ -1843,6 +1843,11 @@ namespace Loopie {
 			float reachDistance = light->GetReachDistance();
 			vec2 cone = vec2(light->GetInnerConeAngle(), light->GetOuterConeAngle());
 			
+			if (ImGui::ColorEdit3("Color", &color.x))
+			{
+				light->SetColor(color);
+			}
+
 			if (ImGui::DragFloat("Intensity", &intensity, 0.05f))
 			{
 				light->SetIntensity(intensity);
@@ -1865,13 +1870,7 @@ namespace Loopie {
 					light->SetInnerConeAngle(cone.x);
 					light->SetOuterConeAngle(cone.y);
 				}
-			}
-
-			if (ImGui::ColorPicker3("Color", &color.x))
-			{
-				light->SetColor(color);
-			} 
-			
+			}	
 		}
 
 		ImGui::PopID();
