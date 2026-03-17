@@ -46,7 +46,19 @@ namespace Loopie {
         bool CollidedThisFrame() const { return m_collided; }
         bool StoppedColliding() const { return m_stopColliding; }
 
+        void SetIncludeMask(uint32_t mask) { m_includeMask = mask; }
+        uint32_t GetIncludeMask() const { return m_includeMask; }
+        void SetExcludeMask(uint32_t mask) { m_excludeMask = mask; }
+        uint32_t GetExcludeMask() const { return m_excludeMask; }
+
+        void IncludeLayer(unsigned int layer) { m_includeMask |= (1u << layer); }
+        void RemoveIncludedLayer(unsigned int layer) { m_includeMask &= ~(1u << layer); }
+        void ExcludeLayer(unsigned int layer) { m_excludeMask |= (1u << layer); }
+        void RemoveExcludedLayer(unsigned int layer) { m_excludeMask &= ~(1u << layer); }
+
         const std::vector<BoxCollider*>& GetCollidingWith() const { return m_collidingWith; }
+
+        bool CanCollideWith(const BoxCollider* other) const;
 
         JsonNode Serialize(JsonNode& parent) const override;
         void Deserialize(const JsonNode& data) override;
@@ -58,6 +70,8 @@ namespace Loopie {
         vec3 m_localCenter = vec3(0.0f);
         vec3 m_localExtents = vec3(0.5f);
         unsigned int  m_layerIndex = 0;
+        uint32_t m_includeMask = 0;
+        uint32_t m_excludeMask = 0;
 
         std::vector<BoxCollider*> m_collidingWith;
 

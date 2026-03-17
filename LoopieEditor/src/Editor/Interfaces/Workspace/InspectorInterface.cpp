@@ -1906,9 +1906,7 @@ namespace Loopie {
 				boxCollider->SetLocalExtents(extents);
 
 			int currentLayer = boxCollider->GetLayerIndex();
-
 			const auto& layers = CollisionProcessor::GetLayers();
-
 			const char* preview = layers[currentLayer].name.c_str();
 
 			if (ImGui::BeginCombo("Layer", preview))
@@ -1916,17 +1914,136 @@ namespace Loopie {
 				for (int i = 0; i < layers.size(); i++)
 				{
 					bool selected = (currentLayer == i);
-
 					if (ImGui::Selectable(layers[i].name.c_str(), selected))
-					{
 						boxCollider->SetLayer(i);
-					}
-
 					if (selected)
 						ImGui::SetItemDefaultFocus();
 				}
-
 				ImGui::EndCombo();
+			}
+
+			if (ImGui::TreeNode("Layer Overrides")) {
+
+				uint32_t includeMask = boxCollider->GetIncludeMask();
+				std::string includePreview;
+				bool first = true;
+				if (includeMask == 0xFFFFFFFF) {
+					includePreview = "Everything";
+				}
+				else if (includeMask == 0) {
+					includePreview = "None";
+				}
+				else {
+					for (int i = 0; i < layers.size(); i++) {
+						if (includeMask & (1u << i)) {
+							if (!first) includePreview += ", ";
+							includePreview += layers[i].name;
+							first = false;
+						}
+					}
+				}
+				
+				if (ImGui::BeginCombo("Include Layers", includePreview.c_str()))
+				{
+
+					bool selected = (includeMask == 0);
+					if (selected)
+						ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetStyleColorVec4(ImGuiCol_HeaderHovered));
+					if (ImGui::Selectable("None", selected))
+						boxCollider->SetIncludeMask(0);
+					if (selected)
+						ImGui::PopStyleColor();
+
+					selected = (includeMask == 0xFFFFFFFF);
+					if (selected)
+						ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetStyleColorVec4(ImGuiCol_HeaderHovered));
+					if (ImGui::Selectable("Everything", selected))
+						boxCollider->SetIncludeMask(0xFFFFFFFF);
+					if (selected)
+						ImGui::PopStyleColor();
+
+					for (int i = 0; i < layers.size(); i++)
+					{
+						selected = (includeMask & (1u << i)) != 0;
+						if (selected)
+							ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetStyleColorVec4(ImGuiCol_HeaderHovered));
+
+						if (ImGui::Selectable(layers[i].name.c_str(), selected))
+						{
+							if (selected)
+								boxCollider->RemoveIncludedLayer(i);
+							else
+								boxCollider->IncludeLayer(i);
+						}
+
+						if (selected)
+							ImGui::PopStyleColor();
+						if (selected)
+							ImGui::SetItemDefaultFocus();
+					}
+					ImGui::EndCombo();
+				}
+
+				uint32_t excludeMask = boxCollider->GetExcludeMask();
+				std::string excludePreview;
+				first = true;
+
+				if (excludeMask == 0xFFFFFFFF) {
+					excludePreview = "Everything";
+				}
+				else if (excludeMask == 0) {
+					excludePreview = "None";
+				}
+				else {
+					for (int i = 0; i < layers.size(); i++) {
+						if (excludeMask & (1u << i)) {
+							if (!first) excludePreview += ", ";
+							excludePreview += layers[i].name;
+							first = false;
+						}
+					}
+				}
+
+				if (ImGui::BeginCombo("Exclude Layers", excludePreview.c_str()))
+				{
+					bool selected = (excludeMask == 0);
+					if (selected)
+						ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetStyleColorVec4(ImGuiCol_HeaderHovered));
+					if (ImGui::Selectable("None", selected))
+						boxCollider->SetExcludeMask(0);
+					if (selected)
+						ImGui::PopStyleColor();
+
+					selected = (excludeMask == 0xFFFFFFFF);
+					if (selected)
+						ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetStyleColorVec4(ImGuiCol_HeaderHovered));
+					if (ImGui::Selectable("Everything", selected))
+						boxCollider->SetExcludeMask(0xFFFFFFFF);
+					if (selected)
+						ImGui::PopStyleColor();
+
+					for (int i = 0; i < layers.size(); i++)
+					{
+						bool selected = (excludeMask & (1u << i)) != 0;
+						if (selected)
+							ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetStyleColorVec4(ImGuiCol_HeaderHovered));
+
+						if (ImGui::Selectable(layers[i].name.c_str(), selected))
+						{
+							if (selected)
+								boxCollider->RemoveExcludedLayer(i);
+							else
+								boxCollider->ExcludeLayer(i);
+						}
+
+						if (selected)
+							ImGui::PopStyleColor();
+						if (selected)
+							ImGui::SetItemDefaultFocus();
+					}
+					ImGui::EndCombo();
+				}
+				ImGui::TreePop();
 			}
 			
 			//if (ImGui::Checkbox("Visible Lines", &draw))
@@ -1938,7 +2055,7 @@ namespace Loopie {
 	void InspectorInterface::DrawAudioSource(AudioSource* source)
 	{
 		ImGui::PushID(source);
-		bool open = ImGui::CollapsingHeader("Audio Source", ImGuiTreeNodeFlags_DefaultOpen);
+		bool open = ImGui::CollapsingHeader("Audio Source");
 		ImGui::SetItemTooltip(source->GetUUID().Get().c_str());
 		if (ComponentContextMenu(source)) {
 			ImGui::PopID();
