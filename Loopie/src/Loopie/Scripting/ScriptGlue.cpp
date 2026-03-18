@@ -1137,6 +1137,80 @@ namespace Loopie
 		if (collider)
 			collider->SetIsStatic(isStatic != 0);
 	}
+
+	static void BoxCollider_SetIncludeMask(MonoString* entityID, MonoString* componentID, int includeMask) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		BoxCollider* collider = Utils::GetComponent<BoxCollider>(entity, componentID);
+		if (collider)
+			collider->SetIncludeMask(includeMask);
+	}
+
+	static int BoxCollider_GetIncludeMask(MonoString* entityID, MonoString* componentID) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return -1;
+		BoxCollider* collider = Utils::GetComponent<BoxCollider>(entity, componentID);
+		if (collider)
+			return collider->GetIncludeMask();
+		return -1;
+	}
+
+	static void BoxCollider_AddIncludeMask(MonoString* entityID, MonoString* componentID, int includeMask) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		BoxCollider* collider = Utils::GetComponent<BoxCollider>(entity, componentID);
+		if (collider)
+			collider->IncludeLayer(includeMask);
+	}
+
+	static void BoxCollider_RemoveIncludeMask(MonoString* entityID, MonoString* componentID, int includeMask) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		BoxCollider* collider = Utils::GetComponent<BoxCollider>(entity, componentID);
+		if (collider)
+			collider->RemoveIncludedLayer(includeMask);
+	}
+
+	static void BoxCollider_SetExcludeMask(MonoString* entityID, MonoString* componentID, int excludeMask) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		BoxCollider* collider = Utils::GetComponent<BoxCollider>(entity, componentID);
+		if (collider)
+			collider->SetExcludeMask(excludeMask);
+	}
+
+	static int BoxCollider_GetExcludeMask(MonoString* entityID, MonoString* componentID) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return -1;
+		BoxCollider* collider = Utils::GetComponent<BoxCollider>(entity, componentID);
+		if (collider)
+			return collider->GetExcludeMask();
+		return -1;
+	}
+
+	static void BoxCollider_AddExcludeMask(MonoString* entityID, MonoString* componentID, int excludeMask) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		BoxCollider* collider = Utils::GetComponent<BoxCollider>(entity, componentID);
+		if (collider)
+			collider->ExcludeLayer(excludeMask);
+	}
+
+	static void BoxCollider_RemoveExcludeMask(MonoString* entityID, MonoString* componentID, int excludeMask) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		BoxCollider* collider = Utils::GetComponent<BoxCollider>(entity, componentID);
+		if (collider)
+			collider->RemoveExcludedLayer(excludeMask);
+	}
 #pragma endregion
 
 #pragma region AudioSource
@@ -1549,6 +1623,14 @@ namespace Loopie
 		ADD_INTERNAL_CALL(BoxCollider_SetStatic);
 		ADD_INTERNAL_CALL(BoxCollider_IsTrigger);
 		ADD_INTERNAL_CALL(BoxCollider_SetTrigger);
+		ADD_INTERNAL_CALL(BoxCollider_SetIncludeMask);
+		ADD_INTERNAL_CALL(BoxCollider_GetIncludeMask);
+		ADD_INTERNAL_CALL(BoxCollider_AddIncludeMask);
+		ADD_INTERNAL_CALL(BoxCollider_RemoveIncludeMask);
+		ADD_INTERNAL_CALL(BoxCollider_SetExcludeMask);
+		ADD_INTERNAL_CALL(BoxCollider_GetExcludeMask);
+		ADD_INTERNAL_CALL(BoxCollider_AddExcludeMask);
+		ADD_INTERNAL_CALL(BoxCollider_RemoveExcludeMask);
 
 		ADD_INTERNAL_CALL(AudioSource_Play);
 		ADD_INTERNAL_CALL(AudioSource_Stop);

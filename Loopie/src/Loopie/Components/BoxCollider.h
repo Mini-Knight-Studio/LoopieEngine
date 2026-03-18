@@ -51,10 +51,10 @@ namespace Loopie {
         void SetExcludeMask(uint32_t mask) { m_excludeMask = mask; }
         uint32_t GetExcludeMask() const { return m_excludeMask; }
 
-        void IncludeLayer(unsigned int layer) { m_includeMask |= (1u << layer); }
-        void RemoveIncludedLayer(unsigned int layer) { m_includeMask &= ~(1u << layer); }
-        void ExcludeLayer(unsigned int layer) { m_excludeMask |= (1u << layer); }
-        void RemoveExcludedLayer(unsigned int layer) { m_excludeMask &= ~(1u << layer); }
+        void IncludeLayer(unsigned int mask) { m_includeMask |= (mask); }
+        void RemoveIncludedLayer(unsigned int mask) { m_includeMask &= ~(mask); }
+        void ExcludeLayer(unsigned int mask) { m_excludeMask |= (mask); }
+        void RemoveExcludedLayer(unsigned int mask) { m_excludeMask &= ~(mask); }
 
         const std::vector<BoxCollider*>& GetCollidingWith() const { return m_collidingWith; }
 

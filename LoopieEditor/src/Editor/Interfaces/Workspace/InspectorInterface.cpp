@@ -1964,22 +1964,21 @@ namespace Loopie {
 
 					for (int i = 0; i < layers.size(); i++)
 					{
-						selected = (includeMask & (1u << i)) != 0;
+						uint32_t bit = (1u << i);
+						selected = (includeMask & bit) != 0;
 						if (selected)
 							ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetStyleColorVec4(ImGuiCol_HeaderHovered));
-
 						if (ImGui::Selectable(layers[i].name.c_str(), selected))
 						{
 							if (selected)
-								boxCollider->RemoveIncludedLayer(i);
+								boxCollider->RemoveIncludedLayer(bit);
 							else
-								boxCollider->IncludeLayer(i);
+								boxCollider->IncludeLayer(bit);
 						}
-
-						if (selected)
+						if (selected) {
 							ImGui::PopStyleColor();
-						if (selected)
 							ImGui::SetItemDefaultFocus();
+						}
 					}
 					ImGui::EndCombo();
 				}
@@ -2024,22 +2023,21 @@ namespace Loopie {
 
 					for (int i = 0; i < layers.size(); i++)
 					{
-						bool selected = (excludeMask & (1u << i)) != 0;
+						uint32_t bit = (1u << i);
+						selected = (excludeMask & bit) != 0;
 						if (selected)
 							ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetStyleColorVec4(ImGuiCol_HeaderHovered));
-
 						if (ImGui::Selectable(layers[i].name.c_str(), selected))
 						{
 							if (selected)
-								boxCollider->RemoveExcludedLayer(i);
+								boxCollider->RemoveExcludedLayer(bit);
 							else
-								boxCollider->ExcludeLayer(i);
+								boxCollider->ExcludeLayer(bit);
 						}
-
-						if (selected)
+						if (selected) {
 							ImGui::PopStyleColor();
-						if (selected)
 							ImGui::SetItemDefaultFocus();
+						}
 					}
 					ImGui::EndCombo();
 				}

@@ -122,6 +122,30 @@ namespace Loopie
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void BoxCollider_SetTrigger(string entityID, string componentID, bool isTrigger);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_SetIncludeMask(string entityID, string componentID, int includeMask);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static int BoxCollider_GetIncludeMask(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_AddIncludeMask(string entityID, string componentID, int includeMask);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_RemoveIncludeMask(string entityID, string componentID, int includeMask);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_SetExcludeMask(string entityID, string componentID, int excludeMask);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static int BoxCollider_GetExcludeMask(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_AddExcludeMask(string entityID, string componentID, int excludeMask);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_RemoveExcludeMask(string entityID, string componentID, int excludeMask);
         #endregion
         #region Animator
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
