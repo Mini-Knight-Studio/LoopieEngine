@@ -16,6 +16,7 @@ namespace Loopie {
 	std::vector<Camera*> Renderer::s_RenderCameras = std::vector<Camera*>();
 	std::shared_ptr<UniformBuffer> Renderer::s_MatricesUniformBuffer = nullptr;
 	std::shared_ptr<UniformBuffer> Renderer::s_lightingUniformBuffer = nullptr;
+	std::shared_ptr<ShaderStorageBuffer> Renderer::s_BonesSSBOBuffer = nullptr;
 	Light* Renderer::s_Lights[MAX_LIGHTS] = {};
 	unsigned short Renderer::s_LightCount = 0;
 	bool Renderer::s_UseGizmos = true;
@@ -59,6 +60,9 @@ namespace Loopie {
 		}
 		s_lightingUniformBuffer = std::make_shared<UniformBuffer>(lightingLayout);
 		s_lightingUniformBuffer->BindToLayout(1);
+
+		s_BonesSSBOBuffer = std::make_shared<ShaderStorageBuffer>();
+		s_BonesSSBOBuffer->BindToLayout(2);
 
 		s_LightCount = 0;
 	}
@@ -207,9 +211,8 @@ namespace Loopie {
 
 		if (!bones.empty())
 		{
-
-			int count = std::min((int)bones.size(), 100);
-			material->GetShader().SetUniformMat4Array("lp_Bones", bones.data(), count);
+			s_BonesSSBOBuffer->SetData(bones.data(), (unsigned int)(bones.size() * sizeof(matrix4)));
+			s_BonesSSBOBuffer->BindToLayout(2);
 			
 		}
 

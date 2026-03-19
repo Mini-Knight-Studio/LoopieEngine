@@ -31,8 +31,12 @@ layout (std140, binding = 1) uniform Lighting
     Light lp_lights[8];
 };
 
+layout (std430, binding = 2) readonly buffer BoneMatrices
+{
+    mat4 lp_Bones[];
+};
+
 uniform mat4 lp_Transform;
-uniform mat4 lp_Bones[100]; 
 uniform bool lp_Skinned;
 ///
 

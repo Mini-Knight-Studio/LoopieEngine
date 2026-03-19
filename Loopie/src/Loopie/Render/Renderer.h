@@ -4,6 +4,7 @@
 #include "Loopie/Resources/Types/Texture.h"
 #include "Loopie/Render/VertexArray.h"
 #include "Loopie/Render/UniformBuffer.h"
+#include "Loopie/Render/ShaderStorageBuffer.h"
 #include "Loopie/Components/Camera.h"
 #include "Loopie/Components/Light.h"
 
@@ -154,6 +155,7 @@ namespace Loopie {
 		static std::vector<Camera*> s_RenderCameras;
 		static std::shared_ptr<UniformBuffer> s_MatricesUniformBuffer;
 		static std::shared_ptr<UniformBuffer> s_lightingUniformBuffer;
+		static std::shared_ptr<ShaderStorageBuffer> s_BonesSSBOBuffer;
 
 		static std::shared_ptr<VertexBuffer> s_billboardVBO;
 		static std::shared_ptr<VertexBuffer>s_posSizeVBO;
