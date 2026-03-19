@@ -63,6 +63,8 @@ namespace Loopie {
 
 		s_BonesSSBOBuffer = std::make_shared<ShaderStorageBuffer>();
 		s_BonesSSBOBuffer->BindToLayout(2);
+		matrix4 dummy = matrix4(1);
+		s_BonesSSBOBuffer->SetData((void*)(&dummy), (unsigned int)(sizeof(matrix4)));
 
 		s_LightCount = 0;
 	}
@@ -212,10 +214,7 @@ namespace Loopie {
 		if (!bones.empty())
 		{
 			s_BonesSSBOBuffer->SetData(bones.data(), (unsigned int)(bones.size() * sizeof(matrix4)));
-			s_BonesSSBOBuffer->BindToLayout(2);
-			
 		}
-
 	}
 	void Renderer::BlendFunction()
 	{
