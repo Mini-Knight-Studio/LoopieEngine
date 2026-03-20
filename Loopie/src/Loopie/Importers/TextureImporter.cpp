@@ -152,6 +152,7 @@ namespace Loopie {
     bool TextureImporter::CheckIfIsImage(const char* path)
     {
         ILenum type = ilDetermineType(path);
-        return type != IL_TYPE_UNKNOWN;
+        
+        return !(type == IL_TYPE_UNKNOWN || type == IL_MP3);
     }
 }

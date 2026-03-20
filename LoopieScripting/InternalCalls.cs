@@ -110,6 +110,42 @@ namespace Loopie
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void BoxCollider_SetLayer(string entityID, string componentID, string tag);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool BoxCollider_IsStatic(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_SetStatic(string entityID, string componentID, bool isStatic);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool BoxCollider_IsTrigger(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_SetTrigger(string entityID, string componentID, bool isTrigger);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_SetIncludeMask(string entityID, string componentID, int includeMask);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static int BoxCollider_GetIncludeMask(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_AddIncludeMask(string entityID, string componentID, int includeMask);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_RemoveIncludeMask(string entityID, string componentID, int includeMask);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_SetExcludeMask(string entityID, string componentID, int excludeMask);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static int BoxCollider_GetExcludeMask(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_AddExcludeMask(string entityID, string componentID, int excludeMask);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_RemoveExcludeMask(string entityID, string componentID, int excludeMask);
         #endregion
         #region Animator
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
@@ -299,28 +335,64 @@ namespace Loopie
         #region Entity
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static object Entity_GetScriptInstance(string entityID, string componentFullName);
+
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static string Entity_Create(string entityName, string parentId);
+
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static string Entity_Clone(string entityID, bool cloneChilds);
+
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Entity_Destroy(string entityID);
+
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static bool Entity_AddComponent(string entityID, string componentFullName, out string componentID);
+
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static bool Entity_HasComponent(string entityID, Type componentType);
+
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static bool Entity_GetComponent(string entityID, Type componentType, out string componentID);
+
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static string Entity_FindEntityByName(string name);
+
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static string Entity_FindEntityByID(string entityID);
+
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Entity_SetActive(string entityID, bool active);
+
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static bool Entity_IsActive(string entityID);
+
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static bool Entity_IsActiveInHierarchy(string entityID);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static string Entity_GetParent(string entityID);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void Entity_SetParent(string entityID, string parentID);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static string Entity_GetName(string entityID);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void Entity_SetName(string entityID, string name);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static int Entity_GetChildCount(string entityID);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static string Entity_GetChild(string entityID, int index);
+        #endregion
+        #region Component
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static object Component_SetActive(string entityID, string componentID, bool isActive);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool Component_IsActive(string entityID, string componentID);
         #endregion
         #region Collisions
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
@@ -335,6 +407,20 @@ namespace Loopie
         #region Gizmo
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Gizmo_DrawLine(Vector3 start, Vector3 end, Vector4 color);
+        #endregion
+        #region Image
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Image_GetTint(string entityID, string componentID, out Vector4 tint);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Image_SetTint(string entityID, string componentID, ref Vector4 tint);
+        #endregion
+        #region Text
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static string Text_GetText(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Text_SetText(string entityID, string componentID, string text);
         #endregion
     }
 }

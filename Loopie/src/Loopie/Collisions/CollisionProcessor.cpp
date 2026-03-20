@@ -4,6 +4,8 @@
 #include "Loopie/Core/Log.h"
 #include "Loopie/Scene/Entity.h"
 
+#include "Loopie/Components/Transform.h"
+
 #include "Loopie/Project/ProjectConfig.h"
 
 #include <algorithm>
@@ -120,10 +122,7 @@ namespace Loopie {
                 if (!collider2->GetIsActive())
                     continue;
 
-                unsigned int layerA = collider1->GetLayerIndex();
-                unsigned int layerB = collider2->GetLayerIndex();
-
-                if (!s_collisionMatrix[layerA][layerB])
+                if (!collider1->CanCollideWith(collider2))
                     continue;
 
                 const AABB& bAABB = collider2->GetWorldAABB();
@@ -144,6 +143,36 @@ namespace Loopie {
 
                     if (!collider2->m_wasCollidingLastFrame)
                         collider2->m_collided = true;
+
+
+                    if (!collider1->IsTrigger() && !collider2->IsTrigger())
+                    {
+                        vec3 pushDir;
+                        float depth;
+                        if (collider1->GetWorldOBB().GetPenetration(collider2->GetWorldOBB(), pushDir, depth))
+                        {
+                            bool static1 = collider1->IsStatic();
+                            bool static2 = collider2->IsStatic();
+
+                            if (!static1 && !static2)
+                            {
+                                collider1->GetTransform()->SetWorldPosition(
+                                    collider1->GetTransform()->GetWorldPosition() + pushDir * depth * 0.5f);
+                                collider2->GetTransform()->SetWorldPosition(
+                                    collider2->GetTransform()->GetWorldPosition() - pushDir * depth * 0.5f);
+                            }
+                            else if (!static1 && static2)
+                            {
+                                collider1->GetTransform()->SetWorldPosition(
+                                    collider1->GetTransform()->GetWorldPosition() + pushDir * depth);
+                            }
+                            else if (static1 && !static2)
+                            {
+                                collider2->GetTransform()->SetWorldPosition(
+                                    collider2->GetTransform()->GetWorldPosition() - pushDir * depth);
+                            }
+                        }
+                    }
                 }
             }
         }

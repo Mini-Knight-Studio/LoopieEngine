@@ -12,6 +12,7 @@ _deps
 build
 out
 
+
 *.vscode
 *.kdev4
 *.kate-swp
@@ -19,6 +20,7 @@ out
 /.idea
 /cmake-build-debug
 /.vs
+/bin
 /cmake-build-debug-event-trace
 /cmake-build-debug-visual-studio
 /cmake-build-debug-visual-studio-event-trace

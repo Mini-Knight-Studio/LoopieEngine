@@ -19,13 +19,6 @@ namespace Loopie
 
 	Material::~Material()
 	{
-		if (m_textureOwnership) {
-			for (auto& [name, texture] : m_textures)
-			{
-				if (texture)
-					texture->DecrementReferenceCount();
-			}
-		}
 
 		m_textures.clear();
 	}
@@ -67,7 +60,6 @@ namespace Loopie
 		if (m_textureBufferOverride)
 		{
 			m_textureBufferOverride->Bind(0);
-			m_shader.SetUniformInt("u_Albedo", 0);
 			
 			for (const auto& [name, uniformValue] : m_uniformValues)
 			{
@@ -130,13 +122,6 @@ namespace Loopie
 			Log::Error("Cannot reset material with invalid shader.");
 			return;
 		}
-		if (m_textureOwnership){
-			for (auto& [name, texture] : m_textures)
-			{
-				if (texture)
-					texture->DecrementReferenceCount();
-			}
-		}
 
 		m_uniformValues.clear();
 		m_textures.clear();
@@ -153,8 +138,6 @@ namespace Loopie
 		for (const auto& sampler : samplers)
 		{
 			m_textures[sampler.name] = Texture::GetDefault();
-			if(m_textureOwnership)
-				m_textures[sampler.name]->IncrementReferenceCount();
 		}
 
 		Log::Info("Material reset to shader defaults");
@@ -248,13 +231,6 @@ namespace Loopie
 			Log::Warn("Texture slot '{}' not found in shader.", name);
 			return;
 		}
-
-		if (m_textureOwnership && it->second)
-			it->second->DecrementReferenceCount();
-
 		it->second = texture;
-
-		if (m_textureOwnership && it->second)
-			it->second->IncrementReferenceCount();
 	}
 }

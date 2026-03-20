@@ -4,9 +4,13 @@
 #include "Loopie/Resources/Types/Texture.h"
 #include "Loopie/Render/VertexArray.h"
 #include "Loopie/Render/UniformBuffer.h"
+#include "Loopie/Render/ShaderStorageBuffer.h"
 #include "Loopie/Components/Camera.h"
+#include "Loopie/Components/Light.h"
 
 #include <filesystem>
+
+#define MAX_LIGHTS 8 // Can be increased if necessary. Watch out that performance though!
 
 namespace Loopie {
 	class Transform;
@@ -63,6 +67,32 @@ namespace Loopie {
 			std::vector<matrix4> Bones;
 		};
 
+		struct RenderParticlesData
+		{
+			const unsigned int maxInstances = 1000;
+			unsigned int count = 0;
+			//VBOs
+
+			struct PosSizeData_
+			{
+				vec3 position;
+				float size;
+
+				PosSizeData_(vec3& pos_, float size_) : position(pos_), size(size_) {}
+
+			};
+			struct ColorData_
+			{
+				vec4 color;
+				ColorData_(vec4& col) : color(col) {}
+			};
+			std::vector<PosSizeData_> PosSizeData;
+			std::vector<ColorData_> ColorData;
+
+		};
+
+		static RenderParticlesData s_ParticlesData;
+
 		static void Init(void* context);
 		static void Shutdown();
 
@@ -70,6 +100,11 @@ namespace Loopie {
 		static void SetClearColor(const vec4& color);
 		static void SetViewport(unsigned int x, unsigned int y, unsigned int width, unsigned int height);
 		static const vec4& GetCurrentViewport() { return s_CurrentViewport; }
+
+		static void RegisterLight(Light* light);
+		static void UnregisterLight(Light* light);
+		static void RemoveAllLights();
+		static unsigned short GetLightCount() { return s_LightCount; }
 
 		static void RegisterCamera(Camera& camera);
 		static void UnregisterCamera(Camera& camera);
@@ -85,6 +120,12 @@ namespace Loopie {
 
 		static void EnableDepth();
 		static void DisableDepth();
+		static void EnableDepthMask();
+		static void DisableDepthMask();
+
+		static void EnableBlend();
+		static void DisableBlend();
+		static void BlendFunction();
 
 		static void EnableStencil();
 		static void DisableStencil();
@@ -96,9 +137,6 @@ namespace Loopie {
 		static void DisableCulling();
 		static void CullFace(CullFaceMode mode);
 
-		static void EnableBlend();
-		static void DisableBlend();
-
 		static void SetDepthWrite(bool enable);
 
 	private:
@@ -106,14 +144,25 @@ namespace Loopie {
 		static void SetRenderUniforms(std::shared_ptr<Material> material, const matrix4& modelMatrix, const std::vector<matrix4>& bones = {});
 		static void FlushRenderQueue();
 
+
+		static void AddParticleItem(vec3& position, float size, vec4& color);
+		static void FlushParticleItems(std::shared_ptr<Material> material);
+
 	public:
 	private:
-
+		static Light* s_Lights[MAX_LIGHTS];
 		static std::vector<RenderItem> s_RenderQueue;
 		static std::vector<Camera*> s_RenderCameras;
 		static std::shared_ptr<UniformBuffer> s_MatricesUniformBuffer;
+		static std::shared_ptr<UniformBuffer> s_lightingUniformBuffer;
+		static std::shared_ptr<ShaderStorageBuffer> s_BonesSSBOBuffer;
+
+		static std::shared_ptr<VertexBuffer> s_billboardVBO;
+		static std::shared_ptr<VertexBuffer>s_posSizeVBO;
+		static std::shared_ptr<VertexBuffer>s_colorVBO;
 
 		static bool s_UseGizmos;
+		static unsigned short s_LightCount;
 
 		static vec4 s_CurrentViewport;
 	};

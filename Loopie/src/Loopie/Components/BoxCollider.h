@@ -31,6 +31,12 @@ namespace Loopie {
         void SetDrawGizmo(bool value) { m_drawGizmo = value; }
         bool GetDrawGizmo() const { return m_drawGizmo; }
 
+        void SetIsTrigger(bool trigger) { m_isTrigger = trigger; }
+        bool IsTrigger() const { return m_isTrigger; }
+
+        void SetIsStatic(bool isStatic) { m_isStatic = isStatic; }
+        bool IsStatic() const { return m_isStatic; }
+
         bool Intersects(const BoxCollider* other) const;
         const unsigned int GetLayerIndex() const { return m_layerIndex; }
         const unsigned int GetLayerBit() const;
@@ -40,7 +46,19 @@ namespace Loopie {
         bool CollidedThisFrame() const { return m_collided; }
         bool StoppedColliding() const { return m_stopColliding; }
 
+        void SetIncludeMask(uint32_t mask) { m_includeMask = mask; }
+        uint32_t GetIncludeMask() const { return m_includeMask; }
+        void SetExcludeMask(uint32_t mask) { m_excludeMask = mask; }
+        uint32_t GetExcludeMask() const { return m_excludeMask; }
+
+        void IncludeLayer(unsigned int mask) { m_includeMask |= (mask); }
+        void RemoveIncludedLayer(unsigned int mask) { m_includeMask &= ~(mask); }
+        void ExcludeLayer(unsigned int mask) { m_excludeMask |= (mask); }
+        void RemoveExcludedLayer(unsigned int mask) { m_excludeMask &= ~(mask); }
+
         const std::vector<BoxCollider*>& GetCollidingWith() const { return m_collidingWith; }
+
+        bool CanCollideWith(const BoxCollider* other) const;
 
         JsonNode Serialize(JsonNode& parent) const override;
         void Deserialize(const JsonNode& data) override;
@@ -52,6 +70,8 @@ namespace Loopie {
         vec3 m_localCenter = vec3(0.0f);
         vec3 m_localExtents = vec3(0.5f);
         unsigned int  m_layerIndex = 0;
+        uint32_t m_includeMask = 0;
+        uint32_t m_excludeMask = 0;
 
         std::vector<BoxCollider*> m_collidingWith;
 
@@ -62,6 +82,9 @@ namespace Loopie {
 
         mutable AABB m_cachedAABB;
         mutable OBB m_worldOBB;
+
+        bool m_isTrigger = false;
+        bool m_isStatic = false;
 
         mutable bool m_obbDirty = true;
         bool m_drawGizmo = true;

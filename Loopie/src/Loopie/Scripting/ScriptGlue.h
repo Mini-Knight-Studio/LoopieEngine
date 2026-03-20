@@ -15,5 +15,4 @@ namespace Loopie {
 		static void RegisterFunctions();
 
 	};
-
 }

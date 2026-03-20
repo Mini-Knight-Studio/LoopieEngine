@@ -6,6 +6,7 @@
 #include "Loopie/Components/RectTransform.h"
 #include "Loopie/Components/Camera.h"
 #include "Loopie/Components/MeshRenderer.h"
+#include "Loopie/Components/ParticleComponent.h"
 #include "Loopie/Components/Animator.h"
 #include "Loopie/Components/ScriptClass.h"
 #include "Loopie/Components/Canvas.h"
@@ -25,6 +26,7 @@
 #include "Loopie/Components/AudioListener.h"
 #include "Loopie/Components/Text.h"
 #include "Loopie/Components/Button.h"
+#include "Loopie/Components/Light.h"
 
 #include <unordered_set>
 
@@ -259,6 +261,12 @@ namespace Loopie {
 				auto mr = clone->AddComponent<MeshRenderer>();
 				mr->Deserialize(componentData.Child("meshrenderer"));
 			}
+			// ParticleComponent
+			else if (componentData.Child("particlecomponent").IsValid())
+			{
+				auto pc = clone->AddComponent<ParticleComponent>();
+				pc->Deserialize(componentData.Child("particlecomponent"));
+			}
 			// ScriptClass
 			else if (componentData.Child("script").IsValid())
 			{
@@ -296,6 +304,12 @@ namespace Loopie {
 				auto audioSource = clone->AddComponent<AudioSource>();
 				audioSource->Deserialize(componentData.Child("audiosource"));
 			}
+			//ParticleComponent
+			else if (componentData.Child("particlecomponent").IsValid())
+			{
+				auto particleComponent = clone->AddComponent<ParticleComponent>();
+				particleComponent->Deserialize(componentData.Child("particlecomponent"));
+			}
 			//AudioListener
 			else if (componentData.Child("audiolistener").IsValid())
 			{
@@ -313,6 +327,12 @@ namespace Loopie {
 			{
 				auto button = clone->AddComponent<Button>();
 				button->Deserialize(componentData.Child("button"));
+			}
+			// Light
+			else if (componentData.Child("light").IsValid())
+			{
+				auto light = clone->AddComponent<Light>();
+				light->Deserialize(componentData.Child("light"));
 			}
 			// CanvasScaler
 			else if (componentData.Child("canvas_scaler").IsValid())
@@ -542,6 +562,16 @@ namespace Loopie {
 							meshRenderer->SetUUID(componentUUID.Get());
 						}
 					}
+					else if (componentNode.Contains("particlecomponent"))
+					{
+						JsonNode node = componentNode.Child("particlecomponent");
+						auto particleComponent = entity->AddComponent<ParticleComponent>();
+						if (particleComponent)
+						{
+							particleComponent->Deserialize(node);
+							particleComponent->SetUUID(componentUUID.Get());
+						}
+					}
 					else if (componentNode.Contains("script"))
 					{
 						JsonNode node = componentNode.Child("script");
@@ -630,6 +660,16 @@ namespace Loopie {
 						{
 							button->Deserialize(node);
 							button->SetUUID(componentUUID.Get());
+						}
+					}
+					else if (componentNode.Contains("light"))
+					{
+						JsonNode node = componentNode.Child("light");
+						auto light = entity->AddComponent<Light>();
+						if (light)
+						{
+							light->Deserialize(node);
+							light->SetUUID(componentUUID.Get());
 						}
 					}
 					else if (componentNode.Contains("canvas_scaler"))
@@ -787,6 +827,17 @@ namespace Loopie {
 		{
 			parent->RemoveChild(entity->GetUUID());
 		}
+
+
+		if (ScriptingManager::IsRunning()) {
+			auto destroy = [&](std::vector<ScriptClass*>& components) -> void {
+				for (size_t i = 0; i < components.size(); i++)
+					components[i]->InvokeOnDestroy();
+			};
+
+			destroy(entity->GetComponents<ScriptClass>());
+		}
+		
 
 		m_octree->Remove(entity);
 		m_entities.erase(entity->GetUUID());

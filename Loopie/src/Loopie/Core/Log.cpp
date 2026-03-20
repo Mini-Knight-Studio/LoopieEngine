@@ -2,7 +2,7 @@
 
 namespace Loopie {
 
-    std::vector<Log::LogEntry> Log::s_LogEntries;
+    std::deque<Log::LogEntry> Log::s_LogEntries;
 
 	void Log::Init() {
         auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();

@@ -34,6 +34,7 @@ namespace Loopie {
 
 
 		Assimp::Importer importer;
+        importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
 		const aiScene* scene = importer.ReadFile(filepath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_GenBoundingBoxes |
 			aiProcess_OptimizeMeshes |
 			aiProcess_JoinIdenticalVertices |

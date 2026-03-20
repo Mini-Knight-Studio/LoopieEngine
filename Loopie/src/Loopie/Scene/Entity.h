@@ -143,6 +143,8 @@ namespace Loopie {
 		bool GetIsActive() const;
 		bool GetIsActiveInHierarchy() const;
 		std::shared_ptr<Entity> GetChild(UUID uuid) const;
+		std::shared_ptr<Entity> GetChild(int index) const;
+		int GetChildCount() const;
 		const std::vector<std::shared_ptr<Entity>>& GetChildren() const;
 		std::weak_ptr<Entity> GetParent() const;
 		std::vector<Component*> GetComponents() const;
