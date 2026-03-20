@@ -151,7 +151,7 @@ namespace Loopie
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Animator_Stop(string entityID, string componentID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Animator_PlayClip(string entityID, string componentID, string clipName);
+        internal extern static void Animator_PlayClip(string entityID, string componentID, string clipName, float transitionTime);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Animator_Play(string entityID, string componentID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]

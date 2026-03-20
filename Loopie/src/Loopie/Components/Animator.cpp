@@ -165,7 +165,7 @@ namespace Loopie {
 		int index = 0;
 		for (const auto& clip : mesh->GetData().AnimationClips) {
 			if (clip.Name == clipName) {
-				if (!m_currentClip) {
+				if (!m_currentClip || transitionTime <= 0) {
 					m_currentClip = &clip;
 					m_currentTime = 0.0f;
 					m_currentClipIndex = index;
@@ -174,7 +174,7 @@ namespace Loopie {
 					m_nextClip = &clip;
 					m_nextClipIndex = index;
 
-					m_transitionDuration = m_nextClip->Duration;
+					m_transitionDuration = std::max(transitionTime, 0.0001f);
 					m_transitionTime = 0;
 					m_nextTime = 0;
 					m_inTransition = true;

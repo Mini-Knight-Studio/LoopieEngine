@@ -587,7 +587,7 @@ namespace Loopie
 			animator->Stop();
 	}
 
-	static void Animator_PlayClip(MonoString* entityID, MonoString* componentID, MonoString* clipName)
+	static void Animator_PlayClip(MonoString* entityID, MonoString* componentID, MonoString* clipName, float transitionTime)
 	{
 		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
 		if (!entity)
@@ -595,7 +595,7 @@ namespace Loopie
 		Animator* animator = Utils::GetComponent<Animator>(entity, componentID);
 		if (animator) {
 			std::string name = Utils::MonoStringToString(clipName);
-			animator->Play(name);
+			animator->Play(name, transitionTime);
 		}
 	}
 
