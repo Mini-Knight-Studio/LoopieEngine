@@ -30,6 +30,7 @@ namespace Loopie {
 		_MonoImage* CompilerImage = nullptr;
 
 		std::string CoreAssemblyFilepath;
+		std::string ExternalAssemblyPath;
 		std::string AppAssemblyFilepath;
 		std::string CompilerAssemblyFilepath;
 
@@ -53,6 +54,8 @@ namespace Loopie {
 		static void LoadCoreAssembly();
 		static void LoadAppAssembly();
 		static void LoadCompilerAssembly();
+
+		static void LoadDependecies();
 
 		static void RuntimeStart();
 		static void RuntimeStop();

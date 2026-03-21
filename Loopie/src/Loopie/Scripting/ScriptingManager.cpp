@@ -53,6 +53,7 @@ namespace Loopie {
 		ScriptGlue::RegisterFunctions();
 
 		LoadCoreAssembly();
+		LoadDependecies();
 
 		if (s_Data.EnableRecompile) {
 			LoadCompilerAssembly();
@@ -114,6 +115,7 @@ namespace Loopie {
 		mono_domain_set(s_Data.AppDomain, true);
 
 		LoadCoreAssembly();
+		LoadDependecies();
 
 		if (s_Data.EnableRecompile) {
 			LoadCompilerAssembly();
@@ -159,6 +161,12 @@ namespace Loopie {
 		s_Data.CompilerAssembly = LoadAssembly(s_Data.CompilerAssemblyFilepath.c_str());
 		if (s_Data.CompilerAssembly)
 			s_Data.CompilerImage = mono_assembly_get_image(s_Data.CompilerAssembly);
+	}
+
+	void ScriptingManager::LoadDependecies()
+	{
+		std::filesystem::path path = s_Data.ExternalAssemblyPath;
+		LoadAssembly((path / "Newtonsoft.Json.dll").string().c_str());
 	}
 
 	void ScriptingManager::RuntimeStart()

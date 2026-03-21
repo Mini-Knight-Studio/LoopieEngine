@@ -58,6 +58,7 @@ namespace Loopie
 
 		std::string projectDir = Application::GetInstance().m_activeProject.GetGameDLLPath().string();
 		context.CoreAssemblyFilepath = "../Loopie/Loopie.Core.dll";
+		context.ExternalAssemblyPath = "../Loopie/";
 		context.AppAssemblyFilepath = projectDir;
 		context.EnableRecompile = false;
 

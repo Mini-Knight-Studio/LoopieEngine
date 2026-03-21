@@ -43,6 +43,7 @@ namespace Loopie
                 {
                     Console.WriteLine("Adding Loopie.Core...");
                     references.Add(MetadataReference.CreateFromFile(coreDll));
+                    references.Add(MetadataReference.CreateFromFile(Path.Combine(Path.GetDirectoryName(coreDll), "Newtonsoft.Json.dll")));
                 }
 
                 // 3. Setup compilation options

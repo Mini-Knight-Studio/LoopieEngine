@@ -61,6 +61,7 @@ namespace Loopie
 		context.CoreAssemblyFilepath = "../Loopie/Loopie.Core.dll";
 		context.AppAssemblyFilepath = projectDir;
 		context.CompilerAssemblyFilepath = "../Loopie/Loopie.ScriptCompiler.dll";
+		context.ExternalAssemblyPath = "../Loopie/";
 		context.EnableRecompile = true;
 
 		ScriptingManager::Init();

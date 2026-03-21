@@ -86,11 +86,9 @@ namespace Loopie {
 					<NuGetAudit>false</NuGetAudit>
 				</PropertyGroup>
 
-				<ItemGroup>
-					<Reference Include="Loopie">
-						<HintPath>ENGINE_DLL_PATH</HintPath>
-					</Reference>
-				</ItemGroup>
+				 <ItemGroup>
+					<Reference Include="ENGINE_DLLS_PATH" />
+				 </ItemGroup>
 
 			</Project>
 
@@ -105,9 +103,9 @@ namespace Loopie {
 			return;
 		}
 
-		std::filesystem::path relative = "../Loopie/Loopie.Core.dll";
+		std::filesystem::path relative = "../Loopie/*.dll";
 
-		csProjString = ReplaceAll(csProjString, "ENGINE_DLL_PATH", std::filesystem::absolute(relative).string());
+		csProjString = ReplaceAll(csProjString, "ENGINE_DLLS_PATH", std::filesystem::absolute(relative).string());
 
 		file << csProjString;
 		file.close();
