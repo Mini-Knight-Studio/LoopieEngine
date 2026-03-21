@@ -30,7 +30,10 @@ namespace Loopie {
 		ULong,
 		String,
 		Entity,
-		Component
+		Component,
+		Vector2,
+		Vector3,
+		Vector4,
 	};
 
 	static std::unordered_map<std::string, ScriptFieldType> s_ScriptFieldTypeMap =
@@ -48,7 +51,10 @@ namespace Loopie {
 		{ "System.UInt64", ScriptFieldType::ULong },
 		{ "System.String",  ScriptFieldType::String },
 		{ "Loopie.Entity",  ScriptFieldType::Entity },
-		{ "Loopie.Component",  ScriptFieldType::Component }
+		{ "Loopie.Component",  ScriptFieldType::Component },
+		{ "Loopie.Vector2",  ScriptFieldType::Vector2 },
+		{ "Loopie.Vector3",  ScriptFieldType::Vector3 },
+		{ "Loopie.Vector4",  ScriptFieldType::Vector4 }
 	};
 
 	

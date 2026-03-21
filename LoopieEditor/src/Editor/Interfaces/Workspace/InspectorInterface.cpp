@@ -1332,7 +1332,28 @@ namespace Loopie {
 
 				case ScriptFieldType::Entity:
 				{
-					ImGui::Text("Entity Field (Not working)");
+					std::string id = isRuntime ? scriptClass->GetRuntimeEntityField(name) : scriptClass->GetFieldString(name);
+
+					std::shared_ptr<Entity> entity = Application::GetInstance().GetScene().GetEntity(UUID(id));
+					std::string label = entity ? entity->GetName() : "Null Entity";
+
+					char buffer[256];
+					memset(buffer, 0, sizeof(buffer));
+					strncpy(buffer, label.c_str(), sizeof(buffer) - 1);
+					
+					ImGui::PushStyleColor(ImGuiCol_FrameBg, ImGui::GetStyleColorVec4(ImGuiCol_FrameBgHovered));
+					ImGui::InputText(name.c_str(), buffer, sizeof(buffer), ImGuiInputTextFlags_ReadOnly);
+					ImGui::PopStyleColor();
+
+					std::shared_ptr<Entity> selected = nullptr;
+					selected = GetDragDropEntity();
+
+					if (selected)
+					{
+						std::string newID = selected->GetUUID().Get();
+						isRuntime ? scriptClass->SetRuntimeEntityField(name, newID) : scriptClass->SetFieldString(name, newID);
+					}
+
 					break;
 				}
 				case ScriptFieldType::Component:
@@ -1340,6 +1361,28 @@ namespace Loopie {
 					ImGui::Text("Component Field (Not working)");
 					break;
 				}
+				case ScriptFieldType::Vector2:
+				{
+					vec2 v = isRuntime ? scriptClass->GetRuntimeFieldValue<vec2>(name) : scriptClass->GetFieldValue<vec2>(name);
+					if (ImGui::DragFloat2(name.c_str(), &v.x, 0.1f))
+						isRuntime ? scriptClass->SetRuntimeFieldValue<vec2>(name, v) : scriptClass->SetFieldValue<vec2>(name, v);
+					break;
+				}
+				case ScriptFieldType::Vector3:
+				{
+					vec3 v = isRuntime ? scriptClass->GetRuntimeFieldValue<vec3>(name) : scriptClass->GetFieldValue<vec3>(name);
+					if (ImGui::DragFloat3(name.c_str(), &v.x, 0.1f))
+						isRuntime ? scriptClass->SetRuntimeFieldValue<vec3>(name, v) : scriptClass->SetFieldValue<vec3>(name, v);
+					break;
+				}
+				case ScriptFieldType::Vector4:
+				{
+					vec4 v = isRuntime ? scriptClass->GetRuntimeFieldValue<vec4>(name) : scriptClass->GetFieldValue<vec4>(name);
+					if (ImGui::DragFloat4(name.c_str(), &v.x, 0.1f))
+						isRuntime ? scriptClass->SetRuntimeFieldValue<vec4>(name, v) : scriptClass->SetFieldValue<vec4>(name, v);
+					break;
+				}
+
 				default:
 					ImGui::Text("Unsupported Field: %s", name.c_str());
 					break;

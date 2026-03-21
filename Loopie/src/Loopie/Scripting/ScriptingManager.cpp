@@ -234,13 +234,15 @@ namespace Loopie {
 					std::string typeName = mono_type_get_name(type);
 					ScriptFieldType fieldType = MonoTypeToScriptFieldType(type);
 
-					MonoClass* fieldClass = mono_class_from_mono_type(type);
-
-					if (fieldClass)
+					if (fieldType == ScriptFieldType::None)
 					{
-						isComponent = mono_class_is_subclass_of(fieldClass, component, false);
-						if (isComponent)
-							fieldType = ScriptFieldType::Component;
+						MonoClass* fieldClass = mono_class_from_mono_type(type);
+						if (fieldClass) {
+							isComponent = mono_class_is_subclass_of(fieldClass, component, false);
+							if (isComponent)
+								fieldType = ScriptFieldType::Component;
+						}
+						
 					}
 
 					scriptClass->GetFields()[fieldName] = { fieldType, fieldName, field };

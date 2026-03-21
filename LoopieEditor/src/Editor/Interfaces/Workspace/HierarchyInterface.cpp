@@ -41,8 +41,8 @@ namespace Loopie {
 
 			ImVec2 cursorPos = ImGui::GetCursorPos();
 
-			if (ImGui::IsWindowHovered() && (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)))
-				SelectEntity(nullptr);
+			/*if (ImGui::IsWindowHovered() && (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)))
+				SelectEntity(nullptr);*/
 
 			if (ImGui::BeginPopupContextWindow("HierarchyBackgroundContext", ImGuiPopupFlags_MouseButtonRight)) {
 				DrawContextMenu(nullptr);
@@ -106,13 +106,12 @@ namespace Loopie {
 		{
 			ImGui::PopStyleColor();
 		}
-
-		Drag(entity);
+		bool dragStarted = false;
+		Drag(entity, dragStarted);
 		Drop(entity);
 
-		if (ImGui::IsItemClicked())
+		if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && ImGui::IsItemHovered() && !dragStarted)
 		{
-			////Expand To Select Multiple
 			SelectEntity(entity);
 		}
 
@@ -258,7 +257,7 @@ namespace Loopie {
 
 	}
 
-	void HierarchyInterface::Drag(const std::shared_ptr<Entity> entity)
+	void HierarchyInterface::Drag(const std::shared_ptr<Entity> entity, bool& dragStarted)
 	{
 		if (ImGui::BeginDragDropSource())
 		{
@@ -268,6 +267,7 @@ namespace Loopie {
 
 			ImGui::Text("%s", entity->GetName().c_str());
 			ImGui::EndDragDropSource();
+			dragStarted = true;
 		}
 	}
 

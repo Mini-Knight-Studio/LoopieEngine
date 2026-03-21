@@ -24,7 +24,7 @@ namespace Loopie {
 		void DrawContextMenu(const std::shared_ptr<Entity> entity);
 		void HotKeysSelectedEntiy(const InputEventManager& inputEvent);
 
-		void Drag(const std::shared_ptr<Entity> entity);
+		void Drag(const std::shared_ptr<Entity> entity, bool& dragStarted);
 		void Drop(const std::shared_ptr<Entity> entity);
 
 		std::shared_ptr<Entity> CreatePrimitiveModel(const std::string& modelPath, const std::string& name, const std::shared_ptr<Entity> parent);

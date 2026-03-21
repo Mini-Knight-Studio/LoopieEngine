@@ -41,7 +41,7 @@ namespace Loopie {
 		const void* GetBuffer() const { return m_buffer; }
 
 	private:
-		uint8_t m_buffer[16];
+		uint8_t m_buffer[32];
 		std::string m_string;
 	};
 
@@ -108,6 +108,9 @@ namespace Loopie {
 		std::string GetRuntimeFieldString(const std::string& name);
 		void SetRuntimeFieldString(const std::string& name, const std::string& value);
 
+		std::string GetRuntimeEntityField(const std::string& name);
+		void SetRuntimeEntityField(const std::string& name, const std::string& value);
+
 		std::string GetFieldString(const std::string& name) const;
 		void SetFieldString(const std::string& name, const std::string& value);
 
@@ -125,7 +128,7 @@ namespace Loopie {
 		bool SetFieldValueInternal(const std::string& fieldName, const void* value); /// Used to change data when mono is running
 
 	private:
-		inline static char s_FieldValueBuffer[16];
+		inline static char s_FieldValueBuffer[32];
 
 		std::shared_ptr<ScriptingClass> m_scriptingClass;
 		std::unordered_map<std::string, ScriptFieldData> m_scriptFields;  /// Used to store data when mono not running
