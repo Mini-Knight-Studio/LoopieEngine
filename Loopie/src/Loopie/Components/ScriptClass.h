@@ -105,14 +105,14 @@ namespace Loopie {
 			m_scriptFields[name].SetValue<T>(value);
 		}
 
-		std::string GetRuntimeFieldString(const std::string& name);
-		void SetRuntimeFieldString(const std::string& name, const std::string& value);
+		std::string GetRuntimeFieldString(const std::string& fieldName);
+		void SetRuntimeFieldString(const std::string& fieldName, const std::string& value);
 
-		std::string GetRuntimeEntityField(const std::string& name);
-		void SetRuntimeEntityField(const std::string& name, const std::string& value);
+		std::string GetRuntimeEntityField(const std::string& fieldName);
+		void SetRuntimeEntityField(const std::string& fieldName, const std::string& value);
 
-		std::string GetFieldString(const std::string& name) const;
-		void SetFieldString(const std::string& name, const std::string& value);
+		std::string GetFieldString(const std::string& fieldName) const;
+		void SetFieldString(const std::string& fieldName, const std::string& value);
 
 		bool IsSameType(std::shared_ptr<ScriptingClass> scriptingClass) const{
 			return m_scriptingClass->IsSameType(scriptingClass);

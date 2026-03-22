@@ -39,4 +39,11 @@ namespace Loopie {
 			return m_className;
 		return m_classNamespace + "." + m_className;
 	}
+	const ScriptField* ScriptingClass::FindField(const std::string& name) const
+	{
+		auto it = m_index.find(name);
+		if (it == m_index.end())
+			return nullptr;
+		return &m_fields[it->second];
+	}
 }

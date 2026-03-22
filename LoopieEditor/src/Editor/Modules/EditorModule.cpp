@@ -426,6 +426,9 @@ namespace Loopie
 		auto& particleEntities = m_currentScene->GetAllEntities();
 		for (const auto& [id, entity] : particleEntities)
 		{
+			if (!entity->GetIsActive())
+				continue;
+
 			const std::vector<Component*>& components = entity->GetComponents();
 			for (size_t i = 0; i < components.size(); i++)
 			{

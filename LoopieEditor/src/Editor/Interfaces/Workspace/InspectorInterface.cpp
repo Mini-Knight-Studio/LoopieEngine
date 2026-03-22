@@ -1254,9 +1254,10 @@ namespace Loopie {
 				ImGui::PopID();
 				return;
 			}
-			const std::map<std::string, ScriptField>& fields = scriptingClass->GetFields();
-			for (const auto& [name, field] : fields)
+			const std::vector<ScriptField>& fields = scriptingClass->GetFields();
+			for (const ScriptField& field : fields)
 			{
+				const std::string& name = field.Name;
 				switch (field.Type)
 				{
 				case ScriptFieldType::Float:

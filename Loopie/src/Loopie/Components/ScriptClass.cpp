@@ -54,8 +54,9 @@ namespace Loopie
 		mono_property_set_value(idProperty, m_instance, args, nullptr);
 
 		// Restore fields
-		for (const auto& [name, field] : m_scriptingClass->GetFields())
+		for (const ScriptField& field : m_scriptingClass->GetFields())
 		{
+			const std::string& name = field.Name;
 			const ScriptFieldData& fieldData = m_scriptFields[name];
 
 			if (field.Type == ScriptFieldType::String)
@@ -120,17 +121,13 @@ namespace Loopie
 		m_className = fullName;
 	}
 
-	std::string ScriptClass::GetRuntimeFieldString(const std::string& name)
+	std::string ScriptClass::GetRuntimeFieldString(const std::string& fieldName)
 	{
-		const auto& fields = m_scriptingClass->GetFields();
-		auto it = fields.find(name);
-		if (it == fields.end())
+		const ScriptField* field = m_scriptingClass->FindField(fieldName);
+		if (!field)
 			return {};
-
-		const ScriptField& field = it->second;
-
 		MonoString* monoStr = nullptr;
-		mono_field_get_value(m_instance, field.ClassField, &monoStr);
+		mono_field_get_value(m_instance, field->ClassField, &monoStr);
 
 		if (!monoStr)
 			return {};
@@ -142,30 +139,24 @@ namespace Loopie
 		return result;
 	}
 
-	void ScriptClass::SetRuntimeFieldString(const std::string& name, const std::string& value)
+	void ScriptClass::SetRuntimeFieldString(const std::string& fieldName, const std::string& value)
 	{
-		const auto& fields = m_scriptingClass->GetFields();
-		auto it = fields.find(name);
-		if (it == fields.end())
+		const ScriptField* field = m_scriptingClass->FindField(fieldName);
+		if (!field)
 			return;
 
-		const ScriptField& field = it->second;
-
 		MonoString* monoStr = mono_string_new(mono_domain_get(), value.c_str());
-		mono_field_set_value(m_instance, field.ClassField, monoStr);
+		mono_field_set_value(m_instance, field->ClassField, monoStr);
 	}
 
-	std::string ScriptClass::GetRuntimeEntityField(const std::string& name)
+	std::string ScriptClass::GetRuntimeEntityField(const std::string& fieldName)
 	{
-		const auto& fields = m_scriptingClass->GetFields();
-		auto it = fields.find(name);
-		if (it == fields.end())
+		const ScriptField* field = m_scriptingClass->FindField(fieldName);
+		if (!field)
 			return "";
 
-		const ScriptField& field = it->second;
-
 		MonoObject* obj = nullptr;
-		mono_field_get_value(m_instance, field.ClassField, &obj);
+		mono_field_get_value(m_instance, field->ClassField, &obj);
 		if (!obj) 
 			return "";
 
@@ -181,55 +172,46 @@ namespace Loopie
 		return uuid;
 	}
 
-	void ScriptClass::SetRuntimeEntityField(const std::string& name, const std::string& value)
+	void ScriptClass::SetRuntimeEntityField(const std::string& fieldName, const std::string& value)
 	{
-		const auto& fields = m_scriptingClass->GetFields();
-		auto it = fields.find(name);
-		if (it == fields.end())
+		const ScriptField* field = m_scriptingClass->FindField(fieldName);
+		if (!field)
 			return;
-
-		const ScriptField& field = it->second;
 
 		UUID uuid = UUID(value);
 		MonoObject* entityObj = ScriptingManager::CreateManagedEntity(uuid);
-		mono_field_set_value(m_instance, field.ClassField, entityObj);
+		mono_field_set_value(m_instance, field->ClassField, entityObj);
 	}
 
-	std::string ScriptClass::GetFieldString(const std::string& name) const
+	std::string ScriptClass::GetFieldString(const std::string& fieldName) const
 	{
-		auto it = m_scriptFields.find(name);
+		auto it = m_scriptFields.find(fieldName);
 		if (it == m_scriptFields.end())
 			return "";
 
 		return it->second.GetString();
 	}
 
-	void ScriptClass::SetFieldString(const std::string& name, const std::string& value)
+	void ScriptClass::SetFieldString(const std::string& fieldName, const std::string& value)
 	{
-		m_scriptFields[name].SetString(value);
+		m_scriptFields[fieldName].SetString(value);
 	}
 
 	bool ScriptClass::GetFieldValueInternal(const std::string& fieldName, void* buffer)
 	{
-		const auto& fields = m_scriptingClass->GetFields();
-		auto it = fields.find(fieldName);
-		if (it == fields.end())
+		const ScriptField* field = m_scriptingClass->FindField(fieldName);
+		if (!field)
 			return false;
-
-		const ScriptField& field = it->second;
-		mono_field_get_value(m_instance, field.ClassField, buffer);
+		mono_field_get_value(m_instance, field->ClassField, buffer);
 		return true;
 	}
 
 	bool ScriptClass::SetFieldValueInternal(const std::string& fieldName, const void* value)
 	{
-		const auto& fields = m_scriptingClass->GetFields();
-		auto it = fields.find(fieldName);
-		if (it == fields.end())
+		const ScriptField* field = m_scriptingClass->FindField(fieldName);
+		if (!field)
 			return false;
-
-		const ScriptField& field = it->second;
-		mono_field_set_value(m_instance, field.ClassField, (void*)value);
+		mono_field_set_value(m_instance, field->ClassField, (void*)value);
 		return true;
 	}
 
@@ -244,8 +226,9 @@ namespace Loopie
 			return scriptObj;
 
 		const auto& fields = m_scriptingClass->GetFields();
-		for (const auto& [name, field] : fields)
+		for (const ScriptField& field : fields)
 		{
+			const std::string& name = field.Name;
 			switch (field.Type)
 			{
 			case ScriptFieldType::Float:
@@ -335,8 +318,9 @@ namespace Loopie
 
 		JsonNode node = data.Child("fields");
 		const auto& fields = m_scriptingClass->GetFields();
-		for (const auto& [name, scriptField] : fields)
+		for (const ScriptField& scriptField : fields)
 		{
+			const std::string& name = scriptField.Name;
 			if (!node.HasKey(name))
 				continue;
 

@@ -224,6 +224,10 @@ namespace Loopie {
 			int fieldCount = mono_class_num_fields(monoClass);
 			Log::Warn("{} has {} fields:", className, fieldCount);
 			void* iterator = nullptr;
+
+			auto& fieldsVector = scriptClass->GetFields();
+			auto& fieldsOrderMap = scriptClass->GetFieldsOrder();
+
 			while (MonoClassField* field = mono_class_get_fields(monoClass, &iterator))
 			{
 				const char* fieldName = mono_field_get_name(field);
@@ -245,7 +249,8 @@ namespace Loopie {
 						
 					}
 
-					scriptClass->GetFields()[fieldName] = { fieldType, fieldName, field };
+					fieldsOrderMap[fieldName] = fieldsVector.size();
+					fieldsVector.push_back({ fieldType, fieldName, field });
 					Log::Warn("   {0} -> {1}", fieldName, typeName);
 				}
 			}

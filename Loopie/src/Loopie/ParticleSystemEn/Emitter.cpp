@@ -74,7 +74,7 @@ namespace Loopie
 		}
 
 		m_billboard->SetPosition(m_position);
-		matrix4 billboardRotation = m_billboard.get()->UpdateCalcRotation(cam);
+		matrix4 billboardRotation = m_billboard->UpdateCalcRotation(cam);
 
 		for (auto it = m_particlePool.rbegin(); it != m_particlePool.rend(); ++it)
 		{
