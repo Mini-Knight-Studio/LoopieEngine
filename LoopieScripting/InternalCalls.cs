@@ -422,5 +422,33 @@ namespace Loopie
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Text_SetText(string entityID, string componentID, string text);
         #endregion
+        #region Window
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Window_SetTargetFramerate(int targetFramerate);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static int Window_GetTargetFramerate();
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Window_SetVSync(bool enabled);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool Window_GetVSync();
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Window_SetFullscreen(bool fullscreen);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool Window_GetFullscreen();
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Window_SetResizable(bool resizable);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Window_SetSize(Vector2 size);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Window_GetSize(out Vector2 size);
+        #endregion
     }
 }

@@ -1465,6 +1465,53 @@ namespace Loopie
 	}
 #pragma endregion
 
+#pragma region Window
+	static void Window_SetTargetFramerate(int targetFramerate) {
+		Window& window = Application::GetInstance().GetWindow();
+		window.SetFramerateLimit(targetFramerate);
+	}
+
+	static int Window_GetTargetFramerate() {
+		const Window& window = Application::GetInstance().GetWindow();
+		return window.GetFramerateLimit();
+	}
+
+	static void Window_SetVSync(bool enabled) {
+		Window& window = Application::GetInstance().GetWindow();
+		window.SetVsync(enabled);
+	}
+
+	static bool Window_GetVSync() {
+		const Window& window = Application::GetInstance().GetWindow();
+		return window.IsVsyncEnabled();
+	}
+
+	static void Window_SetFullscreen(bool fullscreen) {
+		Window& window = Application::GetInstance().GetWindow();
+		window.SetWindowFullscreen(fullscreen);
+	}
+
+	static bool Window_GetFullscreen() {
+		const Window& window = Application::GetInstance().GetWindow();
+		return window.IsFullscreen();
+	}
+
+	static void Window_SetResizable(bool resizable) {
+		Window& window = Application::GetInstance().GetWindow();
+		window.SetResizable(resizable);
+	}
+
+	static void Window_SetSize(vec2* size) {
+		Window& window = Application::GetInstance().GetWindow();
+		window.SetWindowSize(size->x, size->y,false);
+	}
+
+	static void Window_GetSize(vec2* size) {
+		Window& window = Application::GetInstance().GetWindow();
+		*size = window.GetSize();
+	}
+#pragma endregion
+
 	template<typename Comp, typename = std::enable_if_t<std::is_base_of_v<Component, Comp>>>
 	static void RegisterComponent()
 	{
@@ -1658,5 +1705,15 @@ namespace Loopie
 
 		ADD_INTERNAL_CALL(Text_GetText);
 		ADD_INTERNAL_CALL(Text_SetText);
+
+		ADD_INTERNAL_CALL(Window_SetTargetFramerate);
+		ADD_INTERNAL_CALL(Window_GetTargetFramerate);
+		ADD_INTERNAL_CALL(Window_SetVSync);
+		ADD_INTERNAL_CALL(Window_GetVSync);
+		ADD_INTERNAL_CALL(Window_SetFullscreen);
+		ADD_INTERNAL_CALL(Window_GetFullscreen);
+		ADD_INTERNAL_CALL(Window_SetResizable);
+		ADD_INTERNAL_CALL(Window_SetSize);
+		ADD_INTERNAL_CALL(Window_GetSize);
 	}
 }
