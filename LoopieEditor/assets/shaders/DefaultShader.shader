@@ -28,7 +28,7 @@ layout (std140, binding = 0) uniform Matrices
 layout (std140, binding = 1) uniform Lighting
 {
     vec4 lp_CameraWorldPosLightCount;
-    Light lp_lights[8];
+    Light lp_lights[16];
 };
 
 layout (std430, binding = 2) readonly buffer BoneMatrices
@@ -101,7 +101,7 @@ layout (std140, binding = 0) uniform Matrices
 layout (std140, binding = 1) uniform Lighting
 {
     vec4 lp_CameraWorldPosLightCount;
-    Light lp_lights[8];
+    Light lp_lights[16];
 };
 
 uniform sampler2D u_Albedo;
@@ -133,9 +133,7 @@ void main()
     {
         if (int(lp_lights[i].l_PositionType.w) == 0) // Ambiental
         {
-            // Ambient
             result += lp_lights[i].l_ColorIntensity.xyz * lp_lights[i].l_ColorIntensity.w;
-            
         }
         else if (int(lp_lights[i].l_PositionType.w) == 1) // Directional
         {
@@ -153,9 +151,52 @@ void main()
         }
         else if (int(lp_lights[i].l_PositionType.w) == 2) // Spot
         {
+            vec3 toLight = lp_lights[i].l_PositionType.xyz - v_WorldPos;
+            float d = length(toLight); // distance
+            vec3 lightDir = toLight / d; // Normalizes lightDir
+           
+            // Attenuation
+            float attenuation = 1.0 / (lp_lights[i].l_AttenuationOuterCone.x + lp_lights[i].l_AttenuationOuterCone.y * d + 
+                                       lp_lights[i].l_AttenuationOuterCone.z * d * d);
+
+            // Diffuse
+            float diff = max(dot(normal, lightDir), 0.0);
+            vec3 diffuse = diff * lp_lights[i].l_ColorIntensity.xyz * lp_lights[i].l_ColorIntensity.w;
+
+            // Specular
+            vec3 reflectDir = reflect(-lightDir, normal);  
+            float spec = pow(max(dot(viewDir, reflectDir), 0.0), u_Roughness);
+            vec3 specular = texSpecular.xyz * spec * lp_lights[i].l_ColorIntensity.xyz * lp_lights[i].l_ColorIntensity.w;  
+
+            float angle = dot(lp_lights[i].l_DirectionInnerCone.xyz, -lightDir);
+            float innerAngleCone = cos(radians(lp_lights[i].l_DirectionInnerCone.w));
+            float outerAngleCone = cos(radians(lp_lights[i].l_AttenuationOuterCone.w));
+
+            float spotlightAttenuation = smoothstep(outerAngleCone, innerAngleCone, angle);
+
+            result += (diffuse + specular) * attenuation * spotlightAttenuation;
+
         }
         else if (int(lp_lights[i].l_PositionType.w) == 3) // Point
         {
+            vec3 toLight = lp_lights[i].l_PositionType.xyz - v_WorldPos;
+            float d = length(toLight); // distance
+            vec3 lightDir = toLight / d; // Normalizes lightDir
+           
+            // Attenuation
+            float attenuation = 1.0 / (lp_lights[i].l_AttenuationOuterCone.x + lp_lights[i].l_AttenuationOuterCone.y * d + 
+                                       lp_lights[i].l_AttenuationOuterCone.z * d * d);
+
+            // Diffuse
+            float diff = max(dot(normal, lightDir), 0.0);
+            vec3 diffuse = diff * lp_lights[i].l_ColorIntensity.xyz * lp_lights[i].l_ColorIntensity.w;
+
+            // Specular
+            vec3 reflectDir = reflect(-lightDir, normal);  
+            float spec = pow(max(dot(viewDir, reflectDir), 0.0), u_Roughness);
+            vec3 specular = texSpecular.xyz * spec * lp_lights[i].l_ColorIntensity.xyz * lp_lights[i].l_ColorIntensity.w;  
+
+            result += (diffuse + specular) * attenuation;
         }
     }
 

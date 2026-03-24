@@ -90,6 +90,12 @@ namespace Loopie {
 
 	void Renderer::RegisterLight(Light* light)
 	{
+		if (s_LightCount >= MAX_LIGHTS)
+		{
+			Log::Warn("Exceeded maximum amount of lights. Cannot register light.");
+			return;
+		}
+
 		s_Lights[s_LightCount] = light;
 		s_LightCount++;
 	}

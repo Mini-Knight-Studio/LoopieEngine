@@ -10,7 +10,7 @@
 
 #include <filesystem>
 
-#define MAX_LIGHTS 8 // Can be increased if necessary. Watch out that performance though!
+#define MAX_LIGHTS 16 // Can be increased if necessary. Watch out that performance though!
 
 namespace Loopie {
 	class Transform;
