@@ -49,7 +49,7 @@ namespace Loopie
 		GetTransform()->m_transformNotifier.AddObserver(this);
 	}
 
-	void Camera::RenderGizmo()
+	void Camera::RenderGizmo() const
 	{
 		Gizmo::DrawFrustum(GetFrustum());
 	}

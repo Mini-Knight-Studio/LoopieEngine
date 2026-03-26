@@ -21,7 +21,7 @@ namespace Loopie
 		Camera(float fov = 60.0f, float near_plane = 0.3f, float far_plane = 200.0f, bool canBeMainCamera = true);
 		~Camera();
 		void Init() override; //// From Component
-		void RenderGizmo() override;
+		void RenderGizmo() const override;
 		void OnNotify(const TransformNotification& id) override;
 
 		void SetViewport(unsigned int x, unsigned int y, unsigned int width, unsigned int height);

@@ -408,9 +408,9 @@ namespace Loopie
 		if (Renderer::IsGizmoActive()) {
 			if (selectedEntity)
 			{
-				Camera* cam = selectedEntity->GetComponent<Camera>();
-				if(cam)
-					cam->RenderGizmo();
+				std::vector<Component*> comps = selectedEntity->GetComponents();
+				for(const auto* comp : comps)
+					comp->RenderGizmo();
 			}
 			m_currentScene->GetOctree().DebugDraw(Color::MAGENTA);
 		}

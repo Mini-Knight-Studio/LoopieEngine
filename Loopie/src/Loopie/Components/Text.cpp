@@ -19,7 +19,7 @@ namespace Loopie {
 			GetOwner()->ReplaceTransform<RectTransform>();
 	}
 
-	void Text::RenderGizmo()
+	void Text::RenderGizmo() const
 	{
 		auto* rt = GetOwner() ? GetOwner()->GetComponent<RectTransform>() : nullptr;
 		if (!rt)

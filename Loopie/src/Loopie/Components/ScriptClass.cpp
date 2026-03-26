@@ -61,9 +61,8 @@ namespace Loopie
 
 			if (field.Type == ScriptFieldType::String)
 				SetRuntimeFieldString(name, fieldData.GetString());
-			if (field.Type == ScriptFieldType::Entity) {
+			else if (field.Type == ScriptFieldType::Entity)
 				SetRuntimeEntityField(name, fieldData.GetString());
-			}
 			else
 				SetFieldValueInternal(name, fieldData.GetBuffer());
 		}

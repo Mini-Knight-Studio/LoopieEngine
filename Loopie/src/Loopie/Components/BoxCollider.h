@@ -17,7 +17,7 @@ namespace Loopie {
         virtual ~BoxCollider();
 
         void Init() override;
-        void RenderGizmo() override;
+        void RenderGizmo() const override;
 
         const OBB& GetWorldOBB() const;
         const AABB& GetWorldAABB() const;

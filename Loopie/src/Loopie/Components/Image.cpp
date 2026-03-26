@@ -22,7 +22,7 @@ namespace Loopie
 			SetTexture(Texture::GetDefault());
 	}
 
-	void Image::RenderGizmo()
+	void Image::RenderGizmo() const
 	{
 		auto* rt = GetOwner() ? GetOwner()->GetComponent<RectTransform>() : nullptr;
 		if (!rt)

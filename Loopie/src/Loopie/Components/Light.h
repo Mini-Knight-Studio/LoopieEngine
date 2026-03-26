@@ -22,6 +22,7 @@ namespace Loopie
 		~Light();
 
 		void Init() override;
+		void RenderGizmo() const override;
 
 		void SetType(LightType lightType);
 		void SetType(int lightType);

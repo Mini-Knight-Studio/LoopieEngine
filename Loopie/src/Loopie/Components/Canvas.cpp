@@ -45,7 +45,7 @@ void Loopie::Canvas::OnNotify(const TransformNotification& id)
 	}
 }
 
-void Loopie::Canvas::RenderGizmo()
+void Loopie::Canvas::RenderGizmo() const
 {
 	if (!m_drawGizmo)
 		return;

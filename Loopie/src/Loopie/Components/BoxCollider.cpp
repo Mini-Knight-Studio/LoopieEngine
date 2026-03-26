@@ -38,7 +38,7 @@ namespace Loopie {
         }
     }
 
-    void BoxCollider::RenderGizmo() {
+    void BoxCollider::RenderGizmo() const {
         if (m_drawGizmo) {
             vec4 color = m_colliding ? vec4(1.0f, 0.0f, 0.0f, 1.0f) : vec4(0.0f, 1.0f, 0.0f, 1.0f);
 

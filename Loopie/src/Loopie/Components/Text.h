@@ -39,7 +39,7 @@ namespace Loopie
 
 		void Init() override;
 
-		void RenderGizmo() override;
+		void RenderGizmo() const override;
 
 		const std::string& GetText() const { return m_text; }
 		void SetText(const std::string& text) { m_text = text; }

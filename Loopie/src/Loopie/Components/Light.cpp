@@ -40,6 +40,10 @@ namespace Loopie
 		}
 	}
 
+	void Light::RenderGizmo() const {
+
+	}
+
 	void Light::SetType(LightType lightType)
 	{
 		m_type = lightType;

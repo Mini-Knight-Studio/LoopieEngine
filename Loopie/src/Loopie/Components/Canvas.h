@@ -23,7 +23,7 @@ namespace Loopie {
 
 		void Init() override;
 
-		void RenderGizmo() override;
+		void RenderGizmo() const override;
 
 		void OnNotify(const TransformNotification& id) override;
 
