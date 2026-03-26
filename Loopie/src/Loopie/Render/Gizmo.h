@@ -21,6 +21,8 @@ namespace Loopie {
 		static void Shutdown();
 
 		static void DrawLine(const vec3& p0, const vec3& p1, const vec4& color = Color::WHITE);
+		static void DrawCircle(const vec3& center, float radius, const vec3& normal, int segments = 32, const vec4& color = Color::WHITE);
+		static void DrawSphere(const vec3& center, float radius, int segments = 32, const vec4& color = Color::WHITE);
 		static void DrawCube(const vec3& p0, const vec3& p1, const vec4& color = Color::WHITE);
 		static void DrawCube(const std::array<vec3, 8>& corners, const vec4& color = Color::WHITE);
 		static void DrawCube(const OBB& obb, const vec4& color = Color::WHITE);

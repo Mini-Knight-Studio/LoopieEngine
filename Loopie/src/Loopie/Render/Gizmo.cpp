@@ -35,7 +35,7 @@ namespace Loopie {
 	}
 
 	void Gizmo::Shutdown() {
-		delete s_Data.LineBufferModel;
+		delete[] s_Data.LineBufferModel;
 	}
 
 	void Gizmo::BeginGizmo()
@@ -76,6 +76,39 @@ namespace Loopie {
 
 		s_Data.LineCount++;
 
+	}
+
+	void Gizmo::DrawCircle(const vec3& center, float radius, const vec3& normal, int segments, const vec4& color)
+	{
+		vec3 n = glm::normalize(normal);
+
+		vec3 tangent;
+		if (fabs(n.y) < 0.999f)
+			tangent = glm::normalize(glm::cross(n, vec3(0.0f, 1.0f, 0.0f)));
+		else
+			tangent = glm::normalize(glm::cross(n, vec3(1.0f, 0.0f, 0.0f)));
+
+		vec3 bitangent = glm::normalize(glm::cross(n, tangent));
+
+		float step = glm::two_pi<float>() / (float)segments;
+
+		for (int i = 0; i < segments; i++)
+		{
+			float a0 = step * i;
+			float a1 = step * (i + 1);
+
+			vec3 p0 = center + radius * (cos(a0) * tangent + sin(a0) * bitangent);
+			vec3 p1 = center + radius * (cos(a1) * tangent + sin(a1) * bitangent);
+
+			DrawLine(p0, p1, color);
+		}
+	}
+
+	void Gizmo::DrawSphere(const vec3& center, float radius, int segments, const vec4& color)
+	{
+		DrawCircle(center, radius, { 1, 0, 0 }, segments, color);
+		DrawCircle(center, radius, { 0, 1, 0 }, segments, color);
+		DrawCircle(center, radius, { 0, 0, 1 }, segments, color);
 	}
 
 	void Gizmo::DrawCube(const vec3& p0, const vec3& p1, const vec4& color)

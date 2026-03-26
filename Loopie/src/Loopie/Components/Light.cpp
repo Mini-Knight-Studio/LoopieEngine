@@ -1,6 +1,8 @@
 #include "Light.h"
 #include "Loopie/Core/Log.h"
 #include "Loopie/Render/Renderer.h"
+#include "Loopie/Render/Gizmo.h"
+#include "Loopie/Components/Transform.h"
 
 namespace Loopie
 {
@@ -41,7 +43,66 @@ namespace Loopie
 	}
 
 	void Light::RenderGizmo() const {
+		switch (m_type)
+		{
+		case Loopie::LightType::Ambient: {
 
+			break;
+		}
+		case Loopie::LightType::Directional:
+		{
+			vec3 pos = GetOwner()->GetTransform()->GetWorldPosition();
+			vec3 dir = GetOwner()->GetTransform()->Forward();
+
+			Gizmo::DrawLine(pos, pos + dir * 3.0f, Color::YELLOW);
+
+			vec3 right = glm::normalize(glm::cross(dir, vec3(0, 1, 0)));
+			vec3 up = glm::cross(right, dir);
+
+			float arrowSize = 0.5f;
+
+			Gizmo::DrawLine(pos + dir * 3.0f, pos + dir * 3.0f - dir * arrowSize + right * arrowSize, Color::YELLOW);
+			Gizmo::DrawLine(pos + dir * 3.0f, pos + dir * 3.0f - dir * arrowSize - right * arrowSize, Color::YELLOW);
+			break;
+		}
+		case Loopie::LightType::Spot:
+		{
+			vec3 pos = GetOwner()->GetTransform()->GetWorldPosition();
+			vec3 dir = GetOwner()->GetTransform()->Forward();
+
+			float length = 5.0f;
+			float angle = glm::radians(m_outerConeAngle);
+			float radius = tan(angle) * length;
+
+			vec3 end = pos + dir * length;
+
+			Gizmo::DrawCircle(end, radius, dir, 32, Color::YELLOW);
+
+			const int segments = 16;
+			constexpr float step = glm::two_pi<float>() / segments;
+
+			vec3 tangent = glm::normalize(glm::cross(dir, vec3(0, 1, 0)));
+			if (glm::length(tangent) < 0.001f)
+				tangent = glm::normalize(glm::cross(dir, vec3(1, 0, 0)));
+			vec3 bitangent = glm::cross(dir, tangent);
+
+			for (int i = 0; i < segments; i++)
+			{
+				float a = step * i;
+				vec3 point = end + radius * (cos(a) * tangent + sin(a) * bitangent);
+
+				Gizmo::DrawLine(pos, point, Color::YELLOW);
+			}
+			break;
+		}		
+		case Loopie::LightType::Point:{
+			vec3 pos = GetOwner()->GetTransform()->GetWorldPosition();
+			Gizmo::DrawSphere(pos, 1.0f, 32, Color::YELLOW);
+			break;
+		}	
+		default:
+			break;
+		}
 	}
 
 	void Light::SetType(LightType lightType)
