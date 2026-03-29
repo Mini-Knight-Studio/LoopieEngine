@@ -44,6 +44,8 @@ namespace Loopie
 
 			ParticleProps m_particleProperties;
 			std::shared_ptr<Billboard> m_billboard;
+
+			std::shared_ptr<Texture> m_sprite = nullptr;
 		public:
 			
 			Emitter(unsigned int maxParticles, BillboardType bType, vec3 position, unsigned int spawnRate, vec3 posOffSet = vec3(0));
@@ -86,6 +88,8 @@ namespace Loopie
 
 			void ToggleActive();
 
+			std::shared_ptr<Texture> GetSprite() const;
+			void SetSprite(std::shared_ptr<Texture> sprite);
 
 	};
 }
