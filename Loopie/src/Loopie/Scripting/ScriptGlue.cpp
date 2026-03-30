@@ -11,6 +11,7 @@
 #include "Loopie/Components/AudioSource.h"
 #include "Loopie/Components/AudioListener.h"
 #include "Loopie/Components/Image.h"
+#include "Loopie/Components/Text.h"
 
 #include "Loopie/Core/UUID.h"
 #include "Loopie/Core/InputEventManager.h"
@@ -1365,6 +1366,36 @@ namespace Loopie
 	}
 #pragma endregion
 
+#pragma region Text
+	static void Text_GetColor(MonoString* entityID, MonoString* componentID, vec4* outColor)
+	{
+		*outColor = vec4(1.0f);
+
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+
+		Text* text = Utils::GetComponent<Text>(entity, componentID);
+		if (!text)
+			return;
+
+		*outColor = text->GetColor();
+	}
+
+	static void Text_SetColor(MonoString* entityID, MonoString* componentID, vec4* color)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+
+		Text* text = Utils::GetComponent<Text>(entity, componentID);
+		if (!text)
+			return;
+
+		text->SetColor(*color);
+	}
+#pragma endregion
+
 	template<typename Comp, typename = std::enable_if_t<std::is_base_of_v<Component, Comp>>>
 	static void RegisterComponent()
 	{
@@ -1399,6 +1430,7 @@ namespace Loopie
 		RegisterComponent<AudioSource>();
 		RegisterComponent<AudioListener>();
 		RegisterComponent<Image>();
+		RegisterComponent<Text>();
 	}
 
 
@@ -1544,5 +1576,8 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Scene_LoadByID);
 		ADD_INTERNAL_CALL(Image_GetTint);
 		ADD_INTERNAL_CALL(Image_SetTint);
+
+		ADD_INTERNAL_CALL(Text_GetColor);
+		ADD_INTERNAL_CALL(Text_SetColor);
 	}
 }

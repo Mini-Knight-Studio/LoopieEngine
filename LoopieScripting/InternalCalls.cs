@@ -391,5 +391,12 @@ namespace Loopie
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Image_SetTint(string entityID, string componentID, ref Vector4 tint);
         #endregion
+        #region Text
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Text_GetColor(string entityID, string componentID, out Vector4 color);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Text_SetColor(string entityID, string componentID, ref Vector4 color);
+        #endregion
     }
 }
