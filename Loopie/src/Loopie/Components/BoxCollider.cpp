@@ -38,7 +38,7 @@ namespace Loopie {
         }
     }
 
-    void BoxCollider::RenderGizmo() {
+    void BoxCollider::RenderGizmo() const {
         if (m_drawGizmo) {
             vec4 color = m_colliding ? vec4(1.0f, 0.0f, 0.0f, 1.0f) : vec4(0.0f, 1.0f, 0.0f, 1.0f);
 
@@ -96,9 +96,24 @@ namespace Loopie {
 			m_layerIndex = static_cast<unsigned int>(index);
     }
 
+    bool BoxCollider::CanCollideWith(const BoxCollider* other) const
+    {
+        uint32_t otherLayer = other->GetLayerBit();
+        uint32_t myLayer = GetLayerBit();
+
+        if ((m_excludeMask & otherLayer) != 0 || (other->m_excludeMask & myLayer) != 0)
+            return false;
+        if ((m_includeMask & otherLayer) != 0 || (other->m_includeMask & myLayer) != 0)
+            return true;
+
+        return CollisionProcessor::GetLayerCollision(GetLayerIndex(), other->GetLayerIndex());
+    }
+
     JsonNode BoxCollider::Serialize(JsonNode& parent) const {
         JsonNode node = parent.CreateObjectField("boxcollider");
         node.CreateField<unsigned int>("layer_index", m_layerIndex);
+        node.CreateField<uint32_t>("include_mask", m_includeMask);
+        node.CreateField<uint32_t>("exclude_mask", m_excludeMask);
         JsonNode centerNode = node.CreateObjectField("center");
         centerNode.CreateField<double>("x", static_cast<double>(m_localCenter.x));
         centerNode.CreateField<double>("y", static_cast<double>(m_localCenter.y));
@@ -123,9 +138,12 @@ namespace Loopie {
             m_localCenter.y = static_cast<float>(centerNode.GetValue<double>("y", 0.0).Result);
             m_localCenter.z = static_cast<float>(centerNode.GetValue<double>("z", 0.0).Result);
         }
-        if (data.Contains("layer_index")) {
-            m_layerIndex = data.GetValue<unsigned int>("layer_index", 0).Result;
-        }
+
+        m_layerIndex = data.GetValue<unsigned int>("layer_index", 0).Result;
+        m_includeMask = data.GetValue<uint32_t>("include_mask", 0xFFFFFFFF).Result;
+        m_excludeMask = data.GetValue<uint32_t>("exclude_mask", 0).Result;
+           
+
         if (data.Contains("extents")) {
             JsonNode extentsNode = data.Child("extents");
             m_localExtents.x = static_cast<float>(extentsNode.GetValue<double>("x", 0.5).Result);
@@ -133,14 +151,9 @@ namespace Loopie {
             m_localExtents.z = static_cast<float>(extentsNode.GetValue<double>("z", 0.5).Result);
         }
 
-        if (data.Contains("is_trigger"))
-            m_isTrigger = data.GetValue<bool>("is_trigger", false).Result;
-        if (data.Contains("is_static"))
-            m_isStatic = data.GetValue<bool>("is_static", false).Result;
-
-        if (data.Contains("draw_gizmo")) {
-            m_drawGizmo = data.GetValue<bool>("draw_gizmo", true).Result;
-        }
+        m_isTrigger = data.GetValue<bool>("is_trigger", false).Result;
+        m_isStatic = data.GetValue<bool>("is_static", false).Result;
+        m_drawGizmo = data.GetValue<bool>("draw_gizmo", true).Result;
 
         m_obbDirty = true;
     }

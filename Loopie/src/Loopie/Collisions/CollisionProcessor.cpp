@@ -122,10 +122,7 @@ namespace Loopie {
                 if (!collider2->GetIsActive())
                     continue;
 
-                unsigned int layerA = collider1->GetLayerIndex();
-                unsigned int layerB = collider2->GetLayerIndex();
-
-                if (!s_collisionMatrix[layerA][layerB])
+                if (!collider1->CanCollideWith(collider2))
                     continue;
 
                 const AABB& bAABB = collider2->GetWorldAABB();

@@ -1,5 +1,6 @@
 #include "ScriptingClass.h"
 #include "Loopie/Scripting/ScriptingManager.h"
+#include "Loopie/Core/Log.h"
 
 #include "mono/metadata/object.h"
 
@@ -22,12 +23,27 @@ namespace Loopie {
 	_MonoObject* ScriptingClass::InvokeMethod(_MonoObject* instance, _MonoMethod* method, void** params)
 	{
 		MonoObject* exception = nullptr;
-		return mono_runtime_invoke(method, instance, params, &exception);
+		MonoObject* result = mono_runtime_invoke(method, instance, params, &exception);
+
+		if (exception)
+		{
+			mono_print_unhandled_exception(exception);
+			Log::Error("Exception thrown in script method invocation");
+		}
+
+		return result;
 	}
 
 	const std::string ScriptingClass::GetFullName() const{
 		if (m_classNamespace.empty())
 			return m_className;
 		return m_classNamespace + "." + m_className;
+	}
+	const ScriptField* ScriptingClass::FindField(const std::string& name) const
+	{
+		auto it = m_index.find(name);
+		if (it == m_index.end())
+			return nullptr;
+		return &m_fields[it->second];
 	}
 }

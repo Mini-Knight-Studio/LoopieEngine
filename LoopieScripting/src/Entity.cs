@@ -12,7 +12,7 @@ namespace Loopie
             transform = new Transform();
             transform.entity = this;
         }
-        public readonly string ID;
+        public string ID { get; internal set; } = "";
         public Transform transform { get; }
 
         public bool HasComponent<T>() where T : Component, new()

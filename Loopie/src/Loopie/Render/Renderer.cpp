@@ -12,10 +12,19 @@
 namespace Loopie {
 
 	std::vector<Renderer::RenderItem> Renderer::s_RenderQueue = std::vector<Renderer::RenderItem>();
+	Renderer::RenderParticlesData Renderer::s_ParticlesData = Renderer::RenderParticlesData();
 	std::vector<Camera*> Renderer::s_RenderCameras = std::vector<Camera*>();
 	std::shared_ptr<UniformBuffer> Renderer::s_MatricesUniformBuffer = nullptr;
+	std::shared_ptr<UniformBuffer> Renderer::s_lightingUniformBuffer = nullptr;
+	std::shared_ptr<ShaderStorageBuffer> Renderer::s_BonesSSBOBuffer = nullptr;
+	Light* Renderer::s_Lights[MAX_LIGHTS] = {};
+	unsigned short Renderer::s_LightCount = 0;
 	bool Renderer::s_UseGizmos = true;
 	vec4 Renderer::s_CurrentViewport = {0,0,0,0};
+
+	std::shared_ptr<VertexBuffer> Renderer::s_billboardVBO = nullptr;
+	std::shared_ptr<VertexBuffer> Renderer::s_posSizeVBO = nullptr;
+	std::shared_ptr<VertexBuffer> Renderer::s_colorVBO = nullptr;
 
 	void Renderer::Init(void* context) {
 		ASSERT(!gladLoadGLLoader((GLADloadproc)context), "Failed to Initialize GLAD!");
@@ -39,6 +48,25 @@ namespace Loopie {
 		layout.AddLayoutElement(1, GLVariableType::MATRIX4, 1, "Proj");
 		s_MatricesUniformBuffer = std::make_shared<UniformBuffer>(layout);
 		s_MatricesUniformBuffer->BindToLayout(0);
+
+		BufferLayout lightingLayout;
+		lightingLayout.AddLayoutElement(0, GLVariableType::VEC4, 1, "CameraWorldPosLightCount"); // Camera World Position + Light Count
+		for (int i = 0; i < MAX_LIGHTS; ++i)
+		{
+			lightingLayout.AddLayoutElement(4*i+1, GLVariableType::VEC4, 1, "ColorIntensity"); // Color + Intensity
+			lightingLayout.AddLayoutElement(4*i+2, GLVariableType::VEC4, 1, "PositionType"); // Position + Type
+			lightingLayout.AddLayoutElement(4*i+3, GLVariableType::VEC4, 1, "DirectionInnerCone"); // Direction + Inner Cone Angle
+			lightingLayout.AddLayoutElement(4*i+4, GLVariableType::VEC4, 1, "AttenuationOuterCone"); // Attenuation + Outer Cone Angle
+		}
+		s_lightingUniformBuffer = std::make_shared<UniformBuffer>(lightingLayout);
+		s_lightingUniformBuffer->BindToLayout(1);
+
+		s_BonesSSBOBuffer = std::make_shared<ShaderStorageBuffer>();
+		s_BonesSSBOBuffer->BindToLayout(2);
+		matrix4 dummy = matrix4(1);
+		s_BonesSSBOBuffer->SetData((void*)(&dummy), (unsigned int)(sizeof(matrix4)));
+
+		s_LightCount = 0;
 	}
 
 	void Renderer::Shutdown() {
@@ -58,6 +86,37 @@ namespace Loopie {
 	{
 		s_CurrentViewport = vec4(x, y, width, height);
 		glViewport(x, y, width, height);
+	}
+
+	void Renderer::RegisterLight(Light* light)
+	{
+		if (s_LightCount >= MAX_LIGHTS)
+		{
+			Log::Warn("Exceeded maximum amount of lights. Cannot register light.");
+			return;
+		}
+
+		s_Lights[s_LightCount] = light;
+		s_LightCount++;
+	}
+
+	void Renderer::UnregisterLight(Light* light)
+	{
+		for (int i = 0; i < s_LightCount; ++i)
+		{
+			if (s_Lights[i] == light)
+			{
+				s_Lights[i] = s_Lights[s_LightCount - 1];
+				s_LightCount--;
+				return;
+			}
+		}
+		Log::Warn("UnregisterLight: Tried to unregister a non-registered light - Light not found.");
+	}
+
+	void Renderer::RemoveAllLights()
+	{
+		s_LightCount = 0;
 	}
 
 	void Renderer::RegisterCamera(Camera& camera) {
@@ -80,6 +139,25 @@ namespace Loopie {
 		s_UseGizmos = gizmo;
 		s_MatricesUniformBuffer->SetData(&projectionMatrix[0][0], 0);
 		s_MatricesUniformBuffer->SetData(&viewMatrix[0][0], 1);
+		vec3 cameraPos = vec3(glm::inverse(viewMatrix)[3]);
+
+		vec4 cameraPosLightCount = vec4(cameraPos, s_LightCount);
+		s_lightingUniformBuffer->SetData(&cameraPosLightCount, 0);
+
+		for (int i = 0; i < s_LightCount; ++i)
+		{
+			const Light& l = *s_Lights[i];
+
+			vec4 colorIntensity = vec4(l.GetColor(), l.GetIntensity());
+			vec4 positionType = vec4(l.GetTransform()->GetWorldPosition(), l.GetLightType());
+			vec4 directionInnerCone = vec4(l.GetTransform()->Forward(), l.GetInnerConeAngle());
+			vec4 attenuationOuterCone = vec4(l.GetAttenuationConstant(), l.GetAttenuationLinear(), l.GetAttenuationQuadratic(), l.GetOuterConeAngle());
+			
+			s_lightingUniformBuffer->SetData(&colorIntensity,		i * 4 + 1);
+			s_lightingUniformBuffer->SetData(&positionType,			i * 4 + 2);
+			s_lightingUniformBuffer->SetData(&directionInnerCone,	i * 4 + 3);
+			s_lightingUniformBuffer->SetData(&attenuationOuterCone, i * 4 + 4);
+		}
 
 		if (s_UseGizmos)
 			Gizmo::BeginGizmo();
@@ -141,12 +219,12 @@ namespace Loopie {
 
 		if (!bones.empty())
 		{
-
-			int count = std::min((int)bones.size(), 100);
-			material->GetShader().SetUniformMat4Array("lp_Bones", bones.data(), count);
-			
+			s_BonesSSBOBuffer->SetData(bones.data(), (unsigned int)(bones.size() * sizeof(matrix4)));
 		}
-
+	}
+	void Renderer::BlendFunction()
+	{
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
 	void Renderer::EnableDepth()
 	{
@@ -155,6 +233,14 @@ namespace Loopie {
 	void Renderer::DisableDepth()
 	{
 		glDisable(GL_DEPTH_TEST);
+	}
+	void Renderer::EnableDepthMask()
+	{
+		glDepthMask(GL_TRUE);
+	}
+	void Renderer::DisableDepthMask()
+	{
+		glDepthMask(GL_FALSE);
 	}
 	void Renderer::EnableStencil()
 	{

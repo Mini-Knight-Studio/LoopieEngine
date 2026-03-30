@@ -54,7 +54,7 @@ namespace Loopie {
 		float GetCurrentTime() const { return m_currentTime; }
 
 
-		void Play(const std::string& clipName);
+		void Play(const std::string& clipName, float transitionTime = 0.25f);
 		void Play();
 
 		void Pause() { m_isPlaying = false; }
@@ -100,5 +100,13 @@ namespace Loopie {
 		std::string m_pendingTargetRendererUUID;
 
 		bool m_frameSwitch = true;
+
+		//// Transition
+		bool m_inTransition = false;
+		const AnimationClip* m_nextClip = nullptr;
+		int m_nextClipIndex = -1;
+		float m_transitionDuration=0;
+		float m_transitionTime=0;
+		float m_nextTime = 0;
 	};
 }

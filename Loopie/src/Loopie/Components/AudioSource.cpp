@@ -16,11 +16,6 @@ namespace Loopie {
 
     AudioSource::~AudioSource() {
         Stop();
-
-        for (auto& audio : m_audioClips)
-        {
-			audio->DecrementReferenceCount();
-        }
         m_audioClips.clear();
     }
 
@@ -118,7 +113,6 @@ namespace Loopie {
     void AudioSource::AddClip(std::shared_ptr<AudioClip> clip) {
         if (clip) {
             m_audioClips.push_back(clip);
-            clip->IncrementReferenceCount();
         }
     }
 
@@ -126,7 +120,6 @@ namespace Loopie {
     {
 		auto it = std::find(m_audioClips.begin(), m_audioClips.end(), clip);
         if (it != m_audioClips.end()) {
-            it->get()->DecrementReferenceCount();
             m_audioClips.erase(it);
         }
     }
@@ -135,7 +128,6 @@ namespace Loopie {
     {
         if (index >= 0 && index < m_audioClips.size()) {
             auto it = m_audioClips.begin() + index;
-            it->get()->DecrementReferenceCount();
             m_audioClips.erase(it);
         }
     }

@@ -9,9 +9,9 @@ namespace Loopie
             InternalCalls.Animator_Stop(entity.ID, ID);
         }
 
-        public void Play(string clipName)
+        public void Play(string clipName, float transitionTime = 0.25f)
         {
-            InternalCalls.Animator_PlayClip(entity.ID, ID, clipName);
+            InternalCalls.Animator_PlayClip(entity.ID, ID, clipName, transitionTime);
         }
 
         public void Play()

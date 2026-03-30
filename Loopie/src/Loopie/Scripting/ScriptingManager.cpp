@@ -53,6 +53,7 @@ namespace Loopie {
 		ScriptGlue::RegisterFunctions();
 
 		LoadCoreAssembly();
+		LoadDependecies();
 
 		if (s_Data.EnableRecompile) {
 			LoadCompilerAssembly();
@@ -114,6 +115,7 @@ namespace Loopie {
 		mono_domain_set(s_Data.AppDomain, true);
 
 		LoadCoreAssembly();
+		LoadDependecies();
 
 		if (s_Data.EnableRecompile) {
 			LoadCompilerAssembly();
@@ -159,6 +161,12 @@ namespace Loopie {
 		s_Data.CompilerAssembly = LoadAssembly(s_Data.CompilerAssemblyFilepath.c_str());
 		if (s_Data.CompilerAssembly)
 			s_Data.CompilerImage = mono_assembly_get_image(s_Data.CompilerAssembly);
+	}
+
+	void ScriptingManager::LoadDependecies()
+	{
+		std::filesystem::path path = s_Data.ExternalAssemblyPath;
+		LoadAssembly((path / "Newtonsoft.Json.dll").string().c_str());
 	}
 
 	void ScriptingManager::RuntimeStart()
@@ -216,6 +224,10 @@ namespace Loopie {
 			int fieldCount = mono_class_num_fields(monoClass);
 			Log::Warn("{} has {} fields:", className, fieldCount);
 			void* iterator = nullptr;
+
+			auto& fieldsVector = scriptClass->GetFields();
+			auto& fieldsOrderMap = scriptClass->GetFieldsOrder();
+
 			while (MonoClassField* field = mono_class_get_fields(monoClass, &iterator))
 			{
 				const char* fieldName = mono_field_get_name(field);
@@ -226,16 +238,19 @@ namespace Loopie {
 					std::string typeName = mono_type_get_name(type);
 					ScriptFieldType fieldType = MonoTypeToScriptFieldType(type);
 
-					MonoClass* fieldClass = mono_class_from_mono_type(type);
-
-					if (fieldClass)
+					if (fieldType == ScriptFieldType::None)
 					{
-						isComponent = mono_class_is_subclass_of(fieldClass, component, false);
-						if (isComponent)
-							fieldType = ScriptFieldType::Component;
+						MonoClass* fieldClass = mono_class_from_mono_type(type);
+						if (fieldClass) {
+							isComponent = mono_class_is_subclass_of(fieldClass, component, false);
+							if (isComponent)
+								fieldType = ScriptFieldType::Component;
+						}
+						
 					}
 
-					scriptClass->GetFields()[fieldName] = { fieldType, fieldName, field };
+					fieldsOrderMap[fieldName] = fieldsVector.size();
+					fieldsVector.push_back({ fieldType, fieldName, field });
 					Log::Warn("   {0} -> {1}", fieldName, typeName);
 				}
 			}

@@ -12,6 +12,9 @@ namespace Loopie {
 	class MeshRenderer;
 	class ScriptClass;
 	class Material;
+	class ParticleComponent;
+	class ParticleSystem;
+	class Emitter;
 	class Texture;
 	class Animator;
 	class BoxCollider;
@@ -21,10 +24,12 @@ namespace Loopie {
 	class Image;
 	class Text;
 	class Button;
+	class Light;
 	class AudioSource;
 	class AudioListener;
 	class FunctionCall;
 	class Metadata;
+	class Resource;
 
 	class InspectorInterface : public Interface , public IObserver<OnEntityOrFileNotification>{
 	public:
@@ -50,6 +55,8 @@ namespace Loopie {
 		void DrawAnchorPresets(RectTransform* rt, bool& modified);
 		void DrawCamera(Camera* camera);
 		void DrawMeshRenderer(MeshRenderer* meshRenderer);
+		void DrawEmitterInspector(const std::shared_ptr<Emitter> emitter, ParticleComponent* partComponent);
+		void DrawParticleSystem(ParticleComponent* partComponent);
 		void DrawAnimator(Animator* animator);
 		void DrawScriptClass(ScriptClass* scriptClass);
 		void DrawCanvas(Canvas* canvas);
@@ -57,6 +64,7 @@ namespace Loopie {
 		void DrawImage(Image* image);
 		void DrawText(Text* text);
 		void DrawButton(Button* button);
+		void DrawLight(Light* light);
 		void DrawBoxCollider(BoxCollider* boxCollider);
 		void DrawAudioSource(AudioSource* source);
 		void DrawAudioListener(AudioListener* listener);
@@ -90,5 +98,7 @@ namespace Loopie {
 
 		std::weak_ptr<Entity> m_currentEntity;
 		std::filesystem::path m_currentFile;
+		std::shared_ptr<Resource> m_currentResource;
+
 	};
 }

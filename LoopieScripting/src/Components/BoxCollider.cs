@@ -88,5 +88,45 @@ namespace Loopie
         {
             InternalCalls.BoxCollider_SetStatic(entity.ID, ID, isStatic);
         }
+
+        public void SetIncludeMask(int includeMask)
+        {
+            InternalCalls.BoxCollider_SetIncludeMask(entity.ID, ID, includeMask);
+        }
+
+        public int GetIncludeMask()
+        {
+            return InternalCalls.BoxCollider_GetIncludeMask(entity.ID, ID);
+        }
+
+        public void AddIncludeMask(int includeMask)
+        {
+            InternalCalls.BoxCollider_AddIncludeMask(entity.ID, ID, includeMask);
+        }
+
+        public void RemoveIncludeMask(int includeMask)
+        {
+            InternalCalls.BoxCollider_RemoveIncludeMask(entity.ID, ID, includeMask);
+        }
+
+        public void SetExcludeMask(int excludeMask)
+        {
+            InternalCalls.BoxCollider_SetExcludeMask(entity.ID, ID, excludeMask);
+        }
+
+        public int GetExcludeMask()
+        {
+            return InternalCalls.BoxCollider_GetExcludeMask(entity.ID, ID);
+        }
+
+        public void AddExcludeMask(int excludeMask)
+        {
+            InternalCalls.BoxCollider_AddExcludeMask(entity.ID, ID, excludeMask);
+        }
+
+        public void RemoveExcludeMask(int excludeMask)
+        {
+            InternalCalls.BoxCollider_RemoveExcludeMask(entity.ID, ID, excludeMask);
+        }
     }
 }

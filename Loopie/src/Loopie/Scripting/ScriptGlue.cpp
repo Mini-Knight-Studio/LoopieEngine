@@ -12,6 +12,7 @@
 #include "Loopie/Components/AudioListener.h"
 #include "Loopie/Components/Image.h"
 #include "Loopie/Components/Text.h"
+#include "Loopie/Components/ParticleComponent.h"
 
 #include "Loopie/Core/UUID.h"
 #include "Loopie/Core/InputEventManager.h"
@@ -586,7 +587,7 @@ namespace Loopie
 			animator->Stop();
 	}
 
-	static void Animator_PlayClip(MonoString* entityID, MonoString* componentID, MonoString* clipName)
+	static void Animator_PlayClip(MonoString* entityID, MonoString* componentID, MonoString* clipName, float transitionTime)
 	{
 		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
 		if (!entity)
@@ -594,7 +595,7 @@ namespace Loopie
 		Animator* animator = Utils::GetComponent<Animator>(entity, componentID);
 		if (animator) {
 			std::string name = Utils::MonoStringToString(clipName);
-			animator->Play(name);
+			animator->Play(name, transitionTime);
 		}
 	}
 
@@ -1136,6 +1137,80 @@ namespace Loopie
 		if (collider)
 			collider->SetIsStatic(isStatic != 0);
 	}
+
+	static void BoxCollider_SetIncludeMask(MonoString* entityID, MonoString* componentID, int includeMask) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		BoxCollider* collider = Utils::GetComponent<BoxCollider>(entity, componentID);
+		if (collider)
+			collider->SetIncludeMask(includeMask);
+	}
+
+	static int BoxCollider_GetIncludeMask(MonoString* entityID, MonoString* componentID) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return -1;
+		BoxCollider* collider = Utils::GetComponent<BoxCollider>(entity, componentID);
+		if (collider)
+			return collider->GetIncludeMask();
+		return -1;
+	}
+
+	static void BoxCollider_AddIncludeMask(MonoString* entityID, MonoString* componentID, int includeMask) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		BoxCollider* collider = Utils::GetComponent<BoxCollider>(entity, componentID);
+		if (collider)
+			collider->IncludeLayer(includeMask);
+	}
+
+	static void BoxCollider_RemoveIncludeMask(MonoString* entityID, MonoString* componentID, int includeMask) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		BoxCollider* collider = Utils::GetComponent<BoxCollider>(entity, componentID);
+		if (collider)
+			collider->RemoveIncludedLayer(includeMask);
+	}
+
+	static void BoxCollider_SetExcludeMask(MonoString* entityID, MonoString* componentID, int excludeMask) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		BoxCollider* collider = Utils::GetComponent<BoxCollider>(entity, componentID);
+		if (collider)
+			collider->SetExcludeMask(excludeMask);
+	}
+
+	static int BoxCollider_GetExcludeMask(MonoString* entityID, MonoString* componentID) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return -1;
+		BoxCollider* collider = Utils::GetComponent<BoxCollider>(entity, componentID);
+		if (collider)
+			return collider->GetExcludeMask();
+		return -1;
+	}
+
+	static void BoxCollider_AddExcludeMask(MonoString* entityID, MonoString* componentID, int excludeMask) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		BoxCollider* collider = Utils::GetComponent<BoxCollider>(entity, componentID);
+		if (collider)
+			collider->ExcludeLayer(excludeMask);
+	}
+
+	static void BoxCollider_RemoveExcludeMask(MonoString* entityID, MonoString* componentID, int excludeMask) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		BoxCollider* collider = Utils::GetComponent<BoxCollider>(entity, componentID);
+		if (collider)
+			collider->RemoveExcludedLayer(excludeMask);
+	}
 #pragma endregion
 
 #pragma region AudioSource
@@ -1336,19 +1411,20 @@ namespace Loopie
 	}
 #pragma endregion
 
+#pragma region ParticleSystem
+
+#pragma endregion
+
 #pragma region Image
 	static void Image_GetTint(MonoString* entityID, MonoString* componentID, vec4* outTint)
 	{
 		*outTint = vec4(1.0f);
-
 		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
 		if (!entity)
 			return;
-
 		Image* image = Utils::GetComponent<Image>(entity, componentID);
 		if (!image)
 			return;
-
 		*outTint = image->GetTint();
 	}
 
@@ -1357,11 +1433,9 @@ namespace Loopie
 		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
 		if (!entity)
 			return;
-
 		Image* image = Utils::GetComponent<Image>(entity, componentID);
 		if (!image)
 			return;
-
 		image->SetTint(*tint);
 	}
 #pragma endregion
@@ -1392,7 +1466,76 @@ namespace Loopie
 		if (!text)
 			return;
 
-		text->SetColor(*color);
+		text->SetColor(*color);	
+	}
+	static MonoString* Text_GetText(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return ScriptingManager::CreateString("");
+		Text* text = Utils::GetComponent<Text>(entity, componentID);
+		if (text) {
+			return ScriptingManager::CreateString(text->GetText().c_str());
+		}
+		return ScriptingManager::CreateString("");
+	}
+
+	static void Text_SetText(MonoString* entityID, MonoString* componentID, MonoString* textValue)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		Text* text = Utils::GetComponent<Text>(entity, componentID);
+		if (text) {
+			text->SetText(Utils::MonoStringToString(textValue));
+		}
+	}
+#pragma endregion
+
+#pragma region Window
+	static void Window_SetTargetFramerate(int targetFramerate) {
+		Window& window = Application::GetInstance().GetWindow();
+		window.SetFramerateLimit(targetFramerate);
+	}
+
+	static int Window_GetTargetFramerate() {
+		const Window& window = Application::GetInstance().GetWindow();
+		return window.GetFramerateLimit();
+	}
+
+	static void Window_SetVSync(bool enabled) {
+		Window& window = Application::GetInstance().GetWindow();
+		window.SetVsync(enabled);
+	}
+
+	static bool Window_GetVSync() {
+		const Window& window = Application::GetInstance().GetWindow();
+		return window.IsVsyncEnabled();
+	}
+
+	static void Window_SetFullscreen(bool fullscreen) {
+		Window& window = Application::GetInstance().GetWindow();
+		window.SetWindowFullscreen(fullscreen);
+	}
+
+	static bool Window_GetFullscreen() {
+		const Window& window = Application::GetInstance().GetWindow();
+		return window.IsFullscreen();
+	}
+
+	static void Window_SetResizable(bool resizable) {
+		Window& window = Application::GetInstance().GetWindow();
+		window.SetResizable(resizable);
+	}
+
+	static void Window_SetSize(vec2* size) {
+		Window& window = Application::GetInstance().GetWindow();
+		window.SetWindowSize(size->x, size->y,false);
+	}
+
+	static void Window_GetSize(vec2* size) {
+		Window& window = Application::GetInstance().GetWindow();
+		*size = window.GetSize();
 	}
 #pragma endregion
 
@@ -1429,6 +1572,7 @@ namespace Loopie
 		RegisterComponent<BoxCollider>();
 		RegisterComponent<AudioSource>();
 		RegisterComponent<AudioListener>();
+		RegisterComponent<ParticleComponent>();
 		RegisterComponent<Image>();
 		RegisterComponent<Text>();
 	}
@@ -1553,6 +1697,14 @@ namespace Loopie
 		ADD_INTERNAL_CALL(BoxCollider_SetStatic);
 		ADD_INTERNAL_CALL(BoxCollider_IsTrigger);
 		ADD_INTERNAL_CALL(BoxCollider_SetTrigger);
+		ADD_INTERNAL_CALL(BoxCollider_SetIncludeMask);
+		ADD_INTERNAL_CALL(BoxCollider_GetIncludeMask);
+		ADD_INTERNAL_CALL(BoxCollider_AddIncludeMask);
+		ADD_INTERNAL_CALL(BoxCollider_RemoveIncludeMask);
+		ADD_INTERNAL_CALL(BoxCollider_SetExcludeMask);
+		ADD_INTERNAL_CALL(BoxCollider_GetExcludeMask);
+		ADD_INTERNAL_CALL(BoxCollider_AddExcludeMask);
+		ADD_INTERNAL_CALL(BoxCollider_RemoveExcludeMask);
 
 		ADD_INTERNAL_CALL(AudioSource_Play);
 		ADD_INTERNAL_CALL(AudioSource_Stop);
@@ -1574,10 +1726,23 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Gizmo_DrawLine);
 
 		ADD_INTERNAL_CALL(Scene_LoadByID);
+
 		ADD_INTERNAL_CALL(Image_GetTint);
 		ADD_INTERNAL_CALL(Image_SetTint);
 
 		ADD_INTERNAL_CALL(Text_GetColor);
 		ADD_INTERNAL_CALL(Text_SetColor);
+		ADD_INTERNAL_CALL(Text_GetText);
+		ADD_INTERNAL_CALL(Text_SetText);
+
+		ADD_INTERNAL_CALL(Window_SetTargetFramerate);
+		ADD_INTERNAL_CALL(Window_GetTargetFramerate);
+		ADD_INTERNAL_CALL(Window_SetVSync);
+		ADD_INTERNAL_CALL(Window_GetVSync);
+		ADD_INTERNAL_CALL(Window_SetFullscreen);
+		ADD_INTERNAL_CALL(Window_GetFullscreen);
+		ADD_INTERNAL_CALL(Window_SetResizable);
+		ADD_INTERNAL_CALL(Window_SetSize);
+		ADD_INTERNAL_CALL(Window_GetSize);
 	}
 }

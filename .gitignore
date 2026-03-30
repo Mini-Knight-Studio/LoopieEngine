@@ -11,6 +11,8 @@ _deps
 .cache
 build
 out
+.vs
+
 
 *.vscode
 *.kdev4
@@ -18,7 +20,7 @@ out
 /traces
 /.idea
 /cmake-build-debug
-/.vs
+/bin
 /cmake-build-debug-event-trace
 /cmake-build-debug-visual-studio
 /cmake-build-debug-visual-studio-event-trace

@@ -697,10 +697,10 @@ namespace Loopie
 		}
 
 		// Early exit - if the frustum' AABB doesn't intersect with this node's AABB, skip it and its children.
-		if (!frustum.Intersects(node->m_aabb))
-		{
-			return;
-		}
+		//if (!frustum.Intersects(node->m_aabb))
+		//{
+		//	return;
+		//}
 
 		for (const auto& entity : node->m_entities)
 		{

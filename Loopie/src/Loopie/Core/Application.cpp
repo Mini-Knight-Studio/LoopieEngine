@@ -164,10 +164,6 @@ namespace Loopie {
 			{
 				m_window->SetWindowFullscreen(!m_window->IsFullscreen());
 			}
-			else if (eventController.GetKeyStatus(SDL_SCANCODE_ESCAPE) == KeyState::DOWN)
-			{
-				Close();
-			}
 		}
 	}
 

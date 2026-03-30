@@ -9,6 +9,7 @@
 #include "Loopie/Components/Text.h"
 #include "Loopie/Components/Button.h"
 #include "Loopie/Components/CanvasScaler.h"
+#include "Loopie/Components/Light.h"
 
 #include "Editor/Interfaces/Workspace/SceneInterface.h"
 #include <imgui.h>
@@ -40,8 +41,8 @@ namespace Loopie {
 
 			ImVec2 cursorPos = ImGui::GetCursorPos();
 
-			if (ImGui::IsWindowHovered() && (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)))
-				SelectEntity(nullptr);
+			/*if (ImGui::IsWindowHovered() && (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)))
+				SelectEntity(nullptr);*/
 
 			if (ImGui::BeginPopupContextWindow("HierarchyBackgroundContext", ImGuiPopupFlags_MouseButtonRight)) {
 				DrawContextMenu(nullptr);
@@ -58,10 +59,15 @@ namespace Loopie {
 		
 
 			ImVec2 size = ImGui::GetContentRegionAvail();
-			//ImGui::SetCursorPos(cursorPos);  /// And move up the avail
-			ImGui::SetNextItemAllowOverlap();
-			ImGui::InvisibleButton("##DropTarget", size, ImGuiButtonFlags_None);
-			Drop(m_scene->GetRootEntity());
+			if(size.x !=0 && size.y != 0)
+			{
+				//ImGui::SetCursorPos(cursorPos);  /// And move up the avail
+				ImGui::SetNextItemAllowOverlap();
+				ImGui::InvisibleButton("##DropTarget", size, ImGuiButtonFlags_None);
+				Drop(m_scene->GetRootEntity());
+			}
+
+			
 		}
 		ImGui::End();
 	}
@@ -100,13 +106,12 @@ namespace Loopie {
 		{
 			ImGui::PopStyleColor();
 		}
-
-		Drag(entity);
+		bool dragStarted = false;
+		Drag(entity, dragStarted);
 		Drop(entity);
 
-		if (ImGui::IsItemClicked())
+		if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && ImGui::IsItemHovered() && !dragStarted)
 		{
-			////Expand To Select Multiple
 			SelectEntity(entity);
 		}
 
@@ -208,6 +213,22 @@ namespace Loopie {
 
 			ImGui::EndMenu();
 		}
+		if (ImGui::BeginMenu("Light"))
+		{
+			if (ImGui::MenuItem("Ambient"))
+				SelectEntity(CreateLight(LightType::Ambient, "Ambient Light", entity));
+
+			if (ImGui::MenuItem("Directional"))
+				SelectEntity(CreateLight(LightType::Directional, "Directional Light", entity));
+
+			if (ImGui::MenuItem("Point"))
+				SelectEntity(CreateLight(LightType::Point, "Point Light", entity));
+
+			if (ImGui::MenuItem("Spot"))
+				SelectEntity(CreateLight(LightType::Spot, "Spot Light", entity));
+
+			ImGui::EndMenu();
+		}
 	}
 
 	void HierarchyInterface::HotKeysSelectedEntiy(const InputEventManager& inputEvent)
@@ -236,7 +257,7 @@ namespace Loopie {
 
 	}
 
-	void HierarchyInterface::Drag(const std::shared_ptr<Entity> entity)
+	void HierarchyInterface::Drag(const std::shared_ptr<Entity> entity, bool& dragStarted)
 	{
 		if (ImGui::BeginDragDropSource())
 		{
@@ -246,6 +267,7 @@ namespace Loopie {
 
 			ImGui::Text("%s", entity->GetName().c_str());
 			ImGui::EndDragDropSource();
+			dragStarted = true;
 		}
 	}
 
@@ -354,6 +376,14 @@ namespace Loopie {
 		newEntity->AddComponent<Button>();
 		newEntity->AddComponent<Image>();
 
+		return newEntity;
+	}
+
+	std::shared_ptr<Entity> HierarchyInterface::CreateLight(LightType type, const std::string& name, const std::shared_ptr<Entity> parent)
+	{
+		std::shared_ptr<Entity> newEntity = m_scene->CreateEntity(name, parent);
+		newEntity->AddComponent<Light>(vec3(1.0f, 1.0f, 1.0f), 0.5f, type);
+	
 		return newEntity;
 	}
 }

@@ -20,11 +20,6 @@ namespace Loopie {
 		if (GetOwner() && GetTransform())
 			GetTransform()->m_transformNotifier.RemoveObserver(this);
 
-		if (m_mesh)
-			m_mesh->DecrementReferenceCount();
-		if (m_material)
-			m_material->DecrementReferenceCount();
-
 		if (m_linkedAnimator)
 			m_linkedAnimator->RemoveMeshRenderer(this);
 	}
@@ -42,7 +37,7 @@ namespace Loopie {
 		}
 	}
 
-	void MeshRenderer::RenderGizmo() {
+	void MeshRenderer::RenderGizmo() const{
 		if (m_mesh) {
 			///TEST
 			if(m_drawNormalsPerFace)
@@ -62,21 +57,13 @@ namespace Loopie {
 
 	void MeshRenderer::SetMesh(std::shared_ptr<Mesh> mesh)
 	{
-		if (m_mesh)
-			m_mesh->DecrementReferenceCount();
 		m_mesh = mesh;
-		if (m_mesh)
-			m_mesh->IncrementReferenceCount();
 		SetBoundingBoxesDirty();
 	}
 
 	void MeshRenderer::SetMaterial(std::shared_ptr<Material> material)
 	{
-		if(m_material)
-			m_material->DecrementReferenceCount();
 		m_material = material;
-		if(m_material)
-			m_material->IncrementReferenceCount();
 	}
 
 	std::shared_ptr<Material> MeshRenderer::GetMaterial() {
@@ -132,7 +119,7 @@ namespace Loopie {
 		}
 	}
 
-	bool MeshRenderer::GetTriangle(int triangleIndex, Triangle& triangle)
+	bool MeshRenderer::GetTriangle(int triangleIndex, Triangle& triangle) const
 	{
 		const BufferLayout& layout = m_mesh->m_vbo->GetLayout();
 		const BufferElement* posElem = layout.GetElementByIndex(0);
@@ -178,7 +165,7 @@ namespace Loopie {
 	}
 
 	///TEST
-	vec3 MeshRenderer::GetVertexVec3Data(const MeshData& data, unsigned int vertexIndex, unsigned int offset)
+	vec3 MeshRenderer::GetVertexVec3Data(const MeshData& data, unsigned int vertexIndex, unsigned int offset) const
 	{
 		vec3 vec3Data(0.0f);
 
@@ -191,7 +178,7 @@ namespace Loopie {
 		return vec3Data;
 	};
 
-	void MeshRenderer::RenderNormalsPerFace(float length, const vec4& color) {
+	void MeshRenderer::RenderNormalsPerFace(float length, const vec4& color) const {
 		MeshData& data = m_mesh->m_data;
 		if (data.VerticesAmount == 0 || data.IndicesAmount == 0)
 			return;
@@ -222,7 +209,7 @@ namespace Loopie {
 		}
 	}
 
-	void MeshRenderer::RenderNormalsPerTriangle(float length, const vec4& color)
+	void MeshRenderer::RenderNormalsPerTriangle(float length, const vec4& color) const
 	{
 		MeshData& data = m_mesh->m_data;
 		if (data.VerticesAmount == 0 || data.IndicesAmount == 0)

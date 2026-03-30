@@ -11,6 +11,10 @@
 #include "Loopie/Components/Camera.h"
 #include "Loopie/Components/MeshRenderer.h"
 #include "Loopie/Components/ScriptClass.h"
+
+#include "Loopie/Components/ParticleComponent.h"
+#include "Loopie/ParticleSystemEn/ParticleSystem.h"
+
 #include "Loopie/Components/Animator.h"
 #include "Loopie/Components/Canvas.h"
 #include "Loopie/Components/CanvasScaler.h"
@@ -18,6 +22,7 @@
 #include "Loopie/Components/Text.h"
 #include "Loopie/Components/Button.h"
 #include "Loopie/Components/BoxCollider.h"
+#include "Loopie/Components/Light.h"
 #include "Loopie/Scripting/ScriptingManager.h"
 #include "Loopie/Importers/TextureImporter.h"
 #include "Loopie/Importers/FontImporter.h"
@@ -34,10 +39,11 @@
 #include "Loopie/Components/AudioListener.h"
 
 #include <imgui.h>
+#include <imgui_stdlib.h>
 #include <unordered_map>
 
-namespace Loopie {
 
+namespace Loopie {
 	std::string ResourceTypeToString(ResourceType type) {
 		switch (type)
 		{
@@ -286,6 +292,9 @@ namespace Loopie {
 			else if (component->GetTypeID() == MeshRenderer::GetTypeIDStatic()) {
 				DrawMeshRenderer(static_cast<MeshRenderer*>(component));
 			}
+			else if (component->GetTypeID() == ParticleComponent::GetTypeIDStatic()) {
+				DrawParticleSystem(static_cast<ParticleComponent*>(component));
+			}
 			else if (component->GetTypeID() == Animator::GetTypeIDStatic()) {
 				DrawAnimator(static_cast<Animator*>(component));
 			}
@@ -316,6 +325,9 @@ namespace Loopie {
 			else if (component->GetTypeID() == Button::GetTypeIDStatic()) {
 				DrawButton(static_cast<Button*>(component));
 			}
+			else if (component->GetTypeID() == Light::GetTypeIDStatic()) {
+				DrawLight(static_cast<Light*>(component));
+			}
 		}
 		AddComponent(entity);
 	}
@@ -332,8 +344,8 @@ namespace Loopie {
 		std::string extension = path.extension().string();
 		if (extension == ".mat") 
 		{
-			std::shared_ptr<Material> material = ResourceManager::GetMaterial(*metadata);
-			DrawMaterial(material);
+			m_currentResource = ResourceManager::GetMaterial(*metadata);
+			DrawMaterial(std::static_pointer_cast<Material>(m_currentResource));
 			ImGui::Dummy({ 0.0f, 4.0f }); 
 			ImGui::Separator();
 			ImGui::Dummy({ 0.0f, 4.0f }); 
@@ -730,7 +742,6 @@ namespace Loopie {
 			}
 
 			if (ImGui::TreeNode("Mesh Info")) {
-				ImGui::Text("Mesh Resource Count: %u", mesh->GetReferenceCount());
 				ImGui::Text("Mesh Vertices: %d", mesh->GetData().VerticesAmount);
 				ImGui::Text("Has Bones: %s", mesh->GetData().HasBones ? "True" : "False");
 
@@ -1088,6 +1099,138 @@ namespace Loopie {
 		ImGui::PopID();
 	}
 
+
+	void InspectorInterface::DrawParticleSystem(ParticleComponent* partComponent)
+	{
+		ImGui::PushID(partComponent);
+
+		bool open = ImGui::CollapsingHeader("ParticleSystem");
+		ImGui::SetItemTooltip(partComponent->GetUUID().Get().c_str());
+		if (ComponentContextMenu(partComponent)) {
+			ImGui::PopID();
+			return;
+		}
+
+		if (open)
+		{
+			bool active = partComponent->GetIsActive();
+			if (ImGui::Checkbox("Active", &active))
+			{
+				if (active) { partComponent->SetIsActive(true); }
+				else { partComponent->SetIsActive(false); }
+			}
+			
+
+			const std::vector<std::shared_ptr<Emitter>>& emitters = partComponent->GetEmittersVector();
+			for (size_t i = 0; i < emitters.size(); i++)
+			{
+				auto& emitter = emitters[i];
+
+				ImGui::PushID(emitter.get());
+
+				bool open = ImGui::TreeNodeEx("Emitter", true, "%s", emitter->GetName().c_str());
+
+				if (open)
+				{
+					DrawEmitterInspector(emitter, partComponent);
+					ImGui::TreePop();
+				}
+
+				ImGui::PopID();
+			}
+
+			ImGui::Spacing();
+			if (ImGui::Button("Add Emitter"))
+			{
+				vec3 entityPos = partComponent->GetOwner()->GetComponent<Transform>()->GetPosition();
+				auto newEmitter = std::make_shared<Emitter>(1000, CAMERA_FACING, entityPos, 50);
+				int emitterCount = partComponent->GetParticleSystem().GetEmitterArray().size();
+				newEmitter.get()->SetName("Emitter_" + std::to_string(emitterCount));
+				partComponent->AddElemToEmitterVector(newEmitter);
+			}
+
+		}
+
+		ImGui::PopID();
+
+	}
+
+	void InspectorInterface::DrawEmitterInspector(const std::shared_ptr<Emitter> emitter, ParticleComponent* partComponent)
+	{
+
+		//EMITTER PROPERTIES
+
+		ImGui::Separator();
+		ImGui::Text("Emitter Properties");
+		ImGui::Separator();
+
+		std::string name = emitter->GetName();
+		if (ImGui::InputText("Name", &name))
+		{
+			emitter->SetName(name);
+		}
+
+		unsigned int spawnRate = emitter->GetSpawnrate();
+		unsigned int spawnMin = 0;
+		unsigned int spawnMax = 100000;
+		unsigned int spawnSpeed = 1;
+		if (ImGui::DragScalar("Spawn Rate", ImGuiDataType_U32, &spawnRate, spawnSpeed, &spawnMin, &spawnMax, "%u", ImGuiSliderFlags_AlwaysClamp))
+		{
+			emitter->SetSpawnRate(spawnRate);
+		}
+
+		unsigned int maxParticles = emitter->GetMaxParticles();
+		unsigned int maxMin = 1;
+		unsigned int maxMax = 1000000;
+		unsigned int maxSpeed = 10;
+		if (ImGui::DragScalar("Max Particles", ImGuiDataType_U32, &maxParticles, maxSpeed, &maxMin, &maxMax, "%u", ImGuiSliderFlags_AlwaysClamp))
+		{
+			emitter->SetMaxParticles(maxParticles);
+		}
+
+		vec3 positionOffSet = emitter->GetPositionOffSet();
+		if (ImGui::DragFloat3("Emitter Position OffSet", &positionOffSet.x))
+		{
+			emitter->SetPositionOffSet(positionOffSet);
+		}
+
+		bool active = emitter->GetIsActive();
+		if (ImGui::Checkbox("Active", &active))
+		{
+			emitter->ToggleActive();
+		}
+
+		bool particlesFollow = emitter->GetParticlesFollowEmitter();
+		if (ImGui::Button(particlesFollow ? "Particles Follow Emitter: ON" : "Particles Follow Emitter: OFF"))
+		{
+			emitter->SetParticlesFollowEmitter(!particlesFollow);
+		}
+		//PARTICLE PROPERTIES
+		ImGui::Separator();
+		ImGui::Text("Particle Properties");
+		ImGui::Separator();
+
+		ParticleProps& props = emitter->GetEmissionProperties();
+
+		ImGui::DragFloat3("Position", &props.Position.x, 0.1f, -1000.0f, 1000.0f, "%.2f");
+		ImGui::DragFloat3("Position Variation", &props.PositionVariation.x, 0.1f, 0.0f, 500.0f, "%.2f");
+		ImGui::DragFloat3("Velocity", &props.Velocity.x, 0.1f, -500.0f, 500.0f, "%.2f");
+		ImGui::DragFloat3("Velocity Variation", &props.VelocityVariation.x, 0.1f, 0.0f, 200.0f, "%.2f");
+		ImGui::ColorEdit4("Color Begin", &props.ColorBegin.x);
+		ImGui::ColorEdit4("Color End", &props.ColorEnd.x);
+		ImGui::DragFloat("Size Begin", &props.SizeBegin, 0.01f, 0.0f, 100.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+		ImGui::DragFloat("Size End", &props.SizeEnd, 0.01f, 0.0f, 100.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+		ImGui::DragFloat("Size Variation", &props.SizeVariation, 0.01f, 0.0f, 50.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+		ImGui::DragFloat("Lifetime", &props.LifeTime, 0.01f, 0.01f, 60.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+
+
+		ImGui::Spacing();
+		if (ImGui::Button("Delete Emitter"))
+		{
+			partComponent->GetParticleSystem().DeleteElemFromEmitterArray(emitter);
+		}
+	}
+
 	void InspectorInterface::DrawScriptClass(ScriptClass* scriptClass)
 	{
 		ImGui::PushID(scriptClass);
@@ -1111,9 +1254,10 @@ namespace Loopie {
 				ImGui::PopID();
 				return;
 			}
-			const std::map<std::string, ScriptField>& fields = scriptingClass->GetFields();
-			for (const auto& [name, field] : fields)
+			const std::vector<ScriptField>& fields = scriptingClass->GetFields();
+			for (const ScriptField& field : fields)
 			{
+				const std::string& name = field.Name;
 				switch (field.Type)
 				{
 				case ScriptFieldType::Float:
@@ -1189,7 +1333,28 @@ namespace Loopie {
 
 				case ScriptFieldType::Entity:
 				{
-					ImGui::Text("Entity Field (Not working)");
+					std::string id = isRuntime ? scriptClass->GetRuntimeEntityField(name) : scriptClass->GetFieldString(name);
+
+					std::shared_ptr<Entity> entity = Application::GetInstance().GetScene().GetEntity(UUID(id));
+					std::string label = entity ? entity->GetName() : "Null Entity";
+
+					char buffer[256];
+					memset(buffer, 0, sizeof(buffer));
+					strncpy(buffer, label.c_str(), sizeof(buffer) - 1);
+					
+					ImGui::PushStyleColor(ImGuiCol_FrameBg, ImGui::GetStyleColorVec4(ImGuiCol_FrameBgHovered));
+					ImGui::InputText(name.c_str(), buffer, sizeof(buffer), ImGuiInputTextFlags_ReadOnly);
+					ImGui::PopStyleColor();
+
+					std::shared_ptr<Entity> selected = nullptr;
+					selected = GetDragDropEntity();
+
+					if (selected)
+					{
+						std::string newID = selected->GetUUID().Get();
+						isRuntime ? scriptClass->SetRuntimeEntityField(name, newID) : scriptClass->SetFieldString(name, newID);
+					}
+
 					break;
 				}
 				case ScriptFieldType::Component:
@@ -1197,6 +1362,28 @@ namespace Loopie {
 					ImGui::Text("Component Field (Not working)");
 					break;
 				}
+				case ScriptFieldType::Vector2:
+				{
+					vec2 v = isRuntime ? scriptClass->GetRuntimeFieldValue<vec2>(name) : scriptClass->GetFieldValue<vec2>(name);
+					if (ImGui::DragFloat2(name.c_str(), &v.x, 0.1f))
+						isRuntime ? scriptClass->SetRuntimeFieldValue<vec2>(name, v) : scriptClass->SetFieldValue<vec2>(name, v);
+					break;
+				}
+				case ScriptFieldType::Vector3:
+				{
+					vec3 v = isRuntime ? scriptClass->GetRuntimeFieldValue<vec3>(name) : scriptClass->GetFieldValue<vec3>(name);
+					if (ImGui::DragFloat3(name.c_str(), &v.x, 0.1f))
+						isRuntime ? scriptClass->SetRuntimeFieldValue<vec3>(name, v) : scriptClass->SetFieldValue<vec3>(name, v);
+					break;
+				}
+				case ScriptFieldType::Vector4:
+				{
+					vec4 v = isRuntime ? scriptClass->GetRuntimeFieldValue<vec4>(name) : scriptClass->GetFieldValue<vec4>(name);
+					if (ImGui::DragFloat4(name.c_str(), &v.x, 0.1f))
+						isRuntime ? scriptClass->SetRuntimeFieldValue<vec4>(name, v) : scriptClass->SetFieldValue<vec4>(name, v);
+					break;
+				}
+
 				default:
 					ImGui::Text("Unsupported Field: %s", name.c_str());
 					break;
@@ -1676,6 +1863,63 @@ namespace Loopie {
 		ImGui::PopID();
 	}
 
+	void InspectorInterface::DrawLight(Light* light)
+	{
+		ImGui::PushID(light);
+
+		const char* label = "Light";
+		bool open = ImGui::CollapsingHeader(label, ImGuiTreeNodeFlags_DefaultOpen);
+		bool modified = false;
+		ImGui::SetItemTooltip(light->GetUUID().Get().c_str());
+		ComponentContextMenu(light, false);
+
+		static bool uniformScale = false;
+
+		if (open)
+		{
+			LightType type = light->GetLightType();
+			
+			vec3 color = light->GetColor();
+			float intensity = light->GetIntensity();
+
+			vec3 attenuation = vec3(light->GetAttenuationConstant(), light->GetAttenuationLinear(), light->GetAttenuationQuadratic());
+
+			float reachDistance = light->GetReachDistance();
+			vec2 cone = vec2(light->GetInnerConeAngle(), light->GetOuterConeAngle());
+			
+			if (ImGui::ColorEdit3("Color", &color.x))
+			{
+				light->SetColor(color);
+			}
+
+			if (ImGui::DragFloat("Intensity", &intensity, 0.05f))
+			{
+				light->SetIntensity(intensity);
+			}
+			
+			if (type == LightType::Spot || type == LightType::Point)
+			{
+				ImGui::Text("Constant / Linear / Quadratic");
+				if (ImGui::DragFloat3("Attenuation", &attenuation.x, 0.5f))
+				{
+					light->SetAttenuationConstant(attenuation.x);
+					light->SetAttenuationLinear(attenuation.y);
+					light->SetAttenuationQuadratic(attenuation.z);
+				}
+			}
+			if (type == LightType::Spot)
+			{
+				if (ImGui::DragFloat2("Inner / Outer Cone", &cone.x, 0.5f))
+				{
+					light->SetInnerConeAngle(cone.x);
+					light->SetOuterConeAngle(cone.y);
+				}
+			}	
+		}
+
+		ImGui::PopID();
+	}
+
 	void InspectorInterface::DrawBoxCollider(BoxCollider* boxCollider) 
 	{
 
@@ -1706,9 +1950,7 @@ namespace Loopie {
 				boxCollider->SetLocalExtents(extents);
 
 			int currentLayer = boxCollider->GetLayerIndex();
-
 			const auto& layers = CollisionProcessor::GetLayers();
-
 			const char* preview = layers[currentLayer].name.c_str();
 
 			if (ImGui::BeginCombo("Layer", preview))
@@ -1716,17 +1958,134 @@ namespace Loopie {
 				for (int i = 0; i < layers.size(); i++)
 				{
 					bool selected = (currentLayer == i);
-
 					if (ImGui::Selectable(layers[i].name.c_str(), selected))
-					{
 						boxCollider->SetLayer(i);
-					}
-
 					if (selected)
 						ImGui::SetItemDefaultFocus();
 				}
-
 				ImGui::EndCombo();
+			}
+
+			if (ImGui::TreeNode("Layer Overrides")) {
+
+				uint32_t includeMask = boxCollider->GetIncludeMask();
+				std::string includePreview;
+				bool first = true;
+				if (includeMask == 0xFFFFFFFF) {
+					includePreview = "Everything";
+				}
+				else if (includeMask == 0) {
+					includePreview = "None";
+				}
+				else {
+					for (int i = 0; i < layers.size(); i++) {
+						if (includeMask & (1u << i)) {
+							if (!first) includePreview += ", ";
+							includePreview += layers[i].name;
+							first = false;
+						}
+					}
+				}
+				
+				if (ImGui::BeginCombo("Include Layers", includePreview.c_str()))
+				{
+
+					bool selected = (includeMask == 0);
+					if (selected)
+						ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetStyleColorVec4(ImGuiCol_HeaderHovered));
+					if (ImGui::Selectable("None", selected))
+						boxCollider->SetIncludeMask(0);
+					if (selected)
+						ImGui::PopStyleColor();
+
+					selected = (includeMask == 0xFFFFFFFF);
+					if (selected)
+						ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetStyleColorVec4(ImGuiCol_HeaderHovered));
+					if (ImGui::Selectable("Everything", selected))
+						boxCollider->SetIncludeMask(0xFFFFFFFF);
+					if (selected)
+						ImGui::PopStyleColor();
+
+					for (int i = 0; i < layers.size(); i++)
+					{
+						uint32_t bit = (1u << i);
+						selected = (includeMask & bit) != 0;
+						if (selected)
+							ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetStyleColorVec4(ImGuiCol_HeaderHovered));
+						if (ImGui::Selectable(layers[i].name.c_str(), selected))
+						{
+							if (selected)
+								boxCollider->RemoveIncludedLayer(bit);
+							else
+								boxCollider->IncludeLayer(bit);
+						}
+						if (selected) {
+							ImGui::PopStyleColor();
+							ImGui::SetItemDefaultFocus();
+						}
+					}
+					ImGui::EndCombo();
+				}
+
+				uint32_t excludeMask = boxCollider->GetExcludeMask();
+				std::string excludePreview;
+				first = true;
+
+				if (excludeMask == 0xFFFFFFFF) {
+					excludePreview = "Everything";
+				}
+				else if (excludeMask == 0) {
+					excludePreview = "None";
+				}
+				else {
+					for (int i = 0; i < layers.size(); i++) {
+						if (excludeMask & (1u << i)) {
+							if (!first) excludePreview += ", ";
+							excludePreview += layers[i].name;
+							first = false;
+						}
+					}
+				}
+
+				if (ImGui::BeginCombo("Exclude Layers", excludePreview.c_str()))
+				{
+					bool selected = (excludeMask == 0);
+					if (selected)
+						ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetStyleColorVec4(ImGuiCol_HeaderHovered));
+					if (ImGui::Selectable("None", selected))
+						boxCollider->SetExcludeMask(0);
+					if (selected)
+						ImGui::PopStyleColor();
+
+					selected = (excludeMask == 0xFFFFFFFF);
+					if (selected)
+						ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetStyleColorVec4(ImGuiCol_HeaderHovered));
+					if (ImGui::Selectable("Everything", selected))
+						boxCollider->SetExcludeMask(0xFFFFFFFF);
+					if (selected)
+						ImGui::PopStyleColor();
+
+					for (int i = 0; i < layers.size(); i++)
+					{
+						uint32_t bit = (1u << i);
+						selected = (excludeMask & bit) != 0;
+						if (selected)
+							ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetStyleColorVec4(ImGuiCol_HeaderHovered));
+						if (ImGui::Selectable(layers[i].name.c_str(), selected))
+						{
+							if (selected)
+								boxCollider->RemoveExcludedLayer(bit);
+							else
+								boxCollider->ExcludeLayer(bit);
+						}
+						if (selected) {
+							ImGui::PopStyleColor();
+							ImGui::SetItemDefaultFocus();
+						}
+					}
+					ImGui::EndCombo();
+				}
+				ImGui::TreePop();
 			}
 			
 			//if (ImGui::Checkbox("Visible Lines", &draw))
@@ -1738,7 +2097,7 @@ namespace Loopie {
 	void InspectorInterface::DrawAudioSource(AudioSource* source)
 	{
 		ImGui::PushID(source);
-		bool open = ImGui::CollapsingHeader("Audio Source", ImGuiTreeNodeFlags_DefaultOpen);
+		bool open = ImGui::CollapsingHeader("Audio Source");
 		ImGui::SetItemTooltip(source->GetUUID().Get().c_str());
 		if (ComponentContextMenu(source)) {
 			ImGui::PopID();
@@ -2025,9 +2384,19 @@ namespace Loopie {
 					}
 				}
 
+				if (filter.PassFilter("Particle System"))
+				{
+					if (ImGui::Selectable("Particle System")) 
+					{
+						ParticleComponent* comp = entity->AddComponent<ParticleComponent>();
+						std::shared_ptr<Emitter> emitter = std::make_shared<Emitter>(1000, CAMERA_FACING, entity->GetTransform()->GetPosition(), 100);
+						comp->AddElemToEmitterVector(emitter);
+						forceClose = true;
+					}
+				}
+
 				ImGui::Unindent(8.0f);
 			}
-
 
 
 			if (searching)
@@ -2089,6 +2458,54 @@ namespace Loopie {
 					if (ImGui::Selectable("Text"))
 					{
 						entity->AddComponent<Text>();
+						forceClose = true;
+					}
+				}
+				ImGui::Unindent(8.0f);
+			}
+
+
+			if (searching)
+				ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+			if (!isOpen)
+				ImGui::SetNextItemOpen(false, ImGuiCond_Always);
+			if (ImGui::CollapsingHeader("Lights"))
+			{
+				ImGui::Indent(8.0f);
+
+				if (filter.PassFilter("Ambient Light"))
+				{
+					if (ImGui::Selectable("Ambient Light"))
+					{
+						entity->AddComponent<Light>(vec3(1.0f, 1.0f, 1.0f), 0.2f, LightType::Ambient);
+						forceClose = true;
+					}
+					
+				}
+
+				if (filter.PassFilter("Directional Light"))
+				{
+					if (ImGui::Selectable("Directional Light"))
+					{
+						entity->AddComponent<Light>(vec3(1.0f, 1.0f, 1.0f), 0.5f, LightType::Directional);
+						forceClose = true;
+					}
+				}
+
+				if (filter.PassFilter("Point Light"))
+				{
+					if (ImGui::Selectable("Point Light"))
+					{
+						entity->AddComponent<Light>(vec3(1.0f, 1.0f, 1.0f), 0.5f, LightType::Point);
+						forceClose = true;
+					}
+				}
+
+				if (filter.PassFilter("Spot Light"))
+				{
+					if (ImGui::Selectable("Spot Light"))
+					{
+						entity->AddComponent<Light>(vec3(1.0f, 1.0f, 1.0f), 0.5f, LightType::Spot);
 						forceClose = true;
 					}
 				}
@@ -2378,7 +2795,6 @@ namespace Loopie {
 			}
 
 		}
-		ImGui::Text("Material Resource Count: %u", material->GetReferenceCount());
 	}
 
 	void InspectorInterface::OnNotify(const OnEntityOrFileNotification& id)

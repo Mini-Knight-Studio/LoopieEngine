@@ -5,6 +5,7 @@
 #include "Editor/Events/EditorEventTypes.h"
 
 namespace Loopie {
+	enum class LightType;
 	class HierarchyInterface : public Interface {
 	public:
 		HierarchyInterface();
@@ -23,7 +24,7 @@ namespace Loopie {
 		void DrawContextMenu(const std::shared_ptr<Entity> entity);
 		void HotKeysSelectedEntiy(const InputEventManager& inputEvent);
 
-		void Drag(const std::shared_ptr<Entity> entity);
+		void Drag(const std::shared_ptr<Entity> entity, bool& dragStarted);
 		void Drop(const std::shared_ptr<Entity> entity);
 
 		std::shared_ptr<Entity> CreatePrimitiveModel(const std::string& modelPath, const std::string& name, const std::shared_ptr<Entity> parent);
@@ -31,6 +32,7 @@ namespace Loopie {
 		std::shared_ptr<Entity> CreateImage(const std::string& name, const std::shared_ptr<Entity> parent);
 		std::shared_ptr<Entity> CreateText(const std::string& name, const std::shared_ptr<Entity> parent);
 		std::shared_ptr<Entity> CreateButton(const std::string& name, const std::shared_ptr<Entity> parent);
+		std::shared_ptr<Entity> CreateLight(LightType type, const std::string& name, const std::shared_ptr<Entity> parent);
 
 	public:
 

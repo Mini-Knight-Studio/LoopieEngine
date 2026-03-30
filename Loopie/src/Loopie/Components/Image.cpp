@@ -11,8 +11,7 @@ namespace Loopie
 {
 	Image::~Image()
 	{
-		if (m_texture)
-			m_texture->DecrementReferenceCount();
+
 	}
 	void Image::Init()
 	{
@@ -23,7 +22,7 @@ namespace Loopie
 			SetTexture(Texture::GetDefault());
 	}
 
-	void Image::RenderGizmo()
+	void Image::RenderGizmo() const
 	{
 		auto* rt = GetOwner() ? GetOwner()->GetComponent<RectTransform>() : nullptr;
 		if (!rt)

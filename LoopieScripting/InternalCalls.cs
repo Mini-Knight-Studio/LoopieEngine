@@ -122,12 +122,36 @@ namespace Loopie
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void BoxCollider_SetTrigger(string entityID, string componentID, bool isTrigger);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_SetIncludeMask(string entityID, string componentID, int includeMask);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static int BoxCollider_GetIncludeMask(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_AddIncludeMask(string entityID, string componentID, int includeMask);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_RemoveIncludeMask(string entityID, string componentID, int includeMask);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_SetExcludeMask(string entityID, string componentID, int excludeMask);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static int BoxCollider_GetExcludeMask(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_AddExcludeMask(string entityID, string componentID, int excludeMask);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void BoxCollider_RemoveExcludeMask(string entityID, string componentID, int excludeMask);
         #endregion
         #region Animator
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Animator_Stop(string entityID, string componentID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Animator_PlayClip(string entityID, string componentID, string clipName);
+        internal extern static void Animator_PlayClip(string entityID, string componentID, string clipName, float transitionTime);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Animator_Play(string entityID, string componentID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
@@ -397,6 +421,40 @@ namespace Loopie
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Text_SetColor(string entityID, string componentID, ref Vector4 color);
+        
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static string Text_GetText(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Text_SetText(string entityID, string componentID, string text);
+        #endregion
+        #region Window
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Window_SetTargetFramerate(int targetFramerate);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static int Window_GetTargetFramerate();
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Window_SetVSync(bool enabled);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool Window_GetVSync();
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Window_SetFullscreen(bool fullscreen);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool Window_GetFullscreen();
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Window_SetResizable(bool resizable);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Window_SetSize(Vector2 size);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Window_GetSize(out Vector2 size);
         #endregion
     }
 }

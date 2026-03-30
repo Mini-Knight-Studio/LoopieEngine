@@ -49,7 +49,7 @@ namespace Loopie
 		GetTransform()->m_transformNotifier.AddObserver(this);
 	}
 
-	void Camera::RenderGizmo()
+	void Camera::RenderGizmo() const
 	{
 		Gizmo::DrawFrustum(GetFrustum());
 	}
@@ -159,6 +159,17 @@ namespace Loopie
 		m_dirty = false;
 	}
 
+	vec3 Camera::GetPosition() const {
+		return GetTransform()->GetPosition();
+	}
+
+	vec3 Camera::GetForward() const {
+		return -GetTransform()->Forward();
+	}
+
+	vec3 Camera::GetUp() const {
+		return GetTransform()->Up();
+	}
 
 	void Camera::SetDirty() const {
 		m_dirty = true;

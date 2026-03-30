@@ -30,7 +30,10 @@ namespace Loopie {
 		ULong,
 		String,
 		Entity,
-		Component
+		Component,
+		Vector2,
+		Vector3,
+		Vector4,
 	};
 
 	static std::unordered_map<std::string, ScriptFieldType> s_ScriptFieldTypeMap =
@@ -48,7 +51,10 @@ namespace Loopie {
 		{ "System.UInt64", ScriptFieldType::ULong },
 		{ "System.String",  ScriptFieldType::String },
 		{ "Loopie.Entity",  ScriptFieldType::Entity },
-		{ "Loopie.Component",  ScriptFieldType::Component }
+		{ "Loopie.Component",  ScriptFieldType::Component },
+		{ "Loopie.Vector2",  ScriptFieldType::Vector2 },
+		{ "Loopie.Vector3",  ScriptFieldType::Vector3 },
+		{ "Loopie.Vector4",  ScriptFieldType::Vector4 }
 	};
 
 	
@@ -69,12 +75,17 @@ namespace Loopie {
 		_MonoObject* Instantiate();
 		_MonoMethod* GetMethod(const std::string& name, int parameterCount);
 		_MonoObject* InvokeMethod(_MonoObject* instance, _MonoMethod* method, void** params = nullptr);
-		const std::map<std::string, ScriptField>& GetFields() const { return m_fields; }
-		std::map<std::string, ScriptField>& GetFields() { return m_fields; }
+		const std::vector<ScriptField>& GetFields() const { return m_fields; }
+		std::vector<ScriptField>& GetFields() { return m_fields; }
+
+		const std::unordered_map<std::string, unsigned int>& GetFieldsOrder() const { return m_index; }
+		std::unordered_map<std::string, unsigned int>& GetFieldsOrder() { return m_index; }
 
 		const std::string& GetClassName() const { return m_className; }
 		const std::string& GetClassNamespace() const { return m_classNamespace; }
 		const std::string GetFullName() const;
+
+		const ScriptField* FindField(const std::string& name) const;
 
 		_MonoClass* GetMonoClass() const { return m_monoClass; }
 
@@ -91,7 +102,8 @@ namespace Loopie {
 		std::string m_className;
 		_MonoClass* m_monoClass = nullptr;
 
-		std::map<std::string, ScriptField> m_fields;
+		std::vector<ScriptField> m_fields;
+		std::unordered_map<std::string, unsigned int> m_index;
 	};
 	
 }

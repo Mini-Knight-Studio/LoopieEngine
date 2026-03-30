@@ -25,7 +25,7 @@ namespace Loopie {
 		void Init() override; //// From Component
 		void OnNotify(const TransformNotification& id) override;
 
-		void RenderGizmo() override;
+		void RenderGizmo() const override;
 		
 		std::shared_ptr<Mesh> GetMesh() { return m_mesh; }
 		void SetMesh(std::shared_ptr<Mesh> mesh);
@@ -52,7 +52,7 @@ namespace Loopie {
 		JsonNode Serialize(JsonNode& parent) const override;
 		void Deserialize(const JsonNode& data) override;
 
-		bool GetTriangle(int triangleIndex, Triangle& triangle);
+		bool GetTriangle(int triangleIndex, Triangle& triangle) const;
 
 		void SetLinkedAnimator(Animator* animator) { m_linkedAnimator = animator; }
 		Animator* GetLinkedAnimator() { return m_linkedAnimator; }
@@ -61,9 +61,9 @@ namespace Loopie {
 		void RecalculateBoundingBoxes() const;
 
 		///TEST
-		vec3 GetVertexVec3Data(const MeshData& data, unsigned int vertexIndex, unsigned int offset);
-		void RenderNormalsPerFace(float length, const vec4& color);
-		void RenderNormalsPerTriangle(float length, const vec4& color);
+		vec3 GetVertexVec3Data(const MeshData& data, unsigned int vertexIndex, unsigned int offset) const;
+		void RenderNormalsPerFace(float length, const vec4& color) const;
+		void RenderNormalsPerTriangle(float length, const vec4& color) const;
 		bool m_drawNormalsPerFace = false;
 		bool m_drawNormalsPerTriangle = false;
 		bool m_drawAABB = false;
