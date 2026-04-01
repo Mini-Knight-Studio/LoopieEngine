@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Loopie/Components/Component.h"
+#include "Loopie/Components/UIElement.h"
 #include "Loopie/Math/MathTypes.h"
 
 #include <memory>
@@ -9,7 +9,7 @@ namespace Loopie
 {
 	class Texture;
 
-	class Image : public Component
+	class Image : public UIElement
 	{
 	public:
 		DEFINE_TYPE(Image)

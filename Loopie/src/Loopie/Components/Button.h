@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Loopie/Components/Component.h"
+#include "Loopie/Components/UIElement.h"
 #include "Loopie/Core/UUID.h"
 #include "Loopie/Math/MathTypes.h"
 
@@ -22,7 +22,7 @@ namespace Loopie
 		std::string Function;
 	};
 
-	class Button : public Component
+	class Button : public UIElement
 	{
 	public:
 		
@@ -44,11 +44,14 @@ namespace Loopie
 
 		DEFINE_TYPE(Button)
 
-		Button() = default;
+		Button();
 		~Button() override = default;
 
 		void Init() override;
 		void OnUpdate() override {}
+
+		bool CanFocus() const override;
+		void Submit() override;
 
 		JsonNode Serialize(JsonNode& parent) const override;
 		void Deserialize(const JsonNode& data) override;

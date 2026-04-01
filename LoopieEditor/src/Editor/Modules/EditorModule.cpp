@@ -681,7 +681,12 @@ namespace Loopie
 		Application& app = Application::GetInstance();
 		InputEventManager& inputEvent = app.GetInputEvent();
 
+		if (!m_currentScene)
+			return;
+
 		const bool mouseOverGame = m_game.IsVisible() && m_game.IsMouseOverGame();
+		if (m_currentScene && mouseOverGame && ScriptingManager::IsRunning() && !inputEvent.IsReadingInputText())
+			m_uiNavigation.UpdateOverlay(*m_currentScene, inputEvent);
 		if (!mouseOverGame)
 		{
 			return;
@@ -763,7 +768,8 @@ namespace Loopie
 			hovered = (mouseCanvas.x >= minX && mouseCanvas.x <= maxX &&
 					   mouseCanvas.y >= minY && mouseCanvas.y <= maxY);
 
-			button->SetHovered(hovered);
+			const bool focused = button->IsFocused();
+			button->SetHovered(hovered || focused);
 
 			const bool down = (input.GetMouseButtonStatus(0) == KeyState::DOWN) ||
 							  (input.GetMouseButtonStatus(0) == KeyState::REPEAT);
@@ -775,7 +781,7 @@ namespace Loopie
 				pressedInsideAny = true;
 			}
 
-			button->SetPressed(down && hovered && pressedInsideAny);
+			button->SetPressed(down && (hovered || focused) && pressedInsideAny);
 
 			if (up && pressedInsideAny)
 			{

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Loopie/Components/Component.h"
+#include "Loopie/Components/UIElement.h"
 #include "Loopie/Math/MathTypes.h"
 #include "Loopie/Resources/Types/Font.h"
 
@@ -29,7 +29,7 @@ namespace Loopie
 		FixedSize
 	};
 
-	class Text : public Component
+	class Text : public UIElement
 	{
 	public:
 		DEFINE_TYPE(Text)

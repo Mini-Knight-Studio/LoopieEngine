@@ -4,6 +4,8 @@
 #include "Loopie/Events/IObserver.h"
 #include "Loopie/Events/EventTypes.h"
 
+#include "Loopie/UI/UINavigationSystem.h"
+
 #include "Loopie/Core/Application.h"
 #include <memory>
 
@@ -53,6 +55,7 @@ namespace Loopie {
 	private:
 
 		Scene* m_currentScene = nullptr;
+		UINavigationSystem m_uiNavigation;
 
 		DebugGameMode mode;
 	};
