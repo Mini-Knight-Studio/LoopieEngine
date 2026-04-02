@@ -37,6 +37,7 @@
 
 #include "Loopie/Components/AudioSource.h"
 #include "Loopie/Components/AudioListener.h"
+#include "Loopie/Components/SpriteAnimator.h"
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -327,6 +328,9 @@ namespace Loopie {
 			}
 			else if (component->GetTypeID() == Light::GetTypeIDStatic()) {
 				DrawLight(static_cast<Light*>(component));
+			}
+			else if (component->GetTypeID() == SpriteAnimator::GetTypeIDStatic()) {
+				DrawSpriteAnimator(static_cast<SpriteAnimator*>(component));
 			}
 		}
 		AddComponent(entity);
@@ -1562,6 +1566,114 @@ namespace Loopie {
 		ImGui::PopID();
 	}
 
+	void InspectorInterface::DrawSpriteAnimator(SpriteAnimator* spriteAnimator)
+	{
+		ImGui::PushID(spriteAnimator);
+
+		bool open = ImGui::CollapsingHeader("Sprite Animator");
+		ImGui::SetItemTooltip(spriteAnimator->GetUUID().Get().c_str());
+		if (ComponentContextMenu(spriteAnimator))
+		{
+			ImGui::PopID();
+			return;
+		}
+
+		if (open)
+		{
+			ImGui::SeparatorText("Spritesheet");
+
+			std::shared_ptr<Texture> texture = spriteAnimator->GetTexture();
+			ImGui::Button(" [ Drop Texture Here ] ", ImVec2(ImGui::GetContentRegionAvail().x, 30));
+			if (ImGui::BeginPopupContextItem())
+			{
+				if (ImGui::MenuItem("Paste"))
+				{
+					std::shared_ptr<Resource> resource = GetPastedResource(ResourceType::TEXTURE);
+					if (resource)
+						spriteAnimator->SetTexture(std::static_pointer_cast<Texture>(resource));
+				}
+				ImGui::EndPopup();
+			}
+
+			std::shared_ptr<Resource> dd = GetDragDropResource(ResourceType::TEXTURE);
+			if (dd)
+				spriteAnimator->SetTexture(std::static_pointer_cast<Texture>(dd));
+
+			texture = spriteAnimator->GetTexture();
+			Metadata* meta = texture ? AssetRegistry::GetMetadata(texture->GetUUID()) : nullptr;
+			ImGui::Text("Texture: %s", meta ? "Assigned" : "None / Unknown");
+
+			if (texture)
+			{
+				ivec2 texSize = texture->GetSize();
+				if (ImGui::TreeNode("Texture Info"))
+				{
+					meta = AssetRegistry::GetMetadata(texture->GetUUID());
+					if (meta && !meta->CachesPath.empty())
+						ImGui::Text("Path: %s", meta->CachesPath[0].c_str());
+					ImGui::Text("Size: %d x %d", texSize.x, texSize.y);
+					ImGui::TreePop();
+				}
+
+				const float maxSizeNormal = 64.0f;
+				const float maxSizeWide = 128.0f;
+				bool isWide = texSize.x > texSize.y * 1.5f;
+				float maxWidth = isWide ? maxSizeWide : maxSizeNormal;
+				float maxHeight = maxSizeNormal;
+				float scale = std::min(maxWidth / static_cast<float>(texSize.x), maxHeight / static_cast<float>(texSize.y));
+				ImVec2 previewSize(texSize.x * scale, texSize.y * scale);
+
+				ImGui::Text("Preview:");
+				ImGui::Image((ImTextureID)texture->GetRendererId(), previewSize, ImVec2(0, 0), ImVec2(1, 1));
+			}
+
+			ImGui::SeparatorText("Grid");
+			ivec2 grid = spriteAnimator->GetGrid();
+			int cols = grid.x;
+			int rows = grid.y;
+			if (ImGui::DragInt("Columns", &cols, 1.0f, 1, 1024))
+				grid.x = std::max(1, cols);
+			if (ImGui::DragInt("Rows", &rows, 1.0f, 1, 1024))
+				grid.y = std::max(1, rows);
+			if (grid != spriteAnimator->GetGrid())
+				spriteAnimator->SetGrid(grid);
+
+			ImGui::SeparatorText("Frames");
+			int start = spriteAnimator->GetStartFrame();
+			int count = spriteAnimator->GetFrameCount();
+			if (ImGui::DragInt("Start Frame", &start, 1.0f, 0, 100000))
+				spriteAnimator->SetStartFrame(start);
+			if (ImGui::DragInt("Frame Count", &count, 1.0f, 1, 100000))
+				spriteAnimator->SetFrameCount(count);
+
+			ImGui::SeparatorText("Playback");
+			float fps = spriteAnimator->GetFPS();
+			if (ImGui::DragFloat("FPS", &fps, 0.25f, 0.0f, 240.0f))
+				spriteAnimator->SetFPS(fps);
+
+			bool loop = spriteAnimator->GetLoop();
+			if (ImGui::Checkbox("Loop", &loop))
+				spriteAnimator->SetLoop(loop);
+
+			bool pos = spriteAnimator->GetPlayOnStart();
+			if (ImGui::Checkbox("Play On Start", &pos))
+				spriteAnimator->SetPlayOnStart(pos);
+
+			bool playing = spriteAnimator->GetPlaying();
+			if (ImGui::Checkbox("Playing", &playing))
+				spriteAnimator->SetPlaying(playing);
+
+			ImGui::SeparatorText("Controls");
+			if (ImGui::Button("Play"))
+				spriteAnimator->Play();
+			ImGui::SameLine();
+			if (ImGui::Button("Stop"))
+				spriteAnimator->Stop(true);
+		}
+
+		ImGui::PopID();
+	}
+
 	void InspectorInterface::DrawText(Text* text)
 	{
 		ImGui::PushID(text);
@@ -2458,6 +2570,15 @@ namespace Loopie {
 					if (ImGui::Selectable("Text"))
 					{
 						entity->AddComponent<Text>();
+						forceClose = true;
+					}
+				}
+
+				if (filter.PassFilter("Sprite Animator"))
+				{
+					if (ImGui::Selectable("Sprite Animator"))
+					{
+						entity->AddComponent<SpriteAnimator>();
 						forceClose = true;
 					}
 				}

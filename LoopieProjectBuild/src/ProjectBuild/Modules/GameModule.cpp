@@ -348,7 +348,7 @@ namespace Loopie
 				button->GetCurrentTexture(texture);
 			}
 
-			UIRenderer::DrawImage(pixelPos, pixelSize, texture, color);
+			UIRenderer::DrawImage(pixelPos, pixelSize, texture, color, img->GetUVRect());
 		}
 
 		if (text && text->GetIsActive() && rt)
@@ -464,7 +464,7 @@ namespace Loopie
 					button->GetCurrentTexture(texture);
 				}
 
-				UIRenderer::DrawImageWorld(model, texture, color);
+				UIRenderer::DrawImageWorld(model, texture, color, img->GetUVRect());
 			}
 		}
 

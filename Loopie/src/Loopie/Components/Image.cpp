@@ -6,6 +6,7 @@
 #include "Loopie/Components/RectTransform.h"
 #include "Loopie/Render/Gizmo.h"
 #include "Loopie/Resources/Types/Texture.h"
+#include "Loopie/Resources/Types/Sprite.h"
 
 namespace Loopie
 {
@@ -60,17 +61,38 @@ namespace Loopie
 		if (m_texture == texture)
 			return;
 
+		m_sprite.reset();
+		m_uvRect = vec4(0.0f, 0.0f, 1.0f, 1.0f);
 		m_texture = texture;
+	}
+
+	void Image::SetUVRect(const vec4& uvRect)
+	{
+		m_sprite.reset();
+		m_uvRect = uvRect;
+	}
+
+	void Image::SetSprite(const std::shared_ptr<Sprite>& sprite)
+	{
+		m_sprite = sprite;
+		if (m_sprite)
+		{
+			m_texture = m_sprite->GetTexture();
+			m_uvRect = m_sprite->GetUVRect();
+		}
+		else
+		{
+			m_uvRect = vec4(0.0f, 0.0f, 1.0f, 1.0f);
+		}
 	}
 
 	std::shared_ptr<Texture> Image::GetTexture()
 	{
 		if (m_texture)
 			return m_texture;
-		else {
-			SetTexture(Texture::GetDefault());
-			return m_texture;
-		}
+
+		SetTexture(Texture::GetDefault());
+		return m_texture;
 	}
 
 	JsonNode Image::Serialize(JsonNode& parent) const
@@ -86,11 +108,19 @@ namespace Loopie
 		if (m_texture)
 			imgNode.CreateField<std::string>("texture_uuid", m_texture->GetUUID().Get());
 
+		JsonNode uvObj = imgNode.CreateObjectField("uv_rect");
+		uvObj.CreateField<float>("min_u", m_uvRect.x);
+		uvObj.CreateField<float>("min_v", m_uvRect.y);
+		uvObj.CreateField<float>("max_u", m_uvRect.z);
+		uvObj.CreateField<float>("max_v", m_uvRect.w);
+
 		return imgNode;
 	}
 
 	void Image::Deserialize(const JsonNode& data)
 	{
+		vec4 uvRect(0.0f, 0.0f, 1.0f, 1.0f);
+
 		if (data.Contains("tint"))
 		{
 			JsonNode colorObj = data.Child("tint");
@@ -107,23 +137,39 @@ namespace Loopie
 			m_tint = vec4(1.0f);
 		}
 
+		if (data.Contains("uv_rect"))
+		{
+			JsonNode uvObj = data.Child("uv_rect");
+			if (uvObj.IsValid())
+			{
+				uvRect.x = uvObj.GetValue<float>("min_u", 0.0f).Result;
+				uvRect.y = uvObj.GetValue<float>("min_v", 0.0f).Result;
+				uvRect.z = uvObj.GetValue<float>("max_u", 1.0f).Result;
+				uvRect.w = uvObj.GetValue<float>("max_v", 1.0f).Result;
+			}
+		}
+
+		bool textureSet = false;
 		if (data.Contains("texture_uuid"))
 		{
 			UUID texUUID = data.GetValue<std::string>("texture_uuid").Result;
 
 			Metadata* meta = AssetRegistry::GetMetadata(texUUID);
-			if (meta) {
+			if (meta)
+			{
 				auto tex = ResourceManager::GetTexture(*meta);
-				if (!tex || !tex->Load()) {
-					SetTexture(Texture::GetDefault());
-					return;
+				if (tex && tex->Load())
+				{
+					SetTexture(tex);
+					textureSet = true;
 				}
-				SetTexture(tex);
-				return;
 			}
 		}
 
-		SetTexture(Texture::GetDefault());
+		if (!textureSet)
+			SetTexture(Texture::GetDefault());
+
+		m_uvRect = uvRect;
 	}
 
 }

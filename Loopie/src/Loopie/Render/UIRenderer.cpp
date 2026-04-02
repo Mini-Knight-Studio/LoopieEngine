@@ -113,6 +113,11 @@ namespace Loopie
 		if(!s_quadVAO || !s_material)
 			return;
 
+		UniformValue uv;
+		uv.type = UniformType_vec4;
+		uv.value = vec4(0.0f, 0.0f, 1.0f, 1.0f);
+		s_material->SetShaderVariable("u_UVRect", uv);
+
 		matrix4 model(1.0f);
 		model = glm::translate(model, vec3(posPixels.x,posPixels.y, 0.0f));
 		model = glm::scale(model, vec3(sizePixels.x, sizePixels.y, 1.0f));
@@ -126,6 +131,11 @@ namespace Loopie
 	}
 
 	void UIRenderer::DrawImage(const vec2& posPixels, const vec2& sizePixels, const std::shared_ptr<Texture>& texture, const vec4& tint)
+	{
+		DrawImage(posPixels, sizePixels, texture, tint, vec4(0.0f, 0.0f, 1.0f, 1.0f));
+	}
+
+	void UIRenderer::DrawImage(const vec2& posPixels, const vec2& sizePixels, const std::shared_ptr<Texture>& texture, const vec4& tint, const vec4& uvRect)
 	{
 		EnsureInit();
 
@@ -141,12 +151,22 @@ namespace Loopie
 		c.value = tint;
 		s_material->SetShaderVariable("u_Color", c);
 
+		UniformValue uv;
+		uv.type = UniformType_vec4;
+		uv.value = uvRect;
+		s_material->SetShaderVariable("u_UVRect", uv);
+
 		s_material->SetTexture("u_Albedo", texture);
 
 		Renderer::FlushRenderItem(s_quadVAO, s_material, model);
 	}
 
 	void UIRenderer::DrawImageWorld(const matrix4& modelMatrix, const std::shared_ptr<Texture>& texture, const vec4& tint)
+	{
+		DrawImageWorld(modelMatrix, texture, tint, vec4(0.0f, 0.0f, 1.0f, 1.0f));
+	}
+
+	void UIRenderer::DrawImageWorld(const matrix4& modelMatrix, const std::shared_ptr<Texture>& texture, const vec4& tint, const vec4& uvRect)
 	{
 		EnsureInit();
 		if (!s_quadVAO || !s_material || !texture)
@@ -156,6 +176,11 @@ namespace Loopie
 		c.type = UniformType_vec4;
 		c.value = tint;
 		s_material->SetShaderVariable("u_Color", c);
+
+		UniformValue uv;
+		uv.type = UniformType_vec4;
+		uv.value = uvRect;
+		s_material->SetShaderVariable("u_UVRect", uv);
 		
 		s_material->SetTexture("u_Albedo",texture);
 		
