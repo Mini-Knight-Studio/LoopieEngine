@@ -14,6 +14,7 @@
 
 namespace Loopie {
 	class Transform;
+	class ShadowMap;
 
 	class Renderer {
 	public:
@@ -106,6 +107,13 @@ namespace Loopie {
 		static void RemoveAllLights();
 		static unsigned short GetLightCount() { return s_LightCount; }
 
+		// static std::shared_ptr<ShadowMap> GetShadowMap() { return s_ShadowMap; }; // Could be implemented for debugging
+		static void InitShadowMapping();
+		static bool BeginShadowPass(const vec3& sceneCenter);
+		static void FlushShadowItem(std::shared_ptr<VertexArray> vao, const Transform* transform, const std::vector<matrix4>& bones = {});
+		static void EndShadowPass();
+		static void BindShadowDataForMainPass();
+
 		static void RegisterCamera(Camera& camera);
 		static void UnregisterCamera(Camera& camera);
 		static const std::vector<Camera*>& GetRendererCameras() { return s_RenderCameras; }
@@ -151,19 +159,25 @@ namespace Loopie {
 	public:
 	private:
 		static Light* s_Lights[MAX_LIGHTS];
+		static std::shared_ptr<ShadowMap> s_ShadowMap;
 		static std::vector<RenderItem> s_RenderQueue;
 		static std::vector<Camera*> s_RenderCameras;
 		static std::shared_ptr<UniformBuffer> s_MatricesUniformBuffer;
-		static std::shared_ptr<UniformBuffer> s_lightingUniformBuffer;
+		static std::shared_ptr<UniformBuffer> s_LightingUniformBuffer;
+		static std::shared_ptr<UniformBuffer> s_ShadowingUniformBuffer;
 		static std::shared_ptr<ShaderStorageBuffer> s_BonesSSBOBuffer;
 
-		static std::shared_ptr<VertexBuffer> s_billboardVBO;
-		static std::shared_ptr<VertexBuffer>s_posSizeVBO;
-		static std::shared_ptr<VertexBuffer>s_colorVBO;
+		static std::shared_ptr<VertexBuffer> s_BillboardVBO;
+		static std::shared_ptr<VertexBuffer> s_PosSizeVBO;
+		static std::shared_ptr<VertexBuffer> s_ColorVBO;
+
+		static std::unique_ptr<Shader> s_ShadowMapShader;
 
 		static bool s_UseGizmos;
 		static unsigned short s_LightCount;
 
 		static vec4 s_CurrentViewport;
+		static matrix4 s_LightSpaceMatrix;
+		
 	};
 }

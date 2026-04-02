@@ -54,6 +54,9 @@ namespace Loopie
 		void  SetOuterConeAngle(float outerConeAngle);
 		float GetOuterConeAngle() const;
 
+		matrix4 GetLightSpaceMatrix(const vec3& sceneCenter = vec3(0.0f), float orthoSize = 30.0f, 
+									float nearPlane = 0.1f, float farPlane = 100.0f) const;
+
 		JsonNode Serialize(JsonNode& parent) const override;
 		void Deserialize(const JsonNode& data) override;
 
@@ -74,5 +77,6 @@ namespace Loopie
 		float m_reachDistance; 
 		float m_innerConeAngle;
 		float m_outerConeAngle;
+
 	};
 }

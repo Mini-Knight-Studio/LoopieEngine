@@ -104,9 +104,15 @@ layout (std140, binding = 1) uniform Lighting
     Light lp_lights[16];
 };
 
+layout (std140, binding = 3) uniform Shadows
+{
+    mat4 lp_LightSpaceMatrix;
+};
+
 uniform sampler2D u_Albedo;
 uniform sampler2D u_Specular;
 uniform sampler2D u_Normal;
+uniform sampler2D lp_ShadowMap;
 uniform float u_Roughness = 32.0; // highlight, smaller value = broader spotlight (feels more shiny)
 uniform vec4 u_Color = vec4(1.0);
 
@@ -128,7 +134,6 @@ void main()
 
     vec3 result = vec3(0.0);
 
-
     for (int i = 0; i < lp_CameraWorldPosLightCount.w; ++i)
     {
         if (int(lp_lights[i].l_PositionType.w) == 0) // Ambiental
@@ -147,7 +152,28 @@ void main()
             vec3 reflectDir = reflect(-lightDir, normal);  
             float spec = pow(max(dot(viewDir, reflectDir), 0.0), u_Roughness);
             vec3 specular = texSpecular.xyz * spec * lp_lights[i].l_ColorIntensity.xyz * lp_lights[i].l_ColorIntensity.w;  
-            result += (diffuse + specular);
+
+            // Shadows
+            vec4 fragPosLightSpace = lp_LightSpaceMatrix * vec4(v_WorldPos, 1.0);
+            vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+            projCoords = projCoords * 0.5 + 0.5;
+
+            vec2 texelSize = 1.0 / vec2(textureSize(lp_ShadowMap, 0));
+            float bias = max(0.005 * (1.0 - dot(normal, lightDir)), 0.0005);
+            float shadow = 0.0;
+            float currentDepth = projCoords.z;
+
+            for (int x=-1; x<=1; ++x)
+            {
+                for (int y=-1; y<=1; ++y)
+                {
+                    vec2 offset = vec2(x, y) * texelSize;
+                    float closestDepth = texture(lp_ShadowMap, projCoords.xy + offset).r;
+                    shadow += (currentDepth - bias) > closestDepth ? 0.0 : 1.0;
+                }
+            }
+            shadow /= 9.0;
+            result += (diffuse + specular) * shadow;
         }
         else if (int(lp_lights[i].l_PositionType.w) == 2) // Spot
         {
@@ -174,7 +200,28 @@ void main()
 
             float spotlightAttenuation = smoothstep(outerAngleCone, innerAngleCone, angle);
 
-            result += (diffuse + specular) * attenuation * spotlightAttenuation;
+            // Shadows
+            vec4 fragPosLightSpace = lp_LightSpaceMatrix * vec4(v_WorldPos, 1.0);
+            vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+            projCoords = projCoords * 0.5 + 0.5;
+
+            vec2 texelSize = 1.0 / vec2(textureSize(lp_ShadowMap, 0));
+            float bias = max(0.005 * (1.0 - dot(normal, lightDir)), 0.0005);
+            float shadow = 0.0;
+            float currentDepth = projCoords.z;
+
+            for (int x=-1; x<=1; ++x)
+            {
+                for (int y=-1; y<=1; ++y)
+                {
+                    vec2 offset = vec2(x, y) * texelSize;
+                    float closestDepth = texture(lp_ShadowMap, projCoords.xy + offset).r;
+                    shadow += (currentDepth - bias) > closestDepth ? 0.0 : 1.0;
+                }
+            }
+            shadow /= 9.0;
+
+            result += ((diffuse + specular) * attenuation * spotlightAttenuation) * shadow;
 
         }
         else if (int(lp_lights[i].l_PositionType.w) == 3) // Point

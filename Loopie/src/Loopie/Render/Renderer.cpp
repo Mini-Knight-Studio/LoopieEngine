@@ -3,6 +3,7 @@
 #include "Loopie/Core/Assert.h"
 #include "Loopie/Components/Transform.h"
 #include "Loopie/Render/Gizmo.h"
+#include "Loopie/Render/ShadowMap.h"
 #include <iostream>
 
 #include <glad/glad.h>
@@ -11,20 +12,25 @@
 
 namespace Loopie {
 
+	std::shared_ptr<ShadowMap> Renderer::s_ShadowMap = nullptr;
 	std::vector<Renderer::RenderItem> Renderer::s_RenderQueue = std::vector<Renderer::RenderItem>();
 	Renderer::RenderParticlesData Renderer::s_ParticlesData = Renderer::RenderParticlesData();
 	std::vector<Camera*> Renderer::s_RenderCameras = std::vector<Camera*>();
 	std::shared_ptr<UniformBuffer> Renderer::s_MatricesUniformBuffer = nullptr;
-	std::shared_ptr<UniformBuffer> Renderer::s_lightingUniformBuffer = nullptr;
+	std::shared_ptr<UniformBuffer> Renderer::s_LightingUniformBuffer = nullptr;
+	std::shared_ptr<UniformBuffer> Renderer::s_ShadowingUniformBuffer = nullptr;
 	std::shared_ptr<ShaderStorageBuffer> Renderer::s_BonesSSBOBuffer = nullptr;
 	Light* Renderer::s_Lights[MAX_LIGHTS] = {};
 	unsigned short Renderer::s_LightCount = 0;
 	bool Renderer::s_UseGizmos = true;
 	vec4 Renderer::s_CurrentViewport = {0,0,0,0};
 
-	std::shared_ptr<VertexBuffer> Renderer::s_billboardVBO = nullptr;
-	std::shared_ptr<VertexBuffer> Renderer::s_posSizeVBO = nullptr;
-	std::shared_ptr<VertexBuffer> Renderer::s_colorVBO = nullptr;
+	std::shared_ptr<VertexBuffer> Renderer::s_BillboardVBO = nullptr;
+	std::shared_ptr<VertexBuffer> Renderer::s_PosSizeVBO = nullptr;
+	std::shared_ptr<VertexBuffer> Renderer::s_ColorVBO = nullptr;
+	std::unique_ptr<Shader> Renderer::s_ShadowMapShader = nullptr;
+
+	matrix4 Renderer::s_LightSpaceMatrix = matrix4(1.0);
 
 	void Renderer::Init(void* context) {
 		ASSERT(!gladLoadGLLoader((GLADloadproc)context), "Failed to Initialize GLAD!");
@@ -58,8 +64,8 @@ namespace Loopie {
 			lightingLayout.AddLayoutElement(4*i+3, GLVariableType::VEC4, 1, "DirectionInnerCone"); // Direction + Inner Cone Angle
 			lightingLayout.AddLayoutElement(4*i+4, GLVariableType::VEC4, 1, "AttenuationOuterCone"); // Attenuation + Outer Cone Angle
 		}
-		s_lightingUniformBuffer = std::make_shared<UniformBuffer>(lightingLayout);
-		s_lightingUniformBuffer->BindToLayout(1);
+		s_LightingUniformBuffer = std::make_shared<UniformBuffer>(lightingLayout);
+		s_LightingUniformBuffer->BindToLayout(1);
 
 		s_BonesSSBOBuffer = std::make_shared<ShaderStorageBuffer>();
 		s_BonesSSBOBuffer->BindToLayout(2);
@@ -67,6 +73,7 @@ namespace Loopie {
 		s_BonesSSBOBuffer->SetData((void*)(&dummy), (unsigned int)(sizeof(matrix4)));
 
 		s_LightCount = 0;
+		InitShadowMapping();
 	}
 
 	void Renderer::Shutdown() {
@@ -119,6 +126,72 @@ namespace Loopie {
 		s_LightCount = 0;
 	}
 
+	void Renderer::InitShadowMapping()
+	{
+		s_ShadowMap = std::make_shared<ShadowMap>();
+		s_ShadowMapShader = std::make_unique<Shader>("assets/shaders/ShadowDepth.shader");
+		if (!s_ShadowMapShader->GetIsValidShader())
+			Log::Error("Shadow depth shader failed to compile!");
+
+		BufferLayout shadowingLayout;
+		shadowingLayout.AddLayoutElement(0, GLVariableType::MATRIX4, 1, "LightSpaceMatrix");
+		s_ShadowingUniformBuffer = std::make_shared<UniformBuffer>(shadowingLayout);
+		s_ShadowingUniformBuffer->BindToLayout(3);
+	}
+
+	bool Renderer::BeginShadowPass(const vec3& sceneCenter)
+	{
+		EnableDepth();
+		EnableDepthMask();
+		Light* l = nullptr;
+		for (int i = 0; i < s_LightCount; ++i)
+		{
+			switch (s_Lights[i]->GetLightType())
+			{
+			case LightType::Directional:
+			case LightType::Spot:
+				l = s_Lights[i];
+				s_LightSpaceMatrix = l->GetLightSpaceMatrix(sceneCenter, 100.0f, 0.1f, 500.0f);
+				s_ShadowMap->Bind();
+				SetViewport(0, 0, s_ShadowMap->GetWidth(), s_ShadowMap->GetHeight());
+				s_ShadowMap->Clear();
+				s_ShadowMapShader->Bind();
+				s_ShadowingUniformBuffer->SetData(&s_LightSpaceMatrix, 0);
+				return true;
+			case LightType::Point:
+			case LightType::Ambient:
+			default:
+				break;
+			}
+		}
+		return false;
+	}
+
+	void Renderer::FlushShadowItem(std::shared_ptr<VertexArray> vao, const Transform* transform, const std::vector<matrix4>& bones)
+	{
+		vao->Bind();
+		s_ShadowMapShader->SetUniformMat4("lp_Transform", transform->GetLocalToWorldMatrix());
+		s_ShadowMapShader->SetUniformInt("lp_Skinned", !bones.empty() ? 1 : 0);
+		if (!bones.empty())
+		{
+			s_BonesSSBOBuffer->SetData(bones.data(), (unsigned int)(bones.size() * sizeof(matrix4)));
+		}
+		glDrawElements(GL_TRIANGLES, vao->GetIndexBuffer().GetCount(), GL_UNSIGNED_INT, nullptr);
+		vao->Unbind();
+	}
+
+	void Renderer::EndShadowPass()
+	{
+		s_ShadowMap->Unbind();
+		s_ShadowMapShader->Unbind();
+	}
+
+	void Renderer::BindShadowDataForMainPass()
+	{
+		s_ShadowingUniformBuffer->SetData(&s_LightSpaceMatrix, 0);
+		s_ShadowMap->BindTexture(8); // 8 -> High number to avoid collissions
+	}
+
 	void Renderer::RegisterCamera(Camera& camera) {
 		auto it = std::find(s_RenderCameras.begin(), s_RenderCameras.end(), &camera);
 		if (it == s_RenderCameras.end()) {
@@ -142,7 +215,7 @@ namespace Loopie {
 		vec3 cameraPos = vec3(glm::inverse(viewMatrix)[3]);
 
 		vec4 cameraPosLightCount = vec4(cameraPos, s_LightCount);
-		s_lightingUniformBuffer->SetData(&cameraPosLightCount, 0);
+		s_LightingUniformBuffer->SetData(&cameraPosLightCount, 0);
 
 		for (int i = 0; i < s_LightCount; ++i)
 		{
@@ -153,11 +226,13 @@ namespace Loopie {
 			vec4 directionInnerCone = vec4(l.GetTransform()->Forward(), l.GetInnerConeAngle());
 			vec4 attenuationOuterCone = vec4(l.GetAttenuationConstant(), l.GetAttenuationLinear(), l.GetAttenuationQuadratic(), l.GetOuterConeAngle());
 			
-			s_lightingUniformBuffer->SetData(&colorIntensity,		i * 4 + 1);
-			s_lightingUniformBuffer->SetData(&positionType,			i * 4 + 2);
-			s_lightingUniformBuffer->SetData(&directionInnerCone,	i * 4 + 3);
-			s_lightingUniformBuffer->SetData(&attenuationOuterCone, i * 4 + 4);
+			s_LightingUniformBuffer->SetData(&colorIntensity,		i * 4 + 1);
+			s_LightingUniformBuffer->SetData(&positionType,			i * 4 + 2);
+			s_LightingUniformBuffer->SetData(&directionInnerCone,	i * 4 + 3);
+			s_LightingUniformBuffer->SetData(&attenuationOuterCone, i * 4 + 4);
 		}
+
+		BindShadowDataForMainPass();
 
 		if (s_UseGizmos)
 			Gizmo::BeginGizmo();
@@ -216,6 +291,11 @@ namespace Loopie {
 		material->GetShader().SetUniformMat4("lp_Transform", modelMatrix);
 
 		material->GetShader().SetUniformInt("lp_Skinned", !bones.empty() ? 1 : 0);
+
+		if (material->GetShader().GetUniformLocation("lp_ShadowMap") != -1)
+		{
+			material->GetShader().SetUniformInt("lp_ShadowMap", 8);
+		}
 
 		if (!bones.empty())
 		{

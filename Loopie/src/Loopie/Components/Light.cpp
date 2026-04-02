@@ -230,6 +230,54 @@ namespace Loopie
 		return m_outerConeAngle;
 	}
 
+	// Creates a matrix from the light pov, is used to produce shadows
+	matrix4 Light::GetLightSpaceMatrix(const vec3& sceneCenter, float orthoSize, float nearPlane, float farPlane) const
+	{
+		matrix4 viewMat;
+		matrix4 projMatrix;
+
+		switch (m_type)
+		{
+		default:
+		case LightType::Ambient:
+			break;
+		case LightType::Directional:
+		{
+			vec3 lightDir = GetTransform()->Forward();
+			vec3 lightPos = sceneCenter - lightDir * (farPlane * 0.5f);
+
+			vec3 up = vec3(0.0f, 1.0f, 0.0f); // If the up vector and direction of light are parallel, it produces garbage
+			if (abs(dot(lightDir, up)) > 0.99f)
+			{
+				up = vec3(1.0f, 0.0f, 0.0f);
+			}
+			viewMat = glm::lookAt(lightPos, sceneCenter, up);
+			projMatrix = glm::ortho(-orthoSize, orthoSize, -orthoSize, orthoSize, nearPlane, farPlane);
+			break;
+		}
+		case LightType::Spot: 
+		{
+			vec3 lightDir = GetTransform()->Forward();
+			vec3 lightPos = GetTransform()->GetWorldPosition();
+
+			vec3 up = vec3(0.0f, 1.0f, 0.0f); // If the up vector and direction of light are parallel, it produces garbage
+			if (abs(dot(lightDir, up)) > 0.99f)
+			{
+				up = vec3(1.0f, 0.0f, 0.0f);
+			}
+			viewMat = glm::lookAt(lightPos, lightPos + lightDir, up);
+			// Modify the nearPlane value below to play with the precision of shadows (how far shadows are casted)
+			projMatrix = glm::perspective(radians(m_outerConeAngle * 2.0f), 1.0f, 3.0f, farPlane); 
+			break;
+		}
+		case LightType::Point:
+			// TODO
+			break;
+		}
+
+		return projMatrix * viewMat;
+	}
+
 	JsonNode Light::Serialize(JsonNode& parent) const
 	{
 		JsonNode lightObj = parent.CreateObjectField("light");
