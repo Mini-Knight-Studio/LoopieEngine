@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Loopie/Components/Component.h"
+#include "Loopie/Components/UIElement.h"
 #include "Loopie/Events/EventTypes.h"
 #include "Loopie/Events/IObserver.h"
 #include "Loopie/Math/MathTypes.h"
@@ -13,7 +13,7 @@ namespace Loopie {
 		ScreenSpaceOverlay,
 	};
 
-	class Canvas : public Component, public IObserver<TransformNotification>
+	class Canvas : public UIElement, public IObserver<TransformNotification>
 	{
 	public:
 		DEFINE_TYPE(Canvas)

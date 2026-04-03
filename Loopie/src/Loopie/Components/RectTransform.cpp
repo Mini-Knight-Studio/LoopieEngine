@@ -18,13 +18,11 @@ void Loopie::RectTransform::Init()
 		Transform* parentTransform = parent->GetTransform();
 		if (parentTransform && parentTransform->HasSize())
 		{
-			const vec2 parentSize = parentTransform->GetSize();
+			const vec2 parentSize = vec2(parentTransform->GetWidth(), parentTransform->GetHeight());
 			const vec2 anchorReference = GetAnchorReferencePoint(parentSize);
-			const vec2 computedSize = GetComputedSize();
-			const vec2 pivotTranslation = ComputePivotTranslation(computedSize);
 
-			m_localPosition.x = -(anchorReference.x + pivotTranslation.x);
-			m_localPosition.y = -(anchorReference.y + pivotTranslation.y);
+			m_localPosition.x = -anchorReference.x;
+			m_localPosition.y = -anchorReference.y;
 			m_localPosition.z = 0.0f;
 
 			MarkLocalDirty();
@@ -67,7 +65,7 @@ Loopie::vec2 Loopie::RectTransform::GetParentSize() const
 	if (!parentTransform || !parentTransform->HasSize())
 		return vec2(0.0f);
 
-	return parentTransform->GetSize();
+	return vec2(parentTransform->GetWidth(), parentTransform->GetHeight());
 }
 
 Loopie::vec2 Loopie::RectTransform::GetComputedSize() const
@@ -119,13 +117,11 @@ void Loopie::RectTransform::RefreshMatrices() const
 	if (!IsDirty()) return;
 
 	const vec2 parentSize = GetParentSize();
-	const vec2 computedSize = GetComputedSize();
 	const vec2 anchorReference = GetAnchorReferencePoint(parentSize);
-	const vec2 pivotTranslation = ComputePivotTranslation(computedSize);
 
 	vec3 effectiveLocalPosition = m_localPosition;
-	effectiveLocalPosition.x += anchorReference.x + pivotTranslation.x;
-	effectiveLocalPosition.y += anchorReference.y + pivotTranslation.y;
+	effectiveLocalPosition.x += anchorReference.x;
+	effectiveLocalPosition.y += anchorReference.y;
 
 	m_localMatrix = translate(matrix4(1.0f), effectiveLocalPosition) * toMat4(m_localRotation) * scale(matrix4(1.0f), m_localScale);
 

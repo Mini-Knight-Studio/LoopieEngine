@@ -3,7 +3,8 @@
 #include "Loopie/Core/UUID.h"
 #include "Loopie/Core/IIdentificable.h"
 
-namespace Loopie {
+namespace Loopie
+{
 	enum ResourceType
 	{
 		UNKNOWN,
@@ -14,15 +15,17 @@ namespace Loopie {
 		SCENE,
 		AUDIO,
 		SCRIPT,
-		FONT
+		FONT,
+		SPRITE,
 	};
 
-	class Resource : public  IIdentificable {
+	class Resource : public IIdentificable
+	{
 	public:
 		Resource(UUID uuid, ResourceType type) : m_uuid(uuid), m_type(type) {}
 		virtual ~Resource();
 
-		const UUID& GetUUID() { return m_uuid; }
+		const UUID &GetUUID() { return m_uuid; }
 
 		virtual bool Load() = 0;
 

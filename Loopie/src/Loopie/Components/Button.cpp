@@ -14,10 +14,27 @@
 
 namespace Loopie
 {
+	Button::Button()
+	{
+		SetFocusable(true);
+	}
+
+	bool Button::CanFocus() const
+	{
+		return UIElement::CanFocus() && m_interactable;
+	}
+
+	void Button::Submit()
+	{
+		TriggerClick();
+	}
+
 	void Button::Init()
 	{
 		if (!GetOwner())
 			return;
+
+		SetFocusable(true);
 
 		if (!GetOwner()->HasComponent<RectTransform>())
 			GetOwner()->ReplaceTransform<RectTransform>();

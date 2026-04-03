@@ -27,6 +27,7 @@ namespace Loopie {
 	class Light;
 	class AudioSource;
 	class AudioListener;
+	class SpriteAnimator;
 	class FunctionCall;
 	class Metadata;
 	class Resource;
@@ -68,6 +69,7 @@ namespace Loopie {
 		void DrawBoxCollider(BoxCollider* boxCollider);
 		void DrawAudioSource(AudioSource* source);
 		void DrawAudioListener(AudioListener* listener);
+		void DrawSpriteAnimator(SpriteAnimator* spriteAnimator);
 
 		void AddComponent(const std::shared_ptr<Entity>& entity);
 		bool ComponentContextMenu(Component* component, bool canRemove = true);

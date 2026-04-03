@@ -12,6 +12,7 @@
 #include "Loopie/Components/Canvas.h"
 #include "Loopie/Components/CanvasScaler.h"
 #include "Loopie/Components/Image.h"
+#include "Loopie/Components/SpriteAnimator.h"
 #include "Loopie/Helpers/LoopieHelpers.h"
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Components/BoxCollider.h"
@@ -291,6 +292,12 @@ namespace Loopie {
 			{
 				auto image = clone->AddComponent<Image>();
 				image->Deserialize(componentData.Child("image"));
+			}
+			/// SpriteAnimator
+			else if (componentData.Child("sprite_animator").IsValid())
+			{
+				auto spriteAnimator = clone->AddComponent<SpriteAnimator>();
+				spriteAnimator->Deserialize(componentData.Child("sprite_animator"));
 			}
 			/// BoxCollider
 			else if (componentData.Child("boxcollider").IsValid())
@@ -610,6 +617,16 @@ namespace Loopie {
 						{
 							image->Deserialize(node);
 							image->SetUUID(componentUUID.Get());
+						}
+					}
+					else if (componentNode.Contains("sprite_animator"))
+					{
+						JsonNode node = componentNode.Child("sprite_animator");
+						auto spriteAnimator = entity->AddComponent<SpriteAnimator>();
+						if (spriteAnimator)
+						{
+							spriteAnimator->Deserialize(node);
+							spriteAnimator->SetUUID(componentUUID.Get());
 						}
 					}
 					else if (componentNode.Contains("boxcollider"))

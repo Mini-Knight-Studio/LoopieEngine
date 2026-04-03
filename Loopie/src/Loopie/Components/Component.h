@@ -12,6 +12,8 @@
 namespace Loopie {
 	class Entity;
 	class Transform;
+	class UIElement;
+	class UINavigable;
 
 	class Component : public IIdentificable, public ISerializable
 	{
@@ -30,6 +32,12 @@ namespace Loopie {
 		// Default Calls
 		virtual void OnUpdate() {};
 		virtual void RenderGizmo() const {};
+
+		// Optional UI queries (avoids RTTI/dynamic_cast across modules)
+		virtual UIElement* AsUIElement() { return nullptr; }
+		virtual const UIElement* AsUIElement() const { return nullptr; }
+		virtual UINavigable* AsUINavigable() { return nullptr; }
+		virtual const UINavigable* AsUINavigable() const { return nullptr; }
 
 		// Setters
 		void SetIsActive(bool active);
