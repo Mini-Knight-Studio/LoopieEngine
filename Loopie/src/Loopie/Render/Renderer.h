@@ -11,6 +11,7 @@
 #include <filesystem>
 
 #define MAX_LIGHTS 16 // Can be increased if necessary. Watch out that performance though!
+#define MAX_SHADOW_CASTING_LIGHTS 4 // Can be increased if necessary. Watch out that performance though!
 
 namespace Loopie {
 	class Transform;
@@ -92,6 +93,14 @@ namespace Loopie {
 
 		};
 
+		struct ShadowSlot
+		{
+			std::shared_ptr<ShadowMap> map = nullptr;
+			matrix4 lightSpaceMatrix = matrix4(1.0f);
+			short lightIndex = -1;        // dense active index, matches UBO position
+			short rawLightIndex = -1;     // index into s_Lights[], for accessing the Light object
+		};
+
 		static RenderParticlesData s_ParticlesData;
 
 		static void Init(void* context);
@@ -109,10 +118,12 @@ namespace Loopie {
 
 		// static std::shared_ptr<ShadowMap> GetShadowMap() { return s_ShadowMap; }; // Could be implemented for debugging
 		static void InitShadowMapping();
-		static bool BeginShadowPass(const vec3& sceneCenter);
+		static void AssignShadowSlots(const vec3& sceneCenter);
+		static bool BeginShadowPass(int shadowSlotIndex);
 		static void FlushShadowItem(std::shared_ptr<VertexArray> vao, const Transform* transform, const std::vector<matrix4>& bones = {});
-		static void EndShadowPass();
-		static void BindShadowDataForMainPass();
+		static void EndShadowPass(int shadowSlotIndex);
+		static void BindShadowTexturesForMainPass();
+		static int GetShadowCastingLightCount();
 
 		static void RegisterCamera(Camera& camera);
 		static void UnregisterCamera(Camera& camera);
@@ -158,8 +169,6 @@ namespace Loopie {
 
 	public:
 	private:
-		static Light* s_Lights[MAX_LIGHTS];
-		static std::shared_ptr<ShadowMap> s_ShadowMap;
 		static std::vector<RenderItem> s_RenderQueue;
 		static std::vector<Camera*> s_RenderCameras;
 		static std::shared_ptr<UniformBuffer> s_MatricesUniformBuffer;
@@ -171,13 +180,13 @@ namespace Loopie {
 		static std::shared_ptr<VertexBuffer> s_PosSizeVBO;
 		static std::shared_ptr<VertexBuffer> s_ColorVBO;
 
-		static std::unique_ptr<Shader> s_ShadowMapShader;
+		static vec4 s_CurrentViewport;
 
 		static bool s_UseGizmos;
+		static Light* s_Lights[MAX_LIGHTS];
 		static unsigned short s_LightCount;
-
-		static vec4 s_CurrentViewport;
-		static matrix4 s_LightSpaceMatrix;
-		
+		static ShadowSlot s_ShadowSlots[MAX_SHADOW_CASTING_LIGHTS];
+		static unsigned short s_ShadowCount;
+		static std::unique_ptr<Shader> s_ShadowMapShader;
 	};
 }

@@ -12,25 +12,26 @@
 
 namespace Loopie {
 
-	std::shared_ptr<ShadowMap> Renderer::s_ShadowMap = nullptr;
-	std::vector<Renderer::RenderItem> Renderer::s_RenderQueue = std::vector<Renderer::RenderItem>();
 	Renderer::RenderParticlesData Renderer::s_ParticlesData = Renderer::RenderParticlesData();
+	std::vector<Renderer::RenderItem> Renderer::s_RenderQueue = std::vector<Renderer::RenderItem>();
 	std::vector<Camera*> Renderer::s_RenderCameras = std::vector<Camera*>();
 	std::shared_ptr<UniformBuffer> Renderer::s_MatricesUniformBuffer = nullptr;
 	std::shared_ptr<UniformBuffer> Renderer::s_LightingUniformBuffer = nullptr;
 	std::shared_ptr<UniformBuffer> Renderer::s_ShadowingUniformBuffer = nullptr;
 	std::shared_ptr<ShaderStorageBuffer> Renderer::s_BonesSSBOBuffer = nullptr;
-	Light* Renderer::s_Lights[MAX_LIGHTS] = {};
-	unsigned short Renderer::s_LightCount = 0;
-	bool Renderer::s_UseGizmos = true;
-	vec4 Renderer::s_CurrentViewport = {0,0,0,0};
 
 	std::shared_ptr<VertexBuffer> Renderer::s_BillboardVBO = nullptr;
 	std::shared_ptr<VertexBuffer> Renderer::s_PosSizeVBO = nullptr;
 	std::shared_ptr<VertexBuffer> Renderer::s_ColorVBO = nullptr;
-	std::unique_ptr<Shader> Renderer::s_ShadowMapShader = nullptr;
 
-	matrix4 Renderer::s_LightSpaceMatrix = matrix4(1.0);
+	vec4 Renderer::s_CurrentViewport = {0,0,0,0};
+
+	bool Renderer::s_UseGizmos = true;
+	Light* Renderer::s_Lights[MAX_LIGHTS] = {};
+	unsigned short Renderer::s_LightCount = 0;
+	Renderer::ShadowSlot Renderer::s_ShadowSlots[MAX_SHADOW_CASTING_LIGHTS] = { nullptr };
+	unsigned short Renderer::s_ShadowCount = 0;
+	std::unique_ptr<Shader> Renderer::s_ShadowMapShader = nullptr;
 
 	void Renderer::Init(void* context) {
 		ASSERT(!gladLoadGLLoader((GLADloadproc)context), "Failed to Initialize GLAD!");
@@ -59,10 +60,11 @@ namespace Loopie {
 		lightingLayout.AddLayoutElement(0, GLVariableType::VEC4, 1, "CameraWorldPosLightCount"); // Camera World Position + Light Count
 		for (int i = 0; i < MAX_LIGHTS; ++i)
 		{
-			lightingLayout.AddLayoutElement(4*i+1, GLVariableType::VEC4, 1, "ColorIntensity"); // Color + Intensity
-			lightingLayout.AddLayoutElement(4*i+2, GLVariableType::VEC4, 1, "PositionType"); // Position + Type
-			lightingLayout.AddLayoutElement(4*i+3, GLVariableType::VEC4, 1, "DirectionInnerCone"); // Direction + Inner Cone Angle
-			lightingLayout.AddLayoutElement(4*i+4, GLVariableType::VEC4, 1, "AttenuationOuterCone"); // Attenuation + Outer Cone Angle
+			lightingLayout.AddLayoutElement(5*i+1, GLVariableType::VEC4, 1, "ColorIntensity"); // Color + Intensity
+			lightingLayout.AddLayoutElement(5*i+2, GLVariableType::VEC4, 1, "PositionType"); // Position + Type
+			lightingLayout.AddLayoutElement(5*i+3, GLVariableType::VEC4, 1, "DirectionInnerCone"); // Direction + Inner Cone Angle
+			lightingLayout.AddLayoutElement(5*i+4, GLVariableType::VEC4, 1, "AttenuationOuterCone"); // Attenuation + Outer Cone Angle
+			lightingLayout.AddLayoutElement(5*i+5, GLVariableType::VEC4, 1, "SMapAndSColor"); // ShadowMap number + Shadow Color
 		}
 		s_LightingUniformBuffer = std::make_shared<UniformBuffer>(lightingLayout);
 		s_LightingUniformBuffer->BindToLayout(1);
@@ -128,43 +130,90 @@ namespace Loopie {
 
 	void Renderer::InitShadowMapping()
 	{
-		s_ShadowMap = std::make_shared<ShadowMap>();
 		s_ShadowMapShader = std::make_unique<Shader>("assets/shaders/ShadowDepth.shader");
 		if (!s_ShadowMapShader->GetIsValidShader())
+		{
 			Log::Error("Shadow depth shader failed to compile!");
+		}
 
 		BufferLayout shadowingLayout;
-		shadowingLayout.AddLayoutElement(0, GLVariableType::MATRIX4, 1, "LightSpaceMatrix");
+		for (int i = 0; i < MAX_SHADOW_CASTING_LIGHTS; ++i)
+		{
+			s_ShadowSlots[i].map = std::make_shared<ShadowMap>();
+			shadowingLayout.AddLayoutElement(i, GLVariableType::MATRIX4, 1, "LightSpaceMatrix");
+		}
 		s_ShadowingUniformBuffer = std::make_shared<UniformBuffer>(shadowingLayout);
 		s_ShadowingUniformBuffer->BindToLayout(3);
 	}
 
-	bool Renderer::BeginShadowPass(const vec3& sceneCenter)
+	void Renderer::AssignShadowSlots(const vec3& sceneCenter)
 	{
+		s_ShadowCount = 0;
+		for (int i = 0; i < MAX_SHADOW_CASTING_LIGHTS; ++i)
+		{
+			s_ShadowSlots[i].lightIndex = -1;
+			s_ShadowSlots[i].rawLightIndex = -1;
+		}
+
+		int activeLightCount = 0;
+		for (int j = 0; j < s_LightCount; ++j)
+		{
+			Light* l = s_Lights[j];
+			if (!l->GetIsActive())
+				continue;
+
+			bool canCastShadow = l->GetCastsShadows() && l->GetLightType() != LightType::Ambient
+													  && l->GetLightType() != LightType::Point; // May be TODO, but it's very hard. I think beyond our scope.
+			if (canCastShadow)
+			{
+				if (s_ShadowCount < MAX_SHADOW_CASTING_LIGHTS)
+				{
+					s_ShadowSlots[s_ShadowCount].lightIndex = activeLightCount;
+					s_ShadowSlots[s_ShadowCount].rawLightIndex = j;
+					s_ShadowSlots[s_ShadowCount].lightSpaceMatrix = l->GetLightSpaceMatrix(sceneCenter);
+					s_ShadowCount++;
+				}
+				else
+				{
+					Log::Warn("Unable to cast shadows on all requested lights...");
+				}
+			}
+
+			activeLightCount++;
+		}
+	}
+
+	bool Renderer::BeginShadowPass(int shadowSlotIndex)
+	{
+		ShadowSlot& sl = s_ShadowSlots[shadowSlotIndex];
+		if (sl.lightIndex < 0)
+		{
+			return false;
+		}
+
 		EnableDepth();
 		EnableDepthMask();
-		Light* l = nullptr;
-		for (int i = 0; i < s_LightCount; ++i)
+		
+		switch (s_Lights[sl.rawLightIndex]->GetLightType())
 		{
-			switch (s_Lights[i]->GetLightType())
-			{
-			case LightType::Directional:
-			case LightType::Spot:
-				l = s_Lights[i];
-				s_LightSpaceMatrix = l->GetLightSpaceMatrix(sceneCenter, 100.0f, 0.1f, 500.0f);
-				s_ShadowMap->Bind();
-				SetViewport(0, 0, s_ShadowMap->GetWidth(), s_ShadowMap->GetHeight());
-				s_ShadowMap->Clear();
-				s_ShadowMapShader->Bind();
-				s_ShadowingUniformBuffer->SetData(&s_LightSpaceMatrix, 0);
-				return true;
-			case LightType::Point:
-			case LightType::Ambient:
-			default:
-				break;
-			}
+		case LightType::Directional:
+		case LightType::Spot:
+			sl.map->Bind();
+			SetViewport(0, 0, sl.map->GetWidth(), sl.map->GetHeight());
+			sl.map->Clear();
+			s_ShadowMapShader->Bind();
+			s_ShadowMapShader->SetUniformInt("lp_ShadowSlotIndex", shadowSlotIndex);
+			s_ShadowingUniformBuffer->SetData(&sl.lightSpaceMatrix, shadowSlotIndex);
+			break;
+		case LightType::Point:
+			Log::Warn("Point lights' shadows not implemented yet.");
+			break;
+		case LightType::Ambient:
+		default:
+			Log::Warn("Tried to cast shadows of ambient or unknown type light.");
+			return false;
 		}
-		return false;
+		return true;
 	}
 
 	void Renderer::FlushShadowItem(std::shared_ptr<VertexArray> vao, const Transform* transform, const std::vector<matrix4>& bones)
@@ -180,16 +229,23 @@ namespace Loopie {
 		vao->Unbind();
 	}
 
-	void Renderer::EndShadowPass()
+	void Renderer::EndShadowPass(int shadowSlotIndex)
 	{
-		s_ShadowMap->Unbind();
+		s_ShadowSlots[shadowSlotIndex].map->Unbind();
 		s_ShadowMapShader->Unbind();
 	}
 
-	void Renderer::BindShadowDataForMainPass()
+	void Renderer::BindShadowTexturesForMainPass()
 	{
-		s_ShadowingUniformBuffer->SetData(&s_LightSpaceMatrix, 0);
-		s_ShadowMap->BindTexture(8); // 8 -> High number to avoid collissions
+		for (int i = 0; i < MAX_SHADOW_CASTING_LIGHTS; ++i)
+		{
+			s_ShadowSlots[i].map->BindTexture(8+i); // 8 -> High number to avoid collissions
+		}
+	}
+
+	int Renderer::GetShadowCastingLightCount()
+	{
+		return int(s_ShadowCount);
 	}
 
 	void Renderer::RegisterCamera(Camera& camera) {
@@ -214,25 +270,46 @@ namespace Loopie {
 		s_MatricesUniformBuffer->SetData(&viewMatrix[0][0], 1);
 		vec3 cameraPos = vec3(glm::inverse(viewMatrix)[3]);
 
-		vec4 cameraPosLightCount = vec4(cameraPos, s_LightCount);
-		s_LightingUniformBuffer->SetData(&cameraPosLightCount, 0);
-
+		int activeLightCount = 0;
 		for (int i = 0; i < s_LightCount; ++i)
 		{
 			const Light& l = *s_Lights[i];
-
+			if (!l.GetIsActive())
+			{
+				continue;
+			}
 			vec4 colorIntensity = vec4(l.GetColor(), l.GetIntensity());
 			vec4 positionType = vec4(l.GetTransform()->GetWorldPosition(), l.GetLightType());
 			vec4 directionInnerCone = vec4(l.GetTransform()->Forward(), l.GetInnerConeAngle());
 			vec4 attenuationOuterCone = vec4(l.GetAttenuationConstant(), l.GetAttenuationLinear(), l.GetAttenuationQuadratic(), l.GetOuterConeAngle());
 			
-			s_LightingUniformBuffer->SetData(&colorIntensity,		i * 4 + 1);
-			s_LightingUniformBuffer->SetData(&positionType,			i * 4 + 2);
-			s_LightingUniformBuffer->SetData(&directionInnerCone,	i * 4 + 3);
-			s_LightingUniformBuffer->SetData(&attenuationOuterCone, i * 4 + 4);
+			int shadowMapIndex = -1;
+			if (l.GetCastsShadows())
+			{
+				for (int j = 0; j < MAX_SHADOW_CASTING_LIGHTS; ++j)
+				{
+					if (s_ShadowSlots[j].lightIndex == activeLightCount)
+					{
+						shadowMapIndex = j;
+						break;
+					}
+				}
+			}
+			vec4 sMapAndSColor = vec4(shadowMapIndex, l.GetShadowColor());
+			
+			s_LightingUniformBuffer->SetData(&colorIntensity,		activeLightCount * 5 + 1);
+			s_LightingUniformBuffer->SetData(&positionType,			activeLightCount * 5 + 2);
+			s_LightingUniformBuffer->SetData(&directionInnerCone,	activeLightCount * 5 + 3);
+			s_LightingUniformBuffer->SetData(&attenuationOuterCone, activeLightCount * 5 + 4);
+			s_LightingUniformBuffer->SetData(&sMapAndSColor,		activeLightCount * 5 + 5);
+
+			activeLightCount++;
 		}
 
-		BindShadowDataForMainPass();
+		vec4 cameraPosLightCount = vec4(cameraPos, activeLightCount);
+		s_LightingUniformBuffer->SetData(&cameraPosLightCount, 0);
+
+		BindShadowTexturesForMainPass();
 
 		if (s_UseGizmos)
 			Gizmo::BeginGizmo();
@@ -286,15 +363,18 @@ namespace Loopie {
 	{
 		SetRenderUniforms(material, transform->GetLocalToWorldMatrix(), bones);
 	}
+
 	void Renderer::SetRenderUniforms(std::shared_ptr<Material> material, const matrix4& modelMatrix, const std::vector<matrix4>& bones)
 	{
 		material->GetShader().SetUniformMat4("lp_Transform", modelMatrix);
 
 		material->GetShader().SetUniformInt("lp_Skinned", !bones.empty() ? 1 : 0);
 
-		if (material->GetShader().GetUniformLocation("lp_ShadowMap") != -1)
+		for (int i = 0; i < MAX_SHADOW_CASTING_LIGHTS; ++i)
 		{
-			material->GetShader().SetUniformInt("lp_ShadowMap", 8);
+			std::string name = "lp_ShadowMaps[" + std::to_string(i) + "]";
+			if (material->GetShader().GetUniformLocation(name) != -1)
+				material->GetShader().SetUniformInt(name, 8 + i);
 		}
 
 		if (!bones.empty())
@@ -302,67 +382,83 @@ namespace Loopie {
 			s_BonesSSBOBuffer->SetData(bones.data(), (unsigned int)(bones.size() * sizeof(matrix4)));
 		}
 	}
+
 	void Renderer::BlendFunction()
 	{
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
+
 	void Renderer::EnableDepth()
 	{
 		glEnable(GL_DEPTH_TEST);
 	}
+
 	void Renderer::DisableDepth()
 	{
 		glDisable(GL_DEPTH_TEST);
 	}
+
 	void Renderer::EnableDepthMask()
 	{
 		glDepthMask(GL_TRUE);
 	}
+
 	void Renderer::DisableDepthMask()
 	{
 		glDepthMask(GL_FALSE);
 	}
+
 	void Renderer::EnableStencil()
 	{
 		glEnable(GL_STENCIL_TEST);
 	}
+
 	void Renderer::DisableStencil()
 	{
 		glDisable(GL_STENCIL_TEST);
 	}
+
 	void Renderer::SetStencilMask(unsigned int mask)
 	{
 		glStencilMask(mask);
 	}
+
 	void Renderer::SetStencilOp(StencilOp stencil_fail, StencilOp depth_fail, StencilOp pass)
 	{
 		glStencilOp((unsigned int)stencil_fail, (unsigned int)depth_fail, (unsigned int)pass);
 	}
+
 	void Renderer::SetStencilFunc(StencilFunc cond, int ref, unsigned int mask)
 	{
 		glStencilFunc((unsigned int)cond, ref, mask);
 	}
+
 	void Renderer::EnableCulling()
 	{
 		glEnable(GL_CULL_FACE);
 	}
+
 	void Renderer::DisableCulling()
 	{
 		glDisable(GL_CULL_FACE);
 	}
+
 	void Renderer::CullFace(CullFaceMode mode)
 	{
 		glCullFace((unsigned int)mode);
 	}
+
 	void Renderer::EnableBlend()
 	{
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
+
 	void Renderer::DisableBlend()
 	{
 		glDisable(GL_BLEND);
 	}
+
 	void Renderer::SetDepthWrite(bool enable)
 	{
 		glDepthMask(enable ? GL_TRUE : GL_FALSE);

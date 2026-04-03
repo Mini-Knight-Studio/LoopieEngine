@@ -54,6 +54,17 @@ namespace Loopie
 		void  SetOuterConeAngle(float outerConeAngle);
 		float GetOuterConeAngle() const;
 
+		void SetCastsShadows(bool castShadows);
+		bool GetCastsShadows() const;
+		void SetShadowColor(vec3 shadowColor);
+		vec3 GetShadowColor() const;
+		void  SetShadowRedColor(float red);
+		float GetShadowRedColor() const;
+		void  SetShadowGreenColor(float green);
+		float GetShadowGreenColor() const;
+		void  SetShadowBlueColor(float blue);
+		float GetShadowBlueColor() const;
+
 		matrix4 GetLightSpaceMatrix(const vec3& sceneCenter = vec3(0.0f), float orthoSize = 30.0f, 
 									float nearPlane = 0.1f, float farPlane = 100.0f) const;
 
@@ -78,5 +89,7 @@ namespace Loopie
 		float m_innerConeAngle;
 		float m_outerConeAngle;
 
+		bool	m_castsShadows = false;
+		vec3	m_shadowColor; // Values should range from 1.0 to 0.0
 	};
 }

@@ -12,6 +12,7 @@ namespace Loopie
 		m_color = color;
 		m_intensity = intensity;
 		m_type = type;
+		m_shadowColor = color;
 		Renderer::RegisterLight(this);
 	}
 
@@ -230,6 +231,56 @@ namespace Loopie
 		return m_outerConeAngle;
 	}
 
+	void Light::SetCastsShadows(bool castShadows)
+	{
+		m_castsShadows = castShadows;
+	}
+
+	bool Light::GetCastsShadows() const
+	{
+		return m_castsShadows;
+	}
+
+	void Light::SetShadowColor(vec3 shadowColor)
+	{
+		m_shadowColor = shadowColor;
+	}
+
+	vec3 Light::GetShadowColor() const
+	{
+		return m_shadowColor;
+	}
+
+	void Light::SetShadowRedColor(float red)
+	{
+		m_shadowColor.x = red;
+	}
+
+	float Light::GetShadowRedColor() const
+	{
+		return m_shadowColor.x;
+	}
+
+	void Light::SetShadowGreenColor(float green)
+	{
+		m_shadowColor.y = green;
+	}
+
+	float Light::GetShadowGreenColor() const
+	{
+		return m_shadowColor.y;
+	}
+
+	void Light::SetShadowBlueColor(float blue)
+	{
+		m_shadowColor.z = blue;
+	}
+
+	float Light::GetShadowBlueColor() const
+	{
+		return m_shadowColor.z;
+	}
+
 	// Creates a matrix from the light pov, is used to produce shadows
 	matrix4 Light::GetLightSpaceMatrix(const vec3& sceneCenter, float orthoSize, float nearPlane, float farPlane) const
 	{
@@ -271,7 +322,7 @@ namespace Loopie
 			break;
 		}
 		case LightType::Point:
-			// TODO
+			// May be TODO, but it's very hard. I think beyond our scope.
 			break;
 		}
 
@@ -293,6 +344,11 @@ namespace Loopie
 		lightObj.CreateField<float>("reach_distance", m_reachDistance);
 		lightObj.CreateField<float>("inner_cone_angle", m_innerConeAngle);
 		lightObj.CreateField<float>("outer_cone_angle", m_outerConeAngle);
+		lightObj.CreateField<bool>("casts_shadows", m_castsShadows);
+		JsonNode shadowColorNode = lightObj.CreateObjectField("shadow_color");
+		shadowColorNode.CreateField("r", m_shadowColor.x);
+		shadowColorNode.CreateField("g", m_shadowColor.y);
+		shadowColorNode.CreateField("b", m_shadowColor.z);
 
 		return lightObj;
 	}
@@ -314,6 +370,13 @@ namespace Loopie
 		m_reachDistance = data.GetValue<float>("reach_distance", 10.0f).Result;
 		m_innerConeAngle = data.GetValue<float>("inner_cone_angle", 0.0f).Result;
 		m_outerConeAngle = data.GetValue<float>("outer_cone_angle", 0.0f).Result;
+		m_castsShadows = data.GetValue<bool>("casts_shadows", false).Result;
+		JsonNode shadowColorNode = data.Child("shadow_color");
+		if (shadowColorNode.IsValid() && shadowColorNode.IsObject())
+		{
+			m_shadowColor.x = shadowColorNode.GetValue<float>("r", 1.0f).Result;
+			m_shadowColor.y = shadowColorNode.GetValue<float>("g", 1.0f).Result;
+			m_shadowColor.z = shadowColorNode.GetValue<float>("b", 1.0f).Result;
+		}
 	}
-
 }

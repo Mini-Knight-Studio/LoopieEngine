@@ -136,13 +136,16 @@ namespace Loopie
 		m_topBar.Update(inputEvent);
 		m_mainMenu.Update(inputEvent);
 		
-		if (Renderer::BeginShadowPass(m_scene.GetCamera()->GetTransform()->GetWorldPosition()))
+		Renderer::AssignShadowSlots(m_scene.GetCamera()->GetTransform()->GetWorldPosition());
+		for (int i = 0; i < Renderer::GetShadowCastingLightCount(); ++i)
 		{
-			RenderShadows();
-			Renderer::EndShadowPass();
+			if (Renderer::BeginShadowPass(i))
+			{
+				RenderShadows();
+				Renderer::EndShadowPass(i);
+			}
 		}
-
-
+		
 		/// RenderToTarget
 		const std::vector<Camera*>& cameras = Renderer::GetRendererCameras();
 		for (const auto cam : cameras)

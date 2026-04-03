@@ -14,10 +14,11 @@ layout (std430, binding = 2) readonly buffer BoneMatrices
 
 layout (std140, binding = 3) uniform Shadows
 {
-    mat4 lp_LightSpaceMatrix;
+    mat4 lp_LightSpaceMatrix[4];
 };
 
 uniform mat4 lp_Transform;
+uniform int lp_ShadowSlotIndex;
 uniform bool lp_Skinned;
 
 void main() 
@@ -36,7 +37,7 @@ void main()
 	vec4 localPos = skinMatrix * vec4(a_Position, 1.0);
 
     vec4 worldPos = lp_Transform * localPos;
-    gl_Position = lp_LightSpaceMatrix * worldPos;
+    gl_Position = lp_LightSpaceMatrix[lp_ShadowSlotIndex] * worldPos;
 } 
 
 [fragment]
