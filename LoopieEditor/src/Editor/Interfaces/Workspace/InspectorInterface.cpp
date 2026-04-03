@@ -1994,6 +1994,9 @@ namespace Loopie {
 			vec3 color = light->GetColor();
 			float intensity = light->GetIntensity();
 
+			bool shouldCastShadows = light->GetCastsShadows();
+			vec3 shadowColor = light->GetShadowColor();
+
 			vec3 attenuation = vec3(light->GetAttenuationConstant(), light->GetAttenuationLinear(), light->GetAttenuationQuadratic());
 
 			float reachDistance = light->GetReachDistance();
@@ -2007,6 +2010,18 @@ namespace Loopie {
 			if (ImGui::DragFloat("Intensity", &intensity, 0.05f))
 			{
 				light->SetIntensity(intensity);
+			}
+
+			if (type == LightType::Spot || type == LightType::Directional)
+			{
+				if (ImGui::Checkbox("Casts Shadows", &shouldCastShadows))
+				{
+					light->SetCastsShadows(shouldCastShadows);
+				}
+				if (ImGui::ColorEdit3("Shadow Color", &shadowColor.x))
+				{
+					light->SetShadowColor(shadowColor);
+				}
 			}
 			
 			if (type == LightType::Spot || type == LightType::Point)
@@ -2026,7 +2041,7 @@ namespace Loopie {
 					light->SetInnerConeAngle(cone.x);
 					light->SetOuterConeAngle(cone.y);
 				}
-			}	
+			}
 		}
 
 		ImGui::PopID();

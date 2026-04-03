@@ -11,9 +11,11 @@
 #include <filesystem>
 
 #define MAX_LIGHTS 16 // Can be increased if necessary. Watch out that performance though!
+#define MAX_SHADOW_CASTING_LIGHTS 4 // Can be increased if necessary. Watch out that performance though!
 
 namespace Loopie {
 	class Transform;
+	class ShadowMap;
 
 	class Renderer {
 	public:
@@ -91,6 +93,14 @@ namespace Loopie {
 
 		};
 
+		struct ShadowSlot
+		{
+			std::shared_ptr<ShadowMap> map = nullptr;
+			matrix4 lightSpaceMatrix = matrix4(1.0f);
+			short lightIndex = -1;        // dense active index, matches UBO position
+			short rawLightIndex = -1;     // index into s_Lights[], for accessing the Light object
+		};
+
 		static RenderParticlesData s_ParticlesData;
 
 		static void Init(void* context);
@@ -105,6 +115,15 @@ namespace Loopie {
 		static void UnregisterLight(Light* light);
 		static void RemoveAllLights();
 		static unsigned short GetLightCount() { return s_LightCount; }
+
+		// static std::shared_ptr<ShadowMap> GetShadowMap() { return s_ShadowMap; }; // Could be implemented for debugging
+		static void InitShadowMapping();
+		static void AssignShadowSlots(const vec3& sceneCenter);
+		static bool BeginShadowPass(int shadowSlotIndex);
+		static void FlushShadowItem(std::shared_ptr<VertexArray> vao, const Transform* transform, const std::vector<matrix4>& bones = {});
+		static void EndShadowPass(int shadowSlotIndex);
+		static void BindShadowTexturesForMainPass();
+		static int GetShadowCastingLightCount();
 
 		static void RegisterCamera(Camera& camera);
 		static void UnregisterCamera(Camera& camera);
@@ -150,20 +169,24 @@ namespace Loopie {
 
 	public:
 	private:
-		static Light* s_Lights[MAX_LIGHTS];
 		static std::vector<RenderItem> s_RenderQueue;
 		static std::vector<Camera*> s_RenderCameras;
 		static std::shared_ptr<UniformBuffer> s_MatricesUniformBuffer;
-		static std::shared_ptr<UniformBuffer> s_lightingUniformBuffer;
+		static std::shared_ptr<UniformBuffer> s_LightingUniformBuffer;
+		static std::shared_ptr<UniformBuffer> s_ShadowingUniformBuffer;
 		static std::shared_ptr<ShaderStorageBuffer> s_BonesSSBOBuffer;
 
-		static std::shared_ptr<VertexBuffer> s_billboardVBO;
-		static std::shared_ptr<VertexBuffer>s_posSizeVBO;
-		static std::shared_ptr<VertexBuffer>s_colorVBO;
-
-		static bool s_UseGizmos;
-		static unsigned short s_LightCount;
+		static std::shared_ptr<VertexBuffer> s_BillboardVBO;
+		static std::shared_ptr<VertexBuffer> s_PosSizeVBO;
+		static std::shared_ptr<VertexBuffer> s_ColorVBO;
 
 		static vec4 s_CurrentViewport;
+
+		static bool s_UseGizmos;
+		static Light* s_Lights[MAX_LIGHTS];
+		static unsigned short s_LightCount;
+		static ShadowSlot s_ShadowSlots[MAX_SHADOW_CASTING_LIGHTS];
+		static unsigned short s_ShadowCount;
+		static std::unique_ptr<Shader> s_ShadowMapShader;
 	};
 }

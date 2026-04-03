@@ -136,7 +136,16 @@ namespace Loopie
 		m_topBar.Update(inputEvent);
 		m_mainMenu.Update(inputEvent);
 		
-
+		Renderer::AssignShadowSlots(m_scene.GetCamera()->GetTransform()->GetWorldPosition());
+		for (int i = 0; i < Renderer::GetShadowCastingLightCount(); ++i)
+		{
+			if (Renderer::BeginShadowPass(i))
+			{
+				RenderShadows();
+				Renderer::EndShadowPass(i);
+			}
+		}
+		
 		/// RenderToTarget
 		const std::vector<Camera*>& cameras = Renderer::GetRendererCameras();
 		for (const auto cam : cameras)
@@ -415,6 +424,53 @@ namespace Loopie
 			m_currentScene->GetOctree().DebugDraw(Color::MAGENTA);
 		}
 	}
+
+	void EditorModule::RenderShadows()
+	{
+		std::unordered_set<std::shared_ptr<Entity>> entities;
+		m_currentScene->GetOctree().CollectAllEntities(entities); // Should be optimized
+
+		std::vector<MeshRenderer*> renderers;
+		renderers.reserve(1);
+
+		for (const auto& entity : entities)
+		{
+			if (!entity->GetIsActive())
+				continue;
+
+			const std::vector<Component*>& components = entity->GetComponents();
+			renderers.clear();
+			
+			for (size_t i = 0; i < components.size(); i++)
+			{
+				Component* component = components[i];
+				if (!component->GetLocalIsActive())
+					continue;
+				if (component->GetTypeID() == MeshRenderer::GetTypeIDStatic()) {
+					MeshRenderer* renderer = static_cast<MeshRenderer*>(component);
+					if (renderer->GetMesh())
+						renderers.push_back(renderer);
+				}
+			}
+
+			for (size_t i = 0; i < renderers.size(); i++)
+			{
+				MeshRenderer* renderer = renderers[i];
+				const MeshData& data = renderer->GetMesh()->GetData();
+
+				std::vector<matrix4> bones = {};
+				if (data.HasBones) {
+					Animator* animator = renderer->GetLinkedAnimator();
+					if (animator) {
+						bones = animator->GetRendererData(renderer->GetUUID()).FinalBoneMatrices;
+					}
+				}
+
+				Renderer::FlushShadowItem(renderer->GetMesh()->GetVAO(), entity->GetTransform(), bones);
+			}
+		}
+	}
+
 	void EditorModule::RenderParticles(Camera* cam)
 	{
 		Renderer::DisableStencil();
