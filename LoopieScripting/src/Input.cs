@@ -132,5 +132,23 @@ namespace Loopie
         {
             return InternalCalls.Input_GetAxisDeadzone();
         }
+
+        static Vector3 GetMouseWorldPosition(Entity camera, Vector2 screenSize, float fov, float distance)
+        {
+            float x = (MousePosition.x / screenSize.x) * 2f - 1f;
+            float y = 1f - (MousePosition.y / screenSize.y) * 2f;
+
+            float aspect = screenSize.x / screenSize.y;
+            float tanFov = (float)Mathf.Tan(fov * 0.5f * Mathf.PI / 180f);
+
+            Vector3 dir =
+                camera.transform.Forward +
+                camera.transform.Right * x * tanFov * aspect +
+                camera.transform.Up * y * tanFov;
+
+            dir = dir.normalized;
+
+            return camera.transform.position + dir * distance;
+        }
     }
 }
