@@ -177,6 +177,61 @@ namespace Loopie
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static float Animator_GetCurrentTime(string entityID, string componentID);
         #endregion
+        #region SpriteAnimator
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static string SpriteAnimator_GetTextureUUID(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void SpriteAnimator_SetTextureUUID(string entityID, string componentID, string textureUUID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void SpriteAnimator_GetGrid(string entityID, string componentID, out int columns, out int rows);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void SpriteAnimator_SetGrid(string entityID, string componentID, int columns, int rows);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static int SpriteAnimator_GetStartFrame(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void SpriteAnimator_SetStartFrame(string entityID, string componentID, int frame);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static int SpriteAnimator_GetFrameCount(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void SpriteAnimator_SetFrameCount(string entityID, string componentID, int count);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static float SpriteAnimator_GetFPS(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void SpriteAnimator_SetFPS(string entityID, string componentID, float fps);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool SpriteAnimator_GetLoop(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void SpriteAnimator_SetLoop(string entityID, string componentID, bool loop);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool SpriteAnimator_GetPlayOnStart(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void SpriteAnimator_SetPlayOnStart(string entityID, string componentID, bool playOnStart);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool SpriteAnimator_GetPlaying(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void SpriteAnimator_SetPlaying(string entityID, string componentID, bool playing);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void SpriteAnimator_Play(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void SpriteAnimator_Stop(string entityID, string componentID, bool resetTime);
+        #endregion
         #region AudioSource
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void AudioSource_Play(string entityID, string componentID);
