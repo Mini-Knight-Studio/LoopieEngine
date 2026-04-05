@@ -30,10 +30,10 @@ namespace Loopie
 	{
 		float vertices[] =
 		{
-			-0.5f, -0.5f, 0.0f,    
-			 0.5f, -0.5f, 0.0f,   
-			 0.5f,  0.5f, 0.0f,   
-			-0.5f,  0.5f, 0.0f,    
+			-0.5f, -0.5f, 0.0f,		0.0f, 0.0f,    
+			 0.5f, -0.5f, 0.0f,		1.0f, 0.0f,
+			 0.5f,  0.5f, 0.0f,     1.0f, 1.0f,
+			-0.5f,  0.5f, 0.0f,     0.0f, 1.0f,
 		};
 
 		unsigned int indices[] =
@@ -47,6 +47,7 @@ namespace Loopie
 
 		BufferLayout layout;
 		layout.AddLayoutElement(0, GLVariableType::FLOAT, 3, "Position");
+		layout.AddLayoutElement(1, GLVariableType::FLOAT, 2, "TexCoord");
 		m_quadVBO->SetLayout(layout);
 
 		m_quadVAO = std::make_shared<VertexArray>();

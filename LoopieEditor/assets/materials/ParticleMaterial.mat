@@ -4,6 +4,14 @@
 		"u_Color": {
 			"type": "Vec4",
 			"value": "1,1,1,1"
+		},
+		"u_Sprite": {
+			"type": "Sampler2D",
+			"value": ""
+		},
+		"u_UseSprite": {
+			"type": "Bool",
+			"value": "false"
 		}
 	}
 }

@@ -1209,6 +1209,16 @@ namespace Loopie {
 		{
 			emitter->SetParticlesFollowEmitter(!particlesFollow);
 		}
+
+		std::shared_ptr<Texture> sprite = emitter->GetSprite();
+		ImGui::Text("Sprite: %s", sprite ? "Exists" : "None");
+		ImGui::Button(" [ Drop Sprite Here ] ");
+		std::shared_ptr<Resource> spriteResource = GetDragDropResource(ResourceType::TEXTURE);
+		if (spriteResource)
+		{
+			emitter->SetSprite(std::static_pointer_cast<Texture>(spriteResource));
+		}
+
 		//PARTICLE PROPERTIES
 		ImGui::Separator();
 		ImGui::Text("Particle Properties");

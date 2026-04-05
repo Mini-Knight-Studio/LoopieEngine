@@ -130,6 +130,9 @@ namespace Loopie
 		particle.SetSizeEnd(particleProps.SizeEnd);
 		particle.SetLifetime(particleProps.LifeTime);
 
+		//sprite
+		particle.SetSprite(m_sprite);
+
 		m_poolIndex = (m_poolIndex - 1) % m_particlePool.size();
 	}
 	std::string Emitter::GetName()const
@@ -234,5 +237,12 @@ namespace Loopie
 	{ 
 		return m_particleProperties;
 	}
-
+	std::shared_ptr<Texture> Emitter::GetSprite() const 
+	{
+		return m_sprite;
+	}
+	void Emitter::SetSprite(std::shared_ptr<Texture> sprite) 
+	{ 
+		m_sprite = sprite; 
+	}
 }

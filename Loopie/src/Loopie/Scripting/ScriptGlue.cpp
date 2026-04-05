@@ -13,6 +13,10 @@
 #include "Loopie/Components/Image.h"
 #include "Loopie/Components/Text.h"
 #include "Loopie/Components/ParticleComponent.h"
+#include "Loopie/Components/SpriteAnimator.h"
+
+#include "Loopie/Resources/AssetRegistry.h"
+#include "Loopie/Resources/ResourceManager.h"
 
 #include "Loopie/Core/UUID.h"
 #include "Loopie/Core/InputEventManager.h"
@@ -734,6 +738,224 @@ namespace Loopie
 		if (animator)
 			return animator->GetCurrentTime();
 		return 0.0f;
+	}
+
+#pragma endregion
+
+#pragma region SpriteAnimator
+	static MonoString* SpriteAnimator_GetTextureUUID(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return ScriptingManager::CreateString("");
+		SpriteAnimator* animator = Utils::GetComponent<SpriteAnimator>(entity, componentID);
+		if (!animator)
+			return ScriptingManager::CreateString("");
+
+		auto texture = animator->GetTexture();
+		if (!texture)
+			return ScriptingManager::CreateString("");
+		return ScriptingManager::CreateString(texture->GetUUID().Get().c_str());
+	}
+
+	static void SpriteAnimator_SetTextureUUID(MonoString* entityID, MonoString* componentID, MonoString* textureUUID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		SpriteAnimator* animator = Utils::GetComponent<SpriteAnimator>(entity, componentID);
+		if (!animator)
+			return;
+
+		std::string uuidStr = textureUUID ? Utils::MonoStringToString(textureUUID) : "";
+		if (uuidStr.empty())
+		{
+			animator->SetTexture(std::shared_ptr<Texture>());
+			return;
+		}
+
+		UUID uuid(uuidStr);
+		if (uuid == UUID::Invalid)
+		{
+			Log::Warn("SpriteAnimator_SetTextureUUID: invalid UUID {}", uuidStr);
+			animator->SetTexture(std::shared_ptr<Texture>());
+			return;
+		}
+
+		Metadata* meta = AssetRegistry::GetMetadata(uuid);
+		if (!meta)
+		{
+			Log::Warn("SpriteAnimator_SetTextureUUID: texture metadata not found {}", uuidStr);
+			animator->SetTexture(std::shared_ptr<Texture>());
+			return;
+		}
+
+		auto tex = ResourceManager::GetTexture(*meta);
+		if (tex && tex->Load())
+			animator->SetTexture(tex);
+		else
+			Log::Warn("SpriteAnimator_SetTextureUUID: could not load texture {}", uuidStr);
+	}
+
+	static void SpriteAnimator_GetGrid(MonoString* entityID, MonoString* componentID, int* columns, int* rows)
+	{
+		if (columns) *columns = 1;
+		if (rows) *rows = 1;
+
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		SpriteAnimator* animator = Utils::GetComponent<SpriteAnimator>(entity, componentID);
+		if (!animator)
+			return;
+		ivec2 grid = animator->GetGrid();
+		if (columns) *columns = grid.x;
+		if (rows) *rows = grid.y;
+	}
+
+	static void SpriteAnimator_SetGrid(MonoString* entityID, MonoString* componentID, int columns, int rows)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		SpriteAnimator* animator = Utils::GetComponent<SpriteAnimator>(entity, componentID);
+		if (!animator)
+			return;
+		animator->SetGrid(ivec2(columns, rows));
+	}
+
+	static int SpriteAnimator_GetStartFrame(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return 0;
+		SpriteAnimator* animator = Utils::GetComponent<SpriteAnimator>(entity, componentID);
+		return animator ? animator->GetStartFrame() : 0;
+	}
+
+	static void SpriteAnimator_SetStartFrame(MonoString* entityID, MonoString* componentID, int frame)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		SpriteAnimator* animator = Utils::GetComponent<SpriteAnimator>(entity, componentID);
+		if (animator)
+			animator->SetStartFrame(frame);
+	}
+
+	static int SpriteAnimator_GetFrameCount(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return 1;
+		SpriteAnimator* animator = Utils::GetComponent<SpriteAnimator>(entity, componentID);
+		return animator ? animator->GetFrameCount() : 1;
+	}
+
+	static void SpriteAnimator_SetFrameCount(MonoString* entityID, MonoString* componentID, int count)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		SpriteAnimator* animator = Utils::GetComponent<SpriteAnimator>(entity, componentID);
+		if (animator)
+			animator->SetFrameCount(count);
+	}
+
+	static float SpriteAnimator_GetFPS(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return 0.0f;
+		SpriteAnimator* animator = Utils::GetComponent<SpriteAnimator>(entity, componentID);
+		return animator ? animator->GetFPS() : 0.0f;
+	}
+
+	static void SpriteAnimator_SetFPS(MonoString* entityID, MonoString* componentID, float fps)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		SpriteAnimator* animator = Utils::GetComponent<SpriteAnimator>(entity, componentID);
+		if (animator)
+			animator->SetFPS(fps);
+	}
+
+	static MonoBoolean SpriteAnimator_GetLoop(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return false;
+		SpriteAnimator* animator = Utils::GetComponent<SpriteAnimator>(entity, componentID);
+		return animator ? animator->GetLoop() : false;
+	}
+
+	static void SpriteAnimator_SetLoop(MonoString* entityID, MonoString* componentID, MonoBoolean loop)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		SpriteAnimator* animator = Utils::GetComponent<SpriteAnimator>(entity, componentID);
+		if (animator)
+			animator->SetLoop(loop != 0);
+	}
+
+	static MonoBoolean SpriteAnimator_GetPlayOnStart(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return false;
+		SpriteAnimator* animator = Utils::GetComponent<SpriteAnimator>(entity, componentID);
+		return animator ? animator->GetPlayOnStart() : false;
+	}
+
+	static void SpriteAnimator_SetPlayOnStart(MonoString* entityID, MonoString* componentID, MonoBoolean playOnStart)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		SpriteAnimator* animator = Utils::GetComponent<SpriteAnimator>(entity, componentID);
+		if (animator)
+			animator->SetPlayOnStart(playOnStart != 0);
+	}
+
+	static MonoBoolean SpriteAnimator_GetPlaying(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return false;
+		SpriteAnimator* animator = Utils::GetComponent<SpriteAnimator>(entity, componentID);
+		return animator ? animator->GetPlaying() : false;
+	}
+
+	static void SpriteAnimator_SetPlaying(MonoString* entityID, MonoString* componentID, MonoBoolean playing)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		SpriteAnimator* animator = Utils::GetComponent<SpriteAnimator>(entity, componentID);
+		if (animator)
+			animator->SetPlaying(playing != 0);
+	}
+
+	static void SpriteAnimator_Play(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		SpriteAnimator* animator = Utils::GetComponent<SpriteAnimator>(entity, componentID);
+		if (animator)
+			animator->Play();
+	}
+
+	static void SpriteAnimator_Stop(MonoString* entityID, MonoString* componentID, MonoBoolean resetTime)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		SpriteAnimator* animator = Utils::GetComponent<SpriteAnimator>(entity, componentID);
+		if (animator)
+			animator->Stop(resetTime != 0);
 	}
 
 #pragma endregion
@@ -1567,6 +1789,7 @@ namespace Loopie
 		s_EntityGetComponentFuncs.clear();
 		RegisterComponent<Transform>();
 		RegisterComponent<Animator>();
+		RegisterComponent<SpriteAnimator>();
 		RegisterComponent<Camera>();
 		RegisterComponent<MeshRenderer>();
 		RegisterComponent<BoxCollider>();
@@ -1642,6 +1865,25 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Animator_IsLooping);
 		ADD_INTERNAL_CALL(Animator_IsPlaying);
 		ADD_INTERNAL_CALL(Animator_GetCurrentTime);
+
+		ADD_INTERNAL_CALL(SpriteAnimator_GetTextureUUID);
+		ADD_INTERNAL_CALL(SpriteAnimator_SetTextureUUID);
+		ADD_INTERNAL_CALL(SpriteAnimator_GetGrid);
+		ADD_INTERNAL_CALL(SpriteAnimator_SetGrid);
+		ADD_INTERNAL_CALL(SpriteAnimator_GetStartFrame);
+		ADD_INTERNAL_CALL(SpriteAnimator_SetStartFrame);
+		ADD_INTERNAL_CALL(SpriteAnimator_GetFrameCount);
+		ADD_INTERNAL_CALL(SpriteAnimator_SetFrameCount);
+		ADD_INTERNAL_CALL(SpriteAnimator_GetFPS);
+		ADD_INTERNAL_CALL(SpriteAnimator_SetFPS);
+		ADD_INTERNAL_CALL(SpriteAnimator_GetLoop);
+		ADD_INTERNAL_CALL(SpriteAnimator_SetLoop);
+		ADD_INTERNAL_CALL(SpriteAnimator_GetPlayOnStart);
+		ADD_INTERNAL_CALL(SpriteAnimator_SetPlayOnStart);
+		ADD_INTERNAL_CALL(SpriteAnimator_GetPlaying);
+		ADD_INTERNAL_CALL(SpriteAnimator_SetPlaying);
+		ADD_INTERNAL_CALL(SpriteAnimator_Play);
+		ADD_INTERNAL_CALL(SpriteAnimator_Stop);
 
 		ADD_INTERNAL_CALL(Camera_SetFov);
 		ADD_INTERNAL_CALL(Camera_GetFov);
