@@ -26,6 +26,7 @@ namespace Loopie
 			vec3 m_emitterPos; 
 			bool m_followEmitter;
 			vec3 m_velocityOffset;
+			std::shared_ptr<Texture> m_sprite = nullptr;
 
 		public:
 
@@ -74,5 +75,8 @@ namespace Loopie
 
 			bool GetFollowEmitter() const;
 			void SetFollowEmitter(bool follow);
+
+			std::shared_ptr<Texture> GetSprite() const;
+			void SetSprite(std::shared_ptr<Texture> sprite);
 	};
 }

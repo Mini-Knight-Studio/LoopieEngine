@@ -80,6 +80,16 @@ namespace Loopie
 			colorUni.type = UniformType_vec4;
 			colorUni.value = color;
 			material->SetShaderVariable("u_Color", colorUni);
+
+			UniformValue useSprite;
+			useSprite.type = UniformType_bool;
+			useSprite.value = m_sprite != nullptr;
+			material->SetShaderVariable("u_UseSprite", useSprite);
+
+			if (m_sprite)
+			{
+				material->SetTexture("u_Sprite", m_sprite);
+			}
 			
 			//AddParticleRenderItem - > If max capacity reached, flush (this inside AddParticle function), draw and clear pos and color vectors
 			Renderer::FlushRenderItem(quadVAO, material, transform);
@@ -213,5 +223,13 @@ namespace Loopie
 	void ParticleModule::SetFollowEmitter(bool follow)
 	{ 
 		m_followEmitter = follow; 
+	}
+	std::shared_ptr<Texture> ParticleModule::GetSprite() const
+	{
+		return m_sprite;
+	}
+	void ParticleModule::SetSprite(std::shared_ptr<Texture> sprite)
+	{
+		m_sprite = sprite;
 	}
 }
