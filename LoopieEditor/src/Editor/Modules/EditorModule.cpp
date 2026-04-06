@@ -428,7 +428,7 @@ namespace Loopie
 					continue;
 				if (component->GetTypeID() == MeshRenderer::GetTypeIDStatic()) {
 					MeshRenderer* renderer = static_cast<MeshRenderer*>(component);
-					if (renderer->GetMesh())
+					if (renderer->GetMesh() && renderer->GetCastsShadows())
 						renderers.push_back(renderer);
 				}
 			}

@@ -93,7 +93,10 @@ namespace Loopie {
 			meshRendererObj.CreateField<unsigned int>("mesh_index", m_mesh->GetMeshIndex());
 		}
 		if (m_material)
+		{
 			meshRendererObj.CreateField<std::string>("material_uuid", m_material->GetUUID().Get());
+			meshRendererObj.CreateField<bool>("casts_shadows", m_castsShadows);
+		}
 
 		return meshRendererObj;
 	}
@@ -116,6 +119,10 @@ namespace Loopie {
 			Metadata* meta = AssetRegistry::GetMetadata(id);
 			if (meta)
 				SetMaterial(ResourceManager::GetMaterial(*meta));
+		}
+		if (data.Contains("casts_shadows"))
+		{
+			m_castsShadows = data.GetValue<bool>("casts_shadows").Result;
 		}
 	}
 
