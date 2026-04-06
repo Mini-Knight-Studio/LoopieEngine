@@ -15,6 +15,7 @@ namespace Loopie
         m_entityToPivot = m_entity;
 		m_entity->AddComponent<Transform>();
 		m_camera = m_entity->AddComponent<Camera>( 45.0f,  0.1f, 1000.0f, false);
+        m_camera->SetIsEditorCamera(true);
 	}
 
 	OrbitalCamera::~OrbitalCamera()
