@@ -47,6 +47,8 @@ namespace Loopie {
 		bool GetDrawAABB() { return m_drawAABB; }
 		void SetDrawOBB(bool value) { m_drawOBB = value; }
 		bool GetDrawOBB() { return m_drawOBB; }
+		void SetCastsShadows(bool value) { m_castsShadows = value; }
+		bool GetCastsShadows() const { return m_castsShadows; }
 		///TEST
 
 		JsonNode Serialize(JsonNode& parent) const override;
@@ -77,6 +79,7 @@ namespace Loopie {
 		mutable AABB m_worldAABB = AABB();
 		mutable OBB m_worldOBB = OBB();
 		mutable bool m_boundingBoxesDirty = true;
+		bool m_castsShadows = true;
 
 		Animator* m_linkedAnimator = nullptr;
 	};

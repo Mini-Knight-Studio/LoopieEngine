@@ -135,31 +135,19 @@ namespace Loopie
 		m_scene.Update(inputEvent);
 		m_topBar.Update(inputEvent);
 		m_mainMenu.Update(inputEvent);
-		
-		Renderer::AssignShadowSlots(m_scene.GetCamera()->GetTransform()->GetWorldPosition());
-		for (int i = 0; i < Renderer::GetShadowCastingLightCount(); ++i)
-		{
-			if (Renderer::BeginShadowPass(i))
-			{
-				RenderShadows();
-				Renderer::EndShadowPass(i);
-			}
-		}
-		
-		/// RenderToTarget
-		const std::vector<Camera*>& cameras = Renderer::GetRendererCameras();
-		for (const auto cam : cameras)
-		{
-			std::shared_ptr<FrameBuffer> buffer = cam->GetRenderTarget();
-			if (buffer)
-			{
-				buffer->Bind();
-				buffer->Clear();
-				buffer->Unbind();
-			}
-		}
 
-		for (const auto cam : cameras)
+		bool visibleEditorCam = m_scene.IsVisible();
+		if (visibleEditorCam)
+			m_scene.PrepareFrameBuffer();
+		m_scene.GetCamera()->SetRenderTarget(visibleEditorCam ? m_scene.GetFrameBuffer() : nullptr);
+
+		visibleEditorCam = m_game.IsVisible() && m_game.GetCamera() && m_game.GetCamera()->GetIsActive();
+		if (visibleEditorCam)
+			m_game.PrepareFrameBuffer();
+		m_game.GetCamera()->SetRenderTarget(visibleEditorCam ? m_game.GetFrameBuffer() : nullptr);
+		
+		const std::vector<Camera*>& cameras = Renderer::GetRendererCameras();
+		for (Camera* cam : cameras)
 		{
 			if (!cam->GetIsActive())
 				continue;
@@ -168,49 +156,31 @@ namespace Loopie
 			if (!buffer)
 				continue;
 
-			Renderer::BeginScene(cam->GetViewMatrix(), cam->GetProjectionMatrix(), false);
-			Renderer::SetViewport(0, 0, buffer->GetWidth(), buffer->GetHeight());
+			// Per-camera shadow pass
+			Renderer::AssignShadowSlots(cam->GetTransform()->GetWorldPosition());
+			for (int i = 0; i < Renderer::GetShadowCastingLightCount(); ++i)
+			{
+				if (Renderer::BeginShadowPass(i))
+				{
+					RenderShadows();
+					Renderer::EndShadowPass(i);
+				}
+			}
+
+			// Main render
 			buffer->Bind();
+			Renderer::SetViewport(0, 0, buffer->GetWidth(), buffer->GetHeight());
+			Renderer::BeginScene(cam->GetViewMatrix(), cam->GetProjectionMatrix(), cam->GetIsEditorCamera());
 			RenderWorld(cam);
 			RenderParticles(cam);
 			Renderer::EndScene();
-
-			if (buffer)
-				buffer->Unbind();
+			buffer->Unbind();
 		}
-		///
 
-		/// SceneWindowRender		
-		if (m_scene.IsVisible()) {
-			m_scene.StartScene();
-			Renderer::BeginScene(m_scene.GetCamera()->GetViewMatrix(), m_scene.GetCamera()->GetProjectionMatrix(), true);
-			RenderWorld(m_scene.GetCamera());
-			RenderParticles(m_scene.GetCamera());
-			Renderer::EndScene();
-
-			const float sw = (float)m_scene.GetFrameBuffer()->GetWidth();
-			const float sh = (float)m_scene.GetFrameBuffer()->GetHeight();
-			const matrix4 uiView(1.0f);
-			const matrix4 uiProj = glm::ortho(0.0f, sw, sh, 0.0f, -1.0f, 1.0f);
-
-			m_scene.EndScene();
-		}	
-		///
-
-		/// GameWindowRender
-		if (m_game.IsVisible()) {
-			m_game.StartScene();
-			if (m_game.GetCamera() && m_game.GetCamera()->GetIsActive()) {
-				Renderer::BeginScene(m_game.GetCamera()->GetViewMatrix(), m_game.GetCamera()->GetProjectionMatrix(), false);
-				UpdateComponents(Loopie::GIZMO);
-				RenderWorld(m_game.GetCamera());
-				RenderParticles(m_game.GetCamera());
-				Renderer::EndScene();
-
-				// UI pass (ortographic overlay)
-				RenderUI();
-			}
-			m_game.EndScene();
+		if (m_game.IsVisible() && m_game.GetCamera() && m_game.GetCamera()->GetIsActive())
+		{
+			UpdateComponents(Loopie::GIZMO);
+			RenderUI();
 		}
 
 		ProcessOverlayButtonsInput();
@@ -448,7 +418,7 @@ namespace Loopie
 					continue;
 				if (component->GetTypeID() == MeshRenderer::GetTypeIDStatic()) {
 					MeshRenderer* renderer = static_cast<MeshRenderer*>(component);
-					if (renderer->GetMesh())
+					if (renderer->GetMesh() && renderer->GetCastsShadows())
 						renderers.push_back(renderer);
 				}
 			}

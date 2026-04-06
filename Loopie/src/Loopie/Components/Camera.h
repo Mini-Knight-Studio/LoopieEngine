@@ -63,7 +63,9 @@ namespace Loopie
 		bool SetAsMainCamera();
 		bool CanBeMainCamera() const { return m_canBeMainCamera; }
 		void SetIfBeMainCamera(bool canBe) { m_canBeMainCamera = canBe; }
-		bool IsMainCamera() { return m_isMainCamera; }
+		bool IsMainCamera() const { return m_isMainCamera; }
+		void SetIsEditorCamera(bool value) { m_isEditorCamera = value; }
+		bool GetIsEditorCamera() const { return m_isEditorCamera; }
 
 		JsonNode Serialize(JsonNode& parent) const override;
 		void Deserialize(const JsonNode& data) override;
@@ -89,6 +91,7 @@ namespace Loopie
 		static Camera* s_Main;
 		bool m_canBeMainCamera = true;
 		bool m_isMainCamera = false;
+		bool m_isEditorCamera = false;
 
 		CameraProjection m_projectionType = CameraProjection::Perspective;
 		

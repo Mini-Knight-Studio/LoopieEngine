@@ -115,7 +115,9 @@ uniform sampler2D u_Albedo;
 uniform sampler2D u_Specular;
 uniform sampler2D u_Normal;
 uniform sampler2D lp_ShadowMaps[4];
+uniform sampler2D u_Emissive;
 uniform float u_Roughness = 32.0; // highlight, smaller value = broader spotlight (feels more shiny)
+uniform float u_EmissiveIntensity = 0.0;
 uniform vec4 u_Color = vec4(1.0);
 
 void main()
@@ -263,6 +265,10 @@ void main()
 
     // Resulting Color with Lighting
     result = result * texColor.rgb;
+
+    // Adding 
+    vec3 emissive = texture(u_Emissive, v_TexCoord).rgb * u_EmissiveIntensity;
+    result += emissive;
 
     FragColor = vec4(result, texColor.a) * u_Color;
 }

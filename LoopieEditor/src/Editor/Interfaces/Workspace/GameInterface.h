@@ -16,6 +16,7 @@ namespace Loopie {
 
 		bool IsVisible() { return m_visible; }
 
+		void PrepareFrameBuffer();
 		std::shared_ptr<FrameBuffer> GetFrameBuffer() const { return m_buffer; }
 
 		Camera* GetCamera();

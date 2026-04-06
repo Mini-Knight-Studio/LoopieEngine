@@ -758,6 +758,7 @@ namespace Loopie {
 				bool drawTN = meshRenderer->GetDrawNormalsPerTriangle();
 				bool drawAABB = meshRenderer->GetDrawAABB();
 				bool drawOBB = meshRenderer->GetDrawOBB();
+				bool castsShadows = meshRenderer->GetCastsShadows();
 				if (ImGui::Checkbox("Draw Face Normals", &drawFN))
 					meshRenderer->SetDrawNormalsPerFace(drawFN);
 				if (ImGui::Checkbox("Draw Triangle Normals", &drawTN))
@@ -766,6 +767,8 @@ namespace Loopie {
 					meshRenderer->SetDrawAABB(drawAABB);
 				if (ImGui::Checkbox("Draw OBB", &drawOBB))
 					meshRenderer->SetDrawOBB(drawOBB);
+				if (ImGui::Checkbox("Cast Shadows", &castsShadows))
+					meshRenderer->SetCastsShadows(castsShadows);
 				//ImGui::Text("Shader: %s", meshRenderer->GetShader().GetName().c_str()); ????
 
 				ImGui::TreePop();
