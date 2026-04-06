@@ -77,10 +77,11 @@ namespace Loopie {
 
 	void GameInterface::PrepareFrameBuffer()
 	{
+		GetCamera()->SetViewport(0, 0, m_windowSize.x, m_windowSize.y);
+
 		ivec2 textureSize = ivec2(m_buffer->GetWidth(), m_buffer->GetHeight());
 		if (m_windowSize.x != textureSize.x || m_windowSize.y != textureSize.y) 
 		{
-			GetCamera()->SetViewport(0, 0, m_windowSize.x, m_windowSize.y);
 			m_buffer->Resize(m_windowSize.x, m_windowSize.y);
 		}
 		m_buffer->Bind();
