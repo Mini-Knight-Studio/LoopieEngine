@@ -27,17 +27,20 @@ namespace Loopie
 	void ParticleComponent::OnUpdate() 
 	{
 		vec3 pos = GetTransform()->GetPosition();
+		quaternion rot = GetTransform()->GetRotation();
 		vec3 localPos = GetTransform()->GetLocalPosition();
 
 		const std::vector<std::shared_ptr<Emitter>>& emitters = GetEmittersVector();
 		for (size_t i = 0; i < emitters.size(); i++)
 		{
-			emitters[i]->SetPosition(pos + GetEmittersVector()[i]->GetPositionOffSet());
+			vec3 rotatedOffset = rot * GetEmittersVector()[i]->GetPositionOffSet();
+			GetEmittersVector()[i]->SetPosition(pos + rotatedOffset);
 		}
 		
 		float dt = (float)Time::GetDeltaTime();
 		m_partSystem.OnUpdate(dt);
 	}
+
 	void ParticleComponent::Render(Camera* cam)
 	{
 		m_partSystem.OnRender(cam);
