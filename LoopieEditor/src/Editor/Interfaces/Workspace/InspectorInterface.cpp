@@ -1206,6 +1206,12 @@ namespace Loopie {
 			emitter->SetParticlesFollowEmitter(!particlesFollow);
 		}
 
+		bool localVelocity = emitter->GetLocalVelocity();
+		if (ImGui::Button(localVelocity ? "Local Velocity: ON" : "Local Velocity: OFF"))
+		{
+			emitter->SetLocalVelocity(!localVelocity);
+		}
+
 		std::shared_ptr<Texture> sprite = emitter->GetSprite();
 		ImGui::Text("Sprite: %s", sprite ? "Exists" : "None");
 		ImGui::Button(" [ Drop Sprite Here ] ");

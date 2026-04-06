@@ -33,8 +33,12 @@ namespace Loopie
 		const std::vector<std::shared_ptr<Emitter>>& emitters = GetEmittersVector();
 		for (size_t i = 0; i < emitters.size(); i++)
 		{
-			vec3 rotatedOffset = rot * GetEmittersVector()[i]->GetPositionOffSet();
-			GetEmittersVector()[i]->SetPosition(pos + rotatedOffset);
+			if (GetEmittersVector()[i]->GetParticlesFollowEmitter())
+			{
+				vec3 rotatedOffset = rot * GetEmittersVector()[i]->GetPositionOffSet();
+				GetEmittersVector()[i]->SetPosition(pos + rotatedOffset);
+			}
+			GetEmittersVector()[i]->SetEmitterRotation(rot);
 		}
 		
 		float dt = (float)Time::GetDeltaTime();
@@ -69,6 +73,7 @@ namespace Loopie
 			emitterNode.CreateField("active", m_partSystem.GetEmitterArray()[i]->GetIsActive());
 			emitterNode.CreateField("poolindex", m_partSystem.GetEmitterArray()[i]->GetPoolIndex());
 			emitterNode.CreateField("particlefollowemitter", m_partSystem.GetEmitterArray()[i]->GetParticlesFollowEmitter());
+			emitterNode.CreateField("localvelocity", m_partSystem.GetEmitterArray()[i]->GetLocalVelocity());
 
 			JsonNode vectorNode = emitterNode.CreateObjectField("position");
 			vectorNode.CreateField("x", m_partSystem.GetEmitterArray()[i]->GetPosition().x);
@@ -143,6 +148,7 @@ namespace Loopie
 				m_partSystem.GetEmitterArray()[i]->SetActive(node.GetValue<bool>("active",false).Result);
 				m_partSystem.GetEmitterArray()[i]->SetPoolIndex(node.GetValue<unsigned int>("poolindex").Result);
 				m_partSystem.GetEmitterArray()[i]->SetParticlesFollowEmitter(node.GetValue<bool>("particlefollowemitter", false).Result);
+				m_partSystem.GetEmitterArray()[i]->SetLocalVelocity(node.GetValue<bool>("localvelocity", false).Result);
 
 				JsonNode positionNode = node.Child("position");
 				if (positionNode.IsValid() && positionNode.IsObject())
