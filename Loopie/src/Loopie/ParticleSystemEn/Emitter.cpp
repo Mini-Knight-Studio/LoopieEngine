@@ -20,6 +20,9 @@ namespace Loopie
 		m_position = position;
 		m_positionOffSet = posOffSet;
 		m_active = true;
+		m_particleFollowEmitter = true;
+		m_rotation = quaternion(1, 0, 0, 0);
+		m_localVelocity = true;
 		m_poolIndex = 0;
 
 		m_name = "DefaultParticle";
@@ -117,8 +120,14 @@ namespace Loopie
 		vec3 finalVelocity = particleProps.Velocity;
 		finalVelocity.x += RandomFloat(-particleProps.VelocityVariation.x * 1.5f, particleProps.VelocityVariation.x * 1.5f);
 		finalVelocity.y += RandomFloat(-particleProps.VelocityVariation.y * 1.5f, particleProps.VelocityVariation.y * 1.5f);
-		particle.SetVelocity(finalVelocity);
 
+
+		if (m_localVelocity)
+		{
+			finalVelocity = m_rotation * finalVelocity;
+		}
+
+		particle.SetVelocity(finalVelocity);
 
 		//color
 		particle.SetColorBegin(particleProps.ColorBegin);
@@ -245,4 +254,9 @@ namespace Loopie
 	{ 
 		m_sprite = sprite; 
 	}
+	quaternion Emitter::GetEmitterRotation() const { return m_rotation; }
+	void Emitter::SetEmitterRotation(const quaternion& rot) { m_rotation = rot; }
+
+	bool Emitter::GetLocalVelocity() const { return m_localVelocity; }
+	void Emitter::SetLocalVelocity(bool local) { m_localVelocity = local; }
 }

@@ -46,6 +46,10 @@ namespace Loopie
 			std::shared_ptr<Billboard> m_billboard;
 
 			std::shared_ptr<Texture> m_sprite = nullptr;
+
+			quaternion m_rotation;
+			bool m_localVelocity = false;
+
 		public:
 			
 			Emitter(unsigned int maxParticles, BillboardType bType, vec3 position, unsigned int spawnRate, vec3 posOffSet = vec3(0));
@@ -90,6 +94,12 @@ namespace Loopie
 
 			std::shared_ptr<Texture> GetSprite() const;
 			void SetSprite(std::shared_ptr<Texture> sprite);
+
+			glm::quat GetEmitterRotation() const;
+			void SetEmitterRotation(const quaternion &rot);
+
+			bool GetLocalVelocity() const;
+			void SetLocalVelocity(bool local);
 
 	};
 }
