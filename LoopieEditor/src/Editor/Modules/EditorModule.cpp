@@ -136,7 +136,7 @@ namespace Loopie
 		m_topBar.Update(inputEvent);
 		m_mainMenu.Update(inputEvent);
 
-		if (m_scene.IsVisible()) 
+		/*if (m_scene.IsVisible()) 
 		{
 			m_scene.PrepareFrameBuffer();
 			m_scene.GetCamera()->SetRenderTarget(m_scene.GetFrameBuffer());
@@ -154,7 +154,16 @@ namespace Loopie
 		else if (m_game.GetCamera()) 
 		{
 			m_game.GetCamera()->SetRenderTarget(nullptr);
-		}
+		}*/
+		bool visibleEditorCam = m_scene.IsVisible();
+		if (visibleEditorCam)
+			m_scene.PrepareFrameBuffer();
+		m_scene.GetCamera()->SetRenderTarget(visibleEditorCam ? m_scene.GetFrameBuffer() : nullptr);
+
+		visibleEditorCam = m_game.IsVisible() && m_game.GetCamera() && m_game.GetCamera()->GetIsActive();
+		if (visibleEditorCam)
+			m_game.PrepareFrameBuffer();
+		m_game.GetCamera()->SetRenderTarget(visibleEditorCam ? m_game.GetFrameBuffer() : nullptr);
 		
 		const std::vector<Camera*>& cameras = Renderer::GetRendererCameras();
 		for (Camera* cam : cameras)

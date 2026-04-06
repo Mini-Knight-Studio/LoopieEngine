@@ -122,7 +122,7 @@ namespace Loopie {
 		}
 		if (data.Contains("casts_shadows"))
 		{
-			m_castsShadows = data.GetValue<bool>("casts_shadows").Result;
+			m_castsShadows = data.GetValue<bool>("casts_shadows", false).Result;
 		}
 	}
 
