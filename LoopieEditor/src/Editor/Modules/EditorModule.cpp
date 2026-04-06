@@ -136,25 +136,6 @@ namespace Loopie
 		m_topBar.Update(inputEvent);
 		m_mainMenu.Update(inputEvent);
 
-		/*if (m_scene.IsVisible()) 
-		{
-			m_scene.PrepareFrameBuffer();
-			m_scene.GetCamera()->SetRenderTarget(m_scene.GetFrameBuffer());
-		}
-		else 
-		{
-			m_scene.GetCamera()->SetRenderTarget(nullptr);
-		}
-
-		if (m_game.IsVisible() && m_game.GetCamera() && m_game.GetCamera()->GetIsActive()) 
-		{
-			m_game.PrepareFrameBuffer();
-			m_game.GetCamera()->SetRenderTarget(m_game.GetFrameBuffer());
-		}
-		else if (m_game.GetCamera()) 
-		{
-			m_game.GetCamera()->SetRenderTarget(nullptr);
-		}*/
 		bool visibleEditorCam = m_scene.IsVisible();
 		if (visibleEditorCam)
 			m_scene.PrepareFrameBuffer();

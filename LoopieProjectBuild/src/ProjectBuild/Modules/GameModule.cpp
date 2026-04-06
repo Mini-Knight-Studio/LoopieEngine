@@ -107,56 +107,48 @@ namespace Loopie
 		//// 
 
 		/// RenderToTarget
-		const std::vector<Camera*>& cameras = Renderer::GetRendererCameras();
-		for (const auto cam : cameras)
+		Camera* cam = Camera::GetMainCamera();
+		if (cam && cam->GetIsActive())
 		{
-			std::shared_ptr<FrameBuffer> buffer = cam->GetRenderTarget();
-			if (buffer)
+			Renderer::AssignShadowSlots(cam->GetTransform()->GetWorldPosition());
+			for (int i = 0; i < Renderer::GetShadowCastingLightCount(); ++i)
 			{
+				if (Renderer::BeginShadowPass(i))
+				{
+					RenderShadows();
+					Renderer::EndShadowPass(i);
+				}
+			}
+
+			const std::vector<Camera*>& cameras = Renderer::GetRendererCameras();
+			for (Camera* rtCam : cameras)
+			{
+				if (!rtCam->GetIsActive())
+					continue;
+				std::shared_ptr<FrameBuffer> buffer = rtCam->GetRenderTarget();
+				if (!buffer)
+					continue;
+
 				buffer->Bind();
-				buffer->Clear();
+				Renderer::SetViewport(0, 0, buffer->GetWidth(), buffer->GetHeight());
+				Renderer::BeginScene(rtCam->GetViewMatrix(), rtCam->GetProjectionMatrix(), false);
+				RenderWorld(rtCam);
+				RenderParticles(rtCam);
+				Renderer::EndScene();
 				buffer->Unbind();
 			}
-		}
 
-		for (const auto cam : cameras)
-		{
-			if (!cam->GetIsActive())
-				continue;
-
-			std::shared_ptr<FrameBuffer> buffer = cam->GetRenderTarget();
-			if (!buffer)
-				continue;
-
-			Renderer::BeginScene(cam->GetViewMatrix(), cam->GetProjectionMatrix(), false);
-			Renderer::SetViewport(0, 0, buffer->GetWidth(), buffer->GetHeight());
-			buffer->Bind();
-			RenderWorld(cam);
-			RenderParticles(cam);
-			Renderer::EndScene();
-
-			if (buffer)
-				buffer->Unbind();
-		}
-		///
-
-		/// GameWindowRender
-
-		Camera* cam = Camera::GetMainCamera();
-		if (cam) {
+			/// GameWindowRender
 			ivec2 size = Application::GetInstance().GetWindow().GetSize();
 			cam->SetViewport(0, 0, size.x, size.y);
 			Renderer::SetViewport(0, 0, size.x, size.y);
-
-			if (cam && cam->GetIsActive()) {
-				Renderer::BeginScene(cam->GetViewMatrix(), cam->GetProjectionMatrix(), false);
-				RenderWorld(cam);
-				RenderParticles(cam);
-				Renderer::EndScene();
-				RenderUI();
-			}
+			Renderer::BeginScene(cam->GetViewMatrix(), cam->GetProjectionMatrix(), false);
+			RenderWorld(cam);
+			RenderParticles(cam);
+			Renderer::EndScene();
+			RenderUI();
 		}
-		
+
 		///
 
 		ProcessOverlayButtonsInput();
@@ -316,6 +308,52 @@ namespace Loopie
 		}
 		Renderer::EnableDepthMask();
 		Renderer::DisableBlend();
+	}
+
+	void GameModule::RenderShadows()
+	{
+		std::unordered_set<std::shared_ptr<Entity>> entities;
+		m_currentScene->GetOctree().CollectAllEntities(entities); 
+
+		std::vector<MeshRenderer*> renderers;
+		renderers.reserve(1);
+
+		for (const auto& entity : entities)
+		{
+			if (!entity->GetIsActive())
+				continue;
+
+			const std::vector<Component*>& components = entity->GetComponents();
+			renderers.clear();
+
+			for (size_t i = 0; i < components.size(); i++)
+			{
+				Component* component = components[i];
+				if (!component->GetLocalIsActive())
+					continue;
+				if (component->GetTypeID() == MeshRenderer::GetTypeIDStatic()) {
+					MeshRenderer* renderer = static_cast<MeshRenderer*>(component);
+					if (renderer->GetMesh() && renderer->GetCastsShadows())
+						renderers.push_back(renderer);
+				}
+			}
+
+			for (size_t i = 0; i < renderers.size(); i++)
+			{
+				MeshRenderer* renderer = renderers[i];
+				const MeshData& data = renderer->GetMesh()->GetData();
+
+				std::vector<matrix4> bones = {};
+				if (data.HasBones) {
+					Animator* animator = renderer->GetLinkedAnimator();
+					if (animator) {
+						bones = animator->GetRendererData(renderer->GetUUID()).FinalBoneMatrices;
+					}
+				}
+
+				Renderer::FlushShadowItem(renderer->GetMesh()->GetVAO(), entity->GetTransform(), bones);
+			}
+		}
 	}
 
 	void GameModule::RenderUIRecursive(const std::shared_ptr<Entity>& entity, vec2& scale)
