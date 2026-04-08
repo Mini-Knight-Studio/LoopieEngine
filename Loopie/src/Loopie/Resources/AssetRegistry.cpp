@@ -136,7 +136,8 @@ namespace Loopie {
 		for (auto& entry : std::filesystem::recursive_directory_iterator("assets"))
 		{
 			auto path = entry.path();
-			if (path.extension() == ".meta")
+			auto extension = path.extension();
+			if (extension == METADATA_EXTENSION || extension == METADATA_CACHE_EXTENSION)
 				continue;
 
 			Metadata metadata = MetadataRegistry::GetMetadataAsset(path.string());
@@ -150,7 +151,8 @@ namespace Loopie {
 		for (auto& entry : std::filesystem::recursive_directory_iterator(project.GetAssetsPath()))
 		{
 			auto path = entry.path();
-			if (path.extension() == ".meta")
+			auto extension = path.extension();
+			if (extension == METADATA_EXTENSION || extension == METADATA_CACHE_EXTENSION)
 				continue;
 
 			Metadata metadata = MetadataRegistry::GetMetadataAsset(path.string());

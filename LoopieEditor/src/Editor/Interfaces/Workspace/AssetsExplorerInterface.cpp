@@ -215,7 +215,8 @@ namespace Loopie {
 					GoToDirectory(assetsPath);
 				}
 				DirectoryManager::Move(droppedPath, targetPath);
-				DirectoryManager::Move(droppedPath += ".meta", targetPath += ".meta");
+				DirectoryManager::Move(droppedPath += METADATA_EXTENSION, targetPath += METADATA_EXTENSION);
+				DirectoryManager::Move(droppedPath += METADATA_CACHE_EXTENSION, targetPath += METADATA_CACHE_EXTENSION);
 			}
 			else {
 				DirectoryManager::Copy(droppedPath, targetPath);
@@ -504,7 +505,8 @@ namespace Loopie {
 				}
 
 				DirectoryManager::Move(fromPath, newPath);
-				DirectoryManager::Move(fromPath += ".meta", newPath += ".meta");
+				DirectoryManager::Move(fromPath += METADATA_EXTENSION, newPath += METADATA_EXTENSION);
+				DirectoryManager::Move(fromPath += METADATA_CACHE_EXTENSION, newPath += METADATA_CACHE_EXTENSION);
 
 				Refresh();
 			}
@@ -678,16 +680,11 @@ namespace Loopie {
 
 			m_pendingCreateAction = [this, file](const std::string& name)
 				{
-					std::filesystem::path newPath =
-						file.parent_path() / name;
+					std::filesystem::path newPath = file.parent_path() / name;
 
-					DirectoryManager::Move(
-						file,
-						newPath.string() + file.extension().string());
-
-					DirectoryManager::Move(
-						file.string() + ".meta",
-						newPath.string() + file.extension().string() + ".meta");
+					DirectoryManager::Move(file,newPath.string() + file.extension().string());
+					DirectoryManager::Move(file.string() + METADATA_EXTENSION,newPath.string() + file.extension().string() + METADATA_EXTENSION);
+					DirectoryManager::Move(file.string() + METADATA_CACHE_EXTENSION,newPath.string() + file.extension().string() + METADATA_CACHE_EXTENSION);
 				};
 		}
 		ImGui::Separator();
