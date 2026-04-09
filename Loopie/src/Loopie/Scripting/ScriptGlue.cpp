@@ -87,6 +87,28 @@ namespace Loopie
 			return entity;
 		}
 
+		std::shared_ptr<Entity> GetEntityNoLog(MonoString* entityID)
+		{
+			Scene* scene = GetScene();
+			if (!scene)
+				return nullptr;
+			UUID uuid(MonoStringToString(entityID));
+			if (uuid == UUID::Invalid) {
+				return nullptr;
+			}
+			std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+			return entity;
+		}
+
+		std::shared_ptr<Entity> GetEntityNoLog(const std::string& name)
+		{
+			Scene* scene = GetScene();
+			if (!scene)
+				return nullptr;
+			std::shared_ptr<Entity> entity = scene->GetEntity(name);
+			return entity;
+		}
+
 		template<typename T, typename = std::enable_if_t<std::is_base_of_v<Component, T>>>
 		static T* GetComponent(std::shared_ptr<Entity> entity, MonoString* componentID)
 		{
@@ -111,6 +133,28 @@ namespace Loopie
 			T* component = entity->GetComponent<T>();
 			if (!component)
 				Log::Error("Component {} not found", T::GetIdentificableName());
+			return component;
+		}
+
+		template<typename T, typename = std::enable_if_t<std::is_base_of_v<Component, T>>>
+		static T* GetComponentNoLog(std::shared_ptr<Entity> entity, MonoString* componentID)
+		{
+			if (!entity)
+				return nullptr;
+			UUID componentUUID(MonoStringToString(componentID));
+			if (componentUUID == UUID::Invalid) {
+				return nullptr;
+			}
+			T* component = entity->GetComponent<T>(componentUUID);
+			return component;
+		}
+
+		template<typename T, typename = std::enable_if_t<std::is_base_of_v<Component, T>>>
+		T* GetComponentNoLog(std::shared_ptr<Entity> entity)
+		{
+			if (!entity)
+				return nullptr;
+			T* component = entity->GetComponent<T>();
 			return component;
 		}
 	}
@@ -1583,18 +1627,27 @@ namespace Loopie
 		float distance;
 	};
 
-	static MonoBoolean Collisions_Raycast(vec3* origin, vec3* direction, float maxDistance, MonoRaycastHit* outHit, int layerMask)
+	static MonoBoolean Collisions_Raycast(vec3* origin, vec3* direction, float maxDistance, MonoRaycastHit* outHit, int layerMask, MonoString* entityToAvoidID, MonoString* componentToAvoidID)
 	{
 		Ray ray(*origin, *direction, maxDistance);
 
+		std::shared_ptr<Entity> avoidEntity = Utils::GetEntityNoLog(entityToAvoidID);
+		BoxCollider* avoidCollider = nullptr;
+		if (avoidEntity)
+		{
+			avoidCollider = Utils::GetComponentNoLog<BoxCollider>(avoidEntity, componentToAvoidID);
+		}
+
 		RaycastHit nativeHit;
 
-		if (!CollisionProcessor::Raycast(ray, nativeHit, layerMask))
+		if (!CollisionProcessor::Raycast(ray, nativeHit, layerMask, avoidCollider))
 			return false;
 
 		BoxCollider* collider = nativeHit.collider;
 		if (!collider)
 			return false;
+
+		
 
 		std::shared_ptr<Entity> entity = collider->GetOwner();
 		UUID componentUUID = collider->GetUUID();

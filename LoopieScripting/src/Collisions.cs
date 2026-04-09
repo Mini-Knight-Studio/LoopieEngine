@@ -26,10 +26,12 @@ namespace Loopie
 
     public static class Collisions
     {
-        public static bool Raycast(Vector3 origin, Vector3 direction, float maxDistance, out RaycastHit hit, int layerMask = -1)
+        public static bool Raycast(Vector3 origin, Vector3 direction, float maxDistance, out RaycastHit hit, int layerMask = -1, BoxCollider avoidCollider = null)
         {
             hit = new RaycastHit();
-            return InternalCalls.Collisions_Raycast(origin, direction, maxDistance, out hit, layerMask);
+            if(avoidCollider == null)
+                return InternalCalls.Collisions_Raycast(origin, direction, maxDistance, out hit, layerMask, "","");
+            return InternalCalls.Collisions_Raycast(origin, direction, maxDistance, out hit, layerMask, avoidCollider.entity.ID, avoidCollider.ID);
         }
 
         public static int GetLayerBit(string layerName)
