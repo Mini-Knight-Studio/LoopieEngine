@@ -78,20 +78,25 @@ namespace Loopie {
 	const void Project::CreateProjFiles() {
 		std::string csProjString = R"(
 			<Project Sdk="Microsoft.NET.Sdk">
-				<PropertyGroup>
-					<TargetFramework>net472</TargetFramework>
-					<LangVersion>7.3</LangVersion>
-					<Nullable>disable</Nullable>
-					<ImplicitUsings>disable</ImplicitUsings>
-					<NuGetAudit>false</NuGetAudit>
-				</PropertyGroup>
+			  <PropertyGroup>
+				<TargetFramework>net472</TargetFramework>
+				<LangVersion>7.3</LangVersion>
+				<Nullable>disable</Nullable>
+				<ImplicitUsings>disable</ImplicitUsings>
+				<NuGetAudit>false</NuGetAudit>
 
-				 <ItemGroup>
-					<Reference Include="ENGINE_DLLS_PATH" />
-				 </ItemGroup>
+				<EnableDefaultItems>false</EnableDefaultItems>
+			  </PropertyGroup>
+
+			  <ItemGroup>
+				<Compile Include="**\*.cs" />
+			  </ItemGroup>
+
+			  <ItemGroup>
+				<Reference Include="ENGINE_DLLS_PATH" />
+			  </ItemGroup>
 
 			</Project>
-
 			)";
 
 		std::filesystem::path csprojPath = DirectoryManager::CreateFile(m_projectPath, "LoopieProject", ".csproj");

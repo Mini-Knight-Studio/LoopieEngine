@@ -4,6 +4,7 @@
 #include "Loopie/Components/Component.h"
 #include "Loopie/Events/EventTypes.h"
 #include "Loopie/Render/FrameBuffer.h"
+#include "Loopie/Math/Ray.h"
 
 namespace Loopie
 {
@@ -66,6 +67,8 @@ namespace Loopie
 		bool IsMainCamera() const { return m_isMainCamera; }
 		void SetIsEditorCamera(bool value) { m_isEditorCamera = value; }
 		bool GetIsEditorCamera() const { return m_isEditorCamera; }
+
+		static Ray ScreenToWorldRay(const Camera& camera, float mouseX, float mouseY);
 
 		JsonNode Serialize(JsonNode& parent) const override;
 		void Deserialize(const JsonNode& data) override;

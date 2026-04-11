@@ -90,6 +90,28 @@ namespace Loopie
 			return entity;
 		}
 
+		std::shared_ptr<Entity> GetEntityNoLog(MonoString* entityID)
+		{
+			Scene* scene = GetScene();
+			if (!scene)
+				return nullptr;
+			UUID uuid(MonoStringToString(entityID));
+			if (uuid == UUID::Invalid) {
+				return nullptr;
+			}
+			std::shared_ptr<Entity> entity = scene->GetEntity(uuid);
+			return entity;
+		}
+
+		std::shared_ptr<Entity> GetEntityNoLog(const std::string& name)
+		{
+			Scene* scene = GetScene();
+			if (!scene)
+				return nullptr;
+			std::shared_ptr<Entity> entity = scene->GetEntity(name);
+			return entity;
+		}
+
 		template<typename T, typename = std::enable_if_t<std::is_base_of_v<Component, T>>>
 		static T* GetComponent(std::shared_ptr<Entity> entity, MonoString* componentID)
 		{
@@ -114,6 +136,28 @@ namespace Loopie
 			T* component = entity->GetComponent<T>();
 			if (!component)
 				Log::Error("Component {} not found", T::GetIdentificableName());
+			return component;
+		}
+
+		template<typename T, typename = std::enable_if_t<std::is_base_of_v<Component, T>>>
+		static T* GetComponentNoLog(std::shared_ptr<Entity> entity, MonoString* componentID)
+		{
+			if (!entity)
+				return nullptr;
+			UUID componentUUID(MonoStringToString(componentID));
+			if (componentUUID == UUID::Invalid) {
+				return nullptr;
+			}
+			T* component = entity->GetComponent<T>(componentUUID);
+			return component;
+		}
+
+		template<typename T, typename = std::enable_if_t<std::is_base_of_v<Component, T>>>
+		T* GetComponentNoLog(std::shared_ptr<Entity> entity)
+		{
+			if (!entity)
+				return nullptr;
+			T* component = entity->GetComponent<T>();
 			return component;
 		}
 	}
@@ -422,6 +466,20 @@ namespace Loopie
 			return ScriptingManager::CreateString("");
 
 		std::shared_ptr<Entity> child = entity->GetChild(index);
+		if (!child)
+			return ScriptingManager::CreateString("");
+
+		return ScriptingManager::CreateString(child->GetUUID().Get().c_str());
+	}
+
+	static MonoString* Entity_GetChildByName(MonoString* entityID, MonoString* entityName, MonoBoolean deepSearch)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return ScriptingManager::CreateString("");
+
+		std::string name = Utils::MonoStringToString(entityName);
+		std::shared_ptr<Entity> child = entity->GetChild(name, deepSearch != 0);
 		if (!child)
 			return ScriptingManager::CreateString("");
 
@@ -1106,6 +1164,31 @@ namespace Loopie
 		return 0;
 	}
 
+	struct MonoRay
+	{
+		vec3 origin;
+		vec3 direction;
+		float length;
+	};
+
+	static void Camera_ScreenToWorldRay(MonoString* entityID, MonoString* componentID, vec2* screenPoint, MonoRay* outRay)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		Camera* camera = Utils::GetComponent<Camera>(entity, componentID);
+		if (camera)
+		{
+			Ray r = Camera::ScreenToWorldRay(*camera, screenPoint->x, screenPoint->y);
+			outRay->origin = r.StartPoint();
+			outRay->direction = r.Direction();
+		}
+		else {
+			outRay->origin = { 0,0,0 };
+			outRay->direction = { 0,0,0 };
+		}
+	}
+
 #pragma endregion
 
 #pragma region Input
@@ -1595,18 +1678,27 @@ namespace Loopie
 		float distance;
 	};
 
-	static MonoBoolean Collisions_Raycast(vec3* origin, vec3* direction, float maxDistance, MonoRaycastHit* outHit, int layerMask)
+	static MonoBoolean Collisions_Raycast(vec3* origin, vec3* direction, float maxDistance, MonoRaycastHit* outHit, int layerMask, MonoString* entityToAvoidID, MonoString* componentToAvoidID)
 	{
 		Ray ray(*origin, *direction, maxDistance);
 
+		std::shared_ptr<Entity> avoidEntity = Utils::GetEntityNoLog(entityToAvoidID);
+		BoxCollider* avoidCollider = nullptr;
+		if (avoidEntity)
+		{
+			avoidCollider = Utils::GetComponentNoLog<BoxCollider>(avoidEntity, componentToAvoidID);
+		}
+
 		RaycastHit nativeHit;
 
-		if (!CollisionProcessor::Raycast(ray, nativeHit, layerMask))
+		if (!CollisionProcessor::Raycast(ray, nativeHit, layerMask, avoidCollider))
 			return false;
 
 		BoxCollider* collider = nativeHit.collider;
 		if (!collider)
 			return false;
+
+		
 
 		std::shared_ptr<Entity> entity = collider->GetOwner();
 		UUID componentUUID = collider->GetUUID();
@@ -1771,6 +1863,13 @@ namespace Loopie
 		Window& window = Application::GetInstance().GetWindow();
 		*size = window.GetSize();
 	}
+
+#pragma Application
+
+	static void Application_Quit() {
+		Application::GetInstance().Quit();
+	}
+
 #pragma endregion
 
 	template<typename Comp, typename = std::enable_if_t<std::is_base_of_v<Component, Comp>>>
@@ -1839,6 +1938,7 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Entity_SetName);
 		ADD_INTERNAL_CALL(Entity_GetChildCount);
 		ADD_INTERNAL_CALL(Entity_GetChild);
+		ADD_INTERNAL_CALL(Entity_GetChildByName);
 
 		ADD_INTERNAL_CALL(Component_SetActive);
 		ADD_INTERNAL_CALL(Component_IsActive);
@@ -1912,6 +2012,7 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Camera_GetOrthoSize);
 		ADD_INTERNAL_CALL(Camera_SetProjection);
 		ADD_INTERNAL_CALL(Camera_GetProjection);
+		ADD_INTERNAL_CALL(Camera_ScreenToWorldRay);
 
 		ADD_INTERNAL_CALL(Input_IsKeyDown);
 		ADD_INTERNAL_CALL(Input_IsKeyUp);
@@ -1999,5 +2100,7 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Window_SetResizable);
 		ADD_INTERNAL_CALL(Window_SetSize);
 		ADD_INTERNAL_CALL(Window_GetSize);
+
+		ADD_INTERNAL_CALL(Application_Quit);
 	}
 }

@@ -185,7 +185,7 @@ namespace Loopie
 			ScriptingManager::RuntimeStart();
 		}
 
-
+		ScriptingManager::UpdateCoroutines();
 
 		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities()) {
 			if (!entity->GetIsActive())

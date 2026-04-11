@@ -14,6 +14,9 @@
 
 namespace Loopie {
 
+    #define METADATA_EXTENSION ".meta"
+    #define METADATA_CACHE_EXTENSION ".metacache"
+
     struct Metadata {
         UUID UUID;
         ResourceType Type = ResourceType::UNKNOWN;

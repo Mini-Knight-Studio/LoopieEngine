@@ -314,6 +314,9 @@ namespace Loopie
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static int Camera_GetProjection(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static int Camera_ScreenToWorldRay(string entityID, string componentID, Vector2 mousePos, out Ray outRay);
         #endregion
         #region Input
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
@@ -444,6 +447,9 @@ namespace Loopie
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal extern static string Entity_GetChild(string entityID, int index);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static string Entity_GetChildByName(string entityID, string entityName, bool deepSearch);
         #endregion
         #region Component
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
@@ -454,7 +460,7 @@ namespace Loopie
         #endregion
         #region Collisions
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static bool Collisions_Raycast(Vector3 origin, Vector3 direction, float maxDistance, out RaycastHit hit, int layerMask);
+        internal extern static bool Collisions_Raycast(Vector3 origin, Vector3 direction, float maxDistance, out RaycastHit hit, int layerMask, string entityToAvoidID, string componentToAvoidID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static int Collisions_GetLayerBit(string layerName);
         #endregion
@@ -513,6 +519,10 @@ namespace Loopie
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Window_GetSize(out Vector2 size);
+        #endregion
+        #region Application
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Application_Quit();
         #endregion
     }
 }

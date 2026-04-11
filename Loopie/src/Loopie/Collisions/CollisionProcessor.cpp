@@ -38,7 +38,7 @@ namespace Loopie {
 		s_colliders.erase(std::remove(s_colliders.begin(), s_colliders.end(), collider), s_colliders.end());
 	}
 
-    bool CollisionProcessor::Raycast(const Ray& ray, RaycastHit& hit, int layerMask)
+    bool CollisionProcessor::Raycast(const Ray& ray, RaycastHit& hit, int layerMask, BoxCollider* avoidCollider)
     {
         if (s_colliders.empty())
             return false;
@@ -51,6 +51,8 @@ namespace Loopie {
         for (auto* collider : s_colliders)
         {
             if (!collider || !collider->GetIsActive())
+                continue;
+            if (collider == avoidCollider)
                 continue;
 
             int colliderBit = collider->GetLayerBit();

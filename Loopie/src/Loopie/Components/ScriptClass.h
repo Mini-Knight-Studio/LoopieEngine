@@ -73,6 +73,8 @@ namespace Loopie {
 
 		_MonoObject* GetInstance() const;
 
+		bool IsValid() const;
+
 		template<typename T>
 		T GetRuntimeFieldValue(const std::string& name)
 		{

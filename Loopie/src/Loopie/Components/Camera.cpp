@@ -7,6 +7,7 @@
 #include "Loopie/Render/Renderer.h"
 #include "Loopie/Render/Gizmo.h"
 
+#include <limits>
 
 namespace Loopie
 {
@@ -197,6 +198,23 @@ namespace Loopie
 
 	bool Camera::SetAsMainCamera() {
 		return SetMainCamera(this);
+	}
+
+	Ray Camera::ScreenToWorldRay(const Camera& camera, float mouseX, float mouseY)
+	{
+		vec4 viewport = camera.GetViewport();
+
+		float normalizedX = ((mouseX - viewport.x) / viewport.z) * 2.0f - 1.0f;
+		float normalizedY = 1.0f - ((mouseY - viewport.y) / viewport.w) * 2.0f;
+
+		vec4 clip = vec4(normalizedX, normalizedY, -1.0f, 1.0f);
+
+		vec4 view = inverse(camera.GetProjectionMatrix()) * clip;
+		view = vec4(view.x, view.y, -1.0f, 0.0f);
+
+		vec3 worldDir = normalize(vec3(inverse(camera.GetViewMatrix()) * view));
+
+		return { camera.GetPosition(), worldDir, (float)(std::numeric_limits<int>::max()) };
 	}
 
 	JsonNode Camera::Serialize(JsonNode& parent) const

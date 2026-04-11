@@ -38,8 +38,6 @@ namespace Loopie {
 
 		void OnUpdate() override;
 
-
-		static Canvas* FindCanvasInParents(const std::shared_ptr<Loopie::Entity>& entity);
 	private:
 		bool UpdateComponents(DebugGameMode mode);
 		void RenderWorld(Camera* camera);

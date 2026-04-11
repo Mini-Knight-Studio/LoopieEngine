@@ -115,6 +115,23 @@ namespace Loopie {
 		return nullptr;
 	}
 
+	std::shared_ptr<Entity> Entity::GetChild(const std::string& name, bool deepSearch) const
+	{
+		for (const auto& child : m_childrenEntities)
+		{
+			if (child->GetName() == name)
+				return child;
+		}
+		if (deepSearch) {
+			for (const auto& child : m_childrenEntities) {
+				auto result = child->GetChild(name, true);
+				if (result)
+					return result;
+			}
+		}
+		return nullptr;
+	}
+
 	int Entity::GetChildCount() const
 	{
 		return m_childrenEntities.size();

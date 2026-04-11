@@ -179,6 +179,7 @@ namespace Loopie {
 	{
 		s_IsRunning = false;
 		Application::GetInstance().m_notifier.Notify(EngineNotification::OnRuntimeStop);
+		Reload();
 	}
 
 	void ScriptingManager::AttachCurrentThread()

@@ -274,6 +274,8 @@ namespace Loopie
 				if (component->GetTypeID() == ScriptClass::GetTypeIDStatic())
 				{
 					ScriptClass* script = static_cast<ScriptClass*>(component);
+					if (!script->IsValid())
+						continue;
 					switch (mode)
 					{
 					case Loopie::UPDATING:
@@ -296,7 +298,8 @@ namespace Loopie
 			}
 		}
 
-		if (mode == DebugGameMode::END) {
+		if (mode == DebugGameMode::END || Application::GetInstance().HasToStopScripting()) {
+			Application::GetInstance().StopScripting(false);	
 			ScriptingManager::RuntimeStop();
 			Application::GetInstance().GetScene().ReadAndLoadSceneFile("recoverScene.scene", false);
 		}
