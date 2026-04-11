@@ -511,5 +511,9 @@ namespace Loopie
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Window_GetSize(out Vector2 size);
         #endregion
+        #region Application
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Application_Quit();
+        #endregion
     }
 }

@@ -298,7 +298,8 @@ namespace Loopie
 			}
 		}
 
-		if (mode == DebugGameMode::END) {
+		if (mode == DebugGameMode::END || Application::GetInstance().HasToStopScripting()) {
+			Application::GetInstance().StopScripting(false);	
 			ScriptingManager::RuntimeStop();
 			Application::GetInstance().GetScene().ReadAndLoadSceneFile("recoverScene.scene", false);
 		}

@@ -10,6 +10,11 @@ namespace Loopie {
 		EditorApplication() : Application() {
 			AddModule(new GameModule());
 		}
+
+		void Quit() override
+		{
+			Close();
+		}
 	};
 }
 

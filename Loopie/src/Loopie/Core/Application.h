@@ -24,6 +24,7 @@ namespace Loopie {
 
 		void Run();
 		void Close();
+		virtual void Quit() = 0;
 
 		static Application& GetInstance();
 		Window& GetWindow();
@@ -34,6 +35,9 @@ namespace Loopie {
 		bool IsInterfaceVisible() const { return m_renderInterface; }
 
 		void CreateScene();
+
+		bool HasToStopScripting() const { return m_stopScripting; }
+		void StopScripting(bool stop) { m_stopScripting = stop; }
 	private:
 		void ProcessEvents(InputEventManager& eventController);
 
@@ -56,8 +60,7 @@ namespace Loopie {
 
 		bool m_running = true;
 		bool m_renderInterface = true;
-
-		
+		bool m_stopScripting = false;
 	};
 
 	//// Define Main

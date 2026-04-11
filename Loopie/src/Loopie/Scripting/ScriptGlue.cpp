@@ -1812,6 +1812,13 @@ namespace Loopie
 		Window& window = Application::GetInstance().GetWindow();
 		*size = window.GetSize();
 	}
+
+#pragma Application
+
+	static void Application_Quit() {
+		Application::GetInstance().Quit();
+	}
+
 #pragma endregion
 
 	template<typename Comp, typename = std::enable_if_t<std::is_base_of_v<Component, Comp>>>
@@ -2039,5 +2046,7 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Window_SetResizable);
 		ADD_INTERNAL_CALL(Window_SetSize);
 		ADD_INTERNAL_CALL(Window_GetSize);
+
+		ADD_INTERNAL_CALL(Application_Quit);
 	}
 }
