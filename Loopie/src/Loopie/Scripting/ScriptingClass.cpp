@@ -22,6 +22,20 @@ namespace Loopie {
 
 	_MonoObject* ScriptingClass::InvokeMethod(_MonoObject* instance, _MonoMethod* method, void** params)
 	{
+		if (!instance)
+		{
+			Log::Error("InvokeMethod: instance is null");
+			return nullptr;
+		}
+
+		if (!method)
+		{
+			Log::Error("InvokeMethod: method is null");
+			return nullptr;
+		}
+
+		ScriptingManager::AttachCurrentThread();
+
 		MonoObject* exception = nullptr;
 		MonoObject* result = mono_runtime_invoke(method, instance, params, &exception);
 

@@ -274,6 +274,8 @@ namespace Loopie
 				if (component->GetTypeID() == ScriptClass::GetTypeIDStatic())
 				{
 					ScriptClass* script = static_cast<ScriptClass*>(component);
+					if (!script->IsValid())
+						continue;
 					switch (mode)
 					{
 					case Loopie::UPDATING:

@@ -30,7 +30,7 @@ namespace Loopie
 
 		m_instance = m_scriptingClass->Instantiate();
 
-		m_gcHandle = mono_gchandle_new(m_instance, false);
+		m_gcHandle = mono_gchandle_new(m_instance, true);
 
 		m_OnCreate = m_scriptingClass->GetMethod("OnCreate", 0);
 		m_OnUpdate = m_scriptingClass->GetMethod("OnUpdate", 0);
@@ -76,6 +76,10 @@ namespace Loopie
 		return mono_gchandle_get_target(m_gcHandle);
 	}
 
+	bool ScriptClass::IsValid() const{
+		return m_gcHandle != 0 && m_instance != nullptr && m_scriptingClass != nullptr;
+	}
+
 	void ScriptClass::DestroyInstance()
 	{
 		if (m_gcHandle)
@@ -93,26 +97,30 @@ namespace Loopie
 
 	void ScriptClass::InvokeOnCreate()
 	{
-		if (m_OnCreate)
+		if (m_OnCreate) {
 			m_scriptingClass->InvokeMethod(m_instance, m_OnCreate);
+		}
 	}
 
 	void ScriptClass::InvokeOnUpdate()
 	{
-		if (m_OnUpdate)
+		if (m_OnUpdate) {
 			m_scriptingClass->InvokeMethod(m_instance, m_OnUpdate);
+		}
 	}
 
 	void ScriptClass::InvokeOnDestroy()
 	{
-		if(m_OnDestroy)
+		if (m_OnDestroy) {
 			m_scriptingClass->InvokeMethod(m_instance, m_OnDestroy);
+		}
 	}
 
 	void ScriptClass::InvokeOnDrawGizmo()
 	{
-		if (m_OnDrawGizmo)
+		if (m_OnDrawGizmo) {
 			m_scriptingClass->InvokeMethod(m_instance, m_OnDrawGizmo);
+		}
 	}
 
 	void ScriptClass::SetClass(const std::string& fullName)
