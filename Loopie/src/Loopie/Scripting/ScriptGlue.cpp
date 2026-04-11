@@ -14,6 +14,7 @@
 #include "Loopie/Components/Text.h"
 #include "Loopie/Components/ParticleComponent.h"
 #include "Loopie/Components/SpriteAnimator.h"
+#include "Loopie/Components/Button.h"
 
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Resources/ResourceManager.h"
@@ -34,6 +35,8 @@
 
 #include <mono/metadata/object.h>
 #include <mono/metadata/reflection.h>
+
+#include <algorithm>
 
 namespace Loopie
 {
@@ -956,6 +959,15 @@ namespace Loopie
 		SpriteAnimator* animator = Utils::GetComponent<SpriteAnimator>(entity, componentID);
 		if (animator)
 			animator->Stop(resetTime != 0);
+	}
+
+	static int SpriteAnimator_GetCurrentFrame(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return 0;
+		SpriteAnimator* animator = Utils::GetComponent<SpriteAnimator>(entity, componentID);
+		return animator ? animator->GetCurrentFrame() : 0;
 	}
 
 #pragma endregion
@@ -1884,6 +1896,7 @@ namespace Loopie
 		ADD_INTERNAL_CALL(SpriteAnimator_SetPlaying);
 		ADD_INTERNAL_CALL(SpriteAnimator_Play);
 		ADD_INTERNAL_CALL(SpriteAnimator_Stop);
+		ADD_INTERNAL_CALL(SpriteAnimator_GetCurrentFrame);
 
 		ADD_INTERNAL_CALL(Camera_SetFov);
 		ADD_INTERNAL_CALL(Camera_GetFov);

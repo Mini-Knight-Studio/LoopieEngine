@@ -65,5 +65,7 @@ namespace Loopie
         {
             InternalCalls.SpriteAnimator_Stop(entity.ID, ID, resetTime);
         }
+
+        public int CurrentFrame => InternalCalls.SpriteAnimator_GetCurrentFrame(entity.ID, ID);
     }
 }

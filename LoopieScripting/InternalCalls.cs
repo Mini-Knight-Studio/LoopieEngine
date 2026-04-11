@@ -231,6 +231,9 @@ namespace Loopie
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void SpriteAnimator_Stop(string entityID, string componentID, bool resetTime);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static int SpriteAnimator_GetCurrentFrame(string entityID, string componentID);
         #endregion
         #region AudioSource
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
