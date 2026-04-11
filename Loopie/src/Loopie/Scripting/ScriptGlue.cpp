@@ -1152,6 +1152,31 @@ namespace Loopie
 		return 0;
 	}
 
+	struct MonoRay
+	{
+		vec3 origin;
+		vec3 direction;
+		float length;
+	};
+
+	static void Camera_ScreenToWorldRay(MonoString* entityID, MonoString* componentID, vec2* screenPoint, MonoRay* outRay)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		Camera* camera = Utils::GetComponent<Camera>(entity, componentID);
+		if (camera)
+		{
+			Ray r = Camera::ScreenToWorldRay(*camera, screenPoint->x, screenPoint->y);
+			outRay->origin = r.StartPoint();
+			outRay->direction = r.Direction();
+		}
+		else {
+			outRay->origin = { 0,0,0 };
+			outRay->direction = { 0,0,0 };
+		}
+	}
+
 #pragma endregion
 
 #pragma region Input
@@ -1974,6 +1999,7 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Camera_GetOrthoSize);
 		ADD_INTERNAL_CALL(Camera_SetProjection);
 		ADD_INTERNAL_CALL(Camera_GetProjection);
+		ADD_INTERNAL_CALL(Camera_ScreenToWorldRay);
 
 		ADD_INTERNAL_CALL(Input_IsKeyDown);
 		ADD_INTERNAL_CALL(Input_IsKeyUp);

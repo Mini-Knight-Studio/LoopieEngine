@@ -311,6 +311,9 @@ namespace Loopie
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static int Camera_GetProjection(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static int Camera_ScreenToWorldRay(string entityID, string componentID, Vector2 mousePos, out Ray outRay);
         #endregion
         #region Input
         [MethodImplAttribute(MethodImplOptions.InternalCall)]

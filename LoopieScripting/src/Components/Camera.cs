@@ -46,7 +46,7 @@ namespace Loopie
         {
             return InternalCalls.Camera_IsMainCamera(entity.ID, ID);
         }
-      
+
         public static Camera Main { get { return GetMainCamera(); } set { SetMainCamera(value); } }
 
         private static void SetMainCamera(Camera camera)
@@ -94,6 +94,13 @@ namespace Loopie
         public ProjectionType GetProjection()
         {
             return (ProjectionType)InternalCalls.Camera_GetProjection(entity.ID, ID);
+        }
+
+        public static Ray ScreenToWorldRay(Camera camera, Vector2 mousePos)
+        {
+            Ray ray = new Ray();
+            InternalCalls.Camera_ScreenToWorldRay(camera.entity.ID, camera.ID, mousePos, out ray);
+            return ray;
         }
     }
 }
