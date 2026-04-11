@@ -144,7 +144,7 @@ namespace Loopie {
 		bool GetIsActiveInHierarchy() const;
 		std::shared_ptr<Entity> GetChild(UUID uuid) const;
 		std::shared_ptr<Entity> GetChild(int index) const;
-		std::shared_ptr<Entity> GetChild(const std::string& name, bool deepSearch= false, bool exactName = true) const;
+		std::shared_ptr<Entity> GetChild(const std::string& name, bool deepSearch = false) const;
 
 
 
