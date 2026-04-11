@@ -190,9 +190,38 @@ namespace Loopie
             return list;
         }
 
+        public List<Entity> GetChildrenByName(string name, bool deepSearch = false, bool exactName = true)
+        {
+            List<Entity> list = new List<Entity>();
+            for (int i = 0; i < ChildCount; i++)
+            {
+                Entity child = GetChild(i);
+
+                if(exactName)
+                {
+                     if (child.Name == name)
+                        list.Add(child);
+                }
+                else
+                {
+                    if (child.Name.Contains(name))
+                        list.Add(child);
+                }
+                if (deepSearch)
+                    list.AddRange(child.GetChildrenByName(name, true));
+            }
+            return list;
+        }
+
         public Entity GetChild(int index)
         {
             string childID = InternalCalls.Entity_GetChild(ID, index);
+            return new Entity(childID);
+        }
+
+        public Entity GetChildByName(string name, bool deepSearch = false)
+        {
+            string childID = InternalCalls.Entity_GetChildByName(ID, name, deepSearch);
             return new Entity(childID);
         }
 

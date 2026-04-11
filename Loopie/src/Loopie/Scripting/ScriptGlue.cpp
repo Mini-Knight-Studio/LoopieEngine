@@ -469,6 +469,20 @@ namespace Loopie
 		return ScriptingManager::CreateString(child->GetUUID().Get().c_str());
 	}
 
+	static MonoString* Entity_GetChildByName(MonoString* entityID, MonoString* entityName, MonoBoolean deepSearch)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return ScriptingManager::CreateString("");
+
+		std::string name = Utils::MonoStringToString(entityName);
+		std::shared_ptr<Entity> child = entity->GetChild(name, deepSearch != 0);
+		if (!child)
+			return ScriptingManager::CreateString("");
+
+		return ScriptingManager::CreateString(child->GetUUID().Get().c_str());
+	}
+
 #pragma endregion
 
 #pragma region Transform
@@ -1887,6 +1901,7 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Entity_SetName);
 		ADD_INTERNAL_CALL(Entity_GetChildCount);
 		ADD_INTERNAL_CALL(Entity_GetChild);
+		ADD_INTERNAL_CALL(Entity_GetChildByName);
 
 		ADD_INTERNAL_CALL(Component_SetActive);
 		ADD_INTERNAL_CALL(Component_IsActive);

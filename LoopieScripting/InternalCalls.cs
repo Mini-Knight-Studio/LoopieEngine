@@ -441,6 +441,9 @@ namespace Loopie
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal extern static string Entity_GetChild(string entityID, int index);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static string Entity_GetChildByName(string entityID, string entityName, bool deepSearch);
         #endregion
         #region Component
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
