@@ -22,6 +22,7 @@
 #include "Loopie/Core/InputEventManager.h"
 
 #include "Loopie/Collisions/CollisionProcessor.h"
+#include "Loopie/Audio/AudioManager.h"
 
 #include "Loopie/Render/Gizmo.h"
 
@@ -1860,6 +1861,18 @@ namespace Loopie
 
 #pragma endregion
 
+#pragma AudioMixer
+
+	static void AudioMixer_SetBusVolume(MonoString* busName, float volume) {
+		AudioManager::SetBusVolume(Utils::MonoStringToString(busName), volume);
+	}
+
+	static float AudioMixer_GetBusVolume(MonoString* busName) {
+		return AudioManager::GetBusVolume(Utils::MonoStringToString(busName));
+	}
+
+#pragma endregion
+
 	template<typename Comp, typename = std::enable_if_t<std::is_base_of_v<Component, Comp>>>
 	static void RegisterComponent()
 	{
@@ -2089,5 +2102,8 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Window_GetSize);
 
 		ADD_INTERNAL_CALL(Application_Quit);
+
+		ADD_INTERNAL_CALL(AudioMixer_SetBusVolume);
+		ADD_INTERNAL_CALL(AudioMixer_GetBusVolume);
 	}
 }

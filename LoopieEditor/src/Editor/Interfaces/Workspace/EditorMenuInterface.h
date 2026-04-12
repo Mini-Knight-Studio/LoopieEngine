@@ -6,6 +6,9 @@
 #include <vector>
 
 namespace Loopie {
+
+	struct AudioBus;
+
 	class EditorMenuInterface : public Interface {
 	public:
 		EditorMenuInterface();
@@ -18,6 +21,7 @@ namespace Loopie {
 		void RenderAboutMenu();
 		void RenderInfoConfigMenu();
 		void RenderCollisionMatrixMenu();
+		void RenderAudioConfigMenu();
 
 
 		void HotKeys(const InputEventManager& inputEvent);
@@ -38,11 +42,15 @@ namespace Loopie {
 		bool m_showAboutMenu = false;
 		bool m_showInfoConfigMenu = false;
 		bool m_showCollisionMatrixMenu = false;
+		bool m_showAudioConfigMenu = false;
 
 
 		/// Plot
 		const int LOG_SIZE = 100;
 		std::vector<float> m_fpsLog;
 		std::vector<float> m_msLog;
+
+		///Audio
+		AudioBus* m_currentBus;
 	};
 }

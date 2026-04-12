@@ -31,6 +31,7 @@
 #include "Loopie/Importers/MaterialImporter.h"
 
 #include "Loopie/Collisions/CollisionProcessor.h"
+#include "Loopie/Audio/AudioManager.h"
 
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Resources/ResourceManager.h"
@@ -2252,6 +2253,59 @@ namespace Loopie {
 
 		if (open)
 		{
+			const AudioBus* current = source->GetBus();
+			AudioBus* parent = (current && current->parent) ? current->parent : nullptr;
+
+			ImGui::SeparatorText("Audio Bus");
+			std::string currentPath = "Master";
+
+			if (parent)
+				currentPath += "/" + current->path;
+
+			ImGui::Text("Bus: %s", currentPath.c_str());
+
+			if (ImGui::BeginCombo("##AudioBusSelector", currentPath.c_str()))
+			{
+				std::function<void(const AudioBus*)> DrawBus =
+					[&](const AudioBus* bus)
+					{
+						if (!bus) 
+							return;
+
+						bool hasChildren = !bus->children.empty();
+						bool selected = (source->GetBusPath() == bus->path);
+
+						ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | (hasChildren ? 0 : ImGuiTreeNodeFlags_Leaf);
+
+						bool open = ImGui::TreeNodeEx(bus->name.c_str(), flags);
+
+						if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen())
+						{
+							source->SetBus(bus);
+						}
+
+						if (open)
+						{
+							for (auto& [name, child] : bus->children)
+								DrawBus(child.get());
+
+							ImGui::TreePop();
+						}
+					};
+
+				AudioBus* master = AudioManager::GetMasterBus();
+
+				if (master)
+				{
+					DrawBus(master);
+				}
+
+				ImGui::EndCombo();
+			}
+
+
+
+
 			int currentClipIndex = source->GetCurrentClipIndex();
 			std::vector<std::shared_ptr<AudioClip>>& clips = source->GetAudioClips();
 			// --- 2. Bucle ---
@@ -2430,8 +2484,6 @@ namespace Loopie {
 
 			ImGui::SeparatorText("Controls");
 
-
-			// --- 6. Controles R�pidos ---
 			if (ImGui::Button("Play"))
 				source->Play();
 

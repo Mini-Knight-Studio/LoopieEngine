@@ -8,6 +8,7 @@
 
 #include "Loopie/Core/Window.h"
 #include "Loopie/Collisions/CollisionProcessor.h"
+#include "Loopie/Audio/AudioManager.h"
 
 #include <fstream>
 #include <sstream>
@@ -168,6 +169,7 @@ namespace Loopie {
 		JsonNode editorConfigNode;
 		JsonNode collisionLayersNode;
 		JsonNode collisionMatrixNode;
+		JsonNode audioMixerBusesNode;
 		JsonNode buildSceneNode;
 
 		if (!configData.HasKey("", "engine_config"))
@@ -204,6 +206,13 @@ namespace Loopie {
 			collisionMatrixNode = engineConfigNode.CreateObjectField("collision_matrix");
 		else
 			collisionMatrixNode = engineConfigNode.Child("collision_matrix");
+
+
+
+		if (!engineConfigNode.HasKey("audio_mixer_buses"))
+			audioMixerBusesNode = engineConfigNode.CreateObjectField("audio_mixer_buses");
+		else
+			audioMixerBusesNode = engineConfigNode.Child("audio_mixer_buses");
 
 
 
@@ -252,6 +261,48 @@ namespace Loopie {
 		{
 			if (i > 0)
 				CollisionProcessor::SetLayerName(i, collisionLayersNode.GetValue<std::string>(std::to_string(i), "Layer " + std::to_string(i)).Result);
+		}
+
+
+
+		std::function<void(const JsonNode&, AudioBus*)> DeserializeBus =
+			[&](const JsonNode& node, AudioBus* parent)
+			{
+				std::vector<std::string> keys = node.GetObjectKeys();
+
+				for (const std::string& key : keys)
+				{
+					JsonNode childNode = node.Child(key);
+					if (!childNode.IsValid())
+						continue;
+
+					std::string name = childNode.GetValue<std::string>("name", key).Result;
+					std::string path = childNode.GetValue<std::string>("path", "").Result;
+					float volume = childNode.GetValue<float>("volume", 1.0f).Result;
+
+					AudioManager::CreateBus(path);
+					AudioManager::SetBusVolume(path, volume);
+
+					AudioBus* bus = AudioManager::GetBus(path);
+					if (!bus)
+						continue;
+
+					bus->parent = parent;
+
+					JsonNode children = childNode.Child("children");
+					if (children.IsValid())
+					{
+						DeserializeBus(children, bus);
+					}
+				}
+			};
+
+		JsonNode root = audioMixerBusesNode.Child("Master");
+		if (root.IsValid())
+		{
+			float volume = root.GetValue<float>("volume", 1.0f).Result;
+			AudioManager::SetBusVolume("", volume);
+			DeserializeBus(root.Child("children"), AudioManager::GetMasterBus());
 		}
 
 		window.SetVsync(vsync);

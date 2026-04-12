@@ -177,6 +177,8 @@ namespace Loopie {
                 FMOD_MODE mode = m_isSpatial ? (FMOD_3D | FMOD_3D_LINEARROLLOFF) : FMOD_2D;
                 mode |= FMOD_LOOP_OFF;
                
+                m_channel->setChannelGroup(ResolveBus()->group);
+
 
                 m_channel->setMode(mode);
 
@@ -265,6 +267,23 @@ namespace Loopie {
         }
     }
 
+    void AudioSource::SetBus(const AudioBus* bus)
+    {
+        m_busPath = bus ? bus->path : "";
+
+        if(m_channel)
+            m_channel->setChannelGroup(ResolveBus()->group);
+    }
+
+    const std::string AudioSource::GetBusPath() const {
+        return m_busPath;
+    }
+
+    const AudioBus* AudioSource::GetBus() const
+    {
+        return ResolveBus();
+    }
+
 
     void AudioSource::SetSpatial(bool active) {
         m_isSpatial = active;
@@ -296,6 +315,8 @@ namespace Loopie {
         transformObj.CreateField("maxDistance", m_maxDistance);
         transformObj.CreateField("currentClipIndex", m_currentClipIndex);
 
+        transformObj.CreateField("channelBus", m_busPath);
+
         JsonNode clipsArray = transformObj.CreateObjectField("audioClips");
         int arrayIndex = 0;
         for (const auto& clip : m_audioClips) {
@@ -326,6 +347,8 @@ namespace Loopie {
         m_maxDistance = data.GetValue<float>("maxDistance", 100).Result;
         m_currentClipIndex = data.GetValue<int>("currentClipIndex", 0).Result;
 
+        m_busPath = data.GetValue<std::string>("channelBus", "").Result;
+
         m_audioClips.clear();
 
         JsonNode clipsArray = data.Child("audioClips");
@@ -337,6 +360,11 @@ namespace Loopie {
             if (meta)
                 AddClip(ResourceManager::GetAudioClip(*meta));
         }
+    }
+
+    const AudioBus* AudioSource::ResolveBus() const
+    {
+        return AudioManager::GetBus(m_busPath);
     }
 
 }

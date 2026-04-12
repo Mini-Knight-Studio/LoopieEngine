@@ -1,5 +1,3 @@
-
-
 namespace Loopie
 {
     public static class Application

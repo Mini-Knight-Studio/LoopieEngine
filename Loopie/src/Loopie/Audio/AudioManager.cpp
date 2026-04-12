@@ -9,6 +9,8 @@
 #include "Loopie/Components/AudioListener.h" 
 #include "Loopie/Components/Transform.h"
 
+#include "Loopie/Project/ProjectConfig.h"
+
 #include <fmod_studio.hpp>
 #include <fmod.hpp>
 
@@ -17,6 +19,7 @@ namespace Loopie {
 
     FMOD::Studio::System* AudioManager::s_StudioSystem = nullptr;
     FMOD::System* AudioManager::s_CoreSystem = nullptr;
+    std::unique_ptr<AudioBus> AudioManager::s_MasterBus = nullptr;
 
     void AudioManager::Init() {
         FMOD_RESULT result = FMOD::Studio::System::create(&s_StudioSystem);
@@ -32,6 +35,12 @@ namespace Loopie {
             Log::Critical("FMOD Init Error: {0}", FMOD_ErrorString(result));
             return;
         }
+
+        s_MasterBus = std::make_unique<AudioBus>();
+        s_MasterBus->name = "Master";
+
+        s_CoreSystem->getMasterChannelGroup(&s_MasterBus->group);
+
 
         Log::Info("Audio Manager (FMOD) Initialized.");
 
@@ -100,6 +109,97 @@ namespace Loopie {
         return sound;
     }
 
+    bool AudioManager::CreateBus(const std::string& path)
+    {
+        std::stringstream ss(path);
+        std::string segment;
+
+        AudioBus* current = s_MasterBus.get();
+        std::string currentPath;
+
+        while (std::getline(ss, segment, '/'))
+        {
+            if (segment.empty()) continue;
+
+            if (!currentPath.empty())
+                currentPath += "/";
+
+            currentPath += segment;
+
+            if (!current->children.count(segment))
+            {
+                FMOD::ChannelGroup* group = nullptr;
+                s_CoreSystem->createChannelGroup(segment.c_str(), &group);
+
+                current->group->addGroup(group);
+
+                auto bus = std::make_unique<AudioBus>();
+                bus->name = segment;
+                bus->path = currentPath;
+                bus->group = group;
+                bus->parent = current;
+                bus->volume = 1.0f;
+
+                current->children[segment] = std::move(bus);
+            }
+
+            current = current->children[segment].get();
+        }
+
+        return true;
+    }
+
+    bool AudioManager::RemoveBus(AudioBus* bus)
+    {
+        if (!bus || !bus->parent)
+            return false;
+
+        if (bus->group)
+            bus->group->release();
+
+        bus->parent->children.erase(bus->name);
+
+        return true;
+    }
+
+    AudioBus* AudioManager::GetBus(const std::string& path)
+    {
+        if (path.empty() || path == "Master")
+            return s_MasterBus.get();
+
+        std::stringstream ss(path);
+        std::string segment;
+
+        AudioBus* current = s_MasterBus.get();
+
+        while (std::getline(ss, segment, '/'))
+        {
+            if (segment.empty()) continue;
+
+            if (!current->children.count(segment))
+                return nullptr;
+
+            current = current->children[segment].get();
+        }
+
+        return current;
+    }
+
+    void AudioManager::SetBusVolume(const std::string& path, float volume)
+    {
+        AudioBus* bus = GetBus(path);
+        if (bus && bus->group) {
+			bus->volume = volume;
+            bus->group->setVolume(volume);
+        }
+    }
+
+    float AudioManager::GetBusVolume(const std::string& path)
+    {
+        AudioBus* bus = GetBus(path);
+        return bus ? bus->volume : 0.0f;
+    }
+
     void AudioManager::PlaySound(FMOD::Sound* sound, FMOD::Channel** outChannel, bool paused) {
         if (!s_CoreSystem || !sound)
             return;
@@ -126,6 +226,38 @@ namespace Loopie {
 
     void AudioManager::SetGlobalParameter(const std::string& name, float value) {
         if (s_StudioSystem) s_StudioSystem->setParameterByName(name.c_str(), value);
+    }
+
+    void AudioManager::SaveAudioMixer()
+    {
+        JsonData data = ProjectConfig::GetData();
+        JsonNode mixerNode = data.Child("engine_config").Child("audio_mixer_buses");
+
+        if (!mixerNode.IsValid())
+            mixerNode = data.Child("engine_config").CreateObjectField("audio_mixer_buses");
+
+        std::function<void(const AudioBus*, JsonNode&)> SerializeBus =
+            [&](const AudioBus* bus, JsonNode& node)
+            {
+                if (!bus) return;
+
+                node.CreateField("name", bus->name);
+                node.CreateField("path", bus->path);
+                node.CreateField("volume", bus->volume);
+
+                JsonNode childrenNode = node.CreateObjectField("children");
+
+                for (auto& [name, child] : bus->children)
+                {
+                    JsonNode childNode = childrenNode.CreateObjectField(name);
+                    SerializeBus(child.get(), childNode);
+                }
+            };
+
+        JsonNode root = mixerNode.CreateObjectField(s_MasterBus->name);
+        SerializeBus(s_MasterBus.get(), root);
+
+        ProjectConfig::Save(data);
     }
 
     FMOD_VECTOR AudioManager::VectorToFmod(const glm::vec3& v) {

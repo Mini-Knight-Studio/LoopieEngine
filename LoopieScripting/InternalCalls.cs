@@ -521,5 +521,11 @@ namespace Loopie
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Application_Quit();
         #endregion
+        #region AudioMixer
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void AudioMixer_SetBusVolume(string busName, float volume);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static float AudioMixer_GetBusVolume(string busName);
+        #endregion
     }
 }

@@ -24,6 +24,8 @@ struct FMOD_VECTOR;
 
 namespace Loopie {
 
+    struct AudioBus;
+
     enum class AudioLoopStrategy {
         Repetitive,
         Sequential,
@@ -77,6 +79,10 @@ namespace Loopie {
 		bool GetIfPlayOnAwake() const { return m_playOnAwake; }
         void Get3DMinMaxDistance(float& minDist, float& maxDist) const { minDist = m_minDistance; maxDist = m_maxDistance; }
 
+        const std::string GetBusPath() const;
+        const AudioBus* GetBus() const;
+        void SetBus(const AudioBus* bus);
+
         void UpdateChannelMode();
         void SetSpatial(bool active);
         void SetLoopStrategy(AudioLoopStrategy strategy);
@@ -87,7 +93,7 @@ namespace Loopie {
         void Deserialize(const JsonNode& data) override;
 
     private:
-
+        const AudioBus* ResolveBus() const;
     private:
 
         friend class AudioManager;
@@ -115,5 +121,7 @@ namespace Loopie {
 
         AudioLoopStrategy m_loopStrategy = AudioLoopStrategy::Repetitive;
         AudioNoLoopStrategy m_noLoopStrategy = AudioNoLoopStrategy::First;
+
+        std::string m_busPath = "";
     };
 }

@@ -9,6 +9,7 @@
 #include "Loopie/Project/ProjectConfig.h"
 #include "Loopie/Collisions/CollisionProcessor.h"
 #include "Loopie/Scripting/ScriptingManager.h"
+#include "Loopie/Audio/AudioManager.h"
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -142,6 +143,15 @@ namespace Loopie {
 				ImGui::EndMenu();
 			}
 
+			if (ImGui::BeginMenu("Audio"))
+			{
+				if(ImGui::MenuItem("Mixer"))
+				{
+					m_showAudioConfigMenu = true;
+				}
+				ImGui::EndMenu();
+			}
+
 			if (ImGui::BeginMenu("Help"))
 			{
 				if (ImGui::MenuItem("Documentation"))
@@ -178,6 +188,9 @@ namespace Loopie {
 
 		if (m_showCollisionMatrixMenu)
 			RenderCollisionMatrixMenu();
+
+		if(m_showAudioConfigMenu)
+			RenderAudioConfigMenu();
 
 		ImVec2 center = ImGui::GetMainViewport()->GetCenter();
 		ImGui::SetNextWindowPos(center, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
@@ -431,6 +444,158 @@ namespace Loopie {
 		if (ImGui::Button("Save Changes", ImVec2(buttonWidth, 0)))
 		{
 			CollisionProcessor::SaveLayers();
+		}
+
+		ImGui::End();
+	}
+
+	static std::string GetCurrentAudioPath(const std::vector<std::string>& audioNavStack)
+	{
+		std::string path;
+		for (auto& p : audioNavStack)
+		{
+			if (!path.empty()) path += "/";
+			path += p;
+		}
+		return path;
+	}
+
+
+
+	void EditorMenuInterface::RenderAudioConfigMenu()
+	{
+		ImGui::Begin("Audio Mixer", &m_showAudioConfigMenu, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize);
+
+		AudioBus* master = Loopie::AudioManager::GetMasterBus();
+		if (!master)
+		{
+			ImGui::Text("No Audio System");
+			ImGui::End();
+			return;
+		}
+
+		AudioBus* current = m_currentBus;
+		if(!current)
+			current = master;
+
+		AudioBus* parent = (current && current->parent) ? current->parent : nullptr;
+
+
+		if (current && parent)
+		{
+			if (ImGui::Button("< Back"))
+				m_currentBus = parent;
+
+			ImGui::SameLine();
+		}
+
+		if (parent)
+			ImGui::Text("Folder: Master/%s", current->path.c_str());
+		else
+			ImGui::Text("Folder: Master");
+
+
+		ImGui::Separator();
+
+		if (current)
+		{
+			ImGui::SeparatorText("Mixer");
+
+			float currentVol = 1.0f;
+			currentVol = current->volume;
+
+			ImGui::Indent(16.0f);
+			ImGui::Text("%s Vol:", current->name.c_str());
+			ImGui::SetNextItemWidth(120);
+			ImGui::SameLine();
+			if (ImGui::SliderFloat("##owner_vol", &currentVol, 0.0f, 1.0f))
+				AudioManager::SetBusVolume(current->path, currentVol);
+			ImGui::Unindent(16.0f);
+
+			ImGui::SeparatorText("Sub-Mixers");
+
+			if (current->children.size() > 0) {
+
+				ImGui::Indent(16.0f);
+				int index = 0;
+				for (auto& [name, child] : current->children)
+				{
+					ImGui::PushID(child->path.c_str());
+
+					ImGui::Text("%s", child->name.c_str());
+
+					float vol = 1.0f;
+					if (child->group)
+						vol = child->volume;
+
+					ImGui::SetNextItemWidth(120);
+					ImGui::Indent(16.0f);
+					ImGui::Text("Vol:");
+					ImGui::SameLine();
+					if (ImGui::SliderFloat("##vol", &vol, 0.0f, 1.0f))
+					{
+						if (child->group)
+							AudioManager::SetBusVolume(child->path, vol);
+					}
+					ImGui::SameLine();
+					if (ImGui::Button("Enter"))
+					{
+						m_currentBus = child.get();
+					}
+					ImGui::SameLine();
+					if (child->parent)
+					{
+						if (ImGui::Button("X"))
+						{
+							Loopie::AudioManager::RemoveBus(child.get());
+							ImGui::PopID();
+							break;
+						}
+					}
+					ImGui::SameLine();
+					ImGui::TextDisabled("Childs: [%d]", (int)(child->children.size()));
+					ImGui::PopID();
+					ImGui::Unindent(16.0f);
+
+					index++;
+					if (index < current->children.size())
+						ImGui::Separator();
+				}
+				ImGui::Unindent(16.0f);
+			}
+			else{
+				ImGui::Indent(16.0f);
+				ImGui::TextDisabled("Empty (No Sub-Mixers)");
+				ImGui::Unindent(16.0f);
+
+			}	
+		}
+
+		static char newBus[64] = "";
+		ImGui::SeparatorText("");
+		ImGui::InputText("##create-mixer", newBus, sizeof(newBus));
+		ImGui::SameLine();
+
+		if (ImGui::Button("Create Sub-Mixer"))
+		{
+			if (strlen(newBus) > 0)
+			{
+				std::string base = current ? current->path : "";
+				std::string full = base.empty() ? newBus : base + "/" + newBus;
+
+				Loopie::AudioManager::CreateBus(full);
+
+				newBus[0] = '\0';
+			}
+		}
+
+		ImGui::Dummy(ImVec2(0, 15));
+		float windowWidth = ImGui::GetContentRegionAvail().x;
+		float buttonWidth = 100.0f;
+		ImGui::SetCursorPosX((windowWidth)-buttonWidth);
+		if (ImGui::Button("Save Changes", ImVec2(buttonWidth, 0)))
+		{
+			AudioManager::SaveAudioMixer();
 		}
 
 		ImGui::End();
