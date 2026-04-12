@@ -1818,6 +1818,275 @@ namespace Loopie
 	}
 #pragma endregion
 
+#pragma region Button
+	static MonoBoolean Button_IsInteractable(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return false;
+		Button* button = Utils::GetComponent<Button>(entity, componentID);
+		return button ? button->IsInteractable() : false;
+	}
+
+	static void Button_SetInteractable(MonoString* entityID, MonoString* componentID, MonoBoolean interactable)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		Button* button = Utils::GetComponent<Button>(entity, componentID);
+		if (button)
+			button->SetInteractable(interactable != 0);
+	}
+
+	static MonoBoolean Button_IsHovered(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return false;
+		Button* button = Utils::GetComponent<Button>(entity, componentID);
+		return button ? button->IsHovered() : false;
+	}
+
+	static MonoBoolean Button_IsPressed(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return false;
+		Button* button = Utils::GetComponent<Button>(entity, componentID);
+		return button ? button->IsPressed() : false;
+	}
+
+	static void Button_TriggerClick(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		Button* button = Utils::GetComponent<Button>(entity, componentID);
+		if (button)
+			button->TriggerClick();
+	}
+
+	static int Button_GetTransitionMode(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return 0;
+		Button* button = Utils::GetComponent<Button>(entity, componentID);
+		return button ? (int)button->GetTransitionMode() : 0;
+	}
+
+	static void Button_SetTransitionMode(MonoString* entityID, MonoString* componentID, int mode)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		Button* button = Utils::GetComponent<Button>(entity, componentID);
+		if (!button)
+			return;
+		mode = std::clamp(mode, 0, 1);
+		button->SetTransitionMode((Button::VisualTransitionMode)mode);
+	}
+
+	static void Button_GetNormalColor(MonoString* entityID, MonoString* componentID, vec4* outColor)
+	{
+		*outColor = vec4(1.0f);
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		Button* button = Utils::GetComponent<Button>(entity, componentID);
+		if (button)
+			*outColor = button->GetNormalColor();
+	}
+
+	static void Button_SetNormalColor(MonoString* entityID, MonoString* componentID, vec4* color)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		Button* button = Utils::GetComponent<Button>(entity, componentID);
+		if (button)
+			button->SetNormalColor(*color);
+	}
+
+	static void Button_GetHoveredColor(MonoString* entityID, MonoString* componentID, vec4* outColor)
+	{
+		*outColor = vec4(1.0f);
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		Button* button = Utils::GetComponent<Button>(entity, componentID);
+		if (button)
+			*outColor = button->GetHoveredColor();
+	}
+
+	static void Button_SetHoveredColor(MonoString* entityID, MonoString* componentID, vec4* color)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		Button* button = Utils::GetComponent<Button>(entity, componentID);
+		if (button)
+			button->SetHoveredColor(*color);
+	}
+
+	static void Button_GetPressedColor(MonoString* entityID, MonoString* componentID, vec4* outColor)
+	{
+		*outColor = vec4(1.0f);
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		Button* button = Utils::GetComponent<Button>(entity, componentID);
+		if (button)
+			*outColor = button->GetPressedColor();
+	}
+
+	static void Button_SetPressedColor(MonoString* entityID, MonoString* componentID, vec4* color)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		Button* button = Utils::GetComponent<Button>(entity, componentID);
+		if (button)
+			button->SetPressedColor(*color);
+	}
+
+	static void Button_GetDisabledColor(MonoString* entityID, MonoString* componentID, vec4* outColor)
+	{
+		*outColor = vec4(1.0f);
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		Button* button = Utils::GetComponent<Button>(entity, componentID);
+		if (button)
+			*outColor = button->GetDisabledColor();
+	}
+
+	static void Button_SetDisabledColor(MonoString* entityID, MonoString* componentID, vec4* color)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		Button* button = Utils::GetComponent<Button>(entity, componentID);
+		if (button)
+			button->SetDisabledColor(*color);
+	}
+
+	static MonoString* Button_GetTextureUUID(const std::shared_ptr<Texture>& tex)
+	{
+		if (!tex)
+			return ScriptingManager::CreateString("");
+		return ScriptingManager::CreateString(tex->GetUUID().Get().c_str());
+	}
+
+	static std::shared_ptr<Texture> Button_LoadTextureFromUUID(MonoString* uuidStr)
+	{
+		if (!uuidStr)
+			return std::shared_ptr<Texture>();
+		std::string uuidString = Utils::MonoStringToString(uuidStr);
+		if (uuidString.empty())
+			return std::shared_ptr<Texture>();
+		UUID uuid(uuidString);
+		if (uuid == UUID::Invalid)
+			return std::shared_ptr<Texture>();
+		Metadata* meta = AssetRegistry::GetMetadata(uuid);
+		if (!meta)
+			return std::shared_ptr<Texture>();
+		auto tex = ResourceManager::GetTexture(*meta);
+		if (tex)
+			tex->Load();
+		return tex;
+	}
+
+	static MonoString* Button_GetNormalTextureUUID(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return ScriptingManager::CreateString("");
+		Button* button = Utils::GetComponent<Button>(entity, componentID);
+		if (!button)
+			return ScriptingManager::CreateString("");
+		return Button_GetTextureUUID(button->GetNormalTexture());
+	}
+
+	static void Button_SetNormalTextureUUID(MonoString* entityID, MonoString* componentID, MonoString* textureUUID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		Button* button = Utils::GetComponent<Button>(entity, componentID);
+		if (!button)
+			return;
+		button->SetNormalTexture(Button_LoadTextureFromUUID(textureUUID));
+	}
+
+	static MonoString* Button_GetHoveredTextureUUID(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return ScriptingManager::CreateString("");
+		Button* button = Utils::GetComponent<Button>(entity, componentID);
+		if (!button)
+			return ScriptingManager::CreateString("");
+		return Button_GetTextureUUID(button->GetHoveredTexture());
+	}
+
+	static void Button_SetHoveredTextureUUID(MonoString* entityID, MonoString* componentID, MonoString* textureUUID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		Button* button = Utils::GetComponent<Button>(entity, componentID);
+		if (!button)
+			return;
+		button->SetHoveredTexture(Button_LoadTextureFromUUID(textureUUID));
+	}
+
+	static MonoString* Button_GetPressedTextureUUID(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return ScriptingManager::CreateString("");
+		Button* button = Utils::GetComponent<Button>(entity, componentID);
+		if (!button)
+			return ScriptingManager::CreateString("");
+		return Button_GetTextureUUID(button->GetPressedTexture());
+	}
+
+	static void Button_SetPressedTextureUUID(MonoString* entityID, MonoString* componentID, MonoString* textureUUID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		Button* button = Utils::GetComponent<Button>(entity, componentID);
+		if (!button)
+			return;
+		button->SetPressedTexture(Button_LoadTextureFromUUID(textureUUID));
+	}
+
+	static MonoString* Button_GetDisabledTextureUUID(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return ScriptingManager::CreateString("");
+		Button* button = Utils::GetComponent<Button>(entity, componentID);
+		if (!button)
+			return ScriptingManager::CreateString("");
+		return Button_GetTextureUUID(button->GetDisabledTexture());
+	}
+
+	static void Button_SetDisabledTextureUUID(MonoString* entityID, MonoString* componentID, MonoString* textureUUID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		Button* button = Utils::GetComponent<Button>(entity, componentID);
+		if (!button)
+			return;
+		button->SetDisabledTexture(Button_LoadTextureFromUUID(textureUUID));
+	}
+
+#pragma endregion
+
 #pragma region Window
 	static void Window_SetTargetFramerate(int targetFramerate) {
 		Window& window = Application::GetInstance().GetWindow();
@@ -1909,6 +2178,7 @@ namespace Loopie
 		RegisterComponent<ParticleComponent>();
 		RegisterComponent<Image>();
 		RegisterComponent<Text>();
+		RegisterComponent<Button>();
 	}
 
 
@@ -2090,6 +2360,30 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Text_SetColor);
 		ADD_INTERNAL_CALL(Text_GetText);
 		ADD_INTERNAL_CALL(Text_SetText);
+
+		ADD_INTERNAL_CALL(Button_IsInteractable);
+		ADD_INTERNAL_CALL(Button_SetInteractable);
+		ADD_INTERNAL_CALL(Button_IsHovered);
+		ADD_INTERNAL_CALL(Button_IsPressed);
+		ADD_INTERNAL_CALL(Button_TriggerClick);
+		ADD_INTERNAL_CALL(Button_GetTransitionMode);
+		ADD_INTERNAL_CALL(Button_SetTransitionMode);
+		ADD_INTERNAL_CALL(Button_GetNormalColor);
+		ADD_INTERNAL_CALL(Button_SetNormalColor);
+		ADD_INTERNAL_CALL(Button_GetHoveredColor);
+		ADD_INTERNAL_CALL(Button_SetHoveredColor);
+		ADD_INTERNAL_CALL(Button_GetPressedColor);
+		ADD_INTERNAL_CALL(Button_SetPressedColor);
+		ADD_INTERNAL_CALL(Button_GetDisabledColor);
+		ADD_INTERNAL_CALL(Button_SetDisabledColor);
+		ADD_INTERNAL_CALL(Button_GetNormalTextureUUID);
+		ADD_INTERNAL_CALL(Button_SetNormalTextureUUID);
+		ADD_INTERNAL_CALL(Button_GetHoveredTextureUUID);
+		ADD_INTERNAL_CALL(Button_SetHoveredTextureUUID);
+		ADD_INTERNAL_CALL(Button_GetPressedTextureUUID);
+		ADD_INTERNAL_CALL(Button_SetPressedTextureUUID);
+		ADD_INTERNAL_CALL(Button_GetDisabledTextureUUID);
+		ADD_INTERNAL_CALL(Button_SetDisabledTextureUUID);
 
 		ADD_INTERNAL_CALL(Window_SetTargetFramerate);
 		ADD_INTERNAL_CALL(Window_GetTargetFramerate);
