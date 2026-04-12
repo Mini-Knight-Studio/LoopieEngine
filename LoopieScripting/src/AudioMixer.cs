@@ -13,5 +13,21 @@ namespace Loopie
             return InternalCalls.AudioMixer_GetBusVolume(channel);
         }
 
+        public static float LinearToEngineVolume(float t)
+        {
+            t = Mathf.Clamp01(t);
+
+            if (t <= 0.001f)
+                return 0f;
+
+            return Mathf.Pow(t, 2.2f);
+        }
+
+        public static float EngineToLinearVolume(float value)
+        {
+            value = Mathf.Clamp01(value);
+            return Mathf.Sqrt(value);
+        }
+
     }
 }
