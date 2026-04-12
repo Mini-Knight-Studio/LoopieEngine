@@ -135,6 +135,49 @@ namespace Loopie {
 		return m_currentClipIndex;
 	}
 
+	int Animator::GetNextClipIndex() const
+	{
+		if (!m_inTransition)
+			return -1;
+		return m_nextClipIndex;
+	}	
+
+	int Animator::GetClipIndex(const AnimationClip* clip) const
+	{
+		MeshRenderer* renderer = m_targetRenderer ? m_targetRenderer : GetFirstMeshRenderer();
+		if (!renderer)
+			return -1;
+		auto mesh = renderer->GetMesh();
+		if (!mesh)
+			return -1;
+		const auto& clips = mesh->GetData().AnimationClips;
+		int index = 0;
+		for (const auto& clipObj : clips) {
+			if(clip == &clipObj)
+				return index;
+			++index;
+		}
+		return -1;
+	}
+
+	int Animator::GetClipIndex(const std::string& clipName) const
+	{
+		MeshRenderer* renderer = m_targetRenderer ? m_targetRenderer : GetFirstMeshRenderer();
+		if (!renderer)
+			return -1;
+		auto mesh = renderer->GetMesh();
+		if (!mesh)
+			return -1;
+		const auto& clips = mesh->GetData().AnimationClips;
+		int index = 0;
+		for (const auto& clipObj : clips) {
+			if (clipName == clipObj.Name)
+				return index;
+			++index;
+		}
+		return -1;
+	}
+
 	const AnimationClip* Animator::GetClipByIndex(int index) const
 	{
 		MeshRenderer* renderer = m_targetRenderer ? m_targetRenderer : GetFirstMeshRenderer();
@@ -147,6 +190,23 @@ namespace Loopie {
 		if (index < 0 || index >= static_cast<int>(clips.size()))
 			return nullptr;
 		return &clips[index];
+	}
+
+	const AnimationClip* Animator::GetClipByName(const std::string clipName) const
+	{
+		MeshRenderer* renderer = m_targetRenderer ? m_targetRenderer : GetFirstMeshRenderer();
+		if (!renderer)
+			return nullptr;
+		auto mesh = renderer->GetMesh();
+		if (!mesh)
+			return nullptr;
+		const auto& clips = mesh->GetData().AnimationClips;
+		for (const auto& clip : clips) {
+			if (clip.Name == clipName) {
+				return &clip;
+			}
+		}
+		return nullptr;
 	}
 
 	void Animator::Play(const std::string& clipName, float transitionTime)

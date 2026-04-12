@@ -42,12 +42,24 @@ namespace Loopie {
 		MeshRenderer* GetTargetRenderer() const { return m_targetRenderer; }
 		bool HasTargetRenderer() const { return m_targetRenderer != nullptr; }
 
-		int GetCurrentClipIndex() const;
 		const AnimationClip* GetCurrentClip() const { return m_currentClip; }
+		int GetCurrentClipIndex() const;
+		float GetCurrentClipDuration() const { return m_currentClip ? m_currentClip->Duration : 0.0f; }
+
+		const AnimationClip* GetNextClip() const { return m_nextClip; }
+		int GetNextClipIndex() const;
+		float GetNextClipDuration() const { return m_nextClip ? m_nextClip->Duration : 0.0f; }
+
+		int GetClipIndex(const AnimationClip* clip) const;
+		int GetClipIndex(const std::string& clipName) const;
 		const AnimationClip* GetClipByIndex(int index) const;
+		const AnimationClip* GetClipByName(const std::string clipName) const;
+
+		float GetClipDuration(const AnimationClip* clip) const { return clip ? clip->Duration : 0.0f; }
 
 		bool IsLooping() const { return m_looping; }
 		bool IsPlaying() const { return m_isPlaying; }
+		bool IsInTransition() const { return m_inTransition; }
 		void SetLooping(bool loop) { m_looping = loop; }
 		float GetPlaybackSpeed() const { return m_playbackSpeed; }
 		void SetPlaybackSpeed(float speed) { m_playbackSpeed = speed; }

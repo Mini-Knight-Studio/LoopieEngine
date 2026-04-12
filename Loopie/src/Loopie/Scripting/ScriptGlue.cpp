@@ -721,6 +721,95 @@ namespace Loopie
 		return ScriptingManager::CreateString("");
 	}
 
+	static float Animator_GetCurrentClipDuration(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return 0.0f;
+		Animator* animator = Utils::GetComponent<Animator>(entity, componentID);
+		if (animator) {
+			return animator->GetCurrentClipDuration();
+		}
+		return 0.0f;
+	}
+
+	static int Animator_GetNextClipIndex(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return -1;
+		Animator* animator = Utils::GetComponent<Animator>(entity, componentID);
+		if (animator)
+			return animator->GetNextClipIndex();
+		return -1;
+	}
+
+	static MonoString* Animator_GetNextClipName(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return ScriptingManager::CreateString("");
+		Animator* animator = Utils::GetComponent<Animator>(entity, componentID);
+		if (animator) {
+			const AnimationClip* clip = animator->GetNextClip();
+			if (clip)
+			{
+				std::string clipName = clip->Name;
+				return ScriptingManager::CreateString(clipName.c_str());
+			}
+		}
+		return ScriptingManager::CreateString("");
+	}
+
+	static float Animator_GetNextClipDuration(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return 0.0f;
+		Animator* animator = Utils::GetComponent<Animator>(entity, componentID);
+		if (animator) {
+			return animator->GetNextClipDuration();
+		}
+		return 0.0f;
+	}
+
+
+	static float Animator_GetClipDurationByIndex(MonoString* entityID, MonoString* componentID, int clipIndex)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return 0.0f;
+		Animator* animator = Utils::GetComponent<Animator>(entity, componentID);
+		if (animator) {
+			return animator->GetClipDuration(animator->GetClipByIndex(clipIndex));
+		}
+		return 0.0f;
+	}
+
+	static float Animator_GetClipDurationByName(MonoString* entityID, MonoString* componentID, MonoString* clipName)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return 0.0f;
+		Animator* animator = Utils::GetComponent<Animator>(entity, componentID);
+		if (animator) {
+			return animator->GetClipDuration(animator->GetClipByName(Utils::MonoStringToString(clipName)));
+		}
+		return 0.0f;
+	}
+
+	static float Animator_GetClipIndex(MonoString* entityID, MonoString* componentID, MonoString* clipName)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return -1;
+		Animator* animator = Utils::GetComponent<Animator>(entity, componentID);
+		if (animator) {
+			return animator->GetClipIndex(animator->GetClipByName(Utils::MonoStringToString(clipName)));
+		}
+		return -1;
+	}
+
 	static MonoString* Animator_GetClipName(MonoString* entityID, MonoString* componentID, int clipIndex)
 	{
 		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
@@ -778,6 +867,17 @@ namespace Loopie
 		Animator* animator = Utils::GetComponent<Animator>(entity, componentID);
 		if (animator)
 			return animator->IsPlaying();
+		return false;
+	}
+
+	static MonoBoolean Animator_IsInTransition(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return false;
+		Animator* animator = Utils::GetComponent<Animator>(entity, componentID);
+		if (animator)
+			return animator->IsInTransition();
 		return false;
 	}
 
@@ -2253,12 +2353,20 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Animator_Resume);
 		ADD_INTERNAL_CALL(Animator_GetCurrentClipIndex);
 		ADD_INTERNAL_CALL(Animator_GetCurrentClipName);
+		ADD_INTERNAL_CALL(Animator_GetCurrentClipDuration);
+		ADD_INTERNAL_CALL(Animator_GetNextClipIndex);
+		ADD_INTERNAL_CALL(Animator_GetNextClipName);
+		ADD_INTERNAL_CALL(Animator_GetNextClipDuration);
 		ADD_INTERNAL_CALL(Animator_GetClipName);
+		ADD_INTERNAL_CALL(Animator_GetClipIndex);
+		ADD_INTERNAL_CALL(Animator_GetClipDurationByIndex);
+		ADD_INTERNAL_CALL(Animator_GetClipDurationByName);
 		ADD_INTERNAL_CALL(Animator_GetPlaybackSpeed);
 		ADD_INTERNAL_CALL(Animator_SetPlaybackSpeed);
 		ADD_INTERNAL_CALL(Animator_SetLooping);
 		ADD_INTERNAL_CALL(Animator_IsLooping);
 		ADD_INTERNAL_CALL(Animator_IsPlaying);
+		ADD_INTERNAL_CALL(Animator_IsInTransition);
 		ADD_INTERNAL_CALL(Animator_GetCurrentTime);
 
 		ADD_INTERNAL_CALL(SpriteAnimator_GetTextureUUID);

@@ -39,10 +39,49 @@ namespace Loopie
             return InternalCalls.Animator_GetCurrentClipName(entity.ID, ID);
         }
 
+        public float GetCurrentClipDuration()
+        {
+            return InternalCalls.Animator_GetCurrentClipDuration(entity.ID, ID);
+        }
+
+        public int GetNextClipIndex()
+        {
+            return InternalCalls.Animator_GetNextClipIndex(entity.ID, ID);
+        }
+
+        public string GetNextClipName()
+        {
+            return InternalCalls.Animator_GetNextClipName(entity.ID, ID);
+        }
+
+        public float GetNextClipDuration()
+        {
+            return InternalCalls.Animator_GetNextClipDuration(entity.ID, ID);
+        }
+
         public string GetClipName(int index)
         {
             return InternalCalls.Animator_GetClipName(entity.ID, ID, index);
         }
+
+        ////
+
+        public int GetClipIndex(string clipName)
+        {
+            return InternalCalls.Animator_GetClipIndex(entity.ID, ID, clipName);
+        }
+
+        public float GetClipDuration(int index)
+        {
+            return InternalCalls.Animator_GetClipDurationByIndex(entity.ID, ID, index);
+        }
+
+        public float GetClipDuration(string clipName)
+        {
+            return InternalCalls.Animator_GetClipDurationByName(entity.ID, ID, clipName);
+        }
+
+        ////
 
         public float GetPlaybackSpeed()
         {
@@ -78,6 +117,14 @@ namespace Loopie
         public float GetCurrentTime()
         {
             return InternalCalls.Animator_GetCurrentTime(entity.ID, ID);
+        }
+
+        public bool InTransition
+        { get { return IsInTransition(); } }
+
+        private bool IsInTransition()
+        {
+            return InternalCalls.Animator_IsInTransition(entity.ID, ID);
         }
 
     }

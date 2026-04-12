@@ -163,7 +163,21 @@ namespace Loopie
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static string Animator_GetCurrentClipName(string entityID, string componentID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static float Animator_GetCurrentClipDuration(string entityID, string componentID);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static int Animator_GetNextClipIndex(string entityID, string componentID);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static string Animator_GetNextClipName(string entityID, string componentID);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static float Animator_GetNextClipDuration(string entityID, string componentID);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static string Animator_GetClipName(string entityID, string componentID, int index);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static int Animator_GetClipIndex(string entityID, string componentID, string clipName);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static int Animator_GetClipDurationByIndex(string entityID, string componentID, int index);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static int Animator_GetClipDurationByName(string entityID, string componentID, string clipName);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static float Animator_GetPlaybackSpeed(string entityID, string componentID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
@@ -174,6 +188,8 @@ namespace Loopie
         internal extern static bool Animator_IsLooping(string entityID, string componentID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static bool Animator_IsPlaying(string entityID, string componentID);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool Animator_IsInTransition(string entityID, string componentID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static float Animator_GetCurrentTime(string entityID, string componentID);
         #endregion
