@@ -120,6 +120,7 @@ namespace Loopie
 		vec3 finalVelocity = particleProps.Velocity;
 		finalVelocity.x += RandomFloat(-particleProps.VelocityVariation.x * 1.5f, particleProps.VelocityVariation.x * 1.5f);
 		finalVelocity.y += RandomFloat(-particleProps.VelocityVariation.y * 1.5f, particleProps.VelocityVariation.y * 1.5f);
+		finalVelocity.z += RandomFloat(-particleProps.VelocityVariation.z * 1.5f, particleProps.VelocityVariation.z * 1.5f);
 
 
 		if (m_localVelocity)
