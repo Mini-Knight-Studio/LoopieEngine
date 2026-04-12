@@ -48,6 +48,8 @@ namespace Loopie
 		bool GetPlaying() const { return m_playing; }
 		void SetPlaying(bool playing);
 
+		int GetCurrentFrame() const;
+
 		void Play();
 		void Stop(bool resetTime = true);
 

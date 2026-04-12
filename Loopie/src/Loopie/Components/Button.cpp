@@ -448,7 +448,9 @@ namespace Loopie
 
 	bool Button::IsFunctionCallConfigured(const FunctionCall& functionCall)
 	{
-		return !functionCall.Function.empty();
+		return !(functionCall.EntityUUID == UUID::Invalid)
+			&& !(functionCall.ComponentUUID == UUID::Invalid)
+			&& !functionCall.Function.empty();
 	}
 
 	bool Button::TryResolveTarget(const FunctionCall& functionCall, std::shared_ptr<Entity>& entity, ScriptClass*& scriptComponent)

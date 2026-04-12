@@ -110,8 +110,42 @@ namespace Loopie
 	{
 		m_playing = false;
 		if (resetTime)
+		{
 			m_time = 0.0;
-		m_lastAppliedFrame = -1;
+
+			const int cols = std::max(1, m_grid.x);
+			const int rows = std::max(1, m_grid.y);
+			const int totalFrames = cols * rows;
+			if (totalFrames > 0)
+			{
+				const int start = std::clamp(m_startFrame, 0, std::max(0, totalFrames - 1));
+				ApplyFrame(start);
+			}
+		}
+	}
+
+	int SpriteAnimator::GetCurrentFrame() const
+	{
+		const int cols = std::max(1, m_grid.x);
+		const int rows = std::max(1, m_grid.y);
+		const int totalFrames = cols * rows;
+		if (totalFrames <= 0)
+			return 0;
+
+		if (m_lastAppliedFrame >= 0)
+			return std::clamp(m_lastAppliedFrame, 0, totalFrames - 1);
+
+		const int start = std::clamp(m_startFrame, 0, std::max(0, totalFrames - 1));
+		const int count = std::clamp(m_frameCount, 1, std::max(1, totalFrames - start));
+		const float fps = std::max(0.0f, m_fps);
+
+		int localFrame = 0;
+		if (fps > 0.0f)
+			localFrame = (int)std::floor(m_time * (double)fps);
+
+		if (m_loop)
+			return start + (localFrame % count);
+		return start + std::min(localFrame, count - 1);
 	}
 
 	vec4 SpriteAnimator::ComputeUVRect(int frameIndex) const

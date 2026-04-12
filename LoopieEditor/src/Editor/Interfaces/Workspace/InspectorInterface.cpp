@@ -1894,7 +1894,7 @@ namespace Loopie {
 			std::vector<FunctionCall> functionCalls = button->GetFlattenedOnClickFunctionCalls();
 			bool modified = false;
 
-			if (ImGui::TreeNode("Callbakcs")) {
+			if (ImGui::TreeNode("Callbacks")) {
 
 				if (functionCalls.empty())
 				{
@@ -1981,7 +1981,17 @@ namespace Loopie {
 
 				if (ImGui::Button("+"))
 				{
-					functionCalls.push_back(FunctionCall{ UUID(), UUID(), std::string() });
+					UUID defaultEntityUUID = UUID::Invalid;
+					UUID defaultComponentUUID = UUID::Invalid;
+					if (auto owner = button->GetOwner())
+					{
+						defaultEntityUUID = owner->GetUUID();
+						std::vector<ScriptClass*> scripts = owner->GetComponents<ScriptClass>();
+						if (!scripts.empty() && scripts.front())
+							defaultComponentUUID = scripts.front()->GetUUID();
+					}
+
+					functionCalls.push_back(FunctionCall{ defaultEntityUUID, defaultComponentUUID, std::string() });
 					modified = true;
 				}
 

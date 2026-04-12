@@ -231,6 +231,9 @@ namespace Loopie
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void SpriteAnimator_Stop(string entityID, string componentID, bool resetTime);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static int SpriteAnimator_GetCurrentFrame(string entityID, string componentID);
         #endregion
         #region AudioSource
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
@@ -488,6 +491,76 @@ namespace Loopie
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Text_SetText(string entityID, string componentID, string text);
+        #endregion
+        #region Button
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool Button_IsInteractable(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Button_SetInteractable(string entityID, string componentID, bool interactable);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool Button_IsHovered(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool Button_IsPressed(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Button_TriggerClick(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static int Button_GetTransitionMode(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Button_SetTransitionMode(string entityID, string componentID, int mode);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Button_GetNormalColor(string entityID, string componentID, out Vector4 color);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Button_SetNormalColor(string entityID, string componentID, ref Vector4 color);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Button_GetHoveredColor(string entityID, string componentID, out Vector4 color);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Button_SetHoveredColor(string entityID, string componentID, ref Vector4 color);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Button_GetPressedColor(string entityID, string componentID, out Vector4 color);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Button_SetPressedColor(string entityID, string componentID, ref Vector4 color);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Button_GetDisabledColor(string entityID, string componentID, out Vector4 color);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Button_SetDisabledColor(string entityID, string componentID, ref Vector4 color);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static string Button_GetNormalTextureUUID(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Button_SetNormalTextureUUID(string entityID, string componentID, string textureUUID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static string Button_GetHoveredTextureUUID(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Button_SetHoveredTextureUUID(string entityID, string componentID, string textureUUID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static string Button_GetPressedTextureUUID(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Button_SetPressedTextureUUID(string entityID, string componentID, string textureUUID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static string Button_GetDisabledTextureUUID(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Button_SetDisabledTextureUUID(string entityID, string componentID, string textureUUID);
         #endregion
         #region Window
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
