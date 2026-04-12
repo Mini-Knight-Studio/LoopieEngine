@@ -209,6 +209,7 @@ namespace Loopie {
 
 	void EditorMenuInterface::RenderAboutMenu()
 	{
+		ImGui::SetNextWindowFocus();
 
 		ImGui::Begin("About Loopie Engine", &m_showAboutMenu, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse);
 
@@ -341,6 +342,8 @@ namespace Loopie {
 
 	void EditorMenuInterface::RenderCollisionMatrixMenu()
 	{
+		ImGui::SetNextWindowFocus();
+
 		ImGui::Begin("Collision Layers", &m_showCollisionMatrixMenu, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize);
 
 		auto& layers = Loopie::CollisionProcessor::GetLayers();
@@ -464,6 +467,9 @@ namespace Loopie {
 
 	void EditorMenuInterface::RenderAudioConfigMenu()
 	{
+		ImGui::SetNextWindowFocus();
+
+
 		ImGui::Begin("Audio Mixer", &m_showAudioConfigMenu, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize);
 
 		AudioBus* master = Loopie::AudioManager::GetMasterBus();
@@ -528,10 +534,10 @@ namespace Loopie {
 					if (child->group)
 						vol = child->volume;
 
-					ImGui::SetNextItemWidth(120);
 					ImGui::Indent(16.0f);
 					ImGui::Text("Vol:");
 					ImGui::SameLine();
+					ImGui::SetNextItemWidth(120);
 					if (ImGui::SliderFloat("##vol", &vol, 0.0f, 1.0f))
 					{
 						if (child->group)
