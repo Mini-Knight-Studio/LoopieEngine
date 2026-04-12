@@ -174,7 +174,8 @@ namespace Loopie {
 
         while (std::getline(ss, segment, '/'))
         {
-            if (segment.empty()) continue;
+            if (segment.empty() || segment == "Master")
+                continue;
 
             if (!current->children.count(segment))
                 return nullptr;
