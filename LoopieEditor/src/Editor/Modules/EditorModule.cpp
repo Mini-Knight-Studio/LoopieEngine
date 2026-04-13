@@ -195,7 +195,7 @@ namespace Loopie
 
 		if (m_game.IsVisible() && m_game.GetCamera() && m_game.GetCamera()->GetIsActive())
 		{
-			//RenderUI();
+			RenderUI();
 		}
 
 		ProcessOverlayButtonsInput();
@@ -401,7 +401,7 @@ namespace Loopie
 			}
 		}
 
-		//RenderSceneUI(camera);
+		RenderSceneUI(camera);
 
 		Renderer::DisableStencil();
 		if (Renderer::IsGizmoActive()) {
