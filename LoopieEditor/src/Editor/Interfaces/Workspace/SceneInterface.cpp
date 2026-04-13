@@ -140,8 +140,7 @@ namespace Loopie {
 				}
 
 				if (ImGuizmo::Manipulate(&m_camera->GetCamera()->GetViewMatrix()[0][0], &m_camera->GetCamera()->GetProjectionMatrix()[0][0], (ImGuizmo::OPERATION)m_gizmoOperation, (ImGuizmo::MODE)m_gizmoMode, &worldMatrix[0][0],nullptr, allowSnap ? m_snap : nullptr)) {
-					transform->SetWorldMatrix(worldMatrix);
-					Application::GetInstance().GetScene().GetOctree().Rebuild();				
+					transform->SetWorldMatrix(worldMatrix);			
 				}
 				Renderer::EnableDepth();
 			}
@@ -283,7 +282,7 @@ namespace Loopie {
 		availableWidth = ImGui::GetContentRegionAvail().x - buttonsSize.x - framePadding.x * 2;
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + availableWidth);
 
-		Octree& octree = Application::GetInstance().GetScene().GetOctree();
+		LooseOctree& octree = Application::GetInstance().GetScene().GetOctree();
 		hasStyle = AddStyleButton(octree.GetShouldDraw());
 		if (ImGui::ImageButton("octree", (ImTextureID)m_octreeIcon->GetRendererId(), buttonsSize)) {
 			octree.SetShouldDraw(!octree.GetShouldDraw());
@@ -483,7 +482,7 @@ namespace Loopie {
 		triVertexData.resize(3);
 		vec3 meshHitPoint;
 
-		std::unordered_set<std::shared_ptr<Entity>> possibleEntities;
+		std::unordered_set<Entity*> possibleEntities;
 		Application::GetInstance().GetScene().GetOctree().CollectIntersectingObjectsWithRay(mouseRay.StartPoint(), mouseRay.Direction(), possibleEntities);
 		for (const auto& entity : possibleEntities)
 		{
@@ -512,7 +511,7 @@ namespace Loopie {
 				if (distance < minDistance)
 				{
 					minDistance = distance;
-					selectedEntity = entity;
+					selectedEntity = entity->shared_from_this();
 				}
 			}
 		}

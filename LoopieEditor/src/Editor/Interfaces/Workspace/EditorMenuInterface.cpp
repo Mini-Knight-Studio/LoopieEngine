@@ -106,29 +106,9 @@ namespace Loopie {
 			// *** PSS - Created this menu for testing features 08/12/25 ***
 			if (ImGui::BeginMenu("Debug"))
 			{
-				if (ImGui::MenuItem("Octree Stats Console Information"))
-				{
-					Application::GetInstance().GetScene().GetOctree().DebugPrintOctreeStatistics();
-				}
-
-				if (ImGui::MenuItem("Octree Hierarchy Console Information"))
-				{
-					Application::GetInstance().GetScene().GetOctree().DebugPrintOctreeHierarchy();
-				}
-
-				if (ImGui::MenuItem("Rebuild Octree"))
-				{
-					Application::GetInstance().GetScene().GetOctree().Rebuild();
-				}
-
 				if (ImGui::MenuItem("Reload Last Saved Scene... "))
 				{
 					Application::GetInstance().GetScene().ReadAndLoadSceneFile(Application::GetInstance().GetScene().GetFilePath());
-				}
-
-				if (ImGui::MenuItem("Toggle Octree visualization"))
-				{
-					Application::GetInstance().GetScene().GetOctree().ToggleShouldDraw();
 				}
 
 				ImGui::EndMenu();

@@ -38,7 +38,7 @@ namespace Loopie {
 		m_rootEntity = std::make_shared<Entity>("scene");
 		m_rootEntity->AddComponent<Transform>();
 
-		m_octree = std::make_unique<Octree>(DEFAULT_WORLD_BOUNDS);
+		m_octree = std::make_unique<LooseOctree>(DEFAULT_WORLD_BOUNDS);
 
 		Application::GetInstance().m_notifier.AddObserver(this);
 	}
@@ -106,7 +106,6 @@ namespace Loopie {
 		m_entities[entity->GetUUID()] = entity;
 		m_octree->Insert(entity);
 
-		m_octree->Rebuild();
 		return entity;
 	}
 
@@ -127,7 +126,6 @@ namespace Loopie {
 		m_entities[entity->GetUUID()] = entity;
 		m_octree->Insert(entity);
 
-		m_octree->Rebuild();
 		return entity;
 	}
 
@@ -144,7 +142,6 @@ namespace Loopie {
 		m_entities[entity->GetUUID()] = entity;
 		m_octree->Insert(entity);
 
-		m_octree->Rebuild();
 		return entity;
 	}
 
@@ -168,7 +165,6 @@ namespace Loopie {
 		m_entities[entity->GetUUID()] = entity;
 		m_octree->Insert(entity);
 
-		m_octree->Rebuild();
 		return entity;
 	}
 
@@ -179,7 +175,6 @@ namespace Loopie {
 			return;
 
 		RemoveEntityRecursive(it->second);
-		m_octree->Rebuild();
 	}
 
 	void Scene::RemoveEntity(std::shared_ptr<Entity> entity)
@@ -188,7 +183,6 @@ namespace Loopie {
 			return;
 
 		RemoveEntityRecursive(entity);
-		m_octree->Rebuild();
 	}
 
 	void Scene::RemoveEntityDeferred(UUID uuid)
@@ -214,7 +208,6 @@ namespace Loopie {
 		}
 
 		m_entitiesPendingDestroy.clear();
-		m_octree->Rebuild();
 	}
 
 	std::shared_ptr<Entity> Scene::CloneEntity(const std::shared_ptr<Entity> source, std::shared_ptr<Entity> newParent, bool cloneChildren)
@@ -394,7 +387,7 @@ namespace Loopie {
 		return nullptr;
 	}
 
-	Octree& Scene::GetOctree() const
+	LooseOctree& Scene::GetOctree() const
 	{
 		return *m_octree;
 	}
@@ -456,7 +449,7 @@ namespace Loopie {
 		m_entities.clear();
 		m_octree->Clear();
 
-		m_octree = std::make_unique<Octree>(DEFAULT_WORLD_BOUNDS);
+		m_octree = std::make_unique<LooseOctree>(DEFAULT_WORLD_BOUNDS);
 
 		m_rootEntity = std::make_shared<Entity>("scene");
 		m_rootEntity->AddComponent<Transform>();
@@ -490,7 +483,7 @@ namespace Loopie {
 			std::string name = entityNode.GetValue<std::string>("name").Result;
 			bool active = entityNode.GetValue<bool>("active", false).Result;
 
-			std::shared_ptr<Entity> entity = CreateEntity(uuid, name);
+			std::shared_ptr<Entity> entity = CreateEntity(uuid, name, nullptr);
 			entity->SetName(name);
 			entity->SetIsActive(active);		
 		}
@@ -740,8 +733,6 @@ namespace Loopie {
 			}
 		}
 
-		m_octree->Rebuild();
-
 		return true;
 	}
 
@@ -805,13 +796,28 @@ namespace Loopie {
 		if (!parentEntity)
 			return desiredName;
 
-		std::vector<std::string> existingNames;
-		for (const auto& sibling : GetAllSiblings(parentEntity))
-		{
-			existingNames.emplace_back(sibling->GetName());
-		}
+		const auto& siblings = parentEntity->GetChildren();
 
-		return Helper::MakeUniqueName(desiredName, existingNames);
+		auto exists = [&](const std::string& name) -> bool
+			{
+				for (const auto& child : siblings)
+				{
+					if (child->GetName() == name)
+						return true;
+				}
+				return false;
+			};
+
+		if (!exists(desiredName))
+			return desiredName;
+
+		for (int i = 1;; ++i)
+		{
+			std::string candidate = desiredName + "_" + std::to_string(i);
+
+			if (!exists(candidate))
+				return candidate;
+		}
 	}
 
 	void Scene::CollectEntitiesRecursive(std::shared_ptr<Entity> entity,

@@ -129,6 +129,18 @@ namespace Loopie
 		CollisionProcessor::Process();
 		//// 
 
+		LooseOctree& octree = m_currentScene->GetOctree();
+
+		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities())
+		{
+			if (entity->GetTransform()->HasChangedThisFrame())
+			{
+				octree.Update(entity);
+				entity->GetTransform()->CleanChangesFlag();
+			}
+		}
+
+
 		m_hierarchy.Update(inputEvent);
 		m_assetsExplorer.Update(inputEvent);
 		m_textEditor.Update(inputEvent);
@@ -162,7 +174,7 @@ namespace Loopie
 			{
 				if (Renderer::BeginShadowPass(i))
 				{
-					RenderShadows();
+					RenderShadows(cam);
 					Renderer::EndShadowPass(i);
 				}
 			}
@@ -173,14 +185,17 @@ namespace Loopie
 			Renderer::BeginScene(cam->GetViewMatrix(), cam->GetProjectionMatrix(), cam->GetIsEditorCamera());
 			RenderWorld(cam);
 			RenderParticles(cam);
+
+			if(cam == m_game.GetCamera())
+				UpdateComponents(Loopie::GIZMO);
+
 			Renderer::EndScene();
 			buffer->Unbind();
 		}
 
 		if (m_game.IsVisible() && m_game.GetCamera() && m_game.GetCamera()->GetIsActive())
 		{
-			UpdateComponents(Loopie::GIZMO);
-			RenderUI();
+			//RenderUI();
 		}
 
 		ProcessOverlayButtonsInput();
@@ -260,9 +275,11 @@ namespace Loopie
 		if(mode == Loopie::UPDATING || mode== Loopie::NEXTFRAME)
 			ScriptingManager::UpdateCoroutines();
 
+
 		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities()) {
 			if (!entity->GetIsActive())
 				continue;
+
 			const std::vector<Component*>& components = entity->GetComponents();
 			for (size_t i = 0; i < components.size(); i++)
 			{
@@ -314,7 +331,7 @@ namespace Loopie
 		Renderer::Clear();
 
 		// POST
-		std::unordered_set<std::shared_ptr<Entity>> entities;
+		std::unordered_set<Entity*> entities;
 		m_currentScene->GetOctree().CollectVisibleEntitiesFrustum(camera->GetFrustum(), entities);
 
 		std::vector<MeshRenderer*> renderers;
@@ -341,7 +358,7 @@ namespace Loopie
 
 				if (Renderer::IsGizmoActive()) {
 					if (component->GetTypeID() != Camera::GetTypeIDStatic()) {
-						if (HierarchyInterface::s_SelectedEntity.lock() == entity)
+						if (HierarchyInterface::s_SelectedEntity.lock().get() == entity)
 							component->RenderGizmo();
 						if (entity->HasComponent<Canvas>())
 							component->RenderGizmo();
@@ -362,7 +379,7 @@ namespace Loopie
 					}
 				}
 
-				if (!Renderer::IsGizmoActive() || entity != selectedEntity) {
+				if (!Renderer::IsGizmoActive() || entity != selectedEntity.get()) {
 					Renderer::AddRenderItem(renderer->GetMesh()->GetVAO(), renderer->GetMaterial(), entity->GetTransform(), bones);
 				}
 				else {
@@ -384,7 +401,7 @@ namespace Loopie
 			}
 		}
 
-		RenderSceneUI(camera);
+		//RenderSceneUI(camera);
 
 		Renderer::DisableStencil();
 		if (Renderer::IsGizmoActive()) {
@@ -398,10 +415,10 @@ namespace Loopie
 		}
 	}
 
-	void EditorModule::RenderShadows()
+	void EditorModule::RenderShadows(Camera* camera)
 	{
-		std::unordered_set<std::shared_ptr<Entity>> entities;
-		m_currentScene->GetOctree().CollectAllEntities(entities); // Should be optimized
+		std::unordered_set<Entity*> entities;
+		m_currentScene->GetOctree().CollectVisibleEntitiesFrustum(camera->GetFrustum(), entities); // Should be optimized
 
 		std::vector<MeshRenderer*> renderers;
 		renderers.reserve(1);

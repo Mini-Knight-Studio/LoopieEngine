@@ -30,6 +30,7 @@ namespace Loopie {
 				return true;
 			}
 		}
+		m_transform->MarkHasChangedThisFrame();
 		return false;
 	}
 
@@ -130,6 +131,11 @@ namespace Loopie {
 			}
 		}
 		return nullptr;
+	}
+
+	int Entity::GetComponentCount() const
+	{
+		return m_components.size();
 	}
 
 	int Entity::GetChildCount() const

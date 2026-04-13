@@ -18,6 +18,7 @@ namespace Loopie{
         void Enclose(const vec3& point);
 
         bool Contains(const vec3& point) const;
+        bool Contains(const AABB& aabb) const;
         bool ContainsRay(const vec3& rayStart, const vec3& rayEnd) const;
 
         bool Intersects(const AABB& other) const;

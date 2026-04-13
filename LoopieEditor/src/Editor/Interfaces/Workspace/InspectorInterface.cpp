@@ -566,9 +566,6 @@ namespace Loopie {
 		}
 
 		ImGui::PopID();
-
-		if (modified)
-			Application::GetInstance().GetScene().GetOctree().Rebuild();
 	}
 
 	void InspectorInterface::DrawAnchorPresets(RectTransform* rt, bool& modified)

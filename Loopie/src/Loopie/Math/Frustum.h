@@ -28,6 +28,8 @@ namespace Loopie {
         mutable std::array<vec3, 8> _cachedCorners;
         mutable bool _cornersDirty = true;
 
+        bool Contains(const AABB& box) const;
+
         bool Intersects(const vec3& point) const;
         bool Intersects(const AABB& box) const;
         bool Intersects(const OBB& box) const;

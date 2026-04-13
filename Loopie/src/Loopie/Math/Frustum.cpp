@@ -22,6 +22,27 @@ namespace Loopie {
         return true;
 	}
 
+    bool Frustum::Contains(const AABB& box) const
+    {
+        vec3 min = box.MinPoint;
+        vec3 max = box.MaxPoint;
+
+        for (int i = 0; i < 6; i++)
+        {
+            const Plane& plane = Planes[i];
+
+            vec3 negative;
+            negative.x = (plane.Normal.x >= 0) ? min.x : max.x;
+            negative.y = (plane.Normal.y >= 0) ? min.y : max.y;
+            negative.z = (plane.Normal.z >= 0) ? min.z : max.z;
+
+            if (plane.DistanceToPoint(negative) < 0.0f)
+                return false;
+        }
+
+        return true; 
+    }
+
 	bool Frustum::Intersects(const AABB& box) const{
         vec3 min = box.MinPoint;
         vec3 max = box.MaxPoint;

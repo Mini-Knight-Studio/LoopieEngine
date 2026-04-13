@@ -1,106 +1,81 @@
 #pragma once
-#include "Loopie/Math/OctreeNode.h"
 
 #include <memory>
+#include <vector>
 #include <array>
 #include <unordered_map>
+#include <unordered_set>
 
+#include "Loopie/Math/MathTypes.h"
+#include "Loopie/Math/AABB.h"
+#include "Loopie/Math/Frustum.h"
+#include "Loopie/Scene/Entity.h"
 
-namespace Loopie {
-	constexpr int MAXIMUM_DEPTH = 5; // Can be modified as necessary
+namespace Loopie
+{
+    constexpr int LO_MAX_DEPTH = 5;
+    constexpr int LO_MAX_ENTITIES = 8;
+    constexpr float LO_LooseFactor = 1.5f;
 
-	class Entity;
-	struct Frustum;
+    struct LooseOctreeNode
+    {
+        AABB bounds;
+        AABB looseBounds;
 
-	struct OctreeStatistics
-	{
-		int totalNodes = 0;
-		int leafNodes = 0;
-		int internalNodes = 0;
-		int totalEntities = 0;
-		//int visibleEntities = 0;
-		int maxDepth = 0;
-		int minEntitiesPerNode = INT_MAX;
-		int maxEntitiesPerNode = 0;
-		float averageEntitiesPerNode = 0.0f;
-		int emptyNodes = 0;
-		int overfilledNodes = 0; // Leaves exceeding MAX_ENTITIES_PER_NODE at max depth
-	};
+        std::vector<Entity*> entities;
+        std::array<std::unique_ptr<LooseOctreeNode>, 8> children;
 
-	//template<typename T>
-	class Octree
-	{
-		// *** Possible functions to add *** - PSS 30/11/2025
-		// FindNearest (useful for AI, click selection, etc.)
-		// Template - Query (return all objects of specific template type given an AABB / sphere)
-		// Optimize (if we see that the performance of the Octree is bad)
+        LooseOctreeNode* parent = nullptr;
+        bool isLeaf = true;
+        int depth = 0;
+    };
 
-	public:
-		Octree(const AABB& rootBounds);
-		~Octree() = default;
+    class LooseOctree
+    {
+    public:
+        LooseOctree(const AABB& worldBounds);
 
-		void Insert(const std::shared_ptr<Entity>& entity);
-		void Remove(const std::shared_ptr<Entity>& entity);
-		void Update(const std::shared_ptr<Entity>& entity);
-		void Clear();
-		void Rebuild();
-		void DebugDraw(const vec4& color);
-		void DebugPrintOctreeStatistics();
-		void DebugPrintOctreeHierarchy();
-		OctreeStatistics GetStatistics() const;
-		void CollectIntersectingObjectsWithRay(vec3 rayOrigin, vec3 rayDirection,
-			std::unordered_set<std::shared_ptr<Entity>>& entities);
+        void Insert(const std::shared_ptr<Entity>& entity);
+        void Remove(const std::shared_ptr<Entity>& entity);
+        void Update(const std::shared_ptr<Entity>& entity);
 
-		void CollectIntersectingObjectsWithAABB(const AABB& queryBox,
-			std::unordered_set<std::shared_ptr<Entity>>& entities);
+        void Query(const AABB& range, std::vector<Entity*>& result);
 
-		void CollectIntersectingObjectsWithSphere(const vec3& center, const float& radius,
-			std::unordered_set<std::shared_ptr<Entity>>& entities);
+        void CollectVisibleEntitiesFrustum(const Frustum& frustum, std::unordered_set<Entity*>& visibleEntities);
 
-		void CollectVisibleEntitiesFrustum(const Frustum& frustum,
-			std::unordered_set<std::shared_ptr<Entity>>& visibleEntities);
+        void CollectIntersectingObjectsWithRay(const vec3& origin, const vec3& dir, std::unordered_set<Entity*>& result);
 
-		void CollectAllEntities(std::unordered_set<std::shared_ptr<Entity>>& entities);
-		void SetShouldDraw(bool value);
-		void ToggleShouldDraw();
-		bool GetShouldDraw() const;
+        void Clear();
 
+        void SetShouldDraw(bool v) { m_shouldDraw = v; }
+        void ToggleShouldDraw() { m_shouldDraw = !m_shouldDraw; }
+        bool GetShouldDraw() const { return m_shouldDraw; }
 
-	private:
-		AABB GetEntityAABB(const std::shared_ptr<Entity>& entity) const;
-		void InsertRecursively(OctreeNode* node, const std::shared_ptr<Entity>& entity, const AABB& entityAABB, int depth);
-		void RemoveRecursively(OctreeNode* node, const std::shared_ptr<Entity>& entity, const AABB& entityAABB);
-		void Subdivide(OctreeNode* node);
-		void RedistributeEntities(OctreeNode* node, int depth);
-		std::array<AABB, NUM_CHILDREN> ComputeChildAABBs(const AABB& parentAABB) const;
-		void DebugDrawRecursively(OctreeNode* node, const vec4& color, int depth);
-		void DebugPrintOctreeHierarchyRecursively(OctreeNode* node, int depth) const;
-		void GatherStatisticsRecursively(OctreeNode* node, OctreeStatistics& stats, int depth) const;
+        void DebugDraw(const vec4& color);
 
-		void CollectAllEntitiesFromNode(OctreeNode* node, std::unordered_set<std::shared_ptr<Entity>>& entities);
+    private:
+        std::unique_ptr<LooseOctreeNode> m_root;
+        bool m_shouldDraw = false;
 
-		void CollectIntersectingObjectsWithRayRecursively(OctreeNode* node, vec3 rayOrigin, vec3 rayDirection, vec3& rayHit,
-			std::unordered_set<std::shared_ptr<Entity>>& entities);
+        std::unordered_map<Entity*, LooseOctreeNode*> m_lookup;
 
-		void CollectIntersectingObjectsWithAABBRecursively(OctreeNode* node, const AABB& queryBox,
-			std::unordered_set<std::shared_ptr<Entity>>& entities);
+    private:
+        void Insert(LooseOctreeNode* node, Entity* entity);
+        bool Remove(LooseOctreeNode* node, Entity* entity);
 
-		void CollectIntersectingObjectsWithSphereRecursively(OctreeNode* node, const vec3& center, const float& radius,
-			std::unordered_set<std::shared_ptr<Entity>>& entities);
+        void Query(LooseOctreeNode* node,const AABB& range, std::vector<Entity*>& result);
 
-		void CollectVisibleEntitiesFrustumRecursively(OctreeNode* node, const Frustum& frustum,
-			std::unordered_set<std::shared_ptr<Entity>>& visibleEntities);
+        void Subdivide(LooseOctreeNode* node);
+        void Reinsert(LooseOctreeNode* node);
 
-	private:
-		std::unique_ptr<OctreeNode> m_rootNode;
-		AABB m_rootBounds; // Stored so Clear() can recreate the root node
-		bool m_shouldDraw = false;
+        void FrustumQuery(LooseOctreeNode* node, const Frustum& frustum, std::unordered_set<Entity*>& out);
 
-		// *** Entity-to-Node Lookup *** - PSS 22/02/2026
-		// Maps each entity to the node it's stored in.
-		// This allows O(1) removal regardless of whether the entity has moved,
-		// fixing the bug where Remove() would fail to find moved entities
-		// because it traversed using the entity's current (new) AABB.
-		std::unordered_map<Entity*, OctreeNode*> m_entityToNode;
-	};
+        void RayQuery(LooseOctreeNode* node, const vec3& origin, const vec3& dir, std::unordered_set<Entity*>& out);
+
+        std::array<AABB, 8> ComputeChildren(const AABB& parent);
+        AABB Expand(const AABB& box);
+        AABB GetAABB(const Entity* e);
+
+        void DebugDrawNode(LooseOctreeNode* node, const vec4& color);
+    };
 }

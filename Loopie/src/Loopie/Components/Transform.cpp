@@ -17,6 +17,7 @@ namespace Loopie
         ForceRefreshMatrices();
     }
 
+
     const vec3& Transform::GetLocalPosition() const
     {
         return m_localPosition;
@@ -312,6 +313,7 @@ namespace Loopie
     {
         if (m_worldDirty) 
             return;
+        MarkHasChangedThisFrame();
         m_worldDirty = true;
         m_transformNotifier.Notify(TransformNotification::OnDirty);
 
@@ -321,8 +323,23 @@ namespace Loopie
 
     }
 
+    void Transform::MarkHasChangedThisFrame()
+    {
+        m_hasChangedThisFrame = true;
+    }
+
     bool Transform::IsDirty() const{
         return m_worldDirty || m_localDirty;
+    }
+
+    bool Transform::HasChangedThisFrame() const
+    {
+        return m_hasChangedThisFrame;
+    }
+
+    void Transform::CleanChangesFlag() const
+    {
+		m_hasChangedThisFrame = false;
     }
 
     void Transform::ForceRefreshMatrices()

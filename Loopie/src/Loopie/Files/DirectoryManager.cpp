@@ -1,5 +1,7 @@
 #include "DirectoryManager.h"
 
+#include "Loopie/Core/Log.h"
+
 #include <fstream>
 
 namespace Loopie {
@@ -76,10 +78,17 @@ namespace Loopie {
     {
         if (!Contains(fileToDelete))
             return false;
+
+        std::error_code ec;
         if (std::filesystem::is_directory(fileToDelete))
-            std::filesystem::remove_all(fileToDelete);
+            std::filesystem::remove_all(fileToDelete, ec);
         else
-            std::filesystem::remove(fileToDelete);
+            std::filesystem::remove(fileToDelete, ec);
+
+        if (ec) {
+            Log::Error("Error deleting: {0}", ec.message().c_str());
+            return false;
+        }
         return true;
     }
 

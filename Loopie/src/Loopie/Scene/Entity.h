@@ -40,6 +40,8 @@ namespace Loopie {
 			}
 
 			m_componentsByUUID[componentPtr->GetUUID()] = componentPtr;
+
+			m_transform->MarkHasChangedThisFrame();
 			return componentPtr;
 		}
 
@@ -125,6 +127,8 @@ namespace Loopie {
 				if (m_components[i]->GetTypeID() == T::GetTypeIDStatic()){
 					m_componentsByUUID.erase(m_components[i]->GetUUID());
 					m_components.erase(m_components.begin() + i);
+
+					m_transform->MarkHasChangedThisFrame();
 					return true;
 				}
 			}
@@ -146,7 +150,7 @@ namespace Loopie {
 		std::shared_ptr<Entity> GetChild(int index) const;
 		std::shared_ptr<Entity> GetChild(const std::string& name, bool deepSearch = false) const;
 
-
+		int GetComponentCount() const;
 
 		int GetChildCount() const;
 		const std::vector<std::shared_ptr<Entity>>& GetChildren() const;

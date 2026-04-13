@@ -10,6 +10,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 	
 namespace Loopie {
 	class Scene : public IObserver<EngineNotification>
@@ -48,7 +49,7 @@ namespace Loopie {
 		std::shared_ptr<Entity> GetRootEntity() const;
 		std::shared_ptr<Entity> GetEntity(UUID uuid) const;
 		std::shared_ptr<Entity> GetEntity(const std::string& name) const;
-		Octree& GetOctree() const;
+		LooseOctree& GetOctree() const;
 		// Returns the unordered_map of the UUID and Entity ptrs
 		// Usage: for (const auto& [uuid, entity] : scene.GetAllEntities()) {entity->Update();}
 		const std::unordered_map<UUID, std::shared_ptr<Entity>>& GetAllEntities() const;
@@ -72,7 +73,7 @@ namespace Loopie {
 		void RemoveEntityRecursive(std::shared_ptr<Entity> parent);
 
 	private:
-		std::unique_ptr<Octree> m_octree;
+		std::unique_ptr<LooseOctree> m_octree;
 		std::unordered_map<UUID, std::shared_ptr<Entity>> m_entities; // Fast lookup
 		std::unordered_set<UUID> m_entitiesPendingDestroy;
 		std::shared_ptr<Entity> m_rootEntity; // Hierarchy based

@@ -51,6 +51,16 @@ namespace Loopie {
         return insideX && insideY && insideZ;
     }
 
+    bool AABB::Contains(const AABB& other) const
+    {
+        return
+            other.MinPoint.x >= MinPoint.x && other.MaxPoint.x <= MaxPoint.x &&
+            other.MinPoint.y >= MinPoint.y && other.MaxPoint.y <= MaxPoint.y &&
+            other.MinPoint.z >= MinPoint.z && other.MaxPoint.z <= MaxPoint.z;
+    }
+
+
+
     bool AABB::ContainsRay(const vec3& rayStart, const vec3& rayEnd) const
     {
         return Contains(rayStart) && Contains(rayEnd);

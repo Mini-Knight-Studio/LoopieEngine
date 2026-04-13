@@ -201,10 +201,8 @@ namespace Loopie {
 		for (size_t i = 0; i < m_droppedFiles.size(); i++)
 		{
 			std::filesystem::path droppedPath = m_droppedFiles[i];
-
 			currentPath = std::filesystem::absolute(currentPath);
 			droppedPath = std::filesystem::absolute(droppedPath);
-
 			std::filesystem::path targetPath = currentPath / droppedPath.filename();
 
 			bool isInAssetsFolder = droppedPath.string().rfind(assetsPath.string(), 0) == 0;
@@ -224,7 +222,6 @@ namespace Loopie {
 		}
 
 		m_droppedFiles.clear();
-
 
 		Refresh(true, true, false);
 	}
@@ -253,7 +250,7 @@ namespace Loopie {
 			}
 		}
 
-		Refresh(false, true, false);
+		Refresh(false, true, false, false);
 	}
 
 	void AssetsExplorerInterface::SelectFile(const std::filesystem::path& filePath)
@@ -292,7 +289,7 @@ namespace Loopie {
 		ImGui::SetNextItemWidth(inputWidth);
 		if (ImGui::InputTextWithHint("##search", "Search files...", m_searchBuffer, sizeof(m_searchBuffer))) {
 			m_isSearching = strlen(m_searchBuffer) > 0;
-			Refresh(false, false, true);
+			Refresh(false, false, true, false);
 		}
 	}
 
@@ -301,7 +298,7 @@ namespace Loopie {
 	{
 		m_isSearching = false;
 		m_searchBuffer[0] = '\0';
-		Refresh(false, false, true);
+		Refresh(false, false, true, false);
 	}
 
 	void AssetsExplorerInterface::DrawDirectoryTree()
@@ -523,9 +520,10 @@ namespace Loopie {
 		SelectFile("");
 	}
 
-	void AssetsExplorerInterface::Refresh(bool folderTree, bool folderFiles, bool searchFiles)
+	void AssetsExplorerInterface::Refresh(bool folderTree, bool folderFiles, bool searchFiles, bool reloadRegistry)
 	{
-		AssetRegistry::RefreshAssetRegistry();
+		if (reloadRegistry)
+			AssetRegistry::RefreshAssetRegistry();
 		const Project& project = Application::GetInstance().m_activeProject;
 
 		if (!std::filesystem::exists(m_currentDirectory))
@@ -538,7 +536,7 @@ namespace Loopie {
 
 		if(!m_dirtyTreeFolders)
 			m_dirtyTreeFolders = folderTree;
-		if(!m_dirtyFolderFiles)
+		if(!m_dirtyFolderFiles) 
 			m_dirtyFolderFiles = folderFiles;
 		if(!m_dirtyFileSearch)
 			m_dirtyFileSearch = searchFiles;

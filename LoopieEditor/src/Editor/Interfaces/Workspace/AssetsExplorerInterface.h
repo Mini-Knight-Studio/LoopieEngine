@@ -67,7 +67,7 @@ namespace Loopie {
 		void DragFile(const std::string& from);
 		void DropFile(const std::string& to);
 
-		void Refresh(bool folderTree = true, bool folderFiles = true, bool searchFiles = true);
+		void Refresh(bool folderTree = true, bool folderFiles = true, bool searchFiles = true, bool reloadRegistry = true);
 		void PassiveRefresh();
 		void RebuildTreeFolderCache();
 		CachedDirectoryTreeNode BuildDirectoryNode(const std::filesystem::path& directory);
