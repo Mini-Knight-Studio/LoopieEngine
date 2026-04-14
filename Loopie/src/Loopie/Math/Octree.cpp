@@ -16,6 +16,8 @@ namespace Loopie
         m_root->bounds = worldBounds;
         m_root->looseBounds = Expand(worldBounds);
         m_root->depth = 0;
+
+        m_lookup.reserve(500);
     }
 
     void LooseOctree::Clear()

@@ -7,7 +7,8 @@
 namespace Loopie {
 	Entity::Entity(const std::string& name) : m_name(name)
 	{
-		
+		m_components.reserve(5);
+		m_childrenEntities.reserve(10);
 	}
 
 	Entity::~Entity()

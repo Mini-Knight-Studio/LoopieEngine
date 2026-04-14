@@ -19,6 +19,8 @@ namespace Loopie
 		{
 			Log::Error("Particle Shader not set!"); 
 		}
+
+		m_emittersArray.reserve(3);
 	}
 	ParticleSystem::~ParticleSystem()
 	{

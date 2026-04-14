@@ -35,6 +35,9 @@
 namespace Loopie {
 	Scene::Scene()
 	{
+
+		m_entities.reserve(2000);
+
 		m_rootEntity = std::make_shared<Entity>("scene");
 		m_rootEntity->AddComponent<Transform>();
 

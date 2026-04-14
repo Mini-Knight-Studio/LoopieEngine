@@ -21,7 +21,10 @@ namespace Loopie {
 	std::filesystem::path AssetsExplorerInterface::s_SelectedFile = "";
 
 	AssetsExplorerInterface::AssetsExplorerInterface() {
-		
+		m_cachedFolderFiles.reserve(30);
+		m_cachedSearchFiles.reserve(50);
+		m_droppedFiles.reserve(10);
+		m_relativePathSteps.reserve(15);
 	}
 	AssetsExplorerInterface::~AssetsExplorerInterface() {
 		Application::GetInstance().m_notifier.RemoveObserver(this);
