@@ -235,6 +235,11 @@ namespace Loopie
 			}
 		}
 	}
+	void ParticleComponent::Clone(const std::shared_ptr<Entity> entity, const Component& other)
+	{
+		const ParticleComponent& otherParticle = static_cast<const ParticleComponent&>(other);
+		m_partSystem = otherParticle.m_partSystem;
+	}
 	const std::vector<std::shared_ptr<Emitter>>& ParticleComponent::GetEmittersVector()
 	{
 		return m_partSystem.GetEmitterArray();

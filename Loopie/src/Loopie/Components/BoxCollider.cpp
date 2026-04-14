@@ -158,4 +158,18 @@ namespace Loopie {
         m_obbDirty = true;
     }
 
+    void BoxCollider::Clone(const std::shared_ptr<Entity> entity, const Component& other)
+    {
+        const BoxCollider& otherBox = static_cast<const BoxCollider&>(other);
+        m_localCenter = otherBox.m_localCenter;
+        m_localExtents = otherBox.m_localExtents;
+        m_layerIndex = otherBox.m_layerIndex;
+        m_includeMask = otherBox.m_includeMask;
+        m_excludeMask = otherBox.m_excludeMask;
+        m_isTrigger = otherBox.m_isTrigger;
+        m_isStatic = otherBox.m_isStatic;
+        m_drawGizmo = otherBox.m_drawGizmo;
+		m_obbDirty = true;
+    }
+
 }

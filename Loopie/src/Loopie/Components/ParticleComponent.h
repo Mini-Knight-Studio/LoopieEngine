@@ -32,6 +32,7 @@ namespace Loopie
 
 		JsonNode Serialize(JsonNode& parent) const override;
 		void Deserialize(const JsonNode& data) override;
+		void Clone(const std::shared_ptr<Entity> entity, const Component& other) override;
 
 		const std::vector<std::shared_ptr<Emitter>>& GetEmittersVector();
 		void AddElemToEmitterVector(const std::shared_ptr<Emitter>& emitter);

@@ -126,6 +126,14 @@ namespace Loopie {
 		}
 	}
 
+	void MeshRenderer::Clone(const std::shared_ptr<Entity> entity, const Component& other)
+	{
+		const MeshRenderer& otherMeshRenderer = static_cast<const MeshRenderer&>(other);
+		SetMesh(otherMeshRenderer.m_mesh);
+		SetMaterial(otherMeshRenderer.m_material);
+		m_castsShadows = otherMeshRenderer.m_castsShadows;
+	}
+
 	bool MeshRenderer::GetTriangle(int triangleIndex, Triangle& triangle) const
 	{
 		const BufferLayout& layout = m_mesh->m_vbo->GetLayout();

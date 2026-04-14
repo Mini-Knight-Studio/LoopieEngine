@@ -26,4 +26,8 @@ namespace Loopie {
 		if (!data.Contains("audiolistener")) return;
 		JsonNode transformObj = data.Child("audiolistener");
 	}
+	void AudioListener::Clone(const std::shared_ptr<Entity> entity, const Component& other)
+	{
+
+	}
 }

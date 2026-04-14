@@ -55,6 +55,7 @@ namespace Loopie
 
 		JsonNode Serialize(JsonNode& parent) const override;
 		void Deserialize(const JsonNode& data) override;
+		void Clone(const std::shared_ptr<Entity> entity, const Component& other) override;
 
 		bool IsInteractable() const { return m_interactable; }
 		void SetInteractable(bool v);

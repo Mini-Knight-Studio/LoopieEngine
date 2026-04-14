@@ -430,6 +430,57 @@ namespace Loopie {
 		}
 	}
 
+	void Animator::Clone(const std::shared_ptr<Entity> entity, const Component& other)
+	{
+		const Animator& otherAnimator = static_cast<const Animator&>(other);
+		m_targetRenderer = nullptr;
+		m_currentClip = nullptr;
+		m_nextClip = nullptr;
+		m_currentTime = 0.0f;
+		m_nextTime = 0.0f;
+		m_currentClipIndex = 0;
+		m_nextClipIndex = 0;
+		m_inTransition = false;
+		m_isPlaying = otherAnimator.m_isPlaying;
+		m_looping = otherAnimator.m_looping;
+		m_playbackSpeed = otherAnimator.m_playbackSpeed;
+
+		std::unordered_map<UUID, RendererData> rendererUUIDMap = otherAnimator.m_renderers;
+
+		for (const auto& [uuid, data] : rendererUUIDMap)
+		{
+			std::shared_ptr<Entity> renderEntity = data.Renderer->GetOwner();
+			std::shared_ptr<Entity> similEntity = GetOwner()->GetChild(renderEntity->GetName());
+			std::vector<MeshRenderer*> renderers = renderEntity->GetComponents<MeshRenderer>();
+
+			for (size_t i = 0; i < renderers.size(); i++)
+			{
+				if (renderers[i] == data.Renderer)
+				{
+					AddMeshRenderer(similEntity->GetComponents<MeshRenderer>()[i]);
+					continue;
+				}
+			}
+		}
+		if (otherAnimator.m_targetRenderer)
+		{
+
+			std::shared_ptr<Entity> renderEntity = otherAnimator.m_targetRenderer->GetOwner();
+			std::shared_ptr<Entity> similEntity = GetOwner()->GetChild(renderEntity->GetName());
+			std::vector<MeshRenderer*> renderers = renderEntity->GetComponents<MeshRenderer>();
+
+			for (size_t i = 0; i < renderers.size(); i++)
+			{
+				if (renderers[i] == otherAnimator.m_targetRenderer)
+				{
+					SetTargetRenderer(similEntity->GetComponents<MeshRenderer>()[i]);
+					break;
+				}
+			}
+
+		}
+	}
+
 	void Animator::OnSceneDeserialized()
 	{
 		for (const auto& pending : m_pendingRenderers)

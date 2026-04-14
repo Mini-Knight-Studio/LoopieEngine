@@ -29,6 +29,7 @@ namespace Loopie {
 
 		JsonNode Serialize(JsonNode& parent) const override;
 		void Deserialize(const JsonNode& data) override;
+		void Clone(const std::shared_ptr<Entity> entity, const Component& other) override;
 
 		CanvasRenderMode GetRenderMode() const { return m_renderMode; }
 		void SetRenderMode(CanvasRenderMode mode) { m_renderMode = mode; }

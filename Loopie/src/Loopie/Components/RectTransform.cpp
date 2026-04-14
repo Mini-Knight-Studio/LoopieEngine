@@ -241,3 +241,18 @@ void Loopie::RectTransform::Deserialize(const JsonNode& data)
 		}
 	}
 }
+
+void Loopie::RectTransform::Clone(const std::shared_ptr<Entity> entity, const Component& other)
+{
+	const RectTransform& otherRect = static_cast<const RectTransform&>(other);
+	Transform::Clone(entity, other);
+
+	m_anchorMin = otherRect.m_anchorMin;
+	m_anchorMax = otherRect.m_anchorMax;
+	m_pivot = otherRect.m_pivot;
+	m_sizeDelta = otherRect.m_sizeDelta;
+
+	m_anchorMin = Clamp01(m_anchorMin);
+	m_anchorMax = Clamp01(m_anchorMax);
+	m_pivot = Clamp01(m_pivot);
+}

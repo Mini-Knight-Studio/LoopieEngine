@@ -22,6 +22,14 @@ namespace Loopie
 		m_matchWidthOrHeight = data.GetValue<float>("match_width_or_height", m_matchWidthOrHeight).Result;
 	}
 
+	void CanvasScaler::Clone(const std::shared_ptr<Entity> entity, const Component& other)
+	{
+		const CanvasScaler& otherScaler = static_cast<const CanvasScaler&>(other);
+		m_scaleMode = otherScaler.m_scaleMode;
+		m_referenceResolution = otherScaler.m_referenceResolution;
+		m_matchWidthOrHeight = otherScaler.m_matchWidthOrHeight;
+	}
+
 	vec2 CanvasScaler::ComputeScale(const vec2& targetPixels, const vec2& canvasUnits) const
 	{
 		if (m_scaleMode == CanvasScaleMode::ConstantPixelSize)

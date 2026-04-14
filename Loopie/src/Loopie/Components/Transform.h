@@ -69,6 +69,7 @@ namespace Loopie
 
         JsonNode Serialize(JsonNode& parent) const override;
         void Deserialize(const JsonNode& data) override;    
+		void Clone(const std::shared_ptr<Entity> entity, const Component& other) override;
 
 		virtual bool IsRectTransform() const { return false; }
         virtual bool HasSize() const { return false; }

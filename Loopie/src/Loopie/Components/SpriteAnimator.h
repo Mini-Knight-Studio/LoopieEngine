@@ -23,6 +23,7 @@ namespace Loopie
 
 		JsonNode Serialize(JsonNode& parent) const override;
 		void Deserialize(const JsonNode& data) override;
+		void Clone(const std::shared_ptr<Entity> entity, const Component& other) override;
 
 		std::shared_ptr<Texture> GetTexture() const { return m_texture; }
 		void SetTexture(const std::shared_ptr<Texture>& texture);

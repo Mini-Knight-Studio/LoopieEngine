@@ -172,4 +172,12 @@ namespace Loopie
 		m_uvRect = uvRect;
 	}
 
+	void Image::Clone(const std::shared_ptr<Entity> entity, const Component& other)
+	{
+		const Image& otherImage = static_cast<const Image&>(other);
+		m_tint = otherImage.m_tint;
+		m_uvRect = otherImage.m_uvRect;
+		SetTexture(otherImage.m_texture);
+	}
+
 }

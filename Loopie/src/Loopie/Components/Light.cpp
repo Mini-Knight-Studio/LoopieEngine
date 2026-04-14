@@ -379,4 +379,20 @@ namespace Loopie
 			m_shadowColor.z = shadowColorNode.GetValue<float>("b", 1.0f).Result;
 		}
 	}
+	void Light::Clone(const std::shared_ptr<Entity> entity, const Component& other)
+	{
+		const Light& otherLight = static_cast<const Light&>(other);
+
+		m_type = otherLight.m_type;
+		m_color = otherLight.m_color;
+		m_intensity = otherLight.m_intensity;
+		m_attenuationConstant = otherLight.m_attenuationConstant;
+		m_attenuationLinear = otherLight.m_attenuationLinear;
+		m_attenuationQuadratic = otherLight.m_attenuationQuadratic;
+		m_reachDistance = otherLight.m_reachDistance;
+		m_innerConeAngle = otherLight.m_innerConeAngle;
+		m_outerConeAngle = otherLight.m_outerConeAngle;
+		m_castsShadows = otherLight.m_castsShadows;
+		m_shadowColor = otherLight.m_shadowColor;
+	}
 }

@@ -258,4 +258,19 @@ namespace Loopie
 		m_time = 0.0;
 		m_lastAppliedFrame = -1;
 	}
+	void SpriteAnimator::Clone(const std::shared_ptr<Entity> entity, const Component& other)
+	{
+		const SpriteAnimator& otherAnim = static_cast<const SpriteAnimator&>(other);
+
+		m_texture = otherAnim.m_texture;
+		m_grid = otherAnim.m_grid;
+		m_startFrame = otherAnim.m_startFrame;
+		m_frameCount = otherAnim.m_frameCount;
+		m_fps = otherAnim.m_fps;
+		m_loop = otherAnim.m_loop;
+		m_playOnStart = otherAnim.m_playOnStart;
+		m_playing = otherAnim.m_playing;
+		m_time = 0.0;
+		m_lastAppliedFrame = -1;
+	}
 }

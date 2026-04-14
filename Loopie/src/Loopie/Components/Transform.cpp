@@ -416,6 +416,16 @@ namespace Loopie
         }
     }
 
+    void Transform::Clone(const std::shared_ptr<Entity> entity, const Component& other)
+    {
+		const Transform& otherTransform = static_cast<const Transform&>(other);
+
+        m_localPosition = otherTransform.m_localPosition;
+        m_localRotation = otherTransform.m_localRotation;
+		m_localScale = otherTransform.m_localScale;
+		SetEulerAngles(otherTransform.GetLocalEulerAngles());
+    }
+
     void Transform::RefreshMatrices() const
     {
         if (!IsDirty()) return;

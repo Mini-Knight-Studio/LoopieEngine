@@ -362,6 +362,26 @@ namespace Loopie {
         }
     }
 
+    void AudioSource::Clone(const std::shared_ptr<Entity> entity, const Component& other)
+    {
+        const AudioSource& otherAudioSource = static_cast<const AudioSource&>(other);
+        m_isLooping = otherAudioSource.m_isLooping;
+        m_isSpatial = otherAudioSource.m_isSpatial;
+        m_loopStrategy = otherAudioSource.m_loopStrategy;
+        m_noLoopStrategy = otherAudioSource.m_noLoopStrategy;
+        m_playOnAwake = otherAudioSource.m_playOnAwake;
+        m_pitch = otherAudioSource.m_pitch;
+        m_volume = otherAudioSource.m_volume;
+        m_pan = otherAudioSource.m_pan;
+        m_minDistance = otherAudioSource.m_minDistance;
+        m_maxDistance = otherAudioSource.m_maxDistance;
+        m_currentClipIndex = otherAudioSource.m_currentClipIndex;
+        m_busPath = otherAudioSource.m_busPath;
+        for (const auto& clip : otherAudioSource.m_audioClips) {
+            AddClip(clip);
+		}
+    }
+
     const AudioBus* AudioSource::ResolveBus() const
     {
         return AudioManager::GetBus(m_busPath);

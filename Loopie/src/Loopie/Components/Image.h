@@ -36,6 +36,7 @@ namespace Loopie
 
 		JsonNode Serialize(JsonNode& parent) const override;
 		void Deserialize(const JsonNode& data) override;
+		void Clone(const std::shared_ptr<Entity> entity, const Component& other) override;
 
 	private:
 		vec4 m_tint = vec4(1.0f);

@@ -226,119 +226,126 @@ namespace Loopie {
 
 		clone->SetIsActive(source->GetIsActiveInHierarchy());
 
-		// ---- Clone components ----
+		// ---- Clone components ---- 
+
+		/// DO HERE COMPONENTS THAT CAN BE CLONED WITHOUT DEPENDENCIES FIRST (ex: Transform can be cloned before MeshRenderer because it doesn't require any data from the mesh to be cloned)
 		for (Component* component : source->GetComponents())
 		{
-			JsonData componentData;
-			component->Serialize(componentData.Node());
+			if (!component)
+				continue;
 
-			// Transform already exists
-			if (componentData.Child("transform").IsValid())
+			size_t compType = component->GetTypeID();
+
+			if (compType == Transform::GetTypeIDStatic())
 			{
-				clone->GetTransform()->Deserialize(componentData.Child("transform"));
+				clone->GetTransform()->Clone(source, *component);
 				continue;
 			}
-			if (componentData.Child("recttransform").IsValid())
+
+			if (compType == RectTransform::GetTypeIDStatic())
 			{
 				clone->ReplaceTransform<RectTransform>();
-				clone->GetTransform()->Deserialize(componentData.Child("recttransform"));
+				clone->GetTransform()->Clone(source, *component);
+				continue;
 			}
 			// Camera
-			if (componentData.Child("camera").IsValid())
+			if (compType == Camera::GetTypeIDStatic())
 			{
 				auto cam = clone->AddComponent<Camera>();
-				cam->Deserialize(componentData.Child("camera"));
+				cam->Clone(source, *component);
+				continue;
 			}
 			// MeshRenderer
-			else if (componentData.Child("meshrenderer").IsValid())
+			else if (compType == MeshRenderer::GetTypeIDStatic())
 			{
 				auto mr = clone->AddComponent<MeshRenderer>();
-				mr->Deserialize(componentData.Child("meshrenderer"));
+				mr->Clone(source, *component);
+				continue;
 			}
 			// ParticleComponent
-			else if (componentData.Child("particlecomponent").IsValid())
+			else if (compType == ParticleComponent::GetTypeIDStatic())
 			{
 				auto pc = clone->AddComponent<ParticleComponent>();
-				pc->Deserialize(componentData.Child("particlecomponent"));
+				pc->Clone(source, *component);
+				continue;
 			}
 			// ScriptClass
-			else if (componentData.Child("script").IsValid())
+			else if (compType == ScriptClass::GetTypeIDStatic())
 			{
-				std::string classID = componentData.Child("script").GetValue<std::string>("class_id", "").Result;
-				ScriptClass* scriptClass = clone->AddComponent<ScriptClass>(classID);
-				scriptClass->Deserialize(componentData.Child("script"));
-			}
-			/// Animator
-			else if (componentData.Child("animator").IsValid())
-			{
-				auto animator = clone->AddComponent<Animator>();
-				animator->Deserialize(componentData.Child("animator"));
+				const ScriptClass* scriptComp = static_cast<const ScriptClass*>(component);
+				ScriptClass* scriptClass = clone->AddComponent<ScriptClass>(scriptComp->GetClassName());
+				scriptClass->Clone(source, *component);
+				continue;
 			}
 			 // Canvas
-			else if (componentData.Child("canvas").IsValid())
+			else if (compType == Canvas::GetTypeIDStatic())
 			{
 				auto canvas = clone->AddComponent<Canvas>();
-				canvas->Deserialize(componentData.Child("canvas"));
+				canvas->Clone(source, *component);
+				continue;
 			}
 			/// Image
-			else if (componentData.Child("image").IsValid())
+			else if (compType == Image::GetTypeIDStatic())
 			{
 				auto image = clone->AddComponent<Image>();
-				image->Deserialize(componentData.Child("image"));
+				image->Clone(source, *component);
+				continue;
 			}
 			/// SpriteAnimator
-			else if (componentData.Child("sprite_animator").IsValid())
+			else if (compType == SpriteAnimator::GetTypeIDStatic())
 			{
 				auto spriteAnimator = clone->AddComponent<SpriteAnimator>();
-				spriteAnimator->Deserialize(componentData.Child("sprite_animator"));
+				spriteAnimator->Clone(source, *component);
+				continue;
 			}
 			/// BoxCollider
-			else if (componentData.Child("boxcollider").IsValid())
+			else if (compType == BoxCollider::GetTypeIDStatic())
 			{
 				auto bc = clone->AddComponent<BoxCollider>();
-				bc->Deserialize(componentData.Child("boxcollider"));
+				bc->Clone(source, *component);
+				continue;
 			}
 			//AudioSource
-			else if (componentData.Child("audiosource").IsValid())
+			else if (compType == AudioSource::GetTypeIDStatic())
 			{
 				auto audioSource = clone->AddComponent<AudioSource>();
-				audioSource->Deserialize(componentData.Child("audiosource"));
-			}
-			//ParticleComponent
-			else if (componentData.Child("particlecomponent").IsValid())
-			{
-				auto particleComponent = clone->AddComponent<ParticleComponent>();
-				particleComponent->Deserialize(componentData.Child("particlecomponent"));
+				audioSource->Clone(source, *component);
+				continue;
 			}
 			//AudioListener
-			else if (componentData.Child("audiolistener").IsValid())
+			else if (compType == AudioListener::GetTypeIDStatic())
 			{
 				auto audioListener = clone->AddComponent<AudioListener>();
-				audioListener->Deserialize(componentData.Child("audiolistener"));
+				audioListener->Clone(source, *component);
+				continue;
 			}
 			// Text
-			else if (componentData.Child("text").IsValid())
+			else if (compType == Text::GetTypeIDStatic())
 			{
 				auto text = clone->AddComponent<Text>();
-				text->Deserialize(componentData.Child("text"));
+				text->Clone(source, *component);
+				continue;
 			}
 			// Button
-			else if (componentData.Child("button").IsValid())
+			else if (compType == Button::GetTypeIDStatic())
 			{
 				auto button = clone->AddComponent<Button>();
-				button->Deserialize(componentData.Child("button"));
+				button->Clone(source, *component);
+				continue;
 			}
 			// Light
-			else if (componentData.Child("light").IsValid())
+			else if (compType == Light::GetTypeIDStatic())
 			{
 				auto light = clone->AddComponent<Light>();
-				light->Deserialize(componentData.Child("light"));
+				light->Clone(source, *component);
+				continue;
 			}
 			// CanvasScaler
-			else if (componentData.Child("canvas_scaler").IsValid())
+			else if (compType == CanvasScaler::GetTypeIDStatic())
 			{
 				auto scaler = clone->AddComponent<CanvasScaler>();
-				scaler->Deserialize(componentData.Child("canvas_scaler"));
+				scaler->Clone(source, *component);
+				continue;
 			}
 		}
 
@@ -348,6 +355,24 @@ namespace Loopie {
 			for (const auto& child : source->GetChildren())
 			{
 				CloneEntity(child, clone, true);
+			}
+		}
+
+		///// DO HERE COMPONENTS THAT REQUIRE OTHER COMPONENTS TO BE CLONED FIRST (ex: Animator needs MeshRenderer to be cloned first to properly clone the renderer data)
+
+		for (Component* component : source->GetComponents())
+		{
+			if (!component)
+				continue;
+
+			size_t compType = component->GetTypeID();
+
+			/// Animator
+			if (compType == Animator::GetTypeIDStatic())
+			{
+				auto animator = clone->AddComponent<Animator>();
+				animator->Clone(source, *component);
+				continue;
 			}
 		}
 

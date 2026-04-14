@@ -446,6 +446,23 @@ namespace Loopie
 		ApplyState(m_interactable ? VisualState::Normal : VisualState::Disabled);
 	}
 
+	void Button::Clone(const std::shared_ptr<Entity> entity, const Component& other)
+	{
+		const Button& otherButton = static_cast<const Button&>(other);
+		m_interactable = otherButton.m_interactable;
+		m_transitionMode = otherButton.m_transitionMode;
+		m_normalColor = otherButton.m_normalColor;
+		m_hoveredColor = otherButton.m_hoveredColor;
+		m_pressedColor = otherButton.m_pressedColor;
+		m_disabledColor = otherButton.m_disabledColor;
+		m_normalTexture = otherButton.m_normalTexture;
+		m_hoveredTexture = otherButton.m_hoveredTexture;
+		m_pressedTexture = otherButton.m_pressedTexture;
+		m_disabledTexture = otherButton.m_disabledTexture;
+		m_onClickFunctionCalls = otherButton.m_onClickFunctionCalls;
+		ApplyState(m_interactable ? VisualState::Normal : VisualState::Disabled);
+	}
+
 	bool Button::IsFunctionCallConfigured(const FunctionCall& functionCall)
 	{
 		return !(functionCall.EntityUUID == UUID::Invalid)

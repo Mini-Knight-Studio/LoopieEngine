@@ -179,4 +179,17 @@ namespace Loopie {
 
 		SetFont(nullptr);
 	}
+	void Text::Clone(const std::shared_ptr<Entity> entity, const Component& other)
+	{
+		const Text& otherText = static_cast<const Text&>(other);
+
+		m_text = otherText.m_text;
+		m_color = otherText.m_color;
+		m_scale = otherText.m_scale;
+		m_sizeMode = otherText.m_sizeMode;
+		m_fontSize = otherText.m_fontSize;
+		m_horizontalAlignment = otherText.m_horizontalAlignment;
+		m_verticalAlignment = otherText.m_verticalAlignment;
+		m_font = otherText.m_font;
+	}
 }

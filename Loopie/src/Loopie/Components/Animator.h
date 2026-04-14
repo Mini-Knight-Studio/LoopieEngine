@@ -14,7 +14,7 @@ namespace Loopie {
 
 	struct RendererData
 	{
-		MeshRenderer * Renderer = nullptr;
+		MeshRenderer* Renderer = nullptr;
 		std::vector<glm::mat4> FinalBoneMatrices;
 	};
 
@@ -82,6 +82,7 @@ namespace Loopie {
 
 		JsonNode Serialize(JsonNode& parent) const override;
 		void Deserialize(const JsonNode& data) override;
+		void Clone(const std::shared_ptr<Entity> entity, const Component& other) override;
 		void OnSceneDeserialized() override;
 	private:
 		void CalculateBoneTransform();

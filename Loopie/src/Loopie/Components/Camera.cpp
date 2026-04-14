@@ -245,6 +245,18 @@ namespace Loopie
 		}
 	}
 
+	void Camera::Clone(const std::shared_ptr<Entity> entity, const Component& other)
+	{
+		const Camera& otherCamera = static_cast<const Camera&>(other);
+		m_fov = otherCamera.m_fov;
+		m_nearPlane = otherCamera.m_nearPlane;
+		m_farPlane = otherCamera.m_farPlane;
+		m_projectionType = otherCamera.m_projectionType;
+		m_orthoSize = otherCamera.m_orthoSize;
+		m_canBeMainCamera = otherCamera.m_canBeMainCamera;
+
+	}
+
 	void Camera::SetProjection(CameraProjection type)
 	{
 		if (m_projectionType != type)

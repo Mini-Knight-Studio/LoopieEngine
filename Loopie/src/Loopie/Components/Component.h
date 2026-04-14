@@ -46,6 +46,7 @@ namespace Loopie {
 		// Serialize & Deserialize
 		virtual JsonNode Serialize(JsonNode& parent) const = 0;
 		virtual void Deserialize(const JsonNode& data) = 0;
+		virtual void Clone(const std::shared_ptr<Entity> entity, const Component& other) = 0;
 		virtual void OnSceneDeserialized() {};
 
 		virtual void Init() = 0;

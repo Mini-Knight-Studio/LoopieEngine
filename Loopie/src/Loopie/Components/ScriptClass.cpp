@@ -414,4 +414,13 @@ namespace Loopie
 		}
 	}
 
+	void ScriptClass::Clone(const std::shared_ptr<Entity> entity, const Component& other)
+	{
+		const ScriptClass& otherScript = static_cast<const ScriptClass&>(other);
+
+		m_className = otherScript.m_className;
+		m_scriptingClass = ScriptingManager::GetScriptingClass(m_className);
+		m_scriptFields = otherScript.m_scriptFields;
+	}
+
 }
