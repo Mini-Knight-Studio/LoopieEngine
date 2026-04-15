@@ -49,7 +49,7 @@ namespace Loopie {
 		void RenderSceneUI(Camera* camera);
 
 		void ProcessOverlayButtonsInput();
-		static void ProcessOverlayButtonsRecursive(const std::shared_ptr<Loopie::Entity>& entity, const vec2& mouseCanvas, bool mouseOverGame, const Loopie::InputEventManager& input, bool& pressedInsideAny);
+		static void ProcessOverlayButtonsRecursive(const std::shared_ptr<Loopie::Entity>& entity, const vec2& mouseCanvas, bool mouseOverGame, const Loopie::InputEventManager& input, bool& pressedInsideAny, bool& releasedInsideAny);
 
 	private:
 		InspectorInterface m_inspector;

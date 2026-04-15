@@ -879,11 +879,16 @@ namespace Loopie
 			const vec2 mouseCanvas(mouseLocalPx.x / sx, ch - (mouseLocalPx.y / sy));
 
 			static bool s_pressedInside = false;
-			ProcessOverlayButtonsRecursive(entity, mouseCanvas, mouseOverGame, inputEvent, s_pressedInside);
+			static bool s_releasedInside = false;
+			ProcessOverlayButtonsRecursive(entity, mouseCanvas, mouseOverGame, inputEvent, s_pressedInside, s_releasedInside);
+			if (s_releasedInside) {
+				s_pressedInside = false;
+				s_releasedInside = false;
+			}
 		}
 	}
 
-	void EditorModule::ProcessOverlayButtonsRecursive(const std::shared_ptr<Loopie::Entity>& entity, const vec2& mouseCanvas, bool mouseOverGame, const Loopie::InputEventManager& input, bool& pressedInsideAny)
+	void EditorModule::ProcessOverlayButtonsRecursive(const std::shared_ptr<Loopie::Entity>& entity, const vec2& mouseCanvas, bool mouseOverGame, const Loopie::InputEventManager& input, bool& pressedInsideAny, bool& releasedInsideAny)
 	{
 		if (!entity || !entity->GetIsActive())
 			return;
@@ -930,15 +935,17 @@ namespace Loopie
 
 			if (up && pressedInsideAny)
 			{
-				if (hovered)
+				if (hovered) {
 					button->TriggerClick();
+					pressedInsideAny = false;
+				}
 
-				pressedInsideAny = false;
+				releasedInsideAny = true;
 				button->SetPressed(false);
 			}
 		}
 
 		for (const auto& child : entity->GetChildren())
-			ProcessOverlayButtonsRecursive(child, mouseCanvas, mouseOverGame, input, pressedInsideAny);
+			ProcessOverlayButtonsRecursive(child, mouseCanvas, mouseOverGame, input, pressedInsideAny, releasedInsideAny);
 	}
 }
