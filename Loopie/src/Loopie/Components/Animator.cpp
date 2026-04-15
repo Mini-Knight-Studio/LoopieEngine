@@ -469,7 +469,15 @@ namespace Loopie {
 		for (const auto& [uuid, data] : rendererUUIDMap)
 		{
 			std::shared_ptr<Entity> renderEntity = data.Renderer->GetOwner();
-			std::shared_ptr<Entity> similEntity = GetOwner()->GetChild(renderEntity->GetName());
+			std::shared_ptr<Entity> similEntity = nullptr;
+			if (renderEntity == entity)
+				similEntity = GetOwner();
+			else
+				similEntity = GetOwner()->GetChild(renderEntity->GetName());
+
+			if(similEntity == nullptr)
+				continue;
+
 			std::vector<MeshRenderer*> renderers = renderEntity->GetComponents<MeshRenderer>();
 
 			for (size_t i = 0; i < renderers.size(); i++)
@@ -485,18 +493,26 @@ namespace Loopie {
 		{
 
 			std::shared_ptr<Entity> renderEntity = otherAnimator.m_targetRenderer->GetOwner();
-			std::shared_ptr<Entity> similEntity = GetOwner()->GetChild(renderEntity->GetName());
-			std::vector<MeshRenderer*> renderers = renderEntity->GetComponents<MeshRenderer>();
 
-			for (size_t i = 0; i < renderers.size(); i++)
+			std::shared_ptr<Entity> similEntity = nullptr;
+			if (renderEntity == entity)
+				similEntity = GetOwner();
+			else
+				similEntity = GetOwner()->GetChild(renderEntity->GetName());
+
+			if (similEntity != nullptr)
 			{
-				if (renderers[i] == otherAnimator.m_targetRenderer)
+				std::vector<MeshRenderer*> renderers = renderEntity->GetComponents<MeshRenderer>();
+
+				for (size_t i = 0; i < renderers.size(); i++)
 				{
-					SetTargetRenderer(similEntity->GetComponents<MeshRenderer>()[i]);
-					break;
+					if (renderers[i] == otherAnimator.m_targetRenderer)
+					{
+						SetTargetRenderer(similEntity->GetComponents<MeshRenderer>()[i]);
+						break;
+					}
 				}
 			}
-
 		}
 	}
 
