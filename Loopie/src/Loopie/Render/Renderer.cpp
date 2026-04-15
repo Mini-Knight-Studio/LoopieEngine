@@ -417,12 +417,12 @@ namespace Loopie {
 
 		if (material->GetShader().GetUniformLocation("lp_Near") != -1)
 		{
-			material->GetShader().SetUniformInt("lp_Near", s_NearPlane);
+			material->GetShader().SetUniformFloat("lp_Near", s_NearPlane);
 		}
 
 		if (material->GetShader().GetUniformLocation("lp_Far") != -1)
 		{
-			material->GetShader().SetUniformInt("lp_Near", s_FarPlane);
+			material->GetShader().SetUniformFloat("lp_Far", s_FarPlane);
 		}
 
 		for (int i = 0; i < MAX_SHADOW_CASTING_LIGHTS; ++i)
