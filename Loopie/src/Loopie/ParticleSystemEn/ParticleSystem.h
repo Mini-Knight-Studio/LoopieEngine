@@ -34,6 +34,7 @@ namespace Loopie
 
 			void AddElemToEmitterArray(const std::shared_ptr<Emitter>& em);
 			void DeleteElemFromEmitterArray(const std::shared_ptr<Emitter>& em);
+			void ClearEmitterArray();
 
 			const std::vector<std::shared_ptr<Emitter>>& GetEmitterArray() const;
 			std::shared_ptr<VertexArray> GetQuadVAO() const;

@@ -4,6 +4,8 @@
 #include "Loopie/ParticleSystemEn/Emitter.h"
 #include "Loopie/Core/Time.h"
 #include "Loopie/Core/Log.h"
+#include "Loopie/Resources/AssetRegistry.h"
+#include "Loopie/Resources/ResourceManager.h"
 
 #include "Loopie/Profiler/Profiler.h"
 
@@ -77,6 +79,8 @@ namespace Loopie
 			emitterNode.CreateField("poolindex", m_partSystem.GetEmitterArray()[i]->GetPoolIndex());
 			emitterNode.CreateField("particlefollowemitter", m_partSystem.GetEmitterArray()[i]->GetParticlesFollowEmitter());
 			emitterNode.CreateField("localvelocity", m_partSystem.GetEmitterArray()[i]->GetLocalVelocity());
+			if(m_partSystem.GetEmitterArray()[i]->GetSprite())
+				emitterNode.CreateField("sprite_uuid", m_partSystem.GetEmitterArray()[i]->GetSprite()->GetUUID().Get());
 
 			JsonNode vectorNode = emitterNode.CreateObjectField("position");
 			vectorNode.CreateField("x", m_partSystem.GetEmitterArray()[i]->GetPosition().x);
@@ -87,8 +91,7 @@ namespace Loopie
 			vectorNode.CreateField("x", m_partSystem.GetEmitterArray()[i]->GetPositionOffSet().x);
 			vectorNode.CreateField("y", m_partSystem.GetEmitterArray()[i]->GetPositionOffSet().y);
 			vectorNode.CreateField("z", m_partSystem.GetEmitterArray()[i]->GetPositionOffSet().z);
-
-
+	
 			JsonNode pProps = emitterNode.CreateObjectField("particleprops");
 
 			pProps.CreateField("sizebegin", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().SizeBegin);
@@ -128,6 +131,13 @@ namespace Loopie
 			vectorNode.CreateField("g", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().ColorEnd.y);
 			vectorNode.CreateField("b", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().ColorEnd.z);
 			vectorNode.CreateField("a", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().ColorEnd.w);
+
+			JsonNode rotNode = emitterNode.CreateObjectField("rotation");
+			rotNode.CreateField("x", m_partSystem.GetEmitterArray()[i]->GetEmitterRotation().x);
+			rotNode.CreateField("y", m_partSystem.GetEmitterArray()[i]->GetEmitterRotation().y);
+			rotNode.CreateField("z", m_partSystem.GetEmitterArray()[i]->GetEmitterRotation().z);
+			rotNode.CreateField("w", m_partSystem.GetEmitterArray()[i]->GetEmitterRotation().w);
+
 		}
 		
 		return particleObj;
@@ -233,6 +243,27 @@ namespace Loopie
 						props.ColorEnd.w = colorEndNode.GetValue<float>("a").Result;
 					}
 
+					JsonNode rotNode = node.Child("rotation");
+					if (rotNode.IsValid() && rotNode.IsObject())
+					{
+						glm::quat rot;
+						rot.x = rotNode.GetValue<float>("x").Result;
+						rot.y = rotNode.GetValue<float>("y").Result;
+						rot.z = rotNode.GetValue<float>("z").Result;
+						rot.w = rotNode.GetValue<float>("w").Result;
+
+						m_partSystem.GetEmitterArray()[i]->SetEmitterRotation(rot);
+					}
+
+					UUID spriteID = UUID(node.GetValue<std::string>("sprite_uuid").Result);
+					if (UUID::IsValid(spriteID.Get()))
+					{
+						UUID id = UUID(data.GetValue<std::string>("sprite_uuid").Result);
+						Metadata* meta = AssetRegistry::GetMetadata(id);
+						if (meta)
+							m_partSystem.GetEmitterArray()[i]->SetSprite(ResourceManager::GetTexture(*meta));
+					}
+
 					m_partSystem.GetEmitterArray()[i]->SetEmisionProperties(props);
 				}
 			}
@@ -241,7 +272,41 @@ namespace Loopie
 	void ParticleComponent::Clone(const std::shared_ptr<Entity> entity, const Component& other)
 	{
 		const ParticleComponent& otherParticle = static_cast<const ParticleComponent&>(other);
+
 		m_partSystem = otherParticle.m_partSystem;
+		m_partSystem.ClearEmitterArray();
+
+		const auto& otherEmitters = otherParticle.m_partSystem.GetEmitterArray();
+
+		for (const auto& otherEmitter : otherEmitters)
+		{
+			if (!otherEmitter)
+				continue;
+
+
+			auto newEmitter = std::make_shared<Emitter>(
+				otherEmitter->GetMaxParticles(),
+				CAMERA_FACING,
+				otherEmitter->GetPosition(),
+				otherEmitter->GetSpawnrate(),
+				otherEmitter->GetPositionOffSet()
+			);
+
+			newEmitter->SetName(otherEmitter->GetName());
+			newEmitter->SetSpawnRate(otherEmitter->GetSpawnrate());
+			newEmitter->SetMaxParticles(otherEmitter->GetMaxParticles());
+			newEmitter->SetEmitterTimer(otherEmitter->GetEmitterTimer());
+			newEmitter->SetActive(otherEmitter->GetIsActive());
+			newEmitter->SetPoolIndex(otherEmitter->GetPoolIndex());
+			newEmitter->SetParticlesFollowEmitter(otherEmitter->GetParticlesFollowEmitter());
+			newEmitter->SetLocalVelocity(otherEmitter->GetLocalVelocity());
+			newEmitter->SetEmitterRotation(otherEmitter->GetEmitterRotation());
+
+			newEmitter->SetEmisionProperties(otherEmitter->GetEmissionProperties());
+
+			newEmitter->SetSprite(otherEmitter->GetSprite());
+			m_partSystem.AddElemToEmitterArray(newEmitter);
+		}
 	}
 	const std::vector<std::shared_ptr<Emitter>>& ParticleComponent::GetEmittersVector()
 	{

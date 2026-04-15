@@ -53,6 +53,7 @@ namespace Loopie {
             }
             JsonResult<T> result;
             result.Found = false;
+			result.Result = defaultValue;
             return result;
         }
 
@@ -65,6 +66,7 @@ namespace Loopie {
             }
             else {
                 result.Found = false;
+				result.Result = defaultValue;
             }
             return result;
         }

@@ -141,5 +141,10 @@ namespace Loopie
 			m_emittersArray.erase(it);
 		}
 	}
+
+	void ParticleSystem::ClearEmitterArray()
+	{
+		m_emittersArray.clear();
+	}
 	
 }

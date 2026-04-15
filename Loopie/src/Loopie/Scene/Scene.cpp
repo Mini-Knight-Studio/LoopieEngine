@@ -77,6 +77,7 @@ namespace Loopie {
 				JsonData componentObj = JsonData();
 				component->Serialize(componentObj.Node());
 				componentObj.CreateField<std::string>("uuid", component->GetUUID().Get());
+				componentObj.CreateField<bool>("is_active", component->GetIsActive());
 				componentsObj.AddArrayElement(componentObj.GetRoot());
 			}
 
@@ -256,6 +257,7 @@ namespace Loopie {
 			{
 				auto cam = clone->AddComponent<Camera>();
 				cam->Clone(source, *component);
+				cam->SetIsActive(component->GetLocalIsActive());
 				continue;
 			}
 			// MeshRenderer
@@ -263,6 +265,7 @@ namespace Loopie {
 			{
 				auto mr = clone->AddComponent<MeshRenderer>();
 				mr->Clone(source, *component);
+				mr->SetIsActive(component->GetLocalIsActive());
 				continue;
 			}
 			// ParticleComponent
@@ -270,6 +273,7 @@ namespace Loopie {
 			{
 				auto pc = clone->AddComponent<ParticleComponent>();
 				pc->Clone(source, *component);
+				pc->SetIsActive(component->GetLocalIsActive());
 				continue;
 			}
 			// ScriptClass
@@ -278,6 +282,7 @@ namespace Loopie {
 				const ScriptClass* scriptComp = static_cast<const ScriptClass*>(component);
 				ScriptClass* scriptClass = clone->AddComponent<ScriptClass>(scriptComp->GetClassName());
 				scriptClass->Clone(source, *component);
+				scriptClass->SetIsActive(component->GetLocalIsActive());
 				continue;
 			}
 			 // Canvas
@@ -285,6 +290,7 @@ namespace Loopie {
 			{
 				auto canvas = clone->AddComponent<Canvas>();
 				canvas->Clone(source, *component);
+				canvas->SetIsActive(component->GetLocalIsActive());
 				continue;
 			}
 			/// Image
@@ -292,6 +298,7 @@ namespace Loopie {
 			{
 				auto image = clone->AddComponent<Image>();
 				image->Clone(source, *component);
+				image->SetIsActive(component->GetLocalIsActive());
 				continue;
 			}
 			/// SpriteAnimator
@@ -299,6 +306,7 @@ namespace Loopie {
 			{
 				auto spriteAnimator = clone->AddComponent<SpriteAnimator>();
 				spriteAnimator->Clone(source, *component);
+				spriteAnimator->SetIsActive(component->GetLocalIsActive());
 				continue;
 			}
 			/// BoxCollider
@@ -306,6 +314,7 @@ namespace Loopie {
 			{
 				auto bc = clone->AddComponent<BoxCollider>();
 				bc->Clone(source, *component);
+				bc->SetIsActive(component->GetLocalIsActive());
 				continue;
 			}
 			//AudioSource
@@ -313,6 +322,7 @@ namespace Loopie {
 			{
 				auto audioSource = clone->AddComponent<AudioSource>();
 				audioSource->Clone(source, *component);
+				audioSource->SetIsActive(component->GetLocalIsActive());
 				continue;
 			}
 			//AudioListener
@@ -320,6 +330,7 @@ namespace Loopie {
 			{
 				auto audioListener = clone->AddComponent<AudioListener>();
 				audioListener->Clone(source, *component);
+				audioListener->SetIsActive(component->GetLocalIsActive());
 				continue;
 			}
 			// Text
@@ -327,6 +338,7 @@ namespace Loopie {
 			{
 				auto text = clone->AddComponent<Text>();
 				text->Clone(source, *component);
+				text->SetIsActive(component->GetLocalIsActive());
 				continue;
 			}
 			// Button
@@ -334,6 +346,7 @@ namespace Loopie {
 			{
 				auto button = clone->AddComponent<Button>();
 				button->Clone(source, *component);
+				button->SetIsActive(component->GetLocalIsActive());
 				continue;
 			}
 			// Light
@@ -341,6 +354,7 @@ namespace Loopie {
 			{
 				auto light = clone->AddComponent<Light>();
 				light->Clone(source, *component);
+				light->SetIsActive(component->GetLocalIsActive());
 				continue;
 			}
 			// CanvasScaler
@@ -348,6 +362,7 @@ namespace Loopie {
 			{
 				auto scaler = clone->AddComponent<CanvasScaler>();
 				scaler->Clone(source, *component);
+				scaler->SetIsActive(component->GetLocalIsActive());
 				continue;
 			}
 		}
@@ -375,6 +390,7 @@ namespace Loopie {
 			{
 				auto animator = clone->AddComponent<Animator>();
 				animator->Clone(source, *component);
+				animator->SetIsActive(component->GetLocalIsActive());
 				continue;
 			}
 		}
@@ -547,6 +563,7 @@ namespace Loopie {
 					JsonNode componentNode = JsonNode(&componentJson.Result);
 
 					JsonResult<std::string> componentUUIDResult = componentNode.GetValue<std::string>("uuid");
+					JsonResult<bool> componentActiveResult = componentNode.GetValue<bool>("is_active", true);
 					UUID componentUUID = UUID();
 					if(componentUUIDResult.Found)
 					{
@@ -578,6 +595,7 @@ namespace Loopie {
 						{
 							camera->Deserialize(node);
 							camera->SetUUID(componentUUID.Get());
+							camera->SetIsActive(componentActiveResult.Result);
 						}
 					}
 					else if (componentNode.Contains("meshrenderer"))
@@ -588,6 +606,7 @@ namespace Loopie {
 						{
 							meshRenderer->Deserialize(node);
 							meshRenderer->SetUUID(componentUUID.Get());
+							meshRenderer->SetIsActive(componentActiveResult.Result);
 						}
 					}
 					else if (componentNode.Contains("particlecomponent"))
@@ -598,6 +617,7 @@ namespace Loopie {
 						{
 							particleComponent->Deserialize(node);
 							particleComponent->SetUUID(componentUUID.Get());
+							particleComponent->SetIsActive(componentActiveResult.Result);
 						}
 					}
 					else if (componentNode.Contains("script"))
@@ -608,6 +628,7 @@ namespace Loopie {
 						{
 							scriptClass->Deserialize(node);
 							scriptClass->SetUUID(componentUUID.Get());
+							scriptClass->SetIsActive(componentActiveResult.Result);
 						}
 					}
 					else if (componentNode.Contains("animator"))
@@ -618,6 +639,7 @@ namespace Loopie {
 						{
 							animatorClass->Deserialize(node);
 							animatorClass->SetUUID(componentUUID.Get());
+							animatorClass->SetIsActive(componentActiveResult.Result);
 						}
 					}
 					else if (componentNode.Contains("canvas"))
@@ -628,6 +650,7 @@ namespace Loopie {
 						{
 							canvas->Deserialize(node);
 							canvas->SetUUID(componentUUID.Get());
+							canvas->SetIsActive(componentActiveResult.Result);
 						}
 					}
 					else if (componentNode.Contains("image"))
@@ -638,6 +661,7 @@ namespace Loopie {
 						{
 							image->Deserialize(node);
 							image->SetUUID(componentUUID.Get());
+							image->SetIsActive(componentActiveResult.Result);
 						}
 					}
 					else if (componentNode.Contains("sprite_animator"))
@@ -648,6 +672,7 @@ namespace Loopie {
 						{
 							spriteAnimator->Deserialize(node);
 							spriteAnimator->SetUUID(componentUUID.Get());
+							spriteAnimator->SetIsActive(componentActiveResult.Result);
 						}
 					}
 					else if (componentNode.Contains("boxcollider"))
@@ -658,6 +683,7 @@ namespace Loopie {
 						{
 							boxCollider->Deserialize(node);
 							boxCollider->SetUUID(componentUUID.Get());
+							boxCollider->SetIsActive(componentActiveResult.Result);
 						}
 					}
 					else if (componentNode.Contains("audiosource"))
@@ -668,6 +694,7 @@ namespace Loopie {
 						{
 							audioSource->Deserialize(node);
 							audioSource->SetUUID(componentUUID.Get());
+							audioSource->SetIsActive(componentActiveResult.Result);
 						}
 					}
 					else if (componentNode.Contains("audiolistener"))
@@ -678,6 +705,7 @@ namespace Loopie {
 						{
 							audioListener->Deserialize(node);
 							audioListener->SetUUID(componentUUID.Get());
+							audioListener->SetIsActive(componentActiveResult.Result);
 						}
 					}
 					else if (componentNode.Contains("text"))
@@ -688,6 +716,7 @@ namespace Loopie {
 						{
 							text->Deserialize(node);
 							text->SetUUID(componentUUID.Get());
+							text->SetIsActive(componentActiveResult.Result);
 						}
 					}
 					else if (componentNode.Contains("button"))
@@ -698,6 +727,7 @@ namespace Loopie {
 						{
 							button->Deserialize(node);
 							button->SetUUID(componentUUID.Get());
+							button->SetIsActive(componentActiveResult.Result);
 						}
 					}
 					else if (componentNode.Contains("light"))
@@ -708,6 +738,7 @@ namespace Loopie {
 						{
 							light->Deserialize(node);
 							light->SetUUID(componentUUID.Get());
+							light->SetIsActive(componentActiveResult.Result);
 						}
 					}
 					else if (componentNode.Contains("canvas_scaler"))
@@ -718,6 +749,7 @@ namespace Loopie {
 						{
 							scaler->Deserialize(node);
 							scaler->SetUUID(componentUUID.Get());
+							scaler->SetIsActive(componentActiveResult.Result);
 						}
 					}
 				}
