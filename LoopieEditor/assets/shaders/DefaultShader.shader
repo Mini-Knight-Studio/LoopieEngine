@@ -13,11 +13,11 @@ layout (location = 6) in vec4 a_Weights;
 
 struct Light
 {
-    vec4 l_ColorIntensity; // Color + Intensity
-    vec4 l_PositionType; // Position + Type
-    vec4 l_DirectionInnerCone; // Direction + Inner Cone Angle
-    vec4 l_AttenuationOuterCone; // Attenuation + Outer Cone Angle
-    vec4 l_SMapAndSColor; // ShadowMap number + Shadow Color
+    vec4 l_ColorIntensity;          // Color + Intensity
+    vec4 l_PositionType;            // Position + Type
+    vec4 l_DirectionInnerCone;      // Direction + Inner Cone Angle
+    vec4 l_AttenuationOuterCone;    // Attenuation + Outer Cone Angle
+    vec4 l_SMapAndSColor;           // ShadowMap number + Shadow Color
 };
 
 layout (std140, binding = 0) uniform Matrices
@@ -87,11 +87,11 @@ out vec4 FragColor;
 
 struct Light
 {
-    vec4 l_ColorIntensity;
-    vec4 l_PositionType;
-    vec4 l_DirectionInnerCone;
-    vec4 l_AttenuationOuterCone;
-    vec4 l_SMapAndSColor; // ShadowMap number + Shadow Color
+    vec4 l_ColorIntensity;          // Color + Intensity
+    vec4 l_PositionType;            // Position + Type
+    vec4 l_DirectionInnerCone;      // Direction + Inner Cone Angle
+    vec4 l_AttenuationOuterCone;    // Attenuation + Outer Cone Angle
+    vec4 l_SMapAndSColor;           // ShadowMap number + Shadow Color
 };
 
 layout (std140, binding = 0) uniform Matrices

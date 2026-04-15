@@ -186,9 +186,10 @@ namespace Loopie
 			RenderWorld(cam);
 			RenderParticles(cam);
 
-			if(cam == m_game.GetCamera())
+			if (cam == m_game.GetCamera())
 				UpdateComponents(Loopie::GIZMO);
-
+			Renderer::SetSceneDepthTexture(buffer->GetDepthId());
+			Renderer::SetSceneFrustrumValues(cam->GetNearPlane(), cam->GetFarPlane()); // needed for depth testing
 			Renderer::EndScene();
 			buffer->Unbind();
 		}

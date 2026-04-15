@@ -37,6 +37,7 @@ namespace Loopie
 		const std::unordered_map<std::string, std::shared_ptr<Texture>>& GetTextures() { return m_textures; }
 		UniformValue* GetShaderVariable(const std::string& name);
 		const std::unordered_map<std::string, UniformValue>& GetUniforms() const { return m_uniformValues; }
+		bool GetHasTransparency() const { return m_hasTransparency; }
 
 		// Setters
 		void SetShader(const Shader& shader);
@@ -50,6 +51,7 @@ namespace Loopie
 		bool IsEditable() { return m_editable; }
 
 		void SetTextureOwnership(bool ownsTextures) { m_textureOwnership = ownsTextures; }
+		void SetHasTransparency(bool value) { m_hasTransparency = value; }
 
 	private:
 		void ApplyUniform(const std::string& name, const UniformValue& uniformValue);
@@ -63,6 +65,7 @@ namespace Loopie
 		std::unordered_map<std::string, std::shared_ptr<Texture>> m_textures;
 		bool m_textureOwnership = true; // If false, the material won't decrement the reference count of the textures when resetting or being destroyed.
 		bool m_editable = true;
+		bool m_hasTransparency = false; // Set if the material has transparency or not for render sorting reasons
 
 		std::shared_ptr<TextureBuffer> m_textureBufferOverride;
 
