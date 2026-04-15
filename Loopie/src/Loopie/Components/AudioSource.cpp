@@ -3,6 +3,7 @@
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Resources/ResourceManager.h"
 
+#include "Loopie/Profiler/Profiler.h"
 
 #include <fmod_studio.hpp>
 #include <fmod.hpp>
@@ -41,6 +42,8 @@ namespace Loopie {
 	}
 
     void AudioSource::OnUpdate() {
+        LP_FUNC();
+
         Transform* t = GetOwner()->GetTransform();
         if (!t) return;
 

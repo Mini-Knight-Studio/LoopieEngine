@@ -5,6 +5,8 @@
 #include "Loopie/Core/Time.h"
 #include "Loopie/Core/Log.h"
 
+#include "Loopie/Profiler/Profiler.h"
+
 using namespace std;
 namespace Loopie
 {
@@ -47,6 +49,7 @@ namespace Loopie
 
 	void ParticleComponent::Render(Camera* cam)
 	{
+		LP_FUNC();
 		m_partSystem.OnRender(cam);
 	}
 	void ParticleComponent::Reset()

@@ -7,6 +7,8 @@
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Resources/ResourceManager.h"
 
+#include "Loopie/Profiler/Profiler.h"
+
 #include <algorithm>
 #include <cmath>
 
@@ -31,6 +33,8 @@ namespace Loopie
 
 	void SpriteAnimator::OnUpdate()
 	{
+		LP_FUNC();
+
 		if (!GetIsActive() || !m_playing)
 			return;
 

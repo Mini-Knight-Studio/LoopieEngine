@@ -45,6 +45,7 @@ find_package(imguizmo REQUIRED)
 find_package(imgui REQUIRED)
 find_package(DevIL REQUIRED)
 find_package(Freetype REQUIRED)
+find_package(tracy REQUIRED)
 
 add_library(${PROJECT_NAME} ${SOURCES})
 add_library(loopie-core ALIAS ${PROJECT_NAME})
@@ -69,6 +70,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     Mono::Runtime
     ${FMOD_CORE_LIB}
     ${FMOD_STUDIO_LIB}
+    Tracy::TracyClient
 )
 
-target_compile_definitions(${PROJECT_NAME} PUBLIC _CRT_SECURE_NO_WARNINGS GLFW_INCLUDE_NONE)
+target_compile_definitions(${PROJECT_NAME} PUBLIC _CRT_SECURE_NO_WARNINGS GLFW_INCLUDE_NONE TRACY_ENABLE)

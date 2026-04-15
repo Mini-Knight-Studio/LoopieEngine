@@ -45,6 +45,9 @@
 ///
 
 
+#include "Loopie/Profiler/Profiler.h"
+
+
 #include <memory>
 #include <glad/glad.h>
 
@@ -52,6 +55,8 @@ namespace Loopie
 {
 	void EditorModule::OnLoad()
 	{
+		LP_FUNC();
+
 		AssetRegistry::Initialize();
 
 
@@ -100,7 +105,7 @@ namespace Loopie
 		m_game.Init();
 		m_scene.Init();
 		m_mainMenu.Init();
-		m_textEditor.Init();
+		//m_textEditor.Init();
 
 		m_hierarchy.SetScene(m_currentScene);
 
@@ -110,6 +115,8 @@ namespace Loopie
 
 	void EditorModule::OnUnload()
 	{
+		LP_FUNC();
+
 		UIRenderer::Shutdown();
 		AssetRegistry::Shutdown();
 		Application::GetInstance().m_notifier.RemoveObserver(this);
@@ -117,90 +124,152 @@ namespace Loopie
 
 	void EditorModule::OnUpdate()
 	{
+		LP_FUNC();
+
 		Application& app = Application::GetInstance();
 		InputEventManager& inputEvent = app.GetInputEvent();
-		AudioManager::Update();
+		{
+			LP_SCOPE_N("Audio Update");
+			AudioManager::Update();
+		}
 
 		//// Update Components
 		DebugGameMode mode = m_topBar.GetCurrentMode();
-		if (!UpdateComponents(mode)) {
-			m_topBar.SetMode(DebugGameMode::END);
+		{
+			LP_SCOPE_N("Update Components");
+			if (!UpdateComponents(mode)) {
+				m_topBar.SetMode(DebugGameMode::END);
+			}
 		}
-		CollisionProcessor::Process();
+		{
+			LP_SCOPE_N("Collision");
+			CollisionProcessor::Process();
+		}
 		//// 
 
-		LooseOctree& octree = m_currentScene->GetOctree();
-
-		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities())
 		{
-			if (entity->GetTransform()->HasChangedThisFrame())
+			LP_SCOPE_N("Octree Update");
+			LooseOctree& octree = m_currentScene->GetOctree();
+
+			for (const auto& [uuid, entity] : m_currentScene->GetAllEntities())
 			{
-				octree.Update(entity);
-				entity->GetTransform()->CleanChangesFlag();
-			}
-		}
-
-
-		m_hierarchy.Update(inputEvent);
-		m_assetsExplorer.Update(inputEvent);
-		m_textEditor.Update(inputEvent);
-		m_scene.Update(inputEvent);
-		m_topBar.Update(inputEvent);
-		m_mainMenu.Update(inputEvent);
-
-		bool visibleEditorCam = m_scene.IsVisible();
-		if (visibleEditorCam)
-			m_scene.PrepareFrameBuffer();
-		m_scene.GetCamera()->SetRenderTarget(visibleEditorCam ? m_scene.GetFrameBuffer() : nullptr);
-
-		visibleEditorCam = m_game.IsVisible() && m_game.GetCamera() && m_game.GetCamera()->GetIsActive();
-		if (visibleEditorCam)
-			m_game.PrepareFrameBuffer();
-		m_game.GetCamera()->SetRenderTarget(visibleEditorCam ? m_game.GetFrameBuffer() : nullptr);
-		
-		const std::vector<Camera*>& cameras = Renderer::GetRendererCameras();
-		for (Camera* cam : cameras)
-		{
-			if (!cam->GetIsActive())
-				continue;
-
-			std::shared_ptr<FrameBuffer> buffer = cam->GetRenderTarget();
-			if (!buffer)
-				continue;
-
-			// Per-camera shadow pass
-			Renderer::AssignShadowSlots(cam->GetTransform()->GetWorldPosition());
-			for (int i = 0; i < Renderer::GetShadowCastingLightCount(); ++i)
-			{
-				if (Renderer::BeginShadowPass(i))
+				if (entity->GetTransform()->HasChangedThisFrame())
 				{
-					RenderShadows(cam);
-					Renderer::EndShadowPass(i);
+					octree.Update(entity);
+					entity->GetTransform()->CleanChangesFlag();
 				}
 			}
-
-			// Main render
-			buffer->Bind();
-			Renderer::SetViewport(0, 0, buffer->GetWidth(), buffer->GetHeight());
-			Renderer::BeginScene(cam->GetViewMatrix(), cam->GetProjectionMatrix(), cam->GetIsEditorCamera());
-			RenderWorld(cam);
-			RenderParticles(cam);
-
-			if(cam == m_game.GetCamera())
-				UpdateComponents(Loopie::GIZMO);
-
-			Renderer::EndScene();
-			buffer->Unbind();
 		}
 
-		if (m_game.IsVisible() && m_game.GetCamera() && m_game.GetCamera()->GetIsActive())
+
 		{
-			RenderUI();
+			LP_SCOPE_N("Editor UI Updates");
+			m_hierarchy.Update(inputEvent);
+			m_assetsExplorer.Update(inputEvent);
+			//m_textEditor.Update(inputEvent);
+			m_scene.Update(inputEvent);
+			m_topBar.Update(inputEvent);
+			m_mainMenu.Update(inputEvent);
 		}
 
-		ProcessOverlayButtonsInput();
+		{
+			LP_SCOPE_N("Camera Setup");
+			bool visibleEditorCam = m_scene.IsVisible();
+			if (visibleEditorCam)
+				m_scene.PrepareFrameBuffer();
+			m_scene.GetCamera()->SetRenderTarget(visibleEditorCam ? m_scene.GetFrameBuffer() : nullptr);
 
-		m_currentScene->FlushRemovedEntities();
+			visibleEditorCam = m_game.IsVisible() && m_game.GetCamera() && m_game.GetCamera()->GetIsActive();
+			if (visibleEditorCam)
+				m_game.PrepareFrameBuffer();
+			m_game.GetCamera()->SetRenderTarget(visibleEditorCam ? m_game.GetFrameBuffer() : nullptr);
+		}
+
+		{
+			LP_SCOPE_N("Rendering Loop");
+
+			const std::vector<Camera*>& cameras = Renderer::GetRendererCameras();
+			for (Camera* cam : cameras)
+			{
+				if (!cam->GetIsActive())
+					continue;
+
+				std::shared_ptr<FrameBuffer> buffer = cam->GetRenderTarget();
+				if (!buffer)
+					continue;
+
+				{
+					LP_SCOPE_N("Shadow Pass");
+					Renderer::AssignShadowSlots(cam->GetTransform()->GetWorldPosition());
+					for (int i = 0; i < Renderer::GetShadowCastingLightCount(); ++i)
+					{
+						if (Renderer::BeginShadowPass(i))
+						{
+							RenderShadows(cam);
+							Renderer::EndShadowPass(i);
+						}
+					}
+				}
+
+				{
+					LP_SCOPE_N("Main Render");
+					buffer->Bind();
+					Renderer::SetViewport(0, 0, buffer->GetWidth(), buffer->GetHeight());
+
+					Renderer::BeginScene(cam->GetViewMatrix(), cam->GetProjectionMatrix(), cam->GetIsEditorCamera());
+
+					RenderWorld(cam);
+					RenderParticles(cam);
+
+					if (cam == m_game.GetCamera())
+					{
+						{
+							LP_SCOPE_N("Gizmos");
+							for (const auto& [uuid, entity] : m_currentScene->GetAllEntities()) {
+								if (!entity->GetIsActive())
+									continue;
+
+								const std::vector<Component*>& components = entity->GetComponents();
+								for (size_t i = 0; i < components.size(); i++)
+								{
+									Component* component = components[i];
+									if (!component->GetLocalIsActive())
+										continue;
+									if (component->GetTypeID() == ScriptClass::GetTypeIDStatic())
+									{
+										ScriptClass* script = static_cast<ScriptClass*>(component);
+										if (!script->IsValid())
+											continue;
+										script->InvokeOnDrawGizmo();
+									}
+								}
+							}
+						}
+					}
+
+					Renderer::EndScene();
+					buffer->Unbind();
+				}
+			}
+		}
+
+		{
+			LP_SCOPE_N("UI Render");
+			if (m_game.IsVisible() && m_game.GetCamera() && m_game.GetCamera()->GetIsActive())
+			{
+				RenderUI();
+			}
+		}
+
+		{
+			LP_SCOPE_N("Overlay Input");
+			ProcessOverlayButtonsInput();
+		}
+
+		{
+			LP_SCOPE_N("Scene Cleanup");
+			m_currentScene->FlushRemovedEntities();
+		}
 	}
 
 	void EditorModule::OnInterfaceRender()
@@ -242,11 +311,13 @@ namespace Loopie
 		m_assetsExplorer.Render();
 		m_game.Render();
 		m_scene.Render();
-		m_textEditor.Render();
+		//m_textEditor.Render();
 	}
 
 	bool EditorModule::UpdateComponents(DebugGameMode mode)
 	{
+		LP_FUNC();
+
 		if (mode == DebugGameMode::START) {
 
 			bool errors = false;
@@ -276,42 +347,48 @@ namespace Loopie
 			ScriptingManager::UpdateCoroutines();
 
 
-		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities()) {
-			if (!entity->GetIsActive())
-				continue;
-
-			const std::vector<Component*>& components = entity->GetComponents();
-			for (size_t i = 0; i < components.size(); i++)
-			{
-				Component* component = components[i];
-				if (!component->GetLocalIsActive())
+		{
+			LP_SCOPE_N("Components Update Loops");
+			for (const auto& [uuid, entity] : m_currentScene->GetAllEntities()) {
+				if (!entity->GetIsActive())
 					continue;
-				component->OnUpdate();
 
-				if (component->GetTypeID() == ScriptClass::GetTypeIDStatic())
+				const std::vector<Component*>& components = entity->GetComponents();
+				for (size_t i = 0; i < components.size(); i++)
 				{
-					ScriptClass* script = static_cast<ScriptClass*>(component);
-					if (!script->IsValid())
+					Component* component = components[i];
+					if (!component->GetLocalIsActive())
 						continue;
-					switch (mode)
+					component->OnUpdate();
+
+					if (component->GetTypeID() == ScriptClass::GetTypeIDStatic())
 					{
-					case Loopie::UPDATING:
-					case Loopie::NEXTFRAME:
-						script->InvokeOnUpdate();
-						if (m_currentScene->HasLoadRequest())
-							break;
-						break;
-					case Loopie::GIZMO:
-						script->InvokeOnDrawGizmo();
-						break;
-					default:
-						break;
+						{
+							ScriptClass* script = static_cast<ScriptClass*>(component);
+							LP_SCOPE_N("Script Update");
+							if (!script->IsValid())
+								continue;
+							switch (mode)
+							{
+							case Loopie::UPDATING:
+							case Loopie::NEXTFRAME:
+								{
+									LP_SCOPE_N("Update");
+									script->InvokeOnUpdate();
+									if (m_currentScene->HasLoadRequest())
+										break;
+									break;
+								}
+							default:
+								break;
+							}
+						}
 					}
 				}
-			}
-			if (m_currentScene->HasLoadRequest()) {
-				m_currentScene->ReadAndLoadSceneFile(m_currentScene->GetRequestedSceneID());
-				break;
+				if (m_currentScene->HasLoadRequest()) {
+					m_currentScene->ReadAndLoadSceneFile(m_currentScene->GetRequestedSceneID());
+					break;
+				}
 			}
 		}
 
@@ -325,14 +402,20 @@ namespace Loopie
 	}
 
 	void EditorModule::RenderWorld(Camera* camera)
-	{	
+	{
+		LP_FUNC();
+
 		Renderer::EnableStencil();
 		Renderer::EnableDepth();
 		Renderer::Clear();
 
 		// POST
 		std::unordered_set<Entity*> entities;
-		m_currentScene->GetOctree().CollectVisibleEntitiesFrustum(camera->GetFrustum(), entities);
+
+		{
+			LP_SCOPE_N("Frustum Culling");
+			m_currentScene->GetOctree().CollectVisibleEntitiesFrustum(camera->GetFrustum(), entities);
+		}
 
 		std::vector<MeshRenderer*> renderers;
 		renderers.reserve(1);
@@ -345,58 +428,64 @@ namespace Loopie
 
 			const std::vector<Component*>& components = entity->GetComponents();
 			renderers.clear();
-			for (size_t i = 0; i < components.size(); i++)
-			{
-				Component* component = components[i];
-				if (!component->GetLocalIsActive())
-					continue;
-				if (component->GetTypeID() == MeshRenderer::GetTypeIDStatic()) {
-					MeshRenderer* renderer = static_cast<MeshRenderer*>(component);
-					if(renderer->GetMesh())
-						renderers.push_back(renderer);
-				}
 
-				if (Renderer::IsGizmoActive()) {
-					if (component->GetTypeID() != Camera::GetTypeIDStatic()) {
-						if (HierarchyInterface::s_SelectedEntity.lock().get() == entity)
-							component->RenderGizmo();
-						if (entity->HasComponent<Canvas>())
-							component->RenderGizmo();
+			{
+				LP_SCOPE_N("Mesh Collection");
+				for (size_t i = 0; i < components.size(); i++)
+				{
+					Component* component = components[i];
+					if (!component->GetLocalIsActive())
+						continue;
+					if (component->GetTypeID() == MeshRenderer::GetTypeIDStatic()) {
+						MeshRenderer* renderer = static_cast<MeshRenderer*>(component);
+						if(renderer->GetMesh())
+							renderers.push_back(renderer);
+					}
+
+					if (Renderer::IsGizmoActive()) {
+						if (component->GetTypeID() != Camera::GetTypeIDStatic()) {
+							if (HierarchyInterface::s_SelectedEntity.lock().get() == entity)
+								component->RenderGizmo();
+							if (entity->HasComponent<Canvas>())
+								component->RenderGizmo();
+						}
 					}
 				}
 			}
-
-			for (size_t i = 0; i < renderers.size(); i++)
 			{
-				MeshRenderer* renderer = renderers[i];
-				const MeshData& data = renderer->GetMesh()->GetData();
+				LP_SCOPE_N("Render Submission");
+				for (size_t i = 0; i < renderers.size(); i++)
+				{
+					MeshRenderer* renderer = renderers[i];
+					const MeshData& data = renderer->GetMesh()->GetData();
 
-				std::vector<matrix4> bones = {};
-				if (data.HasBones) {
-					Animator* animator = renderer->GetLinkedAnimator();
-					if (animator) {
-						bones = animator->GetRendererData(renderer->GetUUID()).FinalBoneMatrices;
+					std::vector<matrix4> bones = {};
+					if (data.HasBones) {
+						Animator* animator = renderer->GetLinkedAnimator();
+						if (animator) {
+							bones = animator->GetRendererData(renderer->GetUUID()).FinalBoneMatrices;
+						}
 					}
-				}
 
-				if (!Renderer::IsGizmoActive() || entity != selectedEntity.get()) {
-					Renderer::AddRenderItem(renderer->GetMesh()->GetVAO(), renderer->GetMaterial(), entity->GetTransform(), bones);
-				}
-				else {
-					Renderer::SetStencilFunc(Renderer::StencilFunc::ALWAYS, 1, 0xFF);
-					Renderer::SetStencilOp(Renderer::StencilOp::KEEP, Renderer::StencilOp::KEEP, Renderer::StencilOp::REPLACE);
-					Renderer::SetStencilMask(0xFF);
+					if (!Renderer::IsGizmoActive() || entity != selectedEntity.get()) {
+						Renderer::AddRenderItem(renderer->GetMesh()->GetVAO(), renderer->GetMaterial(), entity->GetTransform(), bones);
+					}
+					else {
+						Renderer::SetStencilFunc(Renderer::StencilFunc::ALWAYS, 1, 0xFF);
+						Renderer::SetStencilOp(Renderer::StencilOp::KEEP, Renderer::StencilOp::KEEP, Renderer::StencilOp::REPLACE);
+						Renderer::SetStencilMask(0xFF);
 
-					Renderer::FlushRenderItem(renderer->GetMesh()->GetVAO(), renderer->GetMaterial(), entity->GetTransform(), bones);
+						Renderer::FlushRenderItem(renderer->GetMesh()->GetVAO(), renderer->GetMaterial(), entity->GetTransform(), bones);
 
-					Renderer::SetStencilFunc(Renderer::StencilFunc::NOTEQUAL, 1, 0xFF);
-					Renderer::SetStencilMask(0x00);
+						Renderer::SetStencilFunc(Renderer::StencilFunc::NOTEQUAL, 1, 0xFF);
+						Renderer::SetStencilMask(0x00);
 
-					Renderer::FlushRenderItem(renderer->GetMesh()->GetVAO(), m_selectedObjectMaterial, entity->GetTransform());
+						Renderer::FlushRenderItem(renderer->GetMesh()->GetVAO(), m_selectedObjectMaterial, entity->GetTransform());
 
-					Renderer::SetStencilMask(0xFF);
-					Renderer::EnableDepth();
-					Renderer::DisableStencil();
+						Renderer::SetStencilMask(0xFF);
+						Renderer::EnableDepth();
+						Renderer::DisableStencil();
+					}
 				}
 			}
 		}
@@ -417,6 +506,8 @@ namespace Loopie
 
 	void EditorModule::RenderShadows(Camera* camera)
 	{
+		LP_FUNC();
+
 		std::unordered_set<Entity*> entities;
 		m_currentScene->GetOctree().CollectVisibleEntitiesFrustum(camera->GetFrustum(), entities); // Should be optimized
 
@@ -425,6 +516,7 @@ namespace Loopie
 
 		for (const auto& entity : entities)
 		{
+			LP_SCOPE_N("Shadow Casters");
 			if (!entity->GetIsActive())
 				continue;
 
@@ -463,6 +555,8 @@ namespace Loopie
 
 	void EditorModule::RenderParticles(Camera* cam)
 	{
+		LP_FUNC();
+
 		Renderer::DisableStencil();
 		Renderer::EnableDepth();
 		Renderer::EnableDepthMask();
@@ -548,6 +642,7 @@ namespace Loopie
 
 	void EditorModule::RenderUI()
 	{
+		LP_FUNC();
 		std::shared_ptr<FrameBuffer> buffer = m_game.GetFrameBuffer();
 		if (!buffer)
 			return;
@@ -675,6 +770,8 @@ namespace Loopie
 
 	void EditorModule::RenderSceneUI(Camera* camera)
 	{
+		LP_FUNC();
+
 		Renderer::EnableBlend();
 		Renderer::DisableCulling();
 		Renderer::EnableDepth();
@@ -724,6 +821,8 @@ namespace Loopie
 
 	void EditorModule::ProcessOverlayButtonsInput()
 	{
+		LP_FUNC();
+
 		Application& app = Application::GetInstance();
 		InputEventManager& inputEvent = app.GetInputEvent();
 

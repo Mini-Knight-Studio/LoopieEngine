@@ -6,6 +6,8 @@
 #include "Loopie/Resources/ResourceManager.h"
 #include "Loopie/Importers/MaterialImporter.h"
 
+#include "Loopie/Profiler/Profiler.h"
+
 namespace Loopie 
 {
 	ParticleSystem::ParticleSystem()
@@ -75,6 +77,7 @@ namespace Loopie
 
 	void ParticleSystem::OnUpdate(float dt)
 	{
+		
 		if (!m_emittersArray.empty())
 		{
 			
@@ -94,6 +97,7 @@ namespace Loopie
 	}
 	void ParticleSystem::OnRender(Camera* cam)
 	{
+		LP_FUNC();
 		if (!m_quadVAO || !m_particleMaterial)
 		{
 			Log::Error("ParticleSystem missing material or quad");

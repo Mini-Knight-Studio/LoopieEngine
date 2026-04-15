@@ -423,6 +423,17 @@ namespace Loopie {
 			ImVec2 cursor = ImGui::GetCursorScreenPos();
 
 			ImGui::Image((ImTextureID)icon->GetRendererId(), iconSize);
+			ImGui::SetItemTooltip(node.Path.string().c_str());
+
+			if (ImGui::BeginPopupContextItem("FileContext", ImGuiPopupFlags_MouseButtonRight)) {
+				DrawContextMenu(node.Path);
+				ImGui::EndPopup();
+			}
+
+			DragFile(node.Path.string());
+			if (node.IsDirectory)
+				DropFile(node.Path.string());
+
 
 			if (ImGui::IsItemHovered()) {
 				if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
@@ -439,17 +450,6 @@ namespace Loopie {
 					SelectFile(node.Path);
 				}					
 			}
-
-			if (ImGui::BeginPopupContextItem("FileContext", ImGuiPopupFlags_MouseButtonRight)) {
-				DrawContextMenu(node.Path);
-				ImGui::EndPopup();
-			}
-
-			
-
-			DragFile(node.Path.string());
-			if (node.IsDirectory)
-				DropFile(node.Path.string());
 
 			ImGui::SetCursorScreenPos(cursor);
 			ImGuiSelectableFlags flags = ImGuiSelectableFlags_Disabled;

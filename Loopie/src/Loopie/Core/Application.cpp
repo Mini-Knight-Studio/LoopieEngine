@@ -9,11 +9,15 @@
 #include "Loopie/Audio/AudioManager.h"
 #include "Loopie/Project/ProjectConfig.h"
 
+#include "Loopie/Profiler/Profiler.h"
+
 namespace Loopie {
 	Application* Application::s_Instance = nullptr;
 
 	Application::Application()
 	{
+		LP_FUNC();
+
 		Log::Init();
 		Log::Info("Starting Application...");
 
@@ -44,6 +48,9 @@ namespace Loopie {
 
 	Application::~Application()
 	{
+
+		LP_FUNC();
+
 		Log::Info("Closing Application...");
 
 		for (Module* module : m_modules)
@@ -68,6 +75,8 @@ namespace Loopie {
 
 	void Application::AddModule(Module* module)
 	{
+		LP_FUNC();
+
 		m_modules.emplace_back(module);
 		module->OnLoad();
 		
@@ -75,6 +84,8 @@ namespace Loopie {
 
 	void Application::RemoveModule(Module* module)
 	{
+		LP_FUNC();
+
 		auto it = std::find(m_modules.begin(), m_modules.end(), module);
 		if (it == m_modules.end())
 		{
@@ -111,29 +122,55 @@ namespace Loopie {
 
 	void Application::Run()
 	{
+		LP_FUNC();
+
 		while (m_running)
 		{
+			LP_FRAME();
 
-			Renderer::Clear();
+			{
+				LP_SCOPE_N("Renderer Clear");
+				Renderer::Clear();
+			}
 
-			Time::CalculateFrame();
+			{
+				LP_SCOPE_N("Time Update");
+				Time::CalculateFrame();
+			}
 
-			AudioManager::Update();
+			{
+				LP_SCOPE_N("Audio Update");
+				AudioManager::Update();
+			}
 
-			m_imguiManager.StartFrame();
+			{
+				LP_SCOPE_N("ImGui Begin");
+				m_imguiManager.StartFrame();
+			}
 
-			m_inputEvent.Update();
+			{
+				LP_SCOPE_N("Input Update");
+				m_inputEvent.Update();
+			}
 
-			m_window->ProcessEvents(m_inputEvent);
-			ProcessEvents(m_inputEvent);
+			{
+				LP_SCOPE_N("Window Events");
+				m_window->ProcessEvents(m_inputEvent);
+				ProcessEvents(m_inputEvent);
+			}
 
-			for (Module* module : m_modules) {
-				if (module->IsActive()) {
-					module->OnUpdate();
+			{
+				LP_SCOPE_N("Module Update");
+				for (Module* module : m_modules) {
+					if (module->IsActive()) {
+						module->OnUpdate();
+					}
 				}
 			}
 
-			if(m_renderInterface){
+			if (m_renderInterface)
+			{
+				LP_SCOPE_N("Module UI Render");
 				for (Module* module : m_modules) {
 					if (module->IsActive()) {
 						module->OnInterfaceRender();
@@ -141,9 +178,15 @@ namespace Loopie {
 				}
 			}
 
-			m_imguiManager.EndFrame();
+			{
+				LP_SCOPE_N("ImGui End");
+				m_imguiManager.EndFrame();
+			}
 
-			m_window->Update();		
+			{
+				LP_SCOPE_N("Window Swap/Update");
+				m_window->Update();
+			}
 		}
 	}
 

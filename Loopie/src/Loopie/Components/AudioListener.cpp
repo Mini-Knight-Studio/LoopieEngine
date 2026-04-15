@@ -4,12 +4,16 @@
 #include "Loopie/Components/Transform.h"
 #include "Loopie/Audio/AudioManager.h"
 
+#include "Loopie/Profiler/Profiler.h"
+
 namespace Loopie {
 	void AudioListener::Init() {
 		Log::Info("AudioListener INITIAL");
 	}
 
 	void AudioListener::OnUpdate() {
+		LP_FUNC();
+
 		Transform* transform = GetOwner()->GetTransform();
 		if (transform) {
 			AudioManager::SetListenerAttributes(transform->GetPosition(), transform->Forward(), transform->Up());

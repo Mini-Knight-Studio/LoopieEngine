@@ -1,6 +1,9 @@
 #include "ParticleModule.h"
 #include "Loopie/Core/Log.h"
 #include "Loopie/Render/Renderer.h"
+
+#include "Loopie/Profiler/Profiler.h"
+
 namespace Loopie
 {
 	ParticleModule::ParticleModule()
@@ -50,49 +53,50 @@ namespace Loopie
 	}
 	void ParticleModule::Render(std::shared_ptr<VertexArray> quadVAO, std::shared_ptr<Material> material, const matrix4& billboardRotation)
 	{
-			if (!m_active)
-			{
-				return;
-			}
-			
-			//interpolations
-			float life = m_lifeRemaining / m_lifetime;
-			if (life <=0) { life = 0; }
+		LP_FUNC();
+		if (!m_active)
+		{
+			return;
+		}
+		
+		//interpolations
+		float life = m_lifeRemaining / m_lifetime;
+		if (life <=0) { life = 0; }
 
-			vec4 color;
-			color.r = mix(m_colorEnd.r, m_colorBegin.r, life);
-			color.g = mix(m_colorEnd.g, m_colorBegin.g, life);
-			color.b = mix(m_colorEnd.b, m_colorBegin.b, life);
-			color.a = mix(m_colorEnd.a, m_colorBegin.a, life);
+		vec4 color;
+		color.r = mix(m_colorEnd.r, m_colorBegin.r, life);
+		color.g = mix(m_colorEnd.g, m_colorBegin.g, life);
+		color.b = mix(m_colorEnd.b, m_colorBegin.b, life);
+		color.a = mix(m_colorEnd.a, m_colorBegin.a, life);
 
-			float size = mix(m_sizeEnd, m_sizeBegin, life);
+		float size = mix(m_sizeEnd, m_sizeBegin, life);
 
-		    // transform 
-			matrix4 transform = matrix4(1.0f);
-			transform = translate(transform, m_position);         
-			transform = transform * billboardRotation;
-			transform = rotate(transform, m_rotation, vec3(0.0f, 0.0f, 1.0f));
-			transform = scale(transform, vec3(size, size, 1.0f));
+		// transform 
+		matrix4 transform = matrix4(1.0f);
+		transform = translate(transform, m_position);         
+		transform = transform * billboardRotation;
+		transform = rotate(transform, m_rotation, vec3(0.0f, 0.0f, 1.0f));
+		transform = scale(transform, vec3(size, size, 1.0f));
 
 
-			//material
-			UniformValue colorUni;
-			colorUni.type = UniformType_vec4;
-			colorUni.value = color;
-			material->SetShaderVariable("u_Color", colorUni);
+		//material
+		UniformValue colorUni;
+		colorUni.type = UniformType_vec4;
+		colorUni.value = color;
+		material->SetShaderVariable("u_Color", colorUni);
 
-			UniformValue useSprite;
-			useSprite.type = UniformType_bool;
-			useSprite.value = m_sprite != nullptr;
-			material->SetShaderVariable("u_UseSprite", useSprite);
+		UniformValue useSprite;
+		useSprite.type = UniformType_bool;
+		useSprite.value = m_sprite != nullptr;
+		material->SetShaderVariable("u_UseSprite", useSprite);
 
-			if (m_sprite)
-			{
-				material->SetTexture("u_Sprite", m_sprite);
-			}
-			
-			//AddParticleRenderItem - > If max capacity reached, flush (this inside AddParticle function), draw and clear pos and color vectors
-			Renderer::FlushRenderItem(quadVAO, material, transform);
+		if (m_sprite)
+		{
+			material->SetTexture("u_Sprite", m_sprite);
+		}
+		
+		//AddParticleRenderItem - > If max capacity reached, flush (this inside AddParticle function), draw and clear pos and color vectors
+		Renderer::FlushRenderItem(quadVAO, material, transform);
 		
 	}
 	

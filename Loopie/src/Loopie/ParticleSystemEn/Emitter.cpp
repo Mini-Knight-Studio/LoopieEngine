@@ -3,6 +3,8 @@
 #include "Loopie/Core/Log.h"
 #include "Loopie/Math/MathUtils.h"
 
+#include "Loopie/Profiler/Profiler.h"
+
 namespace Loopie
 {
 	
@@ -40,7 +42,7 @@ namespace Loopie
 	}
 	void Emitter::OnUpdate(float dt)
 	{
-		
+	
 		for (auto& particle : m_particlePool)
 		{
 			if (!particle.GetActive())
@@ -70,6 +72,7 @@ namespace Loopie
 	}
 	void Emitter::OnRender(std::shared_ptr<VertexArray> quadVAO, std::shared_ptr<Material> material, Camera* cam)
 	{
+		LP_FUNC();
 		if (!cam)
 		{
 			Log::Error("No camera passed to particle billboard!");

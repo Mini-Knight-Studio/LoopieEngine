@@ -14,6 +14,10 @@ namespace Loopie {
 
 	struct RendererData
 	{
+		RendererData() {
+			FinalBoneMatrices.reserve(250);
+		}
+
 		MeshRenderer* Renderer = nullptr;
 		std::vector<glm::mat4> FinalBoneMatrices;
 	};
@@ -23,7 +27,7 @@ namespace Loopie {
 	public:
 		DEFINE_TYPE(Animator)
 
-		Animator() = default;
+		Animator();
 		~Animator();
 
 		void Init() override;
@@ -99,8 +103,11 @@ namespace Loopie {
 		bool m_isPlaying = false;
 		bool m_looping = true;
 
-		std::unordered_map<std::string, std::weak_ptr<Entity>> m_boneCache;
+		std::vector<Entity*> m_boneEntityByIndex;
 		bool m_cacheDirty = true;
+
+
+		std::vector<matrix4> m_globalModelSpace;
 
 
 		/// Serialization Temporal fields

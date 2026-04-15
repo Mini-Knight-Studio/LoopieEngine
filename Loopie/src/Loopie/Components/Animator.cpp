@@ -8,9 +8,15 @@
 #include "Loopie/Core/Log.h"
 #include "Loopie/Render/Gizmo.h"
 
+#include "Loopie/Profiler/Profiler.h"
+
 #include <algorithm>
 
 namespace Loopie {
+	Animator::Animator()
+	{
+		m_renderers.reserve(10);
+	}
 
 	Animator::~Animator() {
 		ClearRenderers();
@@ -35,7 +41,9 @@ namespace Loopie {
 
 		RendererData data;
 		data.Renderer = renderer;
+		data.FinalBoneMatrices.resize(renderer->GetMesh()->GetData().Skeleton.size(), matrix4(1));
 		m_renderers[id] = data;
+
 
 		if (renderer->GetLinkedAnimator() != this)
 			renderer->SetLinkedAnimator(this);
@@ -303,36 +311,47 @@ namespace Loopie {
 
 	void Animator::RefreshBoneCache()
 	{
-		m_boneCache.clear();
-
 		MeshRenderer* renderer = m_targetRenderer ? m_targetRenderer : GetFirstMeshRenderer();
-		if (!renderer) 
-			return;
-		auto mesh = renderer->GetMesh();
-		if (!mesh) 
-			return;
-		auto skeleton = mesh->GetData().Skeleton;
+		if (!renderer) return;
 
-		std::unordered_set<std::string> boneNames;
-		for (const auto& bone : skeleton) {
-			boneNames.insert(bone.Name);
+		auto mesh = renderer->GetMesh();
+		if (!mesh) return;
+
+		const auto& skeleton = mesh->GetData().Skeleton;
+
+		m_boneEntityByIndex.clear();
+		m_boneEntityByIndex.resize(skeleton.size(), nullptr);
+
+		m_globalModelSpace.resize(skeleton.size(), matrix4(1));
+
+		std::unordered_map<std::string, Entity*> nameToEntity;
+		nameToEntity.reserve(150);
+
+		std::function<void(Entity*)> traverse = [&](Entity* entity)
+			{
+				nameToEntity[entity->GetName()] = entity;
+
+				for (auto& child : entity->GetChildren())
+					traverse(child.get());
+			};
+
+		traverse(GetOwner().get());
+
+		for (size_t i = 0; i < skeleton.size(); ++i)
+		{
+			auto it = nameToEntity.find(skeleton[i].Name);
+			if (it != nameToEntity.end())
+				m_boneEntityByIndex[i] = it->second;
 		}
 
-		std::function<void(std::shared_ptr<Entity>)> traverse = [&](std::shared_ptr<Entity> entity) {
-			if (boneNames.find(entity->GetName()) != boneNames.end()) {
-				m_boneCache[entity->GetName()] = entity;
-			}
-			for (const auto& child : entity->GetChildren()) {
-				traverse(child);
-			}
-		};
-
-		traverse(GetOwner());
 		m_cacheDirty = false;
 	}
 
 	void Animator::OnUpdate()
 	{
+
+		LP_FUNC();
+
 		bool frameSwitch = Application::GetInstance().GetWindow().GetFrameSwitch();
 
 		if (m_frameSwitch == frameSwitch)
@@ -525,21 +544,15 @@ namespace Loopie {
 		const matrix4& globalInverse = mesh->GetData().GlobalInverseTransform;
 
 		size_t n = skeleton.size();
-		std::vector<std::shared_ptr<Entity>> boneEntities(n, nullptr);
-
-		for (size_t i = 0; i < n; ++i) {
-			auto it = m_boneCache.find(skeleton[i].Name);
-			if (it != m_boneCache.end()) {
-				boneEntities[i] = it->second.lock();
-				if (!boneEntities[i]) {
-					m_boneCache.erase(it);
-				}
-			}
-		}
+		const auto& boneEntities = m_boneEntityByIndex;
 
 		if (m_currentClip && m_isPlaying) {
 			for (size_t i = 0; i < n; ++i) {
-				if (!boneEntities[i]) continue;
+				Entity* entity = boneEntities[i];
+				if (!entity) 
+					continue;
+				auto* transform = entity->GetTransform();
+
 				const Bone& bone = skeleton[i];
 				auto keyIt = m_currentClip->KeyFrames.find(bone.Name);
 				if (keyIt != m_currentClip->KeyFrames.end()) {
@@ -575,26 +588,32 @@ namespace Loopie {
 					}
 					
 
-					boneEntities[i]->GetTransform()->SetLocalPosition(pos);
-					boneEntities[i]->GetTransform()->SetLocalRotation(rot);
-					boneEntities[i]->GetTransform()->SetLocalScale(scale);
+					transform->SetLocalPosition(pos);
+					transform->SetLocalRotation(rot);
+					transform->SetLocalScale(scale);
 				}
 			}
 		}
 
-		std::vector<matrix4> globalModelSpace(n, matrix4(1.0f));
-		for (size_t i = 0; i < n; ++i) {
-			if (!boneEntities[i]) continue;
-			const Bone& bone = skeleton[i];
-			matrix4 local = boneEntities[i]->GetTransform()->GetLocalMatrix();
-			if (bone.ParentID >= 0 && boneEntities[bone.ParentID]) {
-				globalModelSpace[i] = globalModelSpace[bone.ParentID] * local;
-			}
-			else {
-				globalModelSpace[i] = local;
-			}
-		}
+		if (m_globalModelSpace.capacity() < n)
+			m_globalModelSpace.resize(n, matrix4(1.0f));
 
+		//for (size_t i = 0; i < n; ++i) {
+		//	if (!boneEntities[i]) 
+		//		continue;
+		//	const Bone& bone = skeleton[i];
+		//	matrix4 local = boneEntities[i]->GetTransform()->GetLocalMatrix();
+		//	if (bone.ParentID >= 0 && boneEntities[bone.ParentID]) {
+		//		m_globalModelSpace[i] = m_globalModelSpace[bone.ParentID] * local;
+		//	}
+		//	else {
+		//		m_globalModelSpace[i] = local;
+		//	}
+
+
+		//}
+
+		bool processed = false;
 		for (auto& [uuid, data] : m_renderers) {
 			MeshRenderer* renderer = data.Renderer;
 			if (!renderer) continue;
@@ -602,10 +621,27 @@ namespace Loopie {
 			auto mesh = renderer->GetMesh();
 			if (!mesh) continue;
 
-			data.FinalBoneMatrices.resize(n);
+
+			if (data.FinalBoneMatrices.capacity() < n)
+				data.FinalBoneMatrices.resize(n);
+
 			for (size_t i = 0; i < n; ++i) {
-				data.FinalBoneMatrices[i] = globalInverse * globalModelSpace[i] * skeleton[i].OffsetMatrix;
+
+				if (!processed && boneEntities[i]) {
+					const Bone& bone = skeleton[i];
+					matrix4 local = boneEntities[i]->GetTransform()->GetLocalMatrix();
+
+					if (bone.ParentID >= 0 && boneEntities[bone.ParentID]) {
+						m_globalModelSpace[i] = m_globalModelSpace[bone.ParentID] * local;
+					}
+					else {
+						m_globalModelSpace[i] = local;
+					}
+				}
+
+				data.FinalBoneMatrices[i] = globalInverse * m_globalModelSpace[i] * skeleton[i].OffsetMatrix;
 			}
+			processed = true;
 		}
 	}
 }
