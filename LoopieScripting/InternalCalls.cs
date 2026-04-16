@@ -450,5 +450,11 @@ namespace Loopie
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Window_GetSize(out Vector2 size);
         #endregion
+        #region ParticleSystem
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void SetSystemActive(bool active);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void SetEmitterActive(string emitterName, bool active);
+        #endregion
     }
 }
