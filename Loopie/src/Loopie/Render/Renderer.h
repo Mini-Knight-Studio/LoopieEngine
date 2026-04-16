@@ -12,6 +12,7 @@
 
 #define MAX_LIGHTS 16 // Can be increased if necessary. Watch out that performance though!
 #define MAX_SHADOW_CASTING_LIGHTS 4 // Can be increased if necessary. Watch out that performance though!
+#define MAX_BONE_SHADER_BUFFERS 6
 
 namespace Loopie {
 	class Transform;
@@ -101,6 +102,11 @@ namespace Loopie {
 			short rawLightIndex = -1;     // index into s_Lights[], for accessing the Light object
 		};
 
+		struct ShaderBufferObject {
+			std::shared_ptr<ShaderStorageBuffer> Buffer;
+			bool Used;
+		};
+
 		static RenderParticlesData s_ParticlesData;
 
 		static void Init(void* context);
@@ -163,6 +169,7 @@ namespace Loopie {
 		static void SetRenderUniforms(std::shared_ptr<Material> material, const matrix4& modelMatrix, const std::vector<matrix4>& bones = {});
 		static void FlushRenderQueue();
 
+		static std::shared_ptr<ShaderStorageBuffer>& GetBoneStorageBuffer();
 
 		static void AddParticleItem(vec3& position, float size, vec4& color);
 		static void FlushParticleItems(std::shared_ptr<Material> material);
@@ -174,7 +181,9 @@ namespace Loopie {
 		static std::shared_ptr<UniformBuffer> s_MatricesUniformBuffer;
 		static std::shared_ptr<UniformBuffer> s_LightingUniformBuffer;
 		static std::shared_ptr<UniformBuffer> s_ShadowingUniformBuffer;
-		static std::shared_ptr<ShaderStorageBuffer> s_BonesSSBOBuffer;
+
+		static std::array<ShaderBufferObject, MAX_BONE_SHADER_BUFFERS> s_BonesSSBOBuffers;
+		static int s_CurrentBoneSSBOIndex;
 
 		static std::shared_ptr<VertexBuffer> s_BillboardVBO;
 		static std::shared_ptr<VertexBuffer> s_PosSizeVBO;
