@@ -77,7 +77,7 @@ namespace Loopie {
 				JsonData componentObj = JsonData();
 				component->Serialize(componentObj.Node());
 				componentObj.CreateField<std::string>("uuid", component->GetUUID().Get());
-				componentObj.CreateField<bool>("is_active", component->GetIsActive());
+				componentObj.CreateField<bool>("is_active", component->GetLocalIsActive());
 				componentsObj.AddArrayElement(componentObj.GetRoot());
 			}
 

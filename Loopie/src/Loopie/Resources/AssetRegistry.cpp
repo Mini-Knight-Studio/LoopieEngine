@@ -11,6 +11,7 @@
 #include "Loopie/Importers/ScriptImporter.h"
 #include "Loopie/Importers/AudioImporter.h"
 #include "Loopie/Importers/FontImporter.h"
+#include "Loopie/Importers/ShaderImporter.h"
 #include "Loopie/Importers/SceneImporter.h"
 
 #include <filesystem>
@@ -97,6 +98,12 @@ namespace Loopie {
 			else if (metadata.Type == ResourceType::SCENE || SceneImporter::CheckIfIsSceneAsset(pathString.c_str())) {
 				if (metadata.IsOutdated || metadata.CachesPath.size() == 0) {
 					SceneImporter::ImportSceneAsset(pathString, metadata);
+					updated = true;
+				}
+			}
+			else if (metadata.Type == ResourceType::SHADER || SceneImporter::CheckIfIsSceneAsset(pathString.c_str())) {
+				if (metadata.IsOutdated || metadata.CachesPath.size() == 0) {
+					ShaderImporter::ImportShaderAsset(pathString, metadata);
 					updated = true;
 				}
 			}

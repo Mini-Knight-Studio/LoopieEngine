@@ -6,10 +6,12 @@
 #include "Loopie/Resources/Types/AudioClip.h"
 #include "Loopie/Resources/Types/Font.h"
 #include "Loopie/Resources/Types/SceneAsset.h"
+#include "Loopie/Resources/Types/ShaderAsset.h"
 #include "Loopie/Resources/Resource.h"
 #include "Loopie/Resources/AssetRegistry.h"
 
 #include <unordered_map>
+#include <vector>
 #include <memory>
 
 namespace Loopie {
@@ -37,8 +39,12 @@ namespace Loopie {
         static std::shared_ptr<AudioClip> GetAudioClip(const Metadata& metadata);
         static std::shared_ptr<Font> GetFont(const Metadata& metadata);
         static std::shared_ptr<SceneAsset> GetSceneAsset(const Metadata& metadata);
+        static std::shared_ptr<ShaderAsset> GetShaderAsset(const Metadata& metadata);
 
         static void RemoveResource(Resource& resource);
+
+        static std::vector<std::shared_ptr<Resource>> GetResourcesByType(ResourceKey key);
+
 
     private:
         static std::shared_ptr<Resource> GetResource(const ResourceKey& key);

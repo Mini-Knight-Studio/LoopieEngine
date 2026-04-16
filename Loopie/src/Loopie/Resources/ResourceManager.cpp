@@ -75,6 +75,18 @@ namespace Loopie {
         return sceneAsset;
     }
 
+    std::shared_ptr<ShaderAsset> ResourceManager::GetShaderAsset(const Metadata& metadata)
+    {
+        ResourceKey key{ metadata, 0 };
+        auto resource = GetResource(key);
+        if (resource) {
+            return std::static_pointer_cast<ShaderAsset>(resource);
+        }
+        auto shaderAsset = std::make_shared<ShaderAsset>(metadata.UUID);
+        s_Resources[key] = shaderAsset;
+        return shaderAsset;
+    }
+
     std::shared_ptr<Resource> ResourceManager::GetResource(const ResourceKey& key)
     {
         auto it = s_Resources.find(key);
@@ -87,6 +99,8 @@ namespace Loopie {
         }
         return nullptr;
     }
+
+    
 
     void ResourceManager::RemoveResource(Resource& resource)
     {
