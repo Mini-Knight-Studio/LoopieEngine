@@ -24,7 +24,7 @@ namespace Loopie {
         UUID id;
         std::filesystem::path extension = std::filesystem::path(filepath).extension();
 
-        std::filesystem::path locationPath = "Shader";
+        std::filesystem::path locationPath = "Shaders";
         locationPath /= id.Get() + extension.string();
 
         std::filesystem::path destination = project.GetChachePath() / locationPath;

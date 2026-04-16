@@ -16,6 +16,26 @@ namespace Loopie {
 			m_rendererID = 0;
 			return;
 		}
+		m_shaderAsset = nullptr;
+	}
+
+	Shader::Shader(const std::shared_ptr<ShaderAsset> shaderAsset) {
+		if (!shaderAsset) {
+			m_rendererID = 0;
+			return;
+		}
+		const std::filesystem::path& filepath = shaderAsset->GetShaderFilePath();
+		if (filepath.empty()) {
+			m_rendererID = 0;
+			return;
+		}
+
+		if (!ParseCompileLinkShader(filepath.string().c_str(), m_rendererID))
+		{
+			m_rendererID = 0;
+			return;
+		}
+		m_shaderAsset = shaderAsset;
 	}
 
 	Shader::~Shader()

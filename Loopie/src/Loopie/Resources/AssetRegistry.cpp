@@ -101,7 +101,7 @@ namespace Loopie {
 					updated = true;
 				}
 			}
-			else if (metadata.Type == ResourceType::SHADER || SceneImporter::CheckIfIsSceneAsset(pathString.c_str())) {
+			else if (metadata.Type == ResourceType::SHADER || ShaderImporter::CheckIfIsShaderAsset(pathString.c_str())) {
 				if (metadata.IsOutdated || metadata.CachesPath.size() == 0) {
 					ShaderImporter::ImportShaderAsset(pathString, metadata);
 					updated = true;

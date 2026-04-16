@@ -1,5 +1,6 @@
 #pragma once
 #include "Loopie/Math/MathTypes.h"
+#include "Loopie/Resources/Types/ShaderAsset.h"
 
 #include <string>
 #include <vector>
@@ -57,6 +58,7 @@ namespace Loopie {
 	public:
 		// Shaders might need geometry information, which would be included in the constructor & Reload
 		Shader(const char* sourcePath);
+		Shader(const std::shared_ptr<ShaderAsset> shaderAsset);
 		~Shader();
 
 		void Bind() const;
@@ -131,5 +133,7 @@ namespace Loopie {
 		std::string m_geometrySource;
 
 		bool m_isValidShader = true;
+
+		std::shared_ptr<ShaderAsset> m_shaderAsset = nullptr;
 	};
 }

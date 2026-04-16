@@ -62,6 +62,7 @@ namespace Loopie {
 		DirectoryManager::CreateFolder(m_cachePath, "Meshes");
 		DirectoryManager::CreateFolder(m_cachePath, "Materials");
 		DirectoryManager::CreateFolder(m_cachePath, "Shaders");
+		DirectoryManager::CreateFolder(m_cachePath, "Scenes");
 
 		CreateProjFiles();
 
