@@ -1,6 +1,7 @@
 #include "Renderer.h"
 
 #include "Loopie/Core/Assert.h"
+#include "Loopie/Core/Time.h"
 #include "Loopie/Components/Transform.h"
 #include "Loopie/Render/Gizmo.h"
 #include "Loopie/Render/ShadowMap.h"
@@ -32,6 +33,10 @@ namespace Loopie {
 	Renderer::ShadowSlot Renderer::s_ShadowSlots[MAX_SHADOW_CASTING_LIGHTS] = { nullptr };
 	unsigned short Renderer::s_ShadowCount = 0;
 	std::unique_ptr<Shader> Renderer::s_ShadowMapShader = nullptr;
+
+	unsigned int Renderer::s_SceneDepthTextureID = 0;
+	float Renderer::s_NearPlane = 0.3f;
+	float Renderer::s_FarPlane = 200.0f;
 
 	void Renderer::Init(void* context) {
 		ASSERT(!gladLoadGLLoader((GLADloadproc)context), "Failed to Initialize GLAD!");
@@ -355,17 +360,41 @@ namespace Loopie {
 	{
 		/// SORT By Material
 
-
-		///
-
+		// *** Sorting in FlushRendererQueue *** - PSS 09/04/2026 - Since we're not yet
+		// rendering by material, I decided to do it by transparency.
+		// There's a check in the Material -> Material Has Transparency.
+		// Items without transparency are drawn before items with transparency.
 		for (const RenderItem& item : s_RenderQueue) {
-			
-			item.VAO->Bind();
-			item.Material->Bind();
-			SetRenderUniforms(item.Material, item.Transform, item.Bones);
-			glDrawElements(GL_TRIANGLES, item.IndexCount, GL_UNSIGNED_INT, nullptr);
-			item.VAO->Unbind();
+			if (!item.Material->GetHasTransparency())
+			{
+				item.VAO->Bind();
+				item.Material->Bind();
+				SetRenderUniforms(item.Material, item.Transform, item.Bones);
+				glDrawElements(GL_TRIANGLES, item.IndexCount, GL_UNSIGNED_INT, nullptr);
+				item.VAO->Unbind();
+			}
 		}
+
+		glTextureBarrier();
+
+		glActiveTexture(GL_TEXTURE0 + 12); // 12 = Scene Depth Texture Slot, hard-coded
+		glBindTexture(GL_TEXTURE_2D, s_SceneDepthTextureID);
+
+		EnableBlend();
+		DisableDepthMask();
+		for (const RenderItem& item : s_RenderQueue) {
+			if (item.Material->GetHasTransparency())
+			{
+				item.VAO->Bind();
+				item.Material->Bind();
+				SetRenderUniforms(item.Material, item.Transform, item.Bones);
+				glDrawElements(GL_TRIANGLES, item.IndexCount, GL_UNSIGNED_INT, nullptr);
+				item.VAO->Unbind();
+			}
+		}
+		EnableDepthMask();
+		DisableBlend();
+		///
 
 		s_RenderQueue.clear();
 	}
@@ -400,9 +429,35 @@ namespace Loopie {
 
 	void Renderer::SetRenderUniforms(std::shared_ptr<Material> material, const matrix4& modelMatrix, const std::vector<matrix4>& bones)
 	{
-		material->GetShader().SetUniformMat4("lp_Transform", modelMatrix);
+		if (material->GetShader().GetUniformLocation("lp_Transform") != -1)
+		{
+			material->GetShader().SetUniformMat4("lp_Transform", modelMatrix);
+		}
 
-		material->GetShader().SetUniformInt("lp_Skinned", !bones.empty() ? 1 : 0);
+		if (material->GetShader().GetUniformLocation("lp_Time") != -1)
+		{
+			material->GetShader().SetUniformFloat("lp_Time", Time::GetRunTime());
+		}
+
+		if (material->GetShader().GetUniformLocation("lp_Skinned") != -1)
+		{
+			material->GetShader().SetUniformInt("lp_Skinned", !bones.empty() ? 1 : 0);
+		}
+
+		if (material->GetShader().GetUniformLocation("lp_SceneDepth") != -1)
+		{
+			material->GetShader().SetUniformInt("lp_SceneDepth", 12);
+		}
+
+		if (material->GetShader().GetUniformLocation("lp_Near") != -1)
+		{
+			material->GetShader().SetUniformFloat("lp_Near", s_NearPlane);
+		}
+
+		if (material->GetShader().GetUniformLocation("lp_Far") != -1)
+		{
+			material->GetShader().SetUniformFloat("lp_Far", s_FarPlane);
+		}
 
 		for (int i = 0; i < MAX_SHADOW_CASTING_LIGHTS; ++i)
 		{

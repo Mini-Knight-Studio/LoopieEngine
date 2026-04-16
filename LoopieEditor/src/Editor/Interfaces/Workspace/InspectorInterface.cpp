@@ -807,6 +807,9 @@ namespace Loopie {
 			}
 
 			DrawMaterial(material);
+			bool materialHasTransparency = meshRenderer->GetMaterial()->GetHasTransparency();
+			if (ImGui::Checkbox("Material Has Transparency", &materialHasTransparency))
+				meshRenderer->GetMaterial()->SetHasTransparency(materialHasTransparency);
 		}
 
 		ImGui::PopID();

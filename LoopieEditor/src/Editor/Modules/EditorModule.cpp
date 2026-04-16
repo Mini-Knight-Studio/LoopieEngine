@@ -246,7 +246,8 @@ namespace Loopie
 							}
 						}
 					}
-
+					Renderer::SetSceneDepthTexture(buffer->GetDepthId());
+					Renderer::SetSceneFrustrumValues(cam->GetNearPlane(), cam->GetFarPlane()); // needed for depth testing
 					Renderer::EndScene();
 					buffer->Unbind();
 				}

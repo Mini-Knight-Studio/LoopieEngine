@@ -111,6 +111,10 @@ namespace Loopie {
 		static void BindShadowTexturesForMainPass();
 		static int GetShadowCastingLightCount();
 
+		// For water foam usage
+		static void SetSceneDepthTexture(unsigned int textureID) { s_SceneDepthTextureID = textureID; };
+		static void SetSceneFrustrumValues(float nearPlane, float farPlane) { s_NearPlane = nearPlane; s_FarPlane = farPlane; };
+
 		static void RegisterCamera(Camera& camera);
 		static void UnregisterCamera(Camera& camera);
 		static const std::vector<Camera*>& GetRendererCameras() { return s_RenderCameras; }
@@ -151,7 +155,6 @@ namespace Loopie {
 
 		static unsigned int UploadBones(const std::vector<matrix4>& bones);
 
-	public:
 	private:
 		static std::vector<RenderItem> s_RenderQueue;
 		static std::vector<Camera*> s_RenderCameras;
@@ -175,5 +178,9 @@ namespace Loopie {
 		static ShadowSlot s_ShadowSlots[MAX_SHADOW_CASTING_LIGHTS];
 		static unsigned short s_ShadowCount;
 		static std::unique_ptr<Shader> s_ShadowMapShader;
+
+		static unsigned int s_SceneDepthTextureID;
+		static float s_NearPlane;
+		static float s_FarPlane;
 	};
 }
