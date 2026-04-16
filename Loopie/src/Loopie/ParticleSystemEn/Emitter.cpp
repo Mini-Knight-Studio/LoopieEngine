@@ -41,7 +41,7 @@ namespace Loopie
 		m_particlePool.resize(m_maxParticles);
 		m_poolIndex = m_maxParticles - 1;
 	}
-	void Emitter::OnUpdate(float dt)
+	void Emitter::OnUpdate(float dt, bool active)
 	{
 	
 		for (auto& particle : m_particlePool)
@@ -56,7 +56,7 @@ namespace Loopie
 
 			particle.Update(dt);
 		}
-		if (m_active && m_spawnRate > 0)
+		if ((m_active && active) && m_spawnRate > 0)
 		{
 			m_emitterTimer += dt;
 			float emissionInterval = 1.0f / m_spawnRate;

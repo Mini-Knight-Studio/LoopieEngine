@@ -40,8 +40,6 @@ namespace Loopie
 	}	
 
 	void ParticleComponent::OnUpdate() {
-		if (!m_playing)
-			return;
 
 		Transform* transform = GetTransform();
 		vec3 pos = transform->GetPosition();
@@ -55,7 +53,7 @@ namespace Loopie
 			}
 			emitter->SetEmitterRotation(rot);
 		}
-		m_partSystem.OnUpdate((float)Time::GetDeltaTime());
+		m_partSystem.OnUpdate((float)Time::GetDeltaTime(), m_playing);
 	}
 
 	void ParticleComponent::Render(Camera* cam)

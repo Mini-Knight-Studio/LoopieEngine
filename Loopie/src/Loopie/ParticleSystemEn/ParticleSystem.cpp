@@ -75,7 +75,7 @@ namespace Loopie
 		
 	}
 
-	void ParticleSystem::OnUpdate(float dt)
+	void ParticleSystem::OnUpdate(float dt, bool active)
 	{
 		
 		if (!m_emittersArray.empty())
@@ -85,7 +85,7 @@ namespace Loopie
 			{
 				if (emitter)
 				{
-					emitter->OnUpdate(dt);
+					emitter->OnUpdate(dt, active);
 				}
 			}
 		}

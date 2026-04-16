@@ -29,7 +29,7 @@ namespace Loopie
 			~ParticleSystem();
 	
 
-			void OnUpdate(float dt);
+			void OnUpdate(float dt, bool active);
 			void OnRender(Camera* cam);
 
 			void AddElemToEmitterArray(const std::shared_ptr<Emitter>& em);
