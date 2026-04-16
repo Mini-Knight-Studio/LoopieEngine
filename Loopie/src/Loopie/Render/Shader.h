@@ -66,6 +66,7 @@ namespace Loopie {
 		// Constructor and Reload do similar things, might be a good thing to 
 		// put them together in a helper function 
 		bool Reload(const char* sourcePath = nullptr); // Recompiles from the source path currently set
+		bool Reload(const std::shared_ptr<ShaderAsset> shaderAsset); // Recompiles from the source path currently set
 
 		// Add more if needed: https://registry.khronos.org/OpenGL-Refpages/gl4/html/glUniform.xhtml
 		void SetUniformInt(const std::string& name, int value);
@@ -108,6 +109,7 @@ namespace Loopie {
 		// Parse GLSL's version of shader string file
 		std::string ParseGLSLVersion(const std::string& source);
 		bool ParseShaderSourcePath(const std::string& filePath);
+		void GetUniformsGL(GLuint rendererID);
 		void GetUniformsGL();
 		bool GetUniformDefaultValue(Uniform& uniform);
 		//void ExtractUniforms(const std::string& parsedShader, const std::unordered_map<std::string, 

@@ -29,6 +29,7 @@
 #include "Loopie/Importers/AudioImporter.h"
 #include "Loopie/Importers/MeshImporter.h"
 #include "Loopie/Importers/MaterialImporter.h"
+#include "Loopie/Importers/ShaderImporter.h"
 
 #include "Loopie/Collisions/CollisionProcessor.h"
 #include "Loopie/Audio/AudioManager.h"
@@ -88,7 +89,7 @@ namespace Loopie {
 			return MaterialImporter::CheckIfIsMaterial(filepath.c_str());
 			break;
 		case ResourceType::SHADER:
-			// Check if it's a shader file
+			return ShaderImporter::CheckIfIsShaderAsset(filepath.c_str());
 			break;
 		case ResourceType::SCENE:
 			// Check if it's a scene file
@@ -127,7 +128,7 @@ namespace Loopie {
 				AudioImporter::ImportAudio(filepath, metadata);
 				break;
 			case ResourceType::SCRIPT:
-				// Handle script import
+				ShaderImporter::ImportShaderAsset(filepath, metadata);
 				break;
 		default:
 			break;
@@ -148,7 +149,7 @@ namespace Loopie {
 			resource = ResourceManager::GetMaterial(metadata);
 			break;
 		case ResourceType::SHADER:
-			// Handle shader import
+			resource = ResourceManager::GetShaderAsset(metadata);
 			break;
 		case ResourceType::SCENE:
 			// Handle scene import
@@ -355,7 +356,10 @@ namespace Loopie {
 			ImGui::Separator();
 			ImGui::Dummy({ 0.0f, 4.0f }); 
 		}
-		DrawMetadata(metadata);
+		
+		metadata = AssetRegistry::GetMetadata(path.string());
+		if(metadata)
+			DrawMetadata(metadata);
 
 	}
 
@@ -807,9 +811,6 @@ namespace Loopie {
 			}
 
 			DrawMaterial(material);
-			bool materialHasTransparency = meshRenderer->GetMaterial()->GetHasTransparency();
-			if (ImGui::Checkbox("Material Has Transparency", &materialHasTransparency))
-				meshRenderer->GetMaterial()->SetHasTransparency(materialHasTransparency);
 		}
 
 		ImGui::PopID();
@@ -2914,13 +2915,6 @@ namespace Loopie {
 			materialName += " (Read-Only -> EngineDefault)";
 		//ImGui::Text(materialName.c_str());
 
-
-
-		
-		const std::unordered_map<std::string, UniformValue> properties = material->GetUniforms();
-
-		auto& textures = material->GetTextures();
-
 		if (!isEditable)
 			ImGui::BeginDisabled();
 
@@ -2935,7 +2929,8 @@ namespace Loopie {
 				std::shared_ptr<Resource> resource = GetPastedResource(ResourceType::SHADER);
 				if (resource) {
 					std::shared_ptr<ShaderAsset> shaderCopyAsset = std::static_pointer_cast<ShaderAsset>(resource);
-					material->SetShader(Shader(shaderCopyAsset));
+					material->GetShader().Reload(shaderCopyAsset);
+					material->ResetMaterial();
 				}
 			}
 			ImGui::EndPopup();
@@ -2944,13 +2939,19 @@ namespace Loopie {
 		std::shared_ptr<Resource> resource = GetDragDropResource(ResourceType::SHADER);
 		if (resource) {
 			std::shared_ptr<ShaderAsset> shaderDragAsset = std::static_pointer_cast<ShaderAsset>(resource);
-			material->SetShader(Shader(shaderDragAsset));
+			material->GetShader().Reload(shaderDragAsset);
+			material->ResetMaterial();
 		}
 
 		std::filesystem::path shaderPath = shaderAsset ? shaderAsset->GetShaderFilePath() : material->GetShader().GetFilePath();
 		ImGui::Text("Shader: %s", shaderPath.filename().string().c_str());
 
 		ImGui::Separator();
+
+
+		const std::unordered_map<std::string, UniformValue> properties = material->GetUniforms();
+
+		auto& textures = material->GetTextures();
 
 		for (auto& [slotName, texture] : textures)
 		{
@@ -3103,6 +3104,10 @@ namespace Loopie {
 				break;
 			}
 		}
+
+		bool materialHasTransparency = material->GetHasTransparency();
+		if (ImGui::Checkbox("Material Has Transparency", &materialHasTransparency))
+			material->SetHasTransparency(materialHasTransparency);
 
 		if (!isEditable)
 			ImGui::EndDisabled();

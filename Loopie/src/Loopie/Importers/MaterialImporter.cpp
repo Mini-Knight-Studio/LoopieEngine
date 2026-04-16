@@ -128,12 +128,26 @@ namespace Loopie {
 		}
 
 		// Shader UUID
-		JsonResult<std::string> shaderNode = jsonData.GetValue<std::string>("shader");
+		JsonResult<std::string> shaderNode = jsonData.GetValue<std::string>("shader", UUID::Invalid.Get());
 		if (!shaderNode.Found) {
 			Log::Warn("Material missing 'shader' field: {0}", filepath.string());
 			return;
 		}
-		// UUID shaderUUID = UUID(shaderNode.Result);
+
+		UUID shaderUUID = UUID(shaderNode.Result);
+		if (shaderUUID.Get() != UUID::Invalid.Get())
+		{
+			Metadata* meta = AssetRegistry::GetMetadata(shaderUUID);
+			if (meta)
+			{
+				auto shader = ResourceManager::GetShaderAsset(*meta);
+				material.GetShader().Reload(shader);
+			}
+		}
+
+		material.ResetMaterial();
+
+		material.SetHasTransparency(jsonData.GetValue<bool>("hasTransparency", false).Result);
 
 		JsonNode texturesNode = jsonData.Child("textures");
 		for (const auto& key : texturesNode.GetObjectKeys())
@@ -225,11 +239,10 @@ namespace Loopie {
 		JsonData jsonData;
 
 		Shader& shader = material.GetShader();
-		UUID randomUUID;
-		//std::string shaderUUIDString = shader.GetUUID().Get();
+		if(material.GetShader().GetShaderAsset())
+			jsonData.CreateField("shader", material.GetShader().GetShaderAsset()->GetUUID().Get());
 
-		jsonData.CreateField("shader", randomUUID.Get());
-
+		jsonData.CreateField("hasTransparency", material.GetHasTransparency());
 		JsonNode texturesNode = jsonData.CreateObjectField("textures");
 		for (const auto& [name, texture] : material.GetTextures())
 		{

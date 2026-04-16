@@ -13,7 +13,6 @@ namespace Loopie
 
 	Material::Material(const UUID& id) : Resource(id, ResourceType::MATERIAL)
 	{
-		ResetMaterial();
 		Load();
 	}
 

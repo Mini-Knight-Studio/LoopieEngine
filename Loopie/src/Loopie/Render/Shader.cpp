@@ -1,5 +1,6 @@
 #include "Shader.h"
 #include "Loopie/Core/Log.h"
+#include "Loopie/Core/Application.h"
 
 #include <fstream>
 #include <sstream>
@@ -17,6 +18,7 @@ namespace Loopie {
 			return;
 		}
 		m_shaderAsset = nullptr;
+		GetUniformsGL();
 	}
 
 	Shader::Shader(const std::shared_ptr<ShaderAsset> shaderAsset) {
@@ -24,7 +26,7 @@ namespace Loopie {
 			m_rendererID = 0;
 			return;
 		}
-		const std::filesystem::path& filepath = shaderAsset->GetShaderFilePath();
+		const std::filesystem::path& filepath = Application::GetInstance().m_activeProject.GetChachePath() / shaderAsset->GetShaderFilePath();
 		if (filepath.empty()) {
 			m_rendererID = 0;
 			return;
@@ -36,6 +38,7 @@ namespace Loopie {
 			return;
 		}
 		m_shaderAsset = shaderAsset;
+		GetUniformsGL();
 	}
 
 	Shader::~Shader()
@@ -56,20 +59,52 @@ namespace Loopie {
 	bool Shader::Reload(const char* sourcePath)
 	{
 		GLuint newProgram = 0;
+
 		if (!ParseCompileLinkShader(sourcePath, newProgram))
 		{
 			Loopie::Log::Critical("Shader reload failed. Keeping old shader.");
 			return false;
 		}
 
-		// Delete old program and swap them
+		// Clear cache since uniform locations may have changed
+		m_uniformLocationCache.clear();
+		m_uniforms.clear();
+		m_samplers.clear();
+		m_uniformsCached = false;
+		m_attributesCached = false;
+		m_shaderAsset = nullptr;
 		glDeleteProgram(m_rendererID);
+		// Delete old program and swap them
 		m_rendererID = newProgram;
+		GetUniformsGL();
+
+
+		return true;
+	}
+
+	bool Shader::Reload(const std::shared_ptr<ShaderAsset> shaderAsset)
+	{
+		GLuint newProgram = 0;
+
+		const std::filesystem::path& filepath = Application::GetInstance().m_activeProject.GetChachePath() / shaderAsset->GetShaderFilePath();
+		if (!ParseCompileLinkShader(filepath.string().c_str(), newProgram))
+		{
+			Loopie::Log::Critical("Shader reload failed. Keeping old shader.");
+			return false;
+		}
 
 		// Clear cache since uniform locations may have changed
 		m_uniformLocationCache.clear();
+		m_uniforms.clear();
+		m_samplers.clear();
 		m_uniformsCached = false;
 		m_attributesCached = false;
+		m_shaderAsset = nullptr;
+		// Delete old program and swap them
+		glDeleteProgram(m_rendererID);
+		m_rendererID = newProgram;
+		m_shaderAsset = shaderAsset;
+		GetUniformsGL();
 
 		return true;
 	}
@@ -335,7 +370,6 @@ namespace Loopie {
 
 		// Return the new program ID via output parameter
 		programID = newProgram;
-		GetUniformsGL();
 
 		return true;
 	}
@@ -468,7 +502,7 @@ namespace Loopie {
 		return m_isValidShader;
 	}
 
-	void Shader::GetUniformsGL()
+	void Shader::GetUniformsGL(GLuint rendererID)
 	{
 		m_uniforms.clear();
 
@@ -484,26 +518,26 @@ namespace Loopie {
 			{GL_FLOAT_MAT2, UniformType_mat2},
 			{GL_FLOAT_MAT3, UniformType_mat3},
 			{GL_FLOAT_MAT4, UniformType_mat4},
-			{GL_SAMPLER_2D, UniformType_Sampler2D}, 
+			{GL_SAMPLER_2D, UniformType_Sampler2D},
 			{GL_SAMPLER_3D, UniformType_Sampler3D},
 			{GL_SAMPLER_CUBE, UniformType_SamplerCube},
 		};
 
 		GLint numUniforms = 0;
-		glGetProgramiv(m_rendererID, GL_ACTIVE_UNIFORMS, &numUniforms);
+		glGetProgramiv(rendererID, GL_ACTIVE_UNIFORMS, &numUniforms);
 
 		GLint maxNameLength = 0;
-		glGetProgramiv(m_rendererID, GL_ACTIVE_UNIFORM_MAX_LENGTH, &maxNameLength);
+		glGetProgramiv(rendererID, GL_ACTIVE_UNIFORM_MAX_LENGTH, &maxNameLength);
 		std::vector<char> nameBuffer(maxNameLength);
 
 		int currentSlot = 0;
-		for (GLint i = 0; i < numUniforms; ++i) 
+		for (GLint i = 0; i < numUniforms; ++i)
 		{
 			GLsizei length = 0;
 			GLint size = 0;
 			GLenum type = 0;
 
-			glGetActiveUniform(m_rendererID, i, maxNameLength, &length, &size, &type, nameBuffer.data());
+			glGetActiveUniform(rendererID, i, maxNameLength, &length, &size, &type, nameBuffer.data());
 			std::string name(nameBuffer.data(), length);
 
 			if (name._Starts_with("lp_"))
@@ -525,15 +559,20 @@ namespace Loopie {
 
 					m_samplers.push_back(sampler);
 				}
-				
+
 			}
 			else
 			{
 				Log::Warn("Unknown uniform type {0} for uniform '{1}'", type, name);
-				m_uniforms.push_back(Uniform{ name, UniformType_Unknown }); 
+				m_uniforms.push_back(Uniform{ name, UniformType_Unknown });
 				m_uniforms.back().defaultValue = 0;
 			}
 		}
+	}
+
+	void Shader::GetUniformsGL()
+	{
+		GetUniformsGL(m_rendererID);
 	}
 
 	bool Shader::GetUniformDefaultValue(Uniform& uniform)
