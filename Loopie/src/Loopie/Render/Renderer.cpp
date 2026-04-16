@@ -11,15 +11,14 @@
 #include <IL/ilu.h>
 
 namespace Loopie {
-
-	Renderer::RenderParticlesData Renderer::s_ParticlesData = Renderer::RenderParticlesData();
 	std::vector<Renderer::RenderItem> Renderer::s_RenderQueue = std::vector<Renderer::RenderItem>();
 	std::vector<Camera*> Renderer::s_RenderCameras = std::vector<Camera*>();
 	std::shared_ptr<UniformBuffer> Renderer::s_MatricesUniformBuffer = nullptr;
 	std::shared_ptr<UniformBuffer> Renderer::s_LightingUniformBuffer = nullptr;
 	std::shared_ptr<UniformBuffer> Renderer::s_ShadowingUniformBuffer = nullptr;
-	std::array<Renderer::ShaderBufferObject, MAX_BONE_SHADER_BUFFERS> Renderer::s_BonesSSBOBuffers = std::array<ShaderBufferObject, MAX_BONE_SHADER_BUFFERS>();
-	int Renderer::s_CurrentBoneSSBOIndex = 0;
+	std::shared_ptr<ShaderStorageBuffer> Renderer::s_BonesSSBO = nullptr;
+	unsigned int Renderer::s_BoneBufferOffset = 0;
+	unsigned int Renderer::s_BoneBufferCapacity = 0;
 
 	std::shared_ptr<VertexBuffer> Renderer::s_BillboardVBO = nullptr;
 	std::shared_ptr<VertexBuffer> Renderer::s_PosSizeVBO = nullptr;
@@ -70,13 +69,18 @@ namespace Loopie {
 		s_LightingUniformBuffer = std::make_shared<UniformBuffer>(lightingLayout);
 		s_LightingUniformBuffer->BindToLayout(1);
 
+		
+		s_BonesSSBO = std::make_shared<ShaderStorageBuffer>();
 
-		for (size_t i = 0; i < MAX_BONE_SHADER_BUFFERS; i++)
-		{
-			s_BonesSSBOBuffers[i] = { std::make_shared<ShaderStorageBuffer>(),false };
-			matrix4 dummy = matrix4(1);
-			s_BonesSSBOBuffers[i].Buffer->SetData((void*)(&dummy), (unsigned int)(sizeof(matrix4)));
-		}
+
+		s_BoneBufferCapacity = MAX_BONES_TOTAL * sizeof(matrix4);
+
+		s_BonesSSBO->Bind();
+		s_BonesSSBO->SetData(nullptr, s_BoneBufferCapacity);
+
+		s_BonesSSBO->BindToLayout(2);
+		
+
 		s_LightCount = 0;
 		InitShadowMapping();
 	}
@@ -226,7 +230,8 @@ namespace Loopie {
 		s_ShadowMapShader->SetUniformInt("lp_Skinned", !bones.empty() ? 1 : 0);
 		if (!bones.empty())
 		{
-			GetBoneStorageBuffer()->SetData(bones.data(), (unsigned int)(bones.size() * sizeof(matrix4)));
+			int boneOffset = (int)UploadBones(bones);
+			s_ShadowMapShader->SetUniformInt("lp_BoneOffset", boneOffset);
 		}
 		glDrawElements(GL_TRIANGLES, vao->GetIndexBuffer().GetCount(), GL_UNSIGNED_INT, nullptr);
 		vao->Unbind();
@@ -314,9 +319,7 @@ namespace Loopie {
 
 		BindShadowTexturesForMainPass();
 
-		for (auto& storageObject : s_BonesSSBOBuffers) {
-			storageObject.Used = false;
-		}
+		s_BoneBufferOffset = 0;
 
 		if (s_UseGizmos)
 			Gizmo::BeginGizmo();
@@ -325,6 +328,7 @@ namespace Loopie {
 	void Renderer::EndScene()
 	{
 		FlushRenderQueue();
+
 		Gizmo::EndGizmo();
 	}
 
@@ -366,31 +370,27 @@ namespace Loopie {
 		s_RenderQueue.clear();
 	}
 
-	std::shared_ptr<ShaderStorageBuffer>& Renderer::GetBoneStorageBuffer()
+	unsigned int Renderer::UploadBones(const std::vector<matrix4>& bones)
 	{
-		for (size_t i = 0; i < s_BonesSSBOBuffers.size(); i++)
+		if (bones.empty())
+			return 0;
+
+		unsigned int size = bones.size() * sizeof(matrix4);
+
+		// safety check
+		if (s_BoneBufferOffset + size > s_BoneBufferCapacity)
 		{
-			auto& storageObject = s_BonesSSBOBuffers[i];
-			if (!storageObject.Used) {
-				storageObject.Used = true;
-				if(s_CurrentBoneSSBOIndex!=i)
-					storageObject.Buffer->BindToLayout(2);
-				s_CurrentBoneSSBOIndex = i;
-				return storageObject.Buffer;
-			}
+			Log::Error("Bone SSBO overflow! Increase buffer size.");
+			return 0;
 		}
 
-		for (auto& storageObject : s_BonesSSBOBuffers) {
-			storageObject.Used = false;
-		}
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, s_BonesSSBO->GetRendererID());
+		glBufferSubData(GL_SHADER_STORAGE_BUFFER, s_BoneBufferOffset, size, bones.data());
 
-		auto& storageObject = s_BonesSSBOBuffers.front();
-		storageObject.Used = true;
-		if(s_CurrentBoneSSBOIndex!=0)
-			storageObject.Buffer->BindToLayout(2);
-		s_CurrentBoneSSBOIndex = 0;
+		unsigned int offset = s_BoneBufferOffset / sizeof(matrix4);
+		s_BoneBufferOffset += size;
 
-		return storageObject.Buffer;
+		return offset;
 	}
 
 	void Renderer::SetRenderUniforms(std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones)
@@ -413,7 +413,8 @@ namespace Loopie {
 
 		if (!bones.empty())
 		{
-			GetBoneStorageBuffer()->SetData(bones.data(), (unsigned int)(bones.size() * sizeof(matrix4)));
+			int boneOffset = (int)UploadBones(bones);
+			material->GetShader().SetUniformInt("lp_BoneOffset", boneOffset);
 		}
 	}
 
@@ -497,4 +498,5 @@ namespace Loopie {
 	{
 		glDepthMask(enable ? GL_TRUE : GL_FALSE);
 	}
+
 }

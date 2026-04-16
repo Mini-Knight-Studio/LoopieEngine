@@ -488,6 +488,92 @@ namespace Loopie
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Gizmo_DrawLine(Vector3 start, Vector3 end, Vector4 color);
         #endregion
+        #region ParticleSystem
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_Play(string entityID, string componentID);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_Stop(string entityID, string componentID);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static bool ParticleSystem_IsPlaying(string entityID, string componentID);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static int ParticleSystem_GetEmitterIndex(string entityID, string componentID, string emitterName);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_SetEmitterState(string entityID, string componentID, int emitterIndex, bool activeState);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static bool ParticleSystem_GetEmitterState(string entityID, string componentID, int emitterIndex);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_SetEmitterName(string entityID, string componentID, int emitterIndex, string emitterName);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static string ParticleSystem_GetEmitterName(string entityID, string componentID, int emitterIndex);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_SetEmitterSpawnRate(string entityID, string componentID, int emitterIndex, int spawnRate);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static int ParticleSystem_GetEmitterSpawnRate(string entityID, string componentID, int emitterIndex);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_SetEmitterMaxParticles(string entityID, string componentID, int emitterIndex, int maxParticles);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static int ParticleSystem_GetEmitterMaxParticles(string entityID, string componentID, int emitterIndex);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_SetEmitterPosition(string entityID, string componentID, int emitterIndex, Vector3 position);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_GetEmitterPosition(string entityID, string componentID, int emitterIndex, out Vector3 position);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_SetEmitterPositionOffset(string entityID, string componentID, int emitterIndex, Vector3 offset);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_GetEmitterPositionOffset(string entityID, string componentID, int emitterIndex, out Vector3 offset);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_SetEmitterRotation(string entityID, string componentID, int emitterIndex, Vector3 rotation);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_GetEmitterRotation(string entityID, string componentID, int emitterIndex, out Vector3 rotation);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_SetEmitterFollowParent(string entityID, string componentID, int emitterIndex, bool follow);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static bool ParticleSystem_GetEmitterFollowParent(string entityID, string componentID, int emitterIndex);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_SetEmitterLocalVelocity(string entityID, string componentID, int emitterIndex, bool local);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static bool ParticleSystem_GetEmitterLocalVelocity(string entityID, string componentID, int emitterIndex);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_SetEmitterPropPosition(string entityID, string componentID, int emitterIndex, Vector3 position);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_GetEmitterPropPosition(string entityID, string componentID, int emitterIndex, out Vector3 position);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_SetEmitterPropVelocity(string entityID, string componentID, int emitterIndex, Vector3 velocity);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_GetEmitterPropVelocity(string entityID, string componentID, int emitterIndex, out Vector3 velocity);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_SetEmitterPropVelocityVariation(string entityID, string componentID, int emitterIndex, Vector3 variation);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_GetEmitterPropVelocityVariation(string entityID, string componentID, int emitterIndex, out Vector3 variation);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_SetEmitterPropPositionVariation(string entityID, string componentID, int emitterIndex, Vector3 variation);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_GetEmitterPropPositionVariation(string entityID, string componentID, int emitterIndex, out Vector3 variation);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_SetEmitterPropColorBegin(string entityID, string componentID, int emitterIndex, Vector4 color);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_GetEmitterPropColorBegin(string entityID, string componentID, int emitterIndex, out Vector4 color);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_SetEmitterPropColorEnd(string entityID, string componentID, int emitterIndex, Vector4 color);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_GetEmitterPropColorEnd(string entityID, string componentID, int emitterIndex, out Vector4 color);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_SetEmitterPropSizeBegin(string entityID, string componentID, int emitterIndex, float size);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static float ParticleSystem_GetEmitterPropSizeBegin(string entityID, string componentID, int emitterIndex);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_SetEmitterPropSizeEnd(string entityID, string componentID, int emitterIndex, float size);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static float ParticleSystem_GetEmitterPropSizeEnd(string entityID, string componentID, int emitterIndex);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_SetEmitterSizeVariation(string entityID, string componentID, int emitterIndex, float variation);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static float ParticleSystem_GetEmitterSizeVariation(string entityID, string componentID, int emitterIndex);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void ParticleSystem_SetEmitterPropLifetime(string entityID, string componentID, int emitterIndex, float lifetime);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static float ParticleSystem_GetEmitterPropLifetime(string entityID, string componentID, int emitterIndex);
+        #endregion
         #region Image
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Image_GetTint(string entityID, string componentID, out Vector4 tint);

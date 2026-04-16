@@ -463,7 +463,7 @@ namespace Loopie
 					if (data.HasBones) {
 						Animator* animator = renderer->GetLinkedAnimator();
 						if (animator) {
-							bones = animator->GetRendererData(renderer->GetUUID()).FinalBoneMatrices;
+							bones = animator->GetRendererData(renderer->GetUUID())->FinalBoneMatrices;
 						}
 					}
 
@@ -544,7 +544,7 @@ namespace Loopie
 				if (data.HasBones) {
 					Animator* animator = renderer->GetLinkedAnimator();
 					if (animator) {
-						bones = animator->GetRendererData(renderer->GetUUID()).FinalBoneMatrices;
+						bones = animator->GetRendererData(renderer->GetUUID())->FinalBoneMatrices;
 					}
 				}
 

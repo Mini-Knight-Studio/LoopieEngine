@@ -37,6 +37,8 @@ namespace Loopie
 			void ClearEmitterArray();
 
 			const std::vector<std::shared_ptr<Emitter>>& GetEmitterArray() const;
+			std::shared_ptr<Emitter> GetEmitterByName(const std::string& emitterName) const;
+			int GetEmitterIndexByName(const std::string& emitterName) const;
 			std::shared_ptr<VertexArray> GetQuadVAO() const;
 			std::shared_ptr<Material> GetMaterial() const;	
 			int GetActiveParticles() const;	

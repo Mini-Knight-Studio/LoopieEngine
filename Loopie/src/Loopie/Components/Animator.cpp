@@ -80,15 +80,15 @@ namespace Loopie {
 		}
 	}
 
-	RendererData Animator::GetRendererData(const UUID& uuid)
+	RendererData* Animator::GetRendererData(const UUID& uuid)
 	{
 		auto it = m_renderers.find(uuid);
 		if (it != m_renderers.end())
 		{
-			return it->second;
+			return &it->second;
 		}
 
-		return RendererData();
+		return nullptr;
 	}
 
 	void Animator::ClearRenderers()
@@ -129,6 +129,7 @@ namespace Loopie {
 				{
 					m_currentClipIndex = 0;
 					m_currentClip = &clips[0];
+					m_clipCacheDirty = true;
 				}
 			}
 		}
@@ -245,6 +246,7 @@ namespace Loopie {
 					m_transitionDuration = std::max(transitionTime, 0.0001f);
 					m_transitionTime = 0;
 					m_nextTime = 0;
+					m_clipCacheDirty = true;
 					m_inTransition = true;
 				}
 				
@@ -272,6 +274,7 @@ namespace Loopie {
 			return;
 
 		m_currentClip = &clips[m_currentClipIndex];
+		m_clipCacheDirty = true;
 		m_currentTime = 0.0f;
 		m_isPlaying = true;
 	}
@@ -295,6 +298,7 @@ namespace Loopie {
 				m_currentClip = &clip;
 				m_currentTime = 0.0f;
 				m_currentClipIndex = index;
+				m_clipCacheDirty = true;
 				return true;
 			}
 			++index;
@@ -306,6 +310,7 @@ namespace Loopie {
 	{
 		m_isPlaying = false;
 		m_currentClip = nullptr;
+		m_clipCacheDirty = true;
 		m_currentTime = 0.0f;
 	}
 
@@ -347,6 +352,35 @@ namespace Loopie {
 		m_cacheDirty = false;
 	}
 
+	void Animator::RefreshClipCache()
+	{
+		MeshRenderer* renderer = m_targetRenderer ? m_targetRenderer : GetFirstMeshRenderer();
+		if (!renderer || !renderer->GetMesh()) return;
+
+		const auto& skeleton = renderer->GetMesh()->GetData().Skeleton;
+		size_t n = skeleton.size();
+
+		m_currentClipFrameCache.assign(n, nullptr);
+		m_nextClipFrameCache.assign(n, nullptr);
+
+		if (m_currentClip) {
+			for (size_t i = 0; i < n; ++i) {
+				auto it = m_currentClip->KeyFrames.find(skeleton[i].Name);
+				if (it != m_currentClip->KeyFrames.end())
+					m_currentClipFrameCache[i] = &it->second;
+			}
+		}
+		if (m_nextClip) {
+			for (size_t i = 0; i < n; ++i) {
+				auto it = m_nextClip->KeyFrames.find(skeleton[i].Name);
+				if (it != m_nextClip->KeyFrames.end())
+					m_nextClipFrameCache[i] = &it->second;
+			}
+		}
+		if (m_currentClip || m_nextClip)
+			m_clipCacheDirty = false;
+	}
+
 	void Animator::OnUpdate()
 	{
 
@@ -367,6 +401,7 @@ namespace Loopie {
 				m_currentClip = m_nextClip;
 				m_currentClipIndex = m_nextClipIndex;
 				m_inTransition = false;
+				m_clipCacheDirty = true;
 			}
 			m_transitionTime += m_playbackSpeed * dt;
 		}
@@ -533,7 +568,7 @@ namespace Loopie {
 		}
 
 		if (!m_pendingTargetRendererUUID.empty()) {
-			m_targetRenderer = GetRendererData(UUID(m_pendingTargetRendererUUID)).Renderer;
+			m_targetRenderer = GetRendererData(UUID(m_pendingTargetRendererUUID))->Renderer;
 		}
 
 		m_pendingTargetRendererUUID.clear();
@@ -545,119 +580,63 @@ namespace Loopie {
 		}
 	}
 
-	void Animator::CalculateBoneTransform() {
-		if (m_cacheDirty) {
-			RefreshBoneCache();
-		}
+	void Animator::CalculateBoneTransform()
+	{
+		if (m_cacheDirty) RefreshBoneCache();
+		if (m_clipCacheDirty) RefreshClipCache();
 
 		MeshRenderer* renderer = m_targetRenderer ? m_targetRenderer : GetFirstMeshRenderer();
-		if (!renderer)
-			return;
-		auto mesh = renderer->GetMesh();
-		if (!mesh)
-			return;
-		auto skeleton = mesh->GetData().Skeleton;
-		const matrix4& globalInverse = mesh->GetData().GlobalInverseTransform;
+		if (!renderer || !renderer->GetMesh()) return;
 
+		const auto& skeleton = renderer->GetMesh()->GetData().Skeleton;
+		const matrix4& globalInverse = renderer->GetMesh()->GetData().GlobalInverseTransform;
 		size_t n = skeleton.size();
-		const auto& boneEntities = m_boneEntityByIndex;
 
 		if (m_currentClip && m_isPlaying) {
 			for (size_t i = 0; i < n; ++i) {
-				Entity* entity = boneEntities[i];
-				if (!entity) 
-					continue;
-				auto* transform = entity->GetTransform();
+				Entity* entity = m_boneEntityByIndex[i];
+				const KeyFrame* keyframe = m_currentClipFrameCache[i];
+				if (!entity || !keyframe) continue;
 
-				const Bone& bone = skeleton[i];
-				auto keyIt = m_currentClip->KeyFrames.find(bone.Name);
-				if (keyIt != m_currentClip->KeyFrames.end()) {
-					const KeyFrame& keyFrame = keyIt->second;
-
-					vec3 pos;
-					quaternion rot;
-					vec3 scale;
-
-					if (m_inTransition) {
-
-						float t = std::clamp(m_transitionTime / m_transitionDuration, 0.f, 1.f);
-						auto nextKeyFrame = m_nextClip->KeyFrames.at(bone.Name);
-
-						vec3 posA = Vec3Key::Interpolate(keyFrame.Positions, m_currentTime);
-						vec3 posB = Vec3Key::Interpolate(nextKeyFrame.Positions, m_nextTime);
-
-						quaternion rotA = QuaternionKey::Interpolate(keyFrame.Rotations, m_currentTime);
-						quaternion rotB = QuaternionKey::Interpolate(nextKeyFrame.Rotations, m_nextTime);
-
-						vec3 scaleA = Vec3Key::Interpolate(keyFrame.Scales, m_currentTime);
-						vec3 scaleB = Vec3Key::Interpolate(nextKeyFrame.Scales, m_nextTime);
-
-					
-						pos = mix(posA, posB, t);
-						rot = slerp(rotA, rotB, t);
-						scale = mix(scaleA, scaleB,t);
-					}
-					else {
-						pos = Vec3Key::Interpolate(keyFrame.Positions, m_currentTime);
-						rot = QuaternionKey::Interpolate(keyFrame.Rotations, m_currentTime);
-						scale = Vec3Key::Interpolate(keyFrame.Scales, m_currentTime);
-					}
-					
-
-					transform->SetLocalPosition(pos);
-					transform->SetLocalRotation(rot);
-					transform->SetLocalScale(scale);
+				vec3 pos; quaternion rot; vec3 scale;
+				if (m_inTransition) {
+					const KeyFrame* nextkeyframe = m_nextClipFrameCache[i];
+					if (!nextkeyframe) continue;
+					float t = std::clamp(m_transitionTime / m_transitionDuration, 0.f, 1.f);
+					pos = mix(Vec3Key::Interpolate(keyframe->Positions, m_currentTime), Vec3Key::Interpolate(nextkeyframe->Positions, m_nextTime), t);
+					rot = slerp(QuaternionKey::Interpolate(keyframe->Rotations, m_currentTime), QuaternionKey::Interpolate(nextkeyframe->Rotations, m_nextTime), t);
+					scale = mix(Vec3Key::Interpolate(keyframe->Scales, m_currentTime), Vec3Key::Interpolate(nextkeyframe->Scales, m_nextTime), t);
 				}
+				else {
+					pos = Vec3Key::Interpolate(keyframe->Positions, m_currentTime);
+					rot = QuaternionKey::Interpolate(keyframe->Rotations, m_currentTime);
+					scale = Vec3Key::Interpolate(keyframe->Scales, m_currentTime);
+				}
+				auto* tr = entity->GetTransform();
+				tr->SetLocalPosition(pos);
+				tr->SetLocalRotation(rot);
+				tr->SetLocalScale(scale);
 			}
 		}
 
-		if (m_globalModelSpace.capacity() < n)
+		if (m_globalModelSpace.size() < n)
 			m_globalModelSpace.resize(n, matrix4(1.0f));
 
-		//for (size_t i = 0; i < n; ++i) {
-		//	if (!boneEntities[i]) 
-		//		continue;
-		//	const Bone& bone = skeleton[i];
-		//	matrix4 local = boneEntities[i]->GetTransform()->GetLocalMatrix();
-		//	if (bone.ParentID >= 0 && boneEntities[bone.ParentID]) {
-		//		m_globalModelSpace[i] = m_globalModelSpace[bone.ParentID] * local;
-		//	}
-		//	else {
-		//		m_globalModelSpace[i] = local;
-		//	}
+		for (size_t i = 0; i < n; ++i) {
+			if (!m_boneEntityByIndex[i]) 
+				continue;
+			matrix4 local = m_boneEntityByIndex[i]->GetTransform()->GetLocalMatrix();
+			int parentId = skeleton[i].ParentID;
+			m_globalModelSpace[i] = (parentId >= 0 && m_boneEntityByIndex[parentId]) ? m_globalModelSpace[parentId] * local : local;
+		}
 
-
-		//}
-
-		bool processed = false;
 		for (auto& [uuid, data] : m_renderers) {
-			MeshRenderer* renderer = data.Renderer;
-			if (!renderer) continue;
-
-			auto mesh = renderer->GetMesh();
-			if (!mesh) continue;
-
-
-			if (data.FinalBoneMatrices.capacity() < n)
+			if (!data.Renderer || !data.Renderer->GetMesh()) 
+				continue;
+			if (data.FinalBoneMatrices.size() < n)
 				data.FinalBoneMatrices.resize(n);
-
-			for (size_t i = 0; i < n; ++i) {
-
-				if (!processed && boneEntities[i]) {
-					const Bone& bone = skeleton[i];
-					matrix4 local = boneEntities[i]->GetTransform()->GetLocalMatrix();
-
-					if (bone.ParentID >= 0 && boneEntities[bone.ParentID]) {
-						m_globalModelSpace[i] = m_globalModelSpace[bone.ParentID] * local;
-					}
-					else {
-						m_globalModelSpace[i] = local;
-					}
-				}
-
+			for (size_t i = 0; i < n; ++i)
 				data.FinalBoneMatrices[i] = globalInverse * m_globalModelSpace[i] * skeleton[i].OffsetMatrix;
-			}
-			processed = true;
 		}
 	}
 }

@@ -1,6 +1,7 @@
 #include "Emitter.h"
 #include "Loopie/ParticleSystemEn/ParticleModule.h"
 #include "Loopie/Core/Log.h"
+#include "Loopie/Core/Random.h"
 #include "Loopie/Math/MathUtils.h"
 
 #include "Loopie/Profiler/Profiler.h"
@@ -9,8 +10,8 @@ namespace Loopie
 {
 	
 	float RandomFloat(float min, float max)
-	{
-		return min + ((float)rand() / (float)RAND_MAX) * (max - min);
+	{	
+		return Random::Get(min, max);;
 	}
 
 	Emitter::Emitter(unsigned int maxParticles, BillboardType bType, vec3 position, unsigned int spawnRate, vec3 posOffSet)
@@ -88,6 +89,16 @@ namespace Loopie
 			if (!particle.GetActive())
 				continue;
 
+
+			std::shared_ptr<Texture> sprite = particle.GetSprite();
+
+			UniformValue useSprite;
+			useSprite.type = UniformType_bool;
+			useSprite.value = sprite != nullptr;
+			material->SetShaderVariable("u_UseSprite", useSprite);
+			if(sprite)
+				material->SetTexture("u_Sprite", particle.GetSprite());
+
 			particle.Render(quadVAO, material, billboardRotation);
 		}
 	}
@@ -148,11 +159,11 @@ namespace Loopie
 
 		m_poolIndex = (m_poolIndex - 1) % m_particlePool.size();
 	}
-	std::string Emitter::GetName()const
+	const std::string& Emitter::GetName() const
 	{
 		return m_name;
 	}
-	void Emitter::SetName(std::string n)
+	void Emitter::SetName(const std::string& n)
 	{
 		m_name = n;
 	}
@@ -258,7 +269,7 @@ namespace Loopie
 	{ 
 		m_sprite = sprite; 
 	}
-	quaternion Emitter::GetEmitterRotation() const { return m_rotation; }
+	const quaternion& Emitter::GetEmitterRotation() const { return m_rotation; }
 	void Emitter::SetEmitterRotation(const quaternion& rot) { m_rotation = rot; }
 
 	bool Emitter::GetLocalVelocity() const { return m_localVelocity; }

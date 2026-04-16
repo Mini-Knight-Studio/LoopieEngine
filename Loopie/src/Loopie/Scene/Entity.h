@@ -158,7 +158,7 @@ namespace Loopie {
 		std::vector<Component*> GetComponents() const;
 		Transform* GetTransform() const;
 
-		void SetUUID(const std::string uuid);
+		void SetUUID(const std::string& uuid);
 		void SetUUID(UUID uuid);
 		void SetName(const std::string& name);
 		void SetIsActive(bool active);

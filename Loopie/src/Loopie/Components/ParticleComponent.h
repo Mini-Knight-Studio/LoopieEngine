@@ -18,6 +18,7 @@ namespace Loopie
 		
 	private:
 		ParticleSystem m_partSystem;
+		bool m_playing = false;
 	public:
 		DEFINE_TYPE(ParticleComponent)
 		ParticleComponent();
@@ -28,6 +29,10 @@ namespace Loopie
 		void Render(Camera* cam);
 		void Reset();
 
+		void Play();
+		void Stop();
+		bool IsPlaying() const { return m_playing; }
+
 		void OnNotify(const TransformNotification& id) override;
 
 		JsonNode Serialize(JsonNode& parent) const override;
@@ -35,6 +40,8 @@ namespace Loopie
 		void Clone(const std::shared_ptr<Entity> entity, const Component& other) override;
 
 		const std::vector<std::shared_ptr<Emitter>>& GetEmittersVector();
+		std::shared_ptr<Emitter> GetEmitterByName(const std::string& emitterName);
+		int GetEmitterIndexByName(const std::string& emitterName);
 		void AddElemToEmitterVector(const std::shared_ptr<Emitter>& emitter);
 
 		ParticleSystem& GetParticleSystem();

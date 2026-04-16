@@ -32,7 +32,6 @@ namespace Loopie {
 		else {
 			glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, byteSize, data);
 		}
-		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 		Unbind();
 	}
 }

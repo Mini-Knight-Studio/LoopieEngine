@@ -623,6 +623,11 @@ namespace Loopie {
 	{
 		ImGui::PushID(camera);
 
+		bool active = camera->GetLocalIsActive();
+		if (ImGui::Checkbox("##comp_active", &active))
+			camera->SetIsActive(active);
+		ImGui::SameLine();
+
 		bool open = ImGui::CollapsingHeader("Camera");
 		ImGui::SetItemTooltip(camera->GetUUID().Get().c_str());
 		if (ComponentContextMenu(camera)) {
@@ -674,6 +679,11 @@ namespace Loopie {
 	void InspectorInterface::DrawMeshRenderer(MeshRenderer* meshRenderer)
 	{
 		ImGui::PushID(meshRenderer);
+
+		bool active = meshRenderer->GetLocalIsActive();
+		if (ImGui::Checkbox("##comp_active", &active))
+			meshRenderer->SetIsActive(active);
+		ImGui::SameLine();
 
 		bool open = ImGui::CollapsingHeader("Mesh Renderer");
 		ImGui::SetItemTooltip(meshRenderer->GetUUID().Get().c_str());
@@ -805,6 +815,11 @@ namespace Loopie {
 	void InspectorInterface::DrawAnimator(Animator* animator)
 	{
 		ImGui::PushID(animator);
+
+		bool active = animator->GetLocalIsActive();
+		if (ImGui::Checkbox("##comp_active", &active))
+			animator->SetIsActive(active);
+		ImGui::SameLine();
 
 		bool open = ImGui::CollapsingHeader("Animator");
 		ImGui::SetItemTooltip(animator->GetUUID().Get().c_str());
@@ -1109,6 +1124,11 @@ namespace Loopie {
 	{
 		ImGui::PushID(partComponent);
 
+		bool active = partComponent->GetLocalIsActive();
+		if (ImGui::Checkbox("##comp_active", &active))
+			partComponent->SetIsActive(active);
+		ImGui::SameLine();
+
 		bool open = ImGui::CollapsingHeader("ParticleSystem");
 		ImGui::SetItemTooltip(partComponent->GetUUID().Get().c_str());
 		if (ComponentContextMenu(partComponent)) {
@@ -1118,13 +1138,13 @@ namespace Loopie {
 
 		if (open)
 		{
-			bool active = partComponent->GetIsActive();
-			if (ImGui::Checkbox("Active", &active))
-			{
-				if (active) { partComponent->SetIsActive(true); }
-				else { partComponent->SetIsActive(false); }
+			bool playing = partComponent->IsPlaying();
+			if (ImGui::Checkbox("Is Playing", &playing)) {
+				if(playing)
+					partComponent->Play();
+				else
+					partComponent->Stop();
 			}
-			
 
 			const std::vector<std::shared_ptr<Emitter>>& emitters = partComponent->GetEmittersVector();
 			for (size_t i = 0; i < emitters.size(); i++)
@@ -1255,6 +1275,11 @@ namespace Loopie {
 	void InspectorInterface::DrawScriptClass(ScriptClass* scriptClass)
 	{
 		ImGui::PushID(scriptClass);
+
+		bool active = scriptClass->GetLocalIsActive();
+		if (ImGui::Checkbox("##comp_active", &active))
+			scriptClass->SetIsActive(active);
+		ImGui::SameLine();
 
 		bool open = ImGui::CollapsingHeader(scriptClass->GetClassName().c_str());
 		ImGui::SetItemTooltip(scriptClass->GetUUID().Get().c_str());
@@ -1502,6 +1527,11 @@ namespace Loopie {
 	{
 		ImGui::PushID(image);
 
+		bool active = image->GetLocalIsActive();
+		if (ImGui::Checkbox("##comp_active", &active))
+			image->SetIsActive(active);
+		ImGui::SameLine();
+
 		bool open = ImGui::CollapsingHeader("Image");
 		ImGui::SetItemTooltip(image->GetUUID().Get().c_str());
 		if (ComponentContextMenu(image)) {
@@ -1586,6 +1616,11 @@ namespace Loopie {
 	void InspectorInterface::DrawSpriteAnimator(SpriteAnimator* spriteAnimator)
 	{
 		ImGui::PushID(spriteAnimator);
+
+		bool active = spriteAnimator->GetLocalIsActive();
+		if (ImGui::Checkbox("##comp_active", &active))
+			spriteAnimator->SetIsActive(active);
+		ImGui::SameLine();
 
 		bool open = ImGui::CollapsingHeader("Sprite Animator");
 		ImGui::SetItemTooltip(spriteAnimator->GetUUID().Get().c_str());
@@ -1694,6 +1729,11 @@ namespace Loopie {
 	void InspectorInterface::DrawText(Text* text)
 	{
 		ImGui::PushID(text);
+
+		bool active = text->GetLocalIsActive();
+		if (ImGui::Checkbox("##comp_active", &active))
+			text->SetIsActive(active);
+		ImGui::SameLine();
 
 		bool open = ImGui::CollapsingHeader("Text");
 		ImGui::SetItemTooltip(text->GetUUID().Get().c_str());
@@ -1826,6 +1866,11 @@ namespace Loopie {
 	void InspectorInterface::DrawButton(Button* button)
 	{
 		ImGui::PushID(button);
+
+		bool active = button->GetLocalIsActive();
+		if (ImGui::Checkbox("##comp_active", &active))
+			button->SetIsActive(active);
+		ImGui::SameLine();
 
 		bool open = ImGui::CollapsingHeader("Button");
 		ImGui::SetItemTooltip(button->GetUUID().Get().c_str());
@@ -2006,6 +2051,11 @@ namespace Loopie {
 	{
 		ImGui::PushID(light);
 
+		bool active = light->GetLocalIsActive();
+		if (ImGui::Checkbox("##comp_active", &active))
+			light->SetIsActive(active);
+		ImGui::SameLine();
+
 		const char* label = "Light";
 		bool open = ImGui::CollapsingHeader(label, ImGuiTreeNodeFlags_DefaultOpen);
 		bool modified = false;
@@ -2078,6 +2128,12 @@ namespace Loopie {
 	{
 
 		ImGui::PushID(boxCollider);
+
+		bool active = boxCollider->GetLocalIsActive();
+		if (ImGui::Checkbox("##comp_active", &active))
+			boxCollider->SetIsActive(active);
+		ImGui::SameLine();
+
 		bool open = ImGui::CollapsingHeader("Box Collider");
 		ImGui::SetItemTooltip(boxCollider->GetUUID().Get().c_str());
 		if (ComponentContextMenu(boxCollider)) {
@@ -2251,6 +2307,12 @@ namespace Loopie {
 	void InspectorInterface::DrawAudioSource(AudioSource* source)
 	{
 		ImGui::PushID(source);
+
+		bool active = source->GetLocalIsActive();
+		if (ImGui::Checkbox("##comp_active", &active))
+			source->SetIsActive(active);
+		ImGui::SameLine();
+
 		bool open = ImGui::CollapsingHeader("Audio Source");
 		ImGui::SetItemTooltip(source->GetUUID().Get().c_str());
 		if (ComponentContextMenu(source)) {
@@ -2511,6 +2573,12 @@ namespace Loopie {
 	void InspectorInterface::DrawAudioListener(AudioListener* listener)
 	{
 		ImGui::PushID(listener);
+
+		bool active = listener->GetLocalIsActive();
+		if (ImGui::Checkbox("##comp_active", &active))
+			listener->SetIsActive(active);
+		ImGui::SameLine();
+
 		bool open = ImGui::CollapsingHeader("Audio Listener");
 		ImGui::SetItemTooltip(listener->GetUUID().Get().c_str());
 		if (ComponentContextMenu(listener)) {

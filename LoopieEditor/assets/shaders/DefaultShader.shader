@@ -36,6 +36,7 @@ layout (std430, binding = 2) readonly buffer BoneMatrices
 {
     mat4 lp_Bones[];
 };
+uniform int lp_BoneOffset;
 
 uniform mat4 lp_Transform;
 uniform bool lp_Skinned;
@@ -54,10 +55,10 @@ void main()
     if (lp_Skinned)
     {
         skinMatrix =
-              a_Weights[0] * lp_Bones[int(a_BoneIDs[0])] +
-              a_Weights[1] * lp_Bones[int(a_BoneIDs[1])] +
-              a_Weights[2] * lp_Bones[int(a_BoneIDs[2])] +
-              a_Weights[3] * lp_Bones[int(a_BoneIDs[3])];
+              a_Weights[0] * lp_Bones[lp_BoneOffset + int(a_BoneIDs[0])] +
+              a_Weights[1] * lp_Bones[lp_BoneOffset + int(a_BoneIDs[1])] +
+              a_Weights[2] * lp_Bones[lp_BoneOffset + int(a_BoneIDs[2])] +
+              a_Weights[3] * lp_Bones[lp_BoneOffset + int(a_BoneIDs[3])];
     }
 
     vec4 localPos = skinMatrix * vec4(a_Position, 1.0);

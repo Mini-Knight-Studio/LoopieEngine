@@ -1839,7 +1839,436 @@ namespace Loopie
 #pragma endregion
 
 #pragma region ParticleSystem
+	static void ParticleSystem_Play(MonoString* entityID, MonoString* componentID) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet)
+			particleComponet->Play();
+	}
+	static void ParticleSystem_Stop(MonoString* entityID, MonoString* componentID) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet)
+			particleComponet->Stop();
+	}
+	static bool ParticleSystem_IsPlaying(MonoString* entityID, MonoString* componentID) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return false;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet)
+			return particleComponet->IsPlaying();
+		return false;
+	}
 
+	static int ParticleSystem_GetEmitterIndex(MonoString* entityID, MonoString* componentID, MonoString* emitterName) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return-1;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			return particleComponet->GetEmitterIndexByName(Utils::MonoStringToString(emitterName));
+		}
+		return -1;
+	}
+
+	static void ParticleSystem_SetEmitterState(MonoString* entityID, MonoString* componentID, int emitterIndex, MonoBoolean activeState) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if(emitterIndex >=0 && emitterIndex < particleComponet->GetEmittersVector().size())
+			particleComponet->GetEmittersVector()[emitterIndex]->SetActive(activeState!=0);
+		}
+	}
+	static bool ParticleSystem_GetEmitterState(MonoString* entityID, MonoString* componentID, int emitterIndex) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return false;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				return particleComponet->GetEmittersVector()[emitterIndex]->GetIsActive();
+		}
+		return false;
+	}
+	static void ParticleSystem_SetEmitterName(MonoString* entityID, MonoString* componentID, int emitterIndex, MonoString* emitterName) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				particleComponet->GetEmittersVector()[emitterIndex]->SetName(Utils::MonoStringToString(emitterName));
+		}
+	}
+	static MonoString* ParticleSystem_GetEmitterName(MonoString* entityID, MonoString* componentID, int emitterIndex) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return ScriptingManager::CreateString("");;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				return ScriptingManager::CreateString(particleComponet->GetEmittersVector()[emitterIndex]->GetName().c_str());
+		}
+		return ScriptingManager::CreateString("");
+	}
+	static void ParticleSystem_SetEmitterSpawnRate(MonoString* entityID, MonoString* componentID, int emitterIndex, int spawnRate) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				particleComponet->GetEmittersVector()[emitterIndex]->SetSpawnRate(spawnRate);
+		}
+	}
+	static int ParticleSystem_GetEmitterSpawnRate(MonoString* entityID, MonoString* componentID, int emitterIndex) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return 0;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				return particleComponet->GetEmittersVector()[emitterIndex]->GetSpawnrate();
+		}
+		return 0;
+	}
+	static void ParticleSystem_SetEmitterMaxParticles(MonoString* entityID, MonoString* componentID, int emitterIndex, int maxParticles) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				particleComponet->GetEmittersVector()[emitterIndex]->SetMaxParticles(maxParticles);
+		}
+	}
+	static int ParticleSystem_GetEmitterMaxParticles(MonoString* entityID, MonoString* componentID, int emitterIndex) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return 0;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				return particleComponet->GetEmittersVector()[emitterIndex]->GetMaxParticles();
+		}
+		return 0;
+	}
+	static void ParticleSystem_SetEmitterPosition(MonoString* entityID, MonoString* componentID, int emitterIndex, vec3* position) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				particleComponet->GetEmittersVector()[emitterIndex]->SetPosition(*position);
+		}
+	}
+	static void ParticleSystem_GetEmitterPosition(MonoString* entityID, MonoString* componentID, int emitterIndex, vec3* position) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				*position = particleComponet->GetEmittersVector()[emitterIndex]->GetPosition();
+		}
+	}
+	static void ParticleSystem_SetEmitterPositionOffset(MonoString* entityID, MonoString* componentID, int emitterIndex, vec3* positionOffset) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				particleComponet->GetEmittersVector()[emitterIndex]->SetPositionOffSet(*positionOffset);
+		}
+	}
+	static void ParticleSystem_GetEmitterPositionOffset(MonoString* entityID, MonoString* componentID, int emitterIndex, vec3* positionOffset) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				*positionOffset = particleComponet->GetEmittersVector()[emitterIndex]->GetPositionOffSet();
+		}
+	}
+	static void ParticleSystem_SetEmitterFollowParent(MonoString* entityID, MonoString* componentID, int emitterIndex, MonoBoolean followParent) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				particleComponet->GetEmittersVector()[emitterIndex]->SetParticlesFollowEmitter(followParent != 0);
+		}
+	}
+	static bool ParticleSystem_GetEmitterFollowParent(MonoString* entityID, MonoString* componentID, int emitterIndex, MonoBoolean followParent) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return false;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				return particleComponet->GetEmittersVector()[emitterIndex]->GetParticlesFollowEmitter();
+		}
+		return false;
+	}
+	static void ParticleSystem_SetEmitterLocalVelocity(MonoString* entityID, MonoString* componentID, int emitterIndex, MonoBoolean localVelocity) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				particleComponet->GetEmittersVector()[emitterIndex]->SetLocalVelocity(localVelocity != 0);
+		}
+	}
+	static bool ParticleSystem_GetEmitterLocalVelocity(MonoString* entityID, MonoString* componentID, int emitterIndex) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return false;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				return particleComponet->GetEmittersVector()[emitterIndex]->GetLocalVelocity();
+		}
+		return false;
+	}
+	static void ParticleSystem_SetEmitterRotation(MonoString* entityID, MonoString* componentID, int emitterIndex, vec3* rotation) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				particleComponet->GetEmittersVector()[emitterIndex]->SetEmitterRotation(quaternion(radians(*rotation)));
+		}
+	}
+	static void ParticleSystem_GetEmitterRotation(MonoString* entityID, MonoString* componentID, int emitterIndex, vec3* rotation) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size()) {
+				quaternion emitterRot = particleComponet->GetEmittersVector()[emitterIndex]->GetEmitterRotation();
+				*rotation = degrees(eulerAngles(emitterRot));
+			}
+		}
+	}
+
+	static void ParticleSystem_SetEmitterPropPosition(MonoString* entityID, MonoString* componentID, int emitterIndex, vec3* position) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				particleComponet->GetEmittersVector()[emitterIndex]->GetEmissionProperties().Position = *position;
+		}
+	}
+	static void ParticleSystem_GetEmitterPropPosition(MonoString* entityID, MonoString* componentID, int emitterIndex, vec3* position) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				*position = particleComponet->GetEmittersVector()[emitterIndex]->GetEmissionProperties().Position;
+		}
+	}
+	static void ParticleSystem_SetEmitterPropVelocity(MonoString* entityID, MonoString* componentID, int emitterIndex, vec3* velocity) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				particleComponet->GetEmittersVector()[emitterIndex]->GetEmissionProperties().Velocity = *velocity;
+		}
+	}
+	static void ParticleSystem_GetEmitterPropVelocity(MonoString* entityID, MonoString* componentID, int emitterIndex, vec3* velocity) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				*velocity = particleComponet->GetEmittersVector()[emitterIndex]->GetEmissionProperties().Velocity;
+		}
+	}
+	static void ParticleSystem_SetEmitterPropVelocityVariation(MonoString* entityID, MonoString* componentID, int emitterIndex, vec3* velocityVariation) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				particleComponet->GetEmittersVector()[emitterIndex]->GetEmissionProperties().VelocityVariation = *velocityVariation;
+		}
+	}
+	static void ParticleSystem_GetEmitterPropVelocityVariation(MonoString* entityID, MonoString* componentID, int emitterIndex, vec3* velocityVariation) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				*velocityVariation = particleComponet->GetEmittersVector()[emitterIndex]->GetEmissionProperties().VelocityVariation;
+		}
+	}
+	static void ParticleSystem_SetEmitterPropPositionVariation(MonoString* entityID, MonoString* componentID, int emitterIndex, vec3* positionVariation) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				particleComponet->GetEmittersVector()[emitterIndex]->GetEmissionProperties().PositionVariation = *positionVariation;
+		}
+	}
+	static void ParticleSystem_GetEmitterPropPositionVariation(MonoString* entityID, MonoString* componentID, int emitterIndex, vec3* positionVariation) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				*positionVariation = particleComponet->GetEmittersVector()[emitterIndex]->GetEmissionProperties().PositionVariation;
+		}
+	}
+	static void ParticleSystem_SetEmitterPropColorBegin(MonoString* entityID, MonoString* componentID, int emitterIndex, vec4* colorBegin) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				particleComponet->GetEmittersVector()[emitterIndex]->GetEmissionProperties().ColorBegin = *colorBegin;
+		}
+	}
+	static void ParticleSystem_GetEmitterPropColorBegin(MonoString* entityID, MonoString* componentID, int emitterIndex, vec4* colorBegin) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				*colorBegin = particleComponet->GetEmittersVector()[emitterIndex]->GetEmissionProperties().ColorBegin;
+		}
+	}
+	static void ParticleSystem_SetEmitterPropColorEnd(MonoString* entityID, MonoString* componentID, int emitterIndex, vec4* colorEnd) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				particleComponet->GetEmittersVector()[emitterIndex]->GetEmissionProperties().ColorEnd = *colorEnd;
+		}
+	}
+	static void ParticleSystem_GetEmitterPropColorEnd(MonoString* entityID, MonoString* componentID, int emitterIndex, vec4* colorEnd) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				*colorEnd = particleComponet->GetEmittersVector()[emitterIndex]->GetEmissionProperties().ColorEnd;
+		}
+	}
+	static void ParticleSystem_SetEmitterPropSizeBegin(MonoString* entityID, MonoString* componentID, int emitterIndex, float sizeBegin) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				particleComponet->GetEmittersVector()[emitterIndex]->GetEmissionProperties().SizeBegin = sizeBegin;
+		}
+	}
+	static float ParticleSystem_GetEmitterPropSizeBegin(MonoString* entityID, MonoString* componentID, int emitterIndex) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return 0;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				return particleComponet->GetEmittersVector()[emitterIndex]->GetEmissionProperties().SizeBegin;
+		}
+		return 0;
+	}
+	static void ParticleSystem_SetEmitterPropSizeEnd(MonoString* entityID, MonoString* componentID, int emitterIndex, float sizeEnd) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				particleComponet->GetEmittersVector()[emitterIndex]->GetEmissionProperties().SizeEnd = sizeEnd;
+		}
+	}
+	static float ParticleSystem_GetEmitterPropSizeEnd(MonoString* entityID, MonoString* componentID, int emitterIndex) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return 0;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				return particleComponet->GetEmittersVector()[emitterIndex]->GetEmissionProperties().SizeEnd;
+		}
+		return 0;
+	}
+	static void ParticleSystem_SetEmitterSizeVariation(MonoString* entityID, MonoString* componentID, int emitterIndex, float sizeVariation) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				particleComponet->GetEmittersVector()[emitterIndex]->GetEmissionProperties().SizeVariation = sizeVariation;
+		}
+	}
+	static float ParticleSystem_GetEmitterSizeVariation(MonoString* entityID, MonoString* componentID, int emitterIndex) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return 0;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				return particleComponet->GetEmittersVector()[emitterIndex]->GetEmissionProperties().SizeVariation;
+		}
+		return 0;
+	}
+	static void ParticleSystem_SetEmitterPropLifetime(MonoString* entityID, MonoString* componentID, int emitterIndex, float lifetime) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				particleComponet->GetEmittersVector()[emitterIndex]->GetEmissionProperties().LifeTime = lifetime;
+		}
+	}
+	static float ParticleSystem_GetEmitterPropLifetime(MonoString* entityID, MonoString* componentID, int emitterIndex) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return 0;
+		ParticleComponent* particleComponet = Utils::GetComponent<ParticleComponent>(entity, componentID);
+		if (particleComponet) {
+			if (emitterIndex >= 0 && emitterIndex < particleComponet->GetEmittersVector().size())
+				return particleComponet->GetEmittersVector()[emitterIndex]->GetEmissionProperties().LifeTime;
+		}
+		return 0;
+	}
 #pragma endregion
 
 #pragma region Image
@@ -2473,6 +2902,54 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Gizmo_DrawLine);
 
 		ADD_INTERNAL_CALL(Scene_LoadByID);
+
+		ADD_INTERNAL_CALL(ParticleSystem_Play);
+		ADD_INTERNAL_CALL(ParticleSystem_Stop);
+		ADD_INTERNAL_CALL(ParticleSystem_IsPlaying);
+
+		ADD_INTERNAL_CALL(ParticleSystem_GetEmitterIndex);
+		ADD_INTERNAL_CALL(ParticleSystem_SetEmitterState);
+		ADD_INTERNAL_CALL(ParticleSystem_GetEmitterState);
+		ADD_INTERNAL_CALL(ParticleSystem_SetEmitterName);
+		ADD_INTERNAL_CALL(ParticleSystem_GetEmitterName);
+		ADD_INTERNAL_CALL(ParticleSystem_SetEmitterSpawnRate);
+		ADD_INTERNAL_CALL(ParticleSystem_GetEmitterSpawnRate);
+		ADD_INTERNAL_CALL(ParticleSystem_SetEmitterMaxParticles);
+		ADD_INTERNAL_CALL(ParticleSystem_GetEmitterMaxParticles);
+		ADD_INTERNAL_CALL(ParticleSystem_SetEmitterPosition);
+		ADD_INTERNAL_CALL(ParticleSystem_GetEmitterPosition);
+		ADD_INTERNAL_CALL(ParticleSystem_SetEmitterPositionOffset);
+		ADD_INTERNAL_CALL(ParticleSystem_GetEmitterPositionOffset);
+		ADD_INTERNAL_CALL(ParticleSystem_SetEmitterFollowParent);
+		ADD_INTERNAL_CALL(ParticleSystem_GetEmitterFollowParent);
+		ADD_INTERNAL_CALL(ParticleSystem_SetEmitterLocalVelocity);
+		ADD_INTERNAL_CALL(ParticleSystem_GetEmitterLocalVelocity);
+		ADD_INTERNAL_CALL(ParticleSystem_SetEmitterRotation);
+		ADD_INTERNAL_CALL(ParticleSystem_GetEmitterRotation);		
+		ADD_INTERNAL_CALL(ParticleSystem_SetEmitterPropPosition);
+		ADD_INTERNAL_CALL(ParticleSystem_GetEmitterPropPosition);
+		ADD_INTERNAL_CALL(ParticleSystem_SetEmitterPropVelocity);
+		ADD_INTERNAL_CALL(ParticleSystem_GetEmitterPropVelocity);
+		ADD_INTERNAL_CALL(ParticleSystem_SetEmitterPropVelocityVariation);
+		ADD_INTERNAL_CALL(ParticleSystem_GetEmitterPropVelocityVariation);
+		ADD_INTERNAL_CALL(ParticleSystem_SetEmitterPropPositionVariation);
+		ADD_INTERNAL_CALL(ParticleSystem_GetEmitterPropPositionVariation);
+		ADD_INTERNAL_CALL(ParticleSystem_SetEmitterPropColorBegin);
+		ADD_INTERNAL_CALL(ParticleSystem_GetEmitterPropColorBegin);
+		ADD_INTERNAL_CALL(ParticleSystem_SetEmitterPropColorEnd);
+		ADD_INTERNAL_CALL(ParticleSystem_GetEmitterPropColorEnd);
+		ADD_INTERNAL_CALL(ParticleSystem_SetEmitterPropSizeBegin);
+		ADD_INTERNAL_CALL(ParticleSystem_GetEmitterPropSizeBegin);
+		ADD_INTERNAL_CALL(ParticleSystem_SetEmitterPropSizeEnd);
+		ADD_INTERNAL_CALL(ParticleSystem_GetEmitterPropSizeEnd);
+		ADD_INTERNAL_CALL(ParticleSystem_SetEmitterSizeVariation);
+		ADD_INTERNAL_CALL(ParticleSystem_GetEmitterSizeVariation);
+		ADD_INTERNAL_CALL(ParticleSystem_SetEmitterPropLifetime);
+		ADD_INTERNAL_CALL(ParticleSystem_GetEmitterPropLifetime);
+
+
+
+
 
 		ADD_INTERNAL_CALL(Image_GetTint);
 		ADD_INTERNAL_CALL(Image_SetTint);

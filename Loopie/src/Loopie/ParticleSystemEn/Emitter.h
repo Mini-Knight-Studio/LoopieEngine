@@ -38,17 +38,20 @@ namespace Loopie
 			vec3 m_positionOffSet;
 			bool m_active;
 			bool m_particleFollowEmitter;
+			bool m_localVelocity = false;
+			quaternion m_rotation;
+			std::shared_ptr<Texture> m_sprite = nullptr;
+
+
+			ParticleProps m_particleProperties;
+
 
 			std::vector<ParticleModule> m_particlePool;
 			unsigned int m_poolIndex;
 
-			ParticleProps m_particleProperties;
 			std::shared_ptr<Billboard> m_billboard;
 
-			std::shared_ptr<Texture> m_sprite = nullptr;
 
-			quaternion m_rotation;
-			bool m_localVelocity = false;
 
 		public:
 			
@@ -58,8 +61,8 @@ namespace Loopie
 			void OnRender(std::shared_ptr<VertexArray> quadVAO, std::shared_ptr<Material> material, Camera* cam);
 			void Emit(const ParticleProps& particleProps);
 			
-			std::string GetName()const;
-			void SetName(std::string n);
+			const std::string& GetName()const;
+			void SetName(const std::string& n);
 
 			unsigned int GetSpawnrate()const;
 			void SetSpawnRate(unsigned int spawnR);
@@ -95,7 +98,7 @@ namespace Loopie
 			std::shared_ptr<Texture> GetSprite() const;
 			void SetSprite(std::shared_ptr<Texture> sprite);
 
-			glm::quat GetEmitterRotation() const;
+			const quaternion& GetEmitterRotation() const;
 			void SetEmitterRotation(const quaternion &rot);
 
 			bool GetLocalVelocity() const;

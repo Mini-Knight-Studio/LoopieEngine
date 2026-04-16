@@ -28,7 +28,7 @@ namespace Loopie
             InternalCalls.Component_SetActive(entity.ID, ID, active);
         }
 
-        private bool IsActive()
+        public bool IsActive()
         {
             return InternalCalls.Component_IsActive(entity.ID, ID);
         }

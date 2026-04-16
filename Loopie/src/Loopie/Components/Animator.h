@@ -36,7 +36,7 @@ namespace Loopie {
 		void AddMeshRenderer(MeshRenderer* renderer);
 		void RemoveMeshRenderer(MeshRenderer* renderer);
 		void RemoveMeshRenderer(const UUID& uuid);
-		RendererData GetRendererData(const UUID& uuid);
+		RendererData* GetRendererData(const UUID& uuid);
 		void ClearRenderers();
 		MeshRenderer* GetFirstMeshRenderer() const;
 		void SetMeshRenderer(MeshRenderer* meshRenderer); // Replaces all with single
@@ -79,6 +79,7 @@ namespace Loopie {
 		void Stop();
 
 		void RefreshBoneCache();
+		void RefreshClipCache();
 
 		bool SelectClip(const std::string& clipName);
 
@@ -105,6 +106,10 @@ namespace Loopie {
 
 		std::vector<Entity*> m_boneEntityByIndex;
 		bool m_cacheDirty = true;
+		bool m_clipCacheDirty = true;
+
+		std::vector<const KeyFrame*> m_currentClipFrameCache;
+		std::vector<const KeyFrame*> m_nextClipFrameCache;
 
 
 		std::vector<matrix4> m_globalModelSpace;

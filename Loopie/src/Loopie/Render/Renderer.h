@@ -12,7 +12,7 @@
 
 #define MAX_LIGHTS 16 // Can be increased if necessary. Watch out that performance though!
 #define MAX_SHADOW_CASTING_LIGHTS 4 // Can be increased if necessary. Watch out that performance though!
-#define MAX_BONE_SHADER_BUFFERS 6
+#define MAX_BONES_TOTAL 10000 
 
 namespace Loopie {
 	class Transform;
@@ -70,28 +70,10 @@ namespace Loopie {
 			std::vector<matrix4> Bones;
 		};
 
-		struct RenderParticlesData
+		struct ParticleVertex
 		{
-			const unsigned int maxInstances = 1000;
-			unsigned int count = 0;
-			//VBOs
-
-			struct PosSizeData_
-			{
-				vec3 position;
-				float size;
-
-				PosSizeData_(vec3& pos_, float size_) : position(pos_), size(size_) {}
-
-			};
-			struct ColorData_
-			{
-				vec4 color;
-				ColorData_(vec4& col) : color(col) {}
-			};
-			std::vector<PosSizeData_> PosSizeData;
-			std::vector<ColorData_> ColorData;
-
+			matrix4 Transform;
+			vec4 Color;
 		};
 
 		struct ShadowSlot
@@ -106,8 +88,6 @@ namespace Loopie {
 			std::shared_ptr<ShaderStorageBuffer> Buffer;
 			bool Used;
 		};
-
-		static RenderParticlesData s_ParticlesData;
 
 		static void Init(void* context);
 		static void Shutdown();
@@ -169,10 +149,7 @@ namespace Loopie {
 		static void SetRenderUniforms(std::shared_ptr<Material> material, const matrix4& modelMatrix, const std::vector<matrix4>& bones = {});
 		static void FlushRenderQueue();
 
-		static std::shared_ptr<ShaderStorageBuffer>& GetBoneStorageBuffer();
-
-		static void AddParticleItem(vec3& position, float size, vec4& color);
-		static void FlushParticleItems(std::shared_ptr<Material> material);
+		static unsigned int UploadBones(const std::vector<matrix4>& bones);
 
 	public:
 	private:
@@ -182,8 +159,9 @@ namespace Loopie {
 		static std::shared_ptr<UniformBuffer> s_LightingUniformBuffer;
 		static std::shared_ptr<UniformBuffer> s_ShadowingUniformBuffer;
 
-		static std::array<ShaderBufferObject, MAX_BONE_SHADER_BUFFERS> s_BonesSSBOBuffers;
-		static int s_CurrentBoneSSBOIndex;
+		static std::shared_ptr<ShaderStorageBuffer> s_BonesSSBO;
+		static unsigned int s_BoneBufferOffset;
+		static unsigned int s_BoneBufferCapacity;
 
 		static std::shared_ptr<VertexBuffer> s_BillboardVBO;
 		static std::shared_ptr<VertexBuffer> s_PosSizeVBO;

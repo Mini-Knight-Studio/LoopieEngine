@@ -81,7 +81,7 @@ namespace Loopie
 		if (!m_emittersArray.empty())
 		{
 			
-			for (const auto emitter : m_emittersArray)
+			for (const auto& emitter : m_emittersArray)
 			{
 				if (emitter)
 				{
@@ -105,7 +105,7 @@ namespace Loopie
 		}
 
 		
-		for (const auto emitter : m_emittersArray)
+		for (const auto& emitter : m_emittersArray)
 		{
 			if (emitter)
 			{
@@ -116,7 +116,7 @@ namespace Loopie
 	int ParticleSystem::GetActiveParticles() const 
 	{
 		int total = 0;
-		for (const auto emitter : m_emittersArray)
+		for (const auto& emitter : m_emittersArray)
 		{
 			if (emitter)
 			{
@@ -129,6 +129,32 @@ namespace Loopie
 	{
 		return m_emittersArray;
 	}
+	std::shared_ptr<Emitter> ParticleSystem::GetEmitterByName(const std::string& emitterName) const
+	{
+		for (const auto& emitter : m_emittersArray)
+		{
+			if (emitter->GetName() == emitterName)
+			{
+				return emitter;
+			}
+		}
+		return nullptr;
+	}
+
+	int ParticleSystem::GetEmitterIndexByName(const std::string& emitterName) const
+	{
+		int index = 0;
+		for (const auto& emitter : m_emittersArray)
+		{
+			if (emitter->GetName() == emitterName)
+			{
+				return index;
+			}
+			index += 1;
+		}
+		return -1;
+	}
+
 	void ParticleSystem::AddElemToEmitterArray(const std::shared_ptr<Emitter>& em)
 	{
 		m_emittersArray.push_back(em);

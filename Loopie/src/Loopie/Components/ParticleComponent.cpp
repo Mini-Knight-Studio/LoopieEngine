@@ -28,25 +28,34 @@ namespace Loopie
 	{
 		GetTransform()->m_transformNotifier.AddObserver(this);
 	}
-	void ParticleComponent::OnUpdate() 
-	{
-		vec3 pos = GetTransform()->GetPosition();
-		quaternion rot = GetTransform()->GetRotation();
-		vec3 localPos = GetTransform()->GetLocalPosition();
 
-		const std::vector<std::shared_ptr<Emitter>>& emitters = GetEmittersVector();
-		for (size_t i = 0; i < emitters.size(); i++)
-		{
-			if (GetEmittersVector()[i]->GetParticlesFollowEmitter())
-			{
-				vec3 rotatedOffset = rot * GetEmittersVector()[i]->GetPositionOffSet();
-				GetEmittersVector()[i]->SetPosition(pos + rotatedOffset);
+	void ParticleComponent::Play()
+	{
+		m_playing = true;
+	}
+
+	void ParticleComponent::Stop()
+	{
+		m_playing = false;
+	}	
+
+	void ParticleComponent::OnUpdate() {
+		if (!m_playing)
+			return;
+
+		Transform* transform = GetTransform();
+		vec3 pos = transform->GetPosition();
+		quaternion rot = transform->GetRotation();
+
+		const auto& emitters = m_partSystem.GetEmitterArray();
+		for (auto& emitter : emitters) {
+			if (emitter->GetParticlesFollowEmitter()) {
+				vec3 rotatedOffset = rot * emitter->GetPositionOffSet();
+				emitter->SetPosition(pos + rotatedOffset);
 			}
-			GetEmittersVector()[i]->SetEmitterRotation(rot);
+			emitter->SetEmitterRotation(rot);
 		}
-		
-		float dt = (float)Time::GetDeltaTime();
-		m_partSystem.OnUpdate(dt);
+		m_partSystem.OnUpdate((float)Time::GetDeltaTime());
 	}
 
 	void ParticleComponent::Render(Camera* cam)
@@ -68,6 +77,7 @@ namespace Loopie
 		JsonNode particleObj = parent.CreateObjectField("particlecomponent");
 
 		particleObj.CreateField("emitterscount", m_partSystem.GetEmitterArray().size());
+		particleObj.CreateField("playing", IsPlaying());
 		for (size_t i = 0; i < m_partSystem.GetEmitterArray().size(); i++)
 		{
 			JsonNode emitterNode = particleObj.CreateObjectField(std::to_string(i));
@@ -147,6 +157,9 @@ namespace Loopie
 	{
 
 		int emmittersCount = data.GetValue<int>("emitterscount", 0).Result;
+		m_playing = data.GetValue<bool>("playing", true).Result;
+
+
 		for (size_t i = 0; i < emmittersCount; i++)
 		{
 			m_partSystem.AddElemToEmitterArray(std::make_shared<Emitter>(1000, CAMERA_FACING, GetTransform()->GetPosition(), 100));
@@ -312,6 +325,16 @@ namespace Loopie
 	{
 		return m_partSystem.GetEmitterArray();
 	}
+	std::shared_ptr<Emitter> ParticleComponent::GetEmitterByName(const std::string& emitterName)
+	{
+		return m_partSystem.GetEmitterByName(emitterName);
+	}
+
+	int ParticleComponent::GetEmitterIndexByName(const std::string& emitterName)
+	{
+		return m_partSystem.GetEmitterIndexByName(emitterName);
+	}
+
 	void ParticleComponent::AddElemToEmitterVector(const std::shared_ptr<Emitter>& emitter)
 	{
 		m_partSystem.AddElemToEmitterArray(emitter);
