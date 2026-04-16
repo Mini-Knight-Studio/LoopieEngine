@@ -92,6 +92,7 @@ namespace Loopie {
 		const std::string& GetFilePath() const;
 		const std::vector<Uniform>& GetUniforms() const;
 		const std::vector<SamplerSlot>& GetSamplers() const { return m_samplers; }
+		std::shared_ptr<ShaderAsset> GetShaderAsset() const { return m_shaderAsset; }
 
 		// Setters
 		void SetPath(const std::string& path);

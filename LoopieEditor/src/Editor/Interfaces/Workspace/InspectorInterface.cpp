@@ -2910,10 +2910,44 @@ namespace Loopie {
 		if (!isEditable)
 			materialName += " (Read-Only -> EngineDefault)";
 		//ImGui::Text(materialName.c_str());
+
+
+
 		
 		const std::unordered_map<std::string, UniformValue> properties = material->GetUniforms();
 
 		auto& textures = material->GetTextures();
+
+		if (!isEditable)
+			ImGui::BeginDisabled();
+
+
+		ImGui::Button("[ Drop Shader Here ]", ImVec2(ImGui::GetContentRegionAvail().x, 30));
+
+		std::shared_ptr<ShaderAsset> shaderAsset = material->GetShader().GetShaderAsset();
+		if (ImGui::BeginPopupContextItem())
+		{
+			if (ImGui::MenuItem("Paste"))
+			{
+				std::shared_ptr<Resource> resource = GetPastedResource(ResourceType::SHADER);
+				if (resource) {
+					std::shared_ptr<ShaderAsset> shaderCopyAsset = std::static_pointer_cast<ShaderAsset>(resource);
+					material->SetShader(Shader(shaderCopyAsset));
+				}
+			}
+			ImGui::EndPopup();
+		}
+
+		std::shared_ptr<Resource> resource = GetDragDropResource(ResourceType::SHADER);
+		if (resource) {
+			std::shared_ptr<ShaderAsset> shaderDragAsset = std::static_pointer_cast<ShaderAsset>(resource);
+			material->SetShader(Shader(shaderDragAsset));
+		}
+
+		std::filesystem::path shaderPath = shaderAsset ? shaderAsset->GetShaderFilePath() : material->GetShader().GetFilePath();
+		ImGui::Text("Shader: %s", shaderPath.filename().string().c_str());
+
+		ImGui::Separator();
 
 		for (auto& [slotName, texture] : textures)
 		{
@@ -2935,8 +2969,6 @@ namespace Loopie {
 		}
 
 
-		if (!isEditable)
-			ImGui::BeginDisabled();
 
 		for (auto& [name, uniform] : properties)
 		{
