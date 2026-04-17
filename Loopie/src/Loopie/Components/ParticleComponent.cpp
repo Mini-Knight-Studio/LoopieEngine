@@ -287,6 +287,8 @@ namespace Loopie
 		m_partSystem = otherParticle.m_partSystem;
 		m_partSystem.ClearEmitterArray();
 
+		m_playing = otherParticle.IsPlaying();
+
 		const auto& otherEmitters = otherParticle.m_partSystem.GetEmitterArray();
 
 		for (const auto& otherEmitter : otherEmitters)

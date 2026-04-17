@@ -508,7 +508,7 @@ namespace Loopie {
 			if (renderEntity == entity)
 				similEntity = GetOwner();
 			else
-				similEntity = GetOwner()->GetChild(renderEntity->GetName());
+				similEntity = GetOwner()->GetChild(renderEntity->GetName(),true);
 
 			if(similEntity == nullptr)
 				continue;
@@ -533,7 +533,7 @@ namespace Loopie {
 			if (renderEntity == entity)
 				similEntity = GetOwner();
 			else
-				similEntity = GetOwner()->GetChild(renderEntity->GetName());
+				similEntity = GetOwner()->GetChild(renderEntity->GetName(),true);
 
 			if (similEntity != nullptr)
 			{
