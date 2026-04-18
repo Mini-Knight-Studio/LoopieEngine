@@ -189,7 +189,6 @@ namespace Loopie
 			m_velocityOffset = vec3(0.0f);
 			m_followEmitter = false;
 			m_localOffset = vec3(0.0f);
-			m_sprite = nullptr;
 		}
 	}
 	vec3 ParticleModule::GetLocalOffset() const 

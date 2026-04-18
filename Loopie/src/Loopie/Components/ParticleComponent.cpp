@@ -47,7 +47,7 @@ namespace Loopie
 
 		const auto& emitters = m_partSystem.GetEmitterArray();
 		for (auto& emitter : emitters) {
-			if (emitter->GetIsFollowingOwner()) {
+			if (emitter->GetParticlesFollowEmitter()) {
 				vec3 rotatedOffset = rot * emitter->GetPositionOffSet();
 				emitter->SetPosition(pos + rotatedOffset);
 			}
@@ -87,7 +87,6 @@ namespace Loopie
 			emitterNode.CreateField("poolindex", m_partSystem.GetEmitterArray()[i]->GetPoolIndex());
 			emitterNode.CreateField("particlefollowemitter", m_partSystem.GetEmitterArray()[i]->GetParticlesFollowEmitter());
 			emitterNode.CreateField("localvelocity", m_partSystem.GetEmitterArray()[i]->GetLocalVelocity());
-			emitterNode.CreateField("followowner", m_partSystem.GetEmitterArray()[i]->GetIsFollowingOwner());
 			if(m_partSystem.GetEmitterArray()[i]->GetSprite())
 				emitterNode.CreateField("sprite_uuid", m_partSystem.GetEmitterArray()[i]->GetSprite()->GetUUID().Get());
 
@@ -174,7 +173,6 @@ namespace Loopie
 				m_partSystem.GetEmitterArray()[i]->SetPoolIndex(node.GetValue<unsigned int>("poolindex").Result);
 				m_partSystem.GetEmitterArray()[i]->SetParticlesFollowEmitter(node.GetValue<bool>("particlefollowemitter", false).Result);
 				m_partSystem.GetEmitterArray()[i]->SetLocalVelocity(node.GetValue<bool>("localvelocity", false).Result);
-				m_partSystem.GetEmitterArray()[i]->SetFollowingOwner(node.GetValue<bool>("followowner", true).Result);
 
 				JsonNode positionNode = node.Child("position");
 				if (positionNode.IsValid() && positionNode.IsObject())

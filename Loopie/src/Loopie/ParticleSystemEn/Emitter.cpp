@@ -27,7 +27,6 @@ namespace Loopie
 		m_rotation = quaternion(1, 0, 0, 0);
 		m_localVelocity = true;
 		m_poolIndex = 0;
-		m_followOwner = true;
 
 		m_name = "DefaultParticle";
 		m_particleProperties.Velocity = vec3(0, 0, 0);
@@ -275,7 +274,4 @@ namespace Loopie
 
 	bool Emitter::GetLocalVelocity() const { return m_localVelocity; }
 	void Emitter::SetLocalVelocity(bool local) { m_localVelocity = local; }
-
-	bool Emitter::GetIsFollowingOwner() const { return m_followOwner; }
-	void Emitter::SetFollowingOwner(bool follow) { m_followOwner = follow; }
 }
