@@ -1120,6 +1120,16 @@ namespace Loopie
 			animator->Stop(resetTime != 0);
 	}
 
+	static void SpriteAnimator_SetCurrentFrame(MonoString* entityID, MonoString* componentID, int frameIndex)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		SpriteAnimator* animator = Utils::GetComponent<SpriteAnimator>(entity, componentID);
+		if (animator)
+			animator->SetCurrentFrame(frameIndex);
+	}
+
 	static int SpriteAnimator_GetCurrentFrame(MonoString* entityID, MonoString* componentID)
 	{
 		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
@@ -2817,6 +2827,7 @@ namespace Loopie
 		ADD_INTERNAL_CALL(SpriteAnimator_Play);
 		ADD_INTERNAL_CALL(SpriteAnimator_Stop);
 		ADD_INTERNAL_CALL(SpriteAnimator_GetCurrentFrame);
+		ADD_INTERNAL_CALL(SpriteAnimator_SetCurrentFrame);
 
 		ADD_INTERNAL_CALL(Camera_SetFov);
 		ADD_INTERNAL_CALL(Camera_GetFov);

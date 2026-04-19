@@ -152,6 +152,32 @@ namespace Loopie
 		return start + std::min(localFrame, count - 1);
 	}
 
+	void SpriteAnimator::SetCurrentFrame(int frameIndex)
+	{
+		const int cols = std::max(1, m_grid.x);
+		const int rows = std::max(1, m_grid.y);
+		const int totalFrames = cols * rows;
+		if (totalFrames <= 0)
+			return;
+
+		const int start = std::clamp(m_startFrame, 0, std::max(0, totalFrames - 1));
+		const int count = std::clamp(m_frameCount, 1, std::max(1, totalFrames - start));
+		const int endInclusive = start + count - 1;
+
+		frameIndex = std::clamp(frameIndex, start, endInclusive);
+		ApplyFrame(frameIndex);
+
+		const float fps = std::max(0.0f, m_fps);
+		if (fps <= 0.0f)
+		{
+			m_time = 0.0;
+			return;
+		}
+
+		const int localFrame = frameIndex - start;
+		m_time = (double)localFrame / (double)fps;
+	}
+
 	vec4 SpriteAnimator::ComputeUVRect(int frameIndex) const
 	{
 		const int cols = std::max(1, m_grid.x);

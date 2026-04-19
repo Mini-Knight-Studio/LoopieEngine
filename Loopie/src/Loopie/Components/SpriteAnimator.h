@@ -50,6 +50,7 @@ namespace Loopie
 		void SetPlaying(bool playing);
 
 		int GetCurrentFrame() const;
+		void SetCurrentFrame(int frameIndex);
 
 		void Play();
 		void Stop(bool resetTime = true);
