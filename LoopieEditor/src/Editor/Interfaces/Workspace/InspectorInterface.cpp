@@ -30,6 +30,7 @@
 #include "Loopie/Importers/MeshImporter.h"
 #include "Loopie/Importers/MaterialImporter.h"
 #include "Loopie/Importers/ShaderImporter.h"
+#include "Loopie/Render/Renderer.h"
 
 #include "Loopie/Collisions/CollisionProcessor.h"
 #include "Loopie/Audio/AudioManager.h"
@@ -370,26 +371,39 @@ namespace Loopie {
 		strncpy_s(nameBuffer, entity->GetName().c_str(), sizeof(nameBuffer) - 1);
 
 		bool isActive = entity->GetIsActiveInHierarchy();
-		if (ImGui::Checkbox("##", &isActive)) {
-			entity->SetIsActive(isActive);
+		if (ImGui::Checkbox("##", &isActive)) 
+		{
+			entity->SetIsActive(isActive);	
+			if (entity->GetIsStatic())
+			{
+				Application::GetInstance().GetScene().OnStaticGeometryChanged();
+			}
 		}
 
 		ImGui::SameLine();
-		
+
+		int width = ImGui::GetContentRegionAvail().x * 0.6f - 50;
+		if (width <= 0)
+			width = 50;
+		ImGui::SetNextItemWidth(width);
 		if (ImGui::InputText("Name", nameBuffer, sizeof(nameBuffer))) {
 			entity->SetName(std::string(nameBuffer));
 		}
-
 		ImGui::SameLine();
 
-		if (ImGui::Button("UUID"))
-		{
-			Application::GetInstance().m_clipboard.Copy(entity->GetUUID().Get());
+		bool isStatic = entity->GetIsStatic();
+		if (ImGui::Checkbox("Static", &isStatic)) {
+			entity->SetIsStatic(isStatic);
+			Application::GetInstance().GetScene().OnStaticGeometryChanged();
 		}
-		
+
 		ImGui::Separator();
-		
-		ImGui::TextDisabled("UUID: %s", entity->GetUUID().Get().c_str());
+
+		if (ImGui::Button("UUID"))
+			Application::GetInstance().m_clipboard.Copy(entity->GetUUID().Get());
+		ImGui::SameLine();
+		ImGui::TextDisabled("-> %s", entity->GetUUID().Get().c_str());
+		ImGui::SetItemTooltip(entity->GetUUID().Get().c_str());
 
 		ImGui::Separator();
 	}

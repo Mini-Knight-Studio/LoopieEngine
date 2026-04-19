@@ -16,6 +16,7 @@
 #include "Loopie/Helpers/LoopieHelpers.h"
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Components/BoxCollider.h"
+#include "Loopie/Render/Renderer.h"
 
 #include "Loopie/Scripting/ScriptingManager.h"
 #include "Loopie/Audio/AudioManager.h"
@@ -64,7 +65,7 @@ namespace Loopie {
 			entityObj.CreateField<std::string>("uuid", id.Get());
 			entityObj.CreateField<std::string>("name", entity->GetName());
 			entityObj.CreateField<bool>("active", entity->GetIsActiveInHierarchy());
-
+			entityObj.CreateField<bool>("static", entity->GetIsStaticInHierarchy());
 
 			if (std::shared_ptr<Entity> parentEntity = entity->GetParent().lock())
 				entityObj.CreateField<std::string>("parent_uuid", parentEntity->GetUUID().Get());
@@ -110,6 +111,7 @@ namespace Loopie {
 		m_entities[entity->GetUUID()] = entity;
 		m_octree->Insert(entity);
 
+		OnStaticGeometryChanged();
 		return entity;
 	}
 
@@ -130,6 +132,7 @@ namespace Loopie {
 		m_entities[entity->GetUUID()] = entity;
 		m_octree->Insert(entity);
 
+		//OnStaticGeometryChanged(); // Skipping so loading scenes is faster, doing it after all entities are created
 		return entity;
 	}
 
@@ -146,6 +149,7 @@ namespace Loopie {
 		m_entities[entity->GetUUID()] = entity;
 		m_octree->Insert(entity);
 
+		OnStaticGeometryChanged();
 		return entity;
 	}
 
@@ -169,6 +173,7 @@ namespace Loopie {
 		m_entities[entity->GetUUID()] = entity;
 		m_octree->Insert(entity);
 
+		OnStaticGeometryChanged();
 		return entity;
 	}
 
@@ -179,6 +184,7 @@ namespace Loopie {
 			return;
 
 		RemoveEntityRecursive(it->second);
+		OnStaticGeometryChanged();
 	}
 
 	void Scene::RemoveEntity(std::shared_ptr<Entity> entity)
@@ -187,6 +193,7 @@ namespace Loopie {
 			return;
 
 		RemoveEntityRecursive(entity);
+		OnStaticGeometryChanged();
 	}
 
 	void Scene::RemoveEntityDeferred(UUID uuid)
@@ -431,9 +438,25 @@ namespace Loopie {
 		return nullptr;
 	}
 
+	void Scene::OnStaticGeometryChanged()
+	{
+		UpdateEntitySpanningBounds();
+		Renderer::SetShadowsDirty();
+	}
+
 	LooseOctree& Scene::GetOctree() const
 	{
 		return *m_octree;
+	}
+
+	AABB Scene::GetEntitySpanningBounds() const
+	{
+		return m_entitySpanningBounds;
+	}
+
+	void Scene::UpdateEntitySpanningBounds()
+	{
+		m_entitySpanningBounds = m_octree->ComputeSceneAABB();
 	}
 
 	const std::unordered_map<UUID, std::shared_ptr<Entity>>& Scene::GetAllEntities() const
@@ -526,10 +549,12 @@ namespace Loopie {
 			UUID uuid = UUID(entityNode.GetValue<std::string>("uuid").Result);
 			std::string name = entityNode.GetValue<std::string>("name").Result;
 			bool active = entityNode.GetValue<bool>("active", false).Result;
+			bool isStatic = entityNode.GetValue<bool>("static", true).Result;
 
 			std::shared_ptr<Entity> entity = CreateEntity(uuid, name, nullptr);
 			entity->SetName(name);
 			entity->SetIsActive(active);		
+			entity->SetIsStatic(isStatic);
 		}
 
 		// Second iteration: Link relationships and components
@@ -776,6 +801,7 @@ namespace Loopie {
 		{
 			Application::GetInstance().m_notifier.Notify(EngineNotification::OnRuntimeStart);
 		}
+		
 
 		if (safeSceneAsLastLoaded) {
 			m_filePath = filePath;
@@ -792,6 +818,7 @@ namespace Loopie {
 				configData.ToFile(config.string());
 			}
 		}
+		OnStaticGeometryChanged();
 
 		return true;
 	}
@@ -837,6 +864,8 @@ namespace Loopie {
 					scripts[i]->InvokeOnCreate();
 				}
 			}
+
+			OnStaticGeometryChanged();
 		}
 		else if (id == EngineNotification::OnRuntimeStop)
 		{
@@ -924,5 +953,6 @@ namespace Loopie {
 
 		m_octree->Remove(entity);
 		m_entities.erase(entity->GetUUID());
+		OnStaticGeometryChanged();
 	}
 }

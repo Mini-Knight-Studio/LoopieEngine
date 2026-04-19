@@ -146,6 +146,8 @@ namespace Loopie {
 		const std::string& GetName() const;
 		bool GetIsActive() const;
 		bool GetIsActiveInHierarchy() const;
+		bool GetIsStatic() const;
+		bool GetIsStaticInHierarchy() const;
 		std::shared_ptr<Entity> GetChild(UUID uuid) const;
 		std::shared_ptr<Entity> GetChild(int index) const;
 		std::shared_ptr<Entity> GetChild(const std::string& name, bool deepSearch = false) const;
@@ -162,6 +164,7 @@ namespace Loopie {
 		void SetUUID(UUID uuid);
 		void SetName(const std::string& name);
 		void SetIsActive(bool active);
+		void SetIsStatic(bool active);
 		// If a parent is set up, then it means this is its child and will update it accordingly
 		void SetParent(const std::shared_ptr<Entity>& parent, bool keepLocal = true);
 	private:
@@ -177,5 +180,6 @@ namespace Loopie {
 		UUID m_uuid;
 		std::string m_name;
 		bool m_isActive = true;
+		bool m_isStatic = true;
 	};
 }

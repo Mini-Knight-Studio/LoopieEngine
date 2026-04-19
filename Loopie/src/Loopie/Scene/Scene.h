@@ -50,6 +50,10 @@ namespace Loopie {
 		std::shared_ptr<Entity> GetEntity(UUID uuid) const;
 		std::shared_ptr<Entity> GetEntity(const std::string& name) const;
 		LooseOctree& GetOctree() const;
+
+		void OnStaticGeometryChanged();
+		AABB GetEntitySpanningBounds() const;
+		void UpdateEntitySpanningBounds();
 		// Returns the unordered_map of the UUID and Entity ptrs
 		// Usage: for (const auto& [uuid, entity] : scene.GetAllEntities()) {entity->Update();}
 		const std::unordered_map<UUID, std::shared_ptr<Entity>>& GetAllEntities() const;
@@ -79,7 +83,7 @@ namespace Loopie {
 		std::shared_ptr<Entity> m_rootEntity; // Hierarchy based
 		std::string m_filePath;
 		const AABB DEFAULT_WORLD_BOUNDS = AABB(vec3(-500, -450, -500), vec3(500, 550, 500));
-
+		AABB m_entitySpanningBounds = AABB(); // The AABB that makes the whole scene in particular
 
 
 		bool m_loadRequest = false;
