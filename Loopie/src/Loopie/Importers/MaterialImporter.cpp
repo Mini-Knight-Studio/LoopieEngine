@@ -141,7 +141,7 @@ namespace Loopie {
 			if (meta)
 			{
 				auto shader = ResourceManager::GetShaderAsset(*meta);
-				material.GetShader().Reload(shader);
+				material.GetShader().Reload(shader);			
 			}
 		}
 
@@ -241,6 +241,9 @@ namespace Loopie {
 		Shader& shader = material.GetShader();
 		if(material.GetShader().GetShaderAsset())
 			jsonData.CreateField("shader", material.GetShader().GetShaderAsset()->GetUUID().Get());
+		else
+			jsonData.CreateField("shader", "");
+
 
 		jsonData.CreateField("hasTransparency", material.GetHasTransparency());
 		JsonNode texturesNode = jsonData.CreateObjectField("textures");
