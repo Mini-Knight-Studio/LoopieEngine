@@ -112,14 +112,40 @@ layout (std140, binding = 3) uniform Shadows
     mat4 lp_LightSpaceMatrix[4];
 };
 
+layout (std140, binding = 4) uniform StaticShadows
+{
+    mat4 lp_StaticLightSpaceMatrix[4];
+};
+
 uniform sampler2D u_Albedo;
 uniform sampler2D u_Specular;
 uniform sampler2D u_Normal;
 uniform sampler2D lp_ShadowMaps[4];
+uniform sampler2D lp_StaticShadowMaps[4];
 uniform sampler2D u_Emissive;
 uniform float u_Roughness = 32.0; // highlight, smaller value = broader spotlight (feels more shiny)
 uniform float u_EmissiveIntensity = 0.0;
 uniform vec4 u_Color = vec4(1.0);
+
+float SampleShadowMap(sampler2D smap, mat4 lightMatrix, vec3 worldPos, vec3 normal, vec3 lightDir, float biasScale)
+{
+    float slopeScale = 1.0 - dot(normal, lightDir);
+    vec3 offsetPos = worldPos + normal * slopeScale * 0.05;
+
+    float shadow = 0.0;
+    vec4 fragPos = lightMatrix * vec4(offsetPos, 1.0);
+    vec3 coords = fragPos.xyz / fragPos.w * 0.5 + 0.5;
+    vec2 texelSize = 1.0 / vec2(textureSize(smap, 0));
+    float bias = max(0.005 * biasScale * (1.0 - dot(normal, lightDir)), 0.0005 * biasScale);
+
+    for (int x = -1; x <= 1; ++x)
+        for (int y = -1; y <= 1; ++y)
+        {
+            float d = texture(smap, coords.xy + vec2(x,y) * texelSize).r;
+            shadow += (coords.z - bias) > d ? 0.0 : 1.0;
+        }
+    return shadow / 9.0;
+}
 
 void main()
 {
@@ -160,30 +186,15 @@ void main()
 
             
             // Shadows
-            float shadow = 1.0;
+            float dynamicShadow = 1.0;
+            float staticShadow = 1.0;
             int shadowIndex = int(lp_lights[i].l_SMapAndSColor.x);
             if (shadowIndex >= 0)
             {
-                shadow = 0.0;
-                vec4 fragPosLightSpace =  lp_LightSpaceMatrix[shadowIndex] * vec4(v_WorldPos, 1.0);
-                vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-                projCoords = projCoords * 0.5 + 0.5;
-
-                vec2 texelSize = 1.0 / vec2(textureSize(lp_ShadowMaps[shadowIndex], 0));
-                float bias = max(0.005 * (1.0 - dot(normal, lightDir)), 0.0005);
-                float currentDepth = projCoords.z;
-
-                for (int x=-1; x<=1; ++x)
-                {
-                    for (int y=-1; y<=1; ++y)
-                    {
-                        vec2 offset = vec2(x, y) * texelSize;
-                        float closestDepth = texture(lp_ShadowMaps[shadowIndex], projCoords.xy + offset).r;
-                        shadow += (currentDepth - bias) > closestDepth ? 0.0 : 1.0;
-                    }
-                }
-                shadow /= 9.0;
+                dynamicShadow = SampleShadowMap(lp_ShadowMaps[shadowIndex], lp_LightSpaceMatrix[shadowIndex], v_WorldPos, normal, lightDir, 1.0);
+                staticShadow = SampleShadowMap(lp_StaticShadowMaps[shadowIndex], lp_StaticLightSpaceMatrix[shadowIndex], v_WorldPos, normal, lightDir, 3.0);
             }
+            float shadow = dynamicShadow * staticShadow;
 
             result += (diffuse + specular) * mix(lp_lights[i].l_SMapAndSColor.yzw, vec3(1.0), shadow);
         }
@@ -213,30 +224,15 @@ void main()
             float spotlightAttenuation = smoothstep(outerAngleCone, innerAngleCone, angle);
 
             // Shadows
-            float shadow = 1.0;
+            float dynamicShadow = 1.0;
+            float staticShadow = 1.0;
             int shadowIndex = int(lp_lights[i].l_SMapAndSColor.x);
             if (shadowIndex >= 0)
             {
-                shadow = 0.0;
-                vec4 fragPosLightSpace = lp_LightSpaceMatrix[shadowIndex] * vec4(v_WorldPos, 1.0);
-                vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-                projCoords = projCoords * 0.5 + 0.5;
-
-                vec2 texelSize = 1.0 / vec2(textureSize(lp_ShadowMaps[shadowIndex], 0));
-                float bias = max(0.005 * (1.0 - dot(normal, lightDir)), 0.0005);
-                float currentDepth = projCoords.z;
-
-                for (int x=-1; x<=1; ++x)
-                {
-                    for (int y=-1; y<=1; ++y)
-                    {
-                        vec2 offset = vec2(x, y) * texelSize;
-                        float closestDepth = texture(lp_ShadowMaps[shadowIndex], projCoords.xy + offset).r;
-                        shadow += (currentDepth - bias) > closestDepth ? 0.0 : 1.0;
-                    }
-                }
-                shadow /= 9.0;
+               dynamicShadow = SampleShadowMap(lp_ShadowMaps[shadowIndex], lp_LightSpaceMatrix[shadowIndex], v_WorldPos, normal, lightDir, 1.0);
+               staticShadow = SampleShadowMap(lp_StaticShadowMaps[shadowIndex], lp_StaticLightSpaceMatrix[shadowIndex], v_WorldPos, normal, lightDir, 3.0);
             }
+            float shadow = dynamicShadow * staticShadow;
 
             result += ((diffuse + specular) * attenuation * spotlightAttenuation) * mix(lp_lights[i].l_SMapAndSColor.yzw, vec3(1.0), shadow);
 

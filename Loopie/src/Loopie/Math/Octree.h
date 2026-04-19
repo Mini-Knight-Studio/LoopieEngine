@@ -45,6 +45,9 @@ namespace Loopie
 
         void CollectIntersectingObjectsWithRay(const vec3& origin, const vec3& dir, std::unordered_set<Entity*>& result);
 
+        AABB ComputeSceneAABB() const;
+        void ComputeSceneAABBRecursive(LooseOctreeNode* node, AABB& result) const;
+
         void Clear();
 
         void SetShouldDraw(bool v) { m_shouldDraw = v; }

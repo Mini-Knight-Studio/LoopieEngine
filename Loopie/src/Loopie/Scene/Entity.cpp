@@ -98,6 +98,22 @@ namespace Loopie {
 		return m_isActive;
 	}
 
+	bool Entity::GetIsStatic() const
+	{
+		std::shared_ptr<Entity> parent = GetParent().lock();
+
+		if (parent) {
+			return m_isStatic && parent->GetIsStatic();
+		}
+
+		return m_isStatic;
+	}
+
+	bool Entity::GetIsStaticInHierarchy() const
+	{
+		return m_isStatic;
+	}
+
 	std::shared_ptr<Entity> Entity::GetChild(UUID uuid) const
 	{
 		for (const auto& child : m_childrenEntities)
@@ -204,6 +220,11 @@ namespace Loopie {
 	void Entity::SetIsActive(bool active)
 	{
 		m_isActive = active;
+	}
+
+	void Entity::SetIsStatic(bool active)
+	{
+		m_isStatic = active;
 	}
 
 	void Entity::SetParent(const std::shared_ptr<Entity>& parent, bool keepLocal)

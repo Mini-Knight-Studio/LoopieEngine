@@ -183,6 +183,34 @@ namespace Loopie
         RayQuery(m_root.get(), origin, dir, out);
     }
 
+    AABB LooseOctree::ComputeSceneAABB() const
+    {
+        AABB result;
+        ComputeSceneAABBRecursive(m_root.get(), result);
+        return result;
+    }
+
+    void LooseOctree::ComputeSceneAABBRecursive(LooseOctreeNode* node, AABB& result) const
+    {
+        if (!node) return;
+
+        for (auto& e : node->entities)
+        {
+            if (auto mesh = e->GetComponent<MeshRenderer>())
+            {
+                result.Enclose(mesh->GetWorldAABB());
+            }
+        }
+
+        if (!node->isLeaf)
+        {
+            for (auto& c : node->children)
+            {
+                if (c) ComputeSceneAABBRecursive(c.get(), result);
+            }
+        }
+    }
+
     void LooseOctree::RayQuery(LooseOctreeNode* node, const vec3& origin, const vec3& dir, std::unordered_set<Entity*>& out)
     {
         if (!node)

@@ -14,6 +14,12 @@
 #define MAX_SHADOW_CASTING_LIGHTS 4 // Can be increased if necessary. Watch out that performance though!
 #define MAX_BONES_TOTAL 10000 
 
+//#define STATIC_SHADOW_TEXTURE_DEFINITION 8192
+#define STATIC_SHADOW_TEXTURE_DEFINITION 4096
+
+#define DYNAMIC_SHADOW_TEXTURE_INDEX 8 
+#define STATIC_SHADOW_TEXTURE_INDEX 13
+
 namespace Loopie {
 	class Transform;
 	class ShadowMap;
@@ -78,10 +84,13 @@ namespace Loopie {
 
 		struct ShadowSlot
 		{
-			std::shared_ptr<ShadowMap> map = nullptr;
-			matrix4 lightSpaceMatrix = matrix4(1.0f);
+			std::shared_ptr<ShadowMap> dynamicMap = nullptr;
+			std::shared_ptr<ShadowMap> staticMap = nullptr;
+			matrix4 dynamicLightSpaceMatrix = matrix4(1.0f);
+			matrix4 staticLightSpaceMatrix = matrix4(1.0f);
 			short lightIndex = -1;        // dense active index, matches UBO position
 			short rawLightIndex = -1;     // index into s_Lights[], for accessing the Light object
+			bool isDirty = true;
 		};
 
 		struct ShaderBufferObject {
@@ -104,12 +113,19 @@ namespace Loopie {
 
 		// static std::shared_ptr<ShadowMap> GetShadowMap() { return s_ShadowMap; }; // Could be implemented for debugging
 		static void InitShadowMapping();
-		static void AssignShadowSlots(const vec3& sceneCenter);
-		static bool BeginShadowPass(int shadowSlotIndex);
+		static void AssignShadowSlots(const matrix4& cameraViewProj, const Loopie::CameraProjection& camProj, const AABB& sceneAABB);
+		static void SetShadowsDirty();
+		static bool BeginDynamicShadowPass(int shadowSlotIndex);
+		static bool BeginStaticShadowPass(int shadowSlotIndex);
 		static void FlushShadowItem(std::shared_ptr<VertexArray> vao, const Transform* transform, const std::vector<matrix4>& bones = {});
-		static void EndShadowPass(int shadowSlotIndex);
-		static void BindShadowTexturesForMainPass();
+		static void EndDynamicShadowPass(int shadowSlotIndex);
+		static void EndStaticShadowPass(int shadowSlotIndex);
+		static void BindDynamicShadowTexturesForMainPass();
+		static void BindStaticShadowTexturesForMainPass();
 		static int GetShadowCastingLightCount();
+		static matrix4 GetShadowSlotMatrix(unsigned int slotIndex);
+		static matrix4 ComputeDirectionalLightMatrix(const matrix4& cameraViewProj, const vec3& lightDir, const Loopie::CameraProjection& camProj);
+		static matrix4 ComputeDirectionalLightMatrixFromAABB(const AABB& sceneBounds, const vec3& lightDir);
 
 		// For water foam usage
 		static void SetSceneDepthTexture(unsigned int textureID) { s_SceneDepthTextureID = textureID; };
@@ -161,6 +177,7 @@ namespace Loopie {
 		static std::shared_ptr<UniformBuffer> s_MatricesUniformBuffer;
 		static std::shared_ptr<UniformBuffer> s_LightingUniformBuffer;
 		static std::shared_ptr<UniformBuffer> s_ShadowingUniformBuffer;
+		static std::shared_ptr<UniformBuffer> s_StaticMatricesUniformBuffer;
 
 		static std::shared_ptr<ShaderStorageBuffer> s_BonesSSBO;
 		static unsigned int s_BoneBufferOffset;
