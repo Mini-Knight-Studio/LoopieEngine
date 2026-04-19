@@ -1235,6 +1235,12 @@ namespace Loopie {
 			emitter->SetParticlesFollowEmitter(!particlesFollow);
 		}
 
+		bool followOwner = emitter->GetIsFollowingOwner();
+		if (ImGui::Button(followOwner ? "Follow Owner: ON" : "Follow Owner: OFF"))
+		{
+			emitter->SetFollowingOwner(!followOwner);
+		}
+
 		bool localVelocity = emitter->GetLocalVelocity();
 		if (ImGui::Button(localVelocity ? "Local Velocity: ON" : "Local Velocity: OFF"))
 		{

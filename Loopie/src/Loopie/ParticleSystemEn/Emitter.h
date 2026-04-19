@@ -40,8 +40,8 @@ namespace Loopie
 			bool m_particleFollowEmitter;
 			bool m_localVelocity = false;
 			quaternion m_rotation;
+			bool m_followOwner = true;
 			std::shared_ptr<Texture> m_sprite = nullptr;
-
 
 			ParticleProps m_particleProperties;
 
@@ -103,6 +103,9 @@ namespace Loopie
 
 			bool GetLocalVelocity() const;
 			void SetLocalVelocity(bool local);
+
+			bool GetIsFollowingOwner() const;
+			void SetFollowingOwner(bool follow);
 
 	};
 }
