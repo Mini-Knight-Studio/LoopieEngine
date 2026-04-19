@@ -10,6 +10,18 @@ namespace Loopie
             TextureSwap = 1
         }
 
+        public int SortingLayer
+        {
+            get => InternalCalls.UIElement_GetSortingLayer(entity.ID, ID);
+            set => InternalCalls.UIElement_SetSortingLayer(entity.ID, ID, value);
+        }
+
+        public int OrderInLayer
+        {
+            get => InternalCalls.UIElement_GetOrderInLayer(entity.ID, ID);
+            set => InternalCalls.UIElement_SetOrderInLayer(entity.ID, ID, value);
+        }
+
         public bool Interactable
         {
             get => InternalCalls.Button_IsInteractable(entity.ID, ID);

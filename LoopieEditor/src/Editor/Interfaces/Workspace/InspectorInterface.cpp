@@ -1519,6 +1519,14 @@ namespace Loopie {
 		}
 
 		if (open) {
+			ImGui::SeparatorText("Draw Order");
+			int sortingLayer = canvas->GetSortingLayer();
+			if (ImGui::DragInt("Sorting Layer", &sortingLayer, 1.0f))
+				canvas->SetSortingLayer(sortingLayer);
+			int orderInLayer = canvas->GetOrderInLayer();
+			if (ImGui::DragInt("Order In Layer", &orderInLayer, 1.0f))
+				canvas->SetOrderInLayer(orderInLayer);
+
 			CanvasRenderMode renderMode = canvas->GetRenderMode();
 			int modeIndex = (int)renderMode;
 			const char* modeLabels[] = { "World", "Overlay" };
@@ -1609,6 +1617,14 @@ namespace Loopie {
 
 		if (open)
 		{
+			ImGui::SeparatorText("Draw Order");
+			int sortingLayer = image->GetSortingLayer();
+			if (ImGui::DragInt("Sorting Layer", &sortingLayer, 1.0f))
+				image->SetSortingLayer(sortingLayer);
+			int orderInLayer = image->GetOrderInLayer();
+			if (ImGui::DragInt("Order In Layer", &orderInLayer, 1.0f))
+				image->SetOrderInLayer(orderInLayer);
+
 			vec4 color = image->GetTint();
 			ImVec4 imColor(color.r, color.g, color.b, color.a);
 
@@ -1812,6 +1828,14 @@ namespace Loopie {
 
 		if (open)
 		{
+			ImGui::SeparatorText("Draw Order");
+			int sortingLayer = text->GetSortingLayer();
+			if (ImGui::DragInt("Sorting Layer", &sortingLayer, 1.0f))
+				text->SetSortingLayer(sortingLayer);
+			int orderInLayer = text->GetOrderInLayer();
+			if (ImGui::DragInt("Order In Layer", &orderInLayer, 1.0f))
+				text->SetOrderInLayer(orderInLayer);
+
 			std::string value = text->GetText();
 			char buffer[512];
 			memset(buffer, 0, sizeof(buffer));
@@ -1948,6 +1972,14 @@ namespace Loopie {
 		}
 
 		if (open) {
+			ImGui::SeparatorText("Draw Order");
+			int sortingLayer = button->GetSortingLayer();
+			if (ImGui::DragInt("Sorting Layer", &sortingLayer, 1.0f))
+				button->SetSortingLayer(sortingLayer);
+			int orderInLayer = button->GetOrderInLayer();
+			if (ImGui::DragInt("Order In Layer", &orderInLayer, 1.0f))
+				button->SetOrderInLayer(orderInLayer);
+
 			bool interactable = button->IsInteractable();
 			if (ImGui::Checkbox("Interactable", &interactable))
 				button->SetInteractable(interactable);

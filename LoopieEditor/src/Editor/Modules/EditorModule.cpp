@@ -49,10 +49,203 @@
 
 
 #include <memory>
+#include <algorithm>
+#include <cstdint>
+#include <vector>
 #include <glad/glad.h>
 
 namespace Loopie
 {
+	void EditorModule::CollectOverlayUIJobsRecursive(const std::shared_ptr<Entity>& entity, const vec2& overlayScale,
+		int canvasSortingLayer, int canvasOrderInLayer,
+		std::vector<UIJob>& outJobs, uint64_t& inOutTraversal)
+	{
+		if (!entity || !entity->GetIsActive())
+			return;
+
+		RectTransform* rt = entity->GetComponent<RectTransform>();
+		if (rt)
+		{
+			if (Image* img = entity->GetComponent<Image>(); img && img->GetIsActive())
+			{
+				outJobs.push_back(UIJob{ entity, UIJobType::Image, overlayScale,
+					canvasSortingLayer, canvasOrderInLayer,
+					img->GetSortingLayer(), img->GetOrderInLayer(),
+					inOutTraversal++ });
+			}
+
+			if (Text* text = entity->GetComponent<Text>(); text && text->GetIsActive())
+			{
+				outJobs.push_back(UIJob{ entity, UIJobType::Text, overlayScale,
+					canvasSortingLayer, canvasOrderInLayer,
+					text->GetSortingLayer(), text->GetOrderInLayer(),
+					inOutTraversal++ });
+			}
+		}
+
+		for (const auto& child : entity->GetChildren())
+			CollectOverlayUIJobsRecursive(child, overlayScale, canvasSortingLayer, canvasOrderInLayer, outJobs, inOutTraversal);
+	}
+
+	void EditorModule::DrawOverlayUIJob(const UIJob& job)
+	{
+		const auto& entity = job.Entity;
+		if (!entity || !entity->GetIsActive())
+			return;
+
+		RectTransform* rt = entity->GetComponent<RectTransform>();
+		if (!rt)
+			return;
+
+		switch (job.Type)
+		{
+			case UIJobType::Image:
+			{
+				Image* img = entity->GetComponent<Image>();
+				if (!img || !img->GetIsActive())
+					return;
+
+				const vec3 p = rt->GetWorldPosition();
+				const vec3 ws3 = rt->GetWorldScale();
+				const vec2 ws(ws3.x, ws3.y);
+				const vec3 bmin = rt->GetLocalBoundsMin();
+				const vec3 bmax = rt->GetLocalBoundsMax();
+				const vec2 s(bmax.x - bmin.x, bmax.y - bmin.y);
+
+				const vec2 pixelSize(s.x * ws.x * job.OverlayScale.x, s.y * ws.y * job.OverlayScale.y);
+				const vec2 pixelPos((p.x + bmin.x * ws.x) * job.OverlayScale.x, (p.y + bmin.y * ws.y) * job.OverlayScale.y);
+
+				vec4 color = img->GetTint();
+				std::shared_ptr<Texture> texture = img->GetTexture();
+
+				if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
+				{
+					button->GetCurrentColor(color);
+					button->GetCurrentTexture(texture);
+				}
+
+				UIRenderer::DrawImage(pixelPos, pixelSize, texture, color, img->GetUVRect());
+				break;
+			}
+
+			case UIJobType::Text:
+			{
+				Text* text = entity->GetComponent<Text>();
+				if (!text || !text->GetIsActive())
+					return;
+
+				const vec3 p = rt->GetWorldPosition();
+				const vec3 ws3 = rt->GetWorldScale();
+				const vec2 ws(ws3.x, ws3.y);
+				const vec3 bmin = rt->GetLocalBoundsMin();
+				const vec3 bmax = rt->GetLocalBoundsMax();
+				const vec2 s(bmax.x - bmin.x, bmax.y - bmin.y);
+
+				const vec2 pixelPos((p.x + bmin.x * ws.x) * job.OverlayScale.x, (p.y + bmin.y * ws.y) * job.OverlayScale.y);
+				const vec2 pixelSize(s.x * ws.x * job.OverlayScale.x, s.y * ws.y * job.OverlayScale.y);
+
+				UIRenderer::DrawText(pixelPos, pixelSize, text->GetText(), text->GetFont(), text->GetColor(), text->GetScale(),
+					text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment());
+				break;
+			}
+		}
+	}
+
+	void EditorModule::CollectWorldUIJobsRecursive(const std::shared_ptr<Entity>& entity,
+		int canvasSortingLayer, int canvasOrderInLayer,
+		std::vector<UIJob>& outJobs, uint64_t& inOutTraversal)
+	{
+		if (!entity || !entity->GetIsActive())
+			return;
+
+		RectTransform* rt = entity->GetComponent<RectTransform>();
+		if (rt)
+		{
+			if (Image* img = entity->GetComponent<Image>(); img && img->GetIsActive())
+			{
+				outJobs.push_back(UIJob{ entity, UIJobType::Image, vec2(1.0f),
+					canvasSortingLayer, canvasOrderInLayer,
+					img->GetSortingLayer(), img->GetOrderInLayer(),
+					inOutTraversal++ });
+			}
+
+			if (Text* text = entity->GetComponent<Text>(); text && text->GetIsActive())
+			{
+				outJobs.push_back(UIJob{ entity, UIJobType::Text, vec2(1.0f),
+					canvasSortingLayer, canvasOrderInLayer,
+					text->GetSortingLayer(), text->GetOrderInLayer(),
+					inOutTraversal++ });
+			}
+		}
+
+		for (const auto& child : entity->GetChildren())
+			CollectWorldUIJobsRecursive(child, canvasSortingLayer, canvasOrderInLayer, outJobs, inOutTraversal);
+	}
+
+	void EditorModule::DrawWorldUIJob(const UIJob& job)
+	{
+		const auto& entity = job.Entity;
+		if (!entity || !entity->GetIsActive())
+			return;
+
+		RectTransform* rt = entity->GetComponent<RectTransform>();
+		if (!rt)
+			return;
+
+		switch (job.Type)
+		{
+			case UIJobType::Image:
+			{
+				Image* img = entity->GetComponent<Image>();
+				if (!img || !img->GetIsActive())
+					return;
+
+				const std::shared_ptr<Texture> tex = img->GetTexture();
+				if (!tex)
+					return;
+
+				const vec3 bmin = rt->GetLocalBoundsMin();
+				const vec3 bmax = rt->GetLocalBoundsMax();
+				const float w = bmax.x - bmin.x;
+				const float h = bmax.y - bmin.y;
+
+				matrix4 model = rt->GetLocalToWorldMatrix()
+					* glm::translate(matrix4(1.0f), vec3(bmin.x, bmin.y, 0.0f))
+					* glm::scale(matrix4(1.0f), vec3(w, h, 1.0f));
+
+				vec4 color = img->GetTint();
+				std::shared_ptr<Texture> texture = img->GetTexture();
+
+				if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
+				{
+					button->GetCurrentColor(color);
+					button->GetCurrentTexture(texture);
+				}
+
+				UIRenderer::DrawImageWorld(model, texture, color, img->GetUVRect());
+				break;
+			}
+
+			case UIJobType::Text:
+			{
+				Text* text = entity->GetComponent<Text>();
+				if (!text || !text->GetIsActive())
+					return;
+
+				const vec3 bmin = rt->GetLocalBoundsMin();
+				const vec3 bmax = rt->GetLocalBoundsMax();
+				const float w = bmax.x - bmin.x;
+				const float h = bmax.y - bmin.y;
+
+				const matrix4 model = rt->GetLocalToWorldMatrix() * glm::translate(matrix4(1.0f), vec3(bmin.x, bmin.y, 0.0f));
+
+				UIRenderer::DrawTextWorld(model, vec2(w, h), text->GetText(), text->GetFont(), text->GetColor(), text->GetScale(),
+					text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment());
+				break;
+			}
+		}
+	}
+
 	void EditorModule::OnLoad()
 	{
 		LP_FUNC();
@@ -672,6 +865,10 @@ namespace Loopie
 
 		Renderer::BeginScene(uiView, uiProj, false);
 
+		std::vector<UIJob> jobs;
+		jobs.reserve(256);
+		uint64_t traversal = 0;
+
 		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities())
 		{
 			if (!entity || !entity->GetIsActive())
@@ -706,8 +903,21 @@ namespace Loopie
 			if (canvasUnits.x <= 0.0f || canvasUnits.y <= 0.0f)
 				continue;
 
-			RenderUIRecursive(entity, vec2(targetPixels.x / canvasUnits.x, targetPixels.y / canvasUnits.y));
+			const vec2 overlayScale(targetPixels.x / canvasUnits.x, targetPixels.y / canvasUnits.y);
+			CollectOverlayUIJobsRecursive(entity, overlayScale, canvas->GetSortingLayer(), canvas->GetOrderInLayer(), jobs, traversal);
 		}
+
+		std::sort(jobs.begin(), jobs.end(), [](const UIJob& a, const UIJob& b)
+			{
+				if (a.CanvasSortingLayer != b.CanvasSortingLayer) return a.CanvasSortingLayer < b.CanvasSortingLayer;
+				if (a.CanvasOrderInLayer != b.CanvasOrderInLayer) return a.CanvasOrderInLayer < b.CanvasOrderInLayer;
+				if (a.ElementSortingLayer != b.ElementSortingLayer) return a.ElementSortingLayer < b.ElementSortingLayer;
+				if (a.ElementOrderInLayer != b.ElementOrderInLayer) return a.ElementOrderInLayer < b.ElementOrderInLayer;
+				return a.TraversalIndex < b.TraversalIndex;
+			});
+
+		for (const UIJob& job : jobs)
+			DrawOverlayUIJob(job);
 
 		Renderer::EndScene();
 
@@ -780,6 +990,10 @@ namespace Loopie
 
 		const bool isSceneView = (camera == m_scene.GetCamera());
 
+		std::vector<UIJob> jobs;
+		jobs.reserve(256);
+		uint64_t traversal = 0;
+
 		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities())
 		{
 			if (!entity || !entity->GetIsActive())
@@ -804,8 +1018,20 @@ namespace Loopie
 				}
 			}
 
-			RenderSceneUIRecursive(entity);
+			CollectWorldUIJobsRecursive(entity, canvas->GetSortingLayer(), canvas->GetOrderInLayer(), jobs, traversal);
 		}
+
+		std::sort(jobs.begin(), jobs.end(), [](const UIJob& a, const UIJob& b)
+			{
+				if (a.CanvasSortingLayer != b.CanvasSortingLayer) return a.CanvasSortingLayer < b.CanvasSortingLayer;
+				if (a.CanvasOrderInLayer != b.CanvasOrderInLayer) return a.CanvasOrderInLayer < b.CanvasOrderInLayer;
+				if (a.ElementSortingLayer != b.ElementSortingLayer) return a.ElementSortingLayer < b.ElementSortingLayer;
+				if (a.ElementOrderInLayer != b.ElementOrderInLayer) return a.ElementOrderInLayer < b.ElementOrderInLayer;
+				return a.TraversalIndex < b.TraversalIndex;
+			});
+
+		for (const UIJob& job : jobs)
+			DrawWorldUIJob(job);
 
 		Renderer::DisableBlend();
 	}

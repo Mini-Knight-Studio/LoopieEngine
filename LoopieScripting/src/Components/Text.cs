@@ -4,6 +4,18 @@ namespace Loopie
 {
     public sealed class Text : Component
     {
+        public int SortingLayer
+        {
+            get => InternalCalls.UIElement_GetSortingLayer(entity.ID, ID);
+            set => InternalCalls.UIElement_SetSortingLayer(entity.ID, ID, value);
+        }
+
+        public int OrderInLayer
+        {
+            get => InternalCalls.UIElement_GetOrderInLayer(entity.ID, ID);
+            set => InternalCalls.UIElement_SetOrderInLayer(entity.ID, ID, value);
+        }
+
         public string Value
         {
             get => GetText();
