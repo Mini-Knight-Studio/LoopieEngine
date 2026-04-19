@@ -115,7 +115,7 @@ namespace Loopie
 			{
 				if (Renderer::BeginShadowPass(i))
 				{
-					RenderShadows();
+					RenderShadows(cam);
 					Renderer::EndShadowPass(i);
 				}
 			}
@@ -235,7 +235,7 @@ namespace Loopie
 		Renderer::Clear();
 
 		// POST
-		std::unordered_set<std::shared_ptr<Entity>> entities;
+		std::unordered_set<Entity*> entities;
 		m_currentScene->GetOctree().CollectVisibleEntitiesFrustum(camera->GetFrustum(), entities);
 
 		std::vector<MeshRenderer*> renderers;
@@ -269,7 +269,7 @@ namespace Loopie
 				if (data.HasBones) {
 					Animator* animator = renderer->GetLinkedAnimator();
 					if (animator) {
-						bones = animator->GetRendererData(renderer->GetUUID()).FinalBoneMatrices;
+						bones = animator->GetRendererData(renderer->GetUUID())->FinalBoneMatrices;
 					}
 				}
 
@@ -310,10 +310,10 @@ namespace Loopie
 		Renderer::DisableBlend();
 	}
 
-	void GameModule::RenderShadows()
+	void GameModule::RenderShadows(Camera* camera)
 	{
-		std::unordered_set<std::shared_ptr<Entity>> entities;
-		m_currentScene->GetOctree().CollectAllEntities(entities); 
+		std::unordered_set<Entity*> entities;
+		m_currentScene->GetOctree().CollectVisibleEntitiesFrustum(camera->GetFrustum(), entities);
 
 		std::vector<MeshRenderer*> renderers;
 		renderers.reserve(1);
@@ -347,7 +347,7 @@ namespace Loopie
 				if (data.HasBones) {
 					Animator* animator = renderer->GetLinkedAnimator();
 					if (animator) {
-						bones = animator->GetRendererData(renderer->GetUUID()).FinalBoneMatrices;
+						bones = animator->GetRendererData(renderer->GetUUID())->FinalBoneMatrices;
 					}
 				}
 
