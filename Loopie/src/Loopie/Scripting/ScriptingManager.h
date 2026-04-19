@@ -82,6 +82,8 @@ namespace Loopie {
 		static _MonoAssembly* LoadAssembly(const char* path);
 		static bool CompileGameAssembly();
 
+		static FieldAttributes ExtractFieldAttributes(_MonoClass* monoClass, _MonoClassField* field);
+
 		static void InitCoroutines();
 
 	private:

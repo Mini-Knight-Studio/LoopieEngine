@@ -387,8 +387,9 @@ namespace Loopie {
 
 		MonoCustomAttrInfo* attrInfo = mono_custom_attrs_from_field(monoClass, field);
 		if (!attrInfo)
-			return attributes;
+			return attributes; // No attributes found, return defaults
 
+		// Look up attribute classes from the Core image
 		MonoClass* headerAttrClass = mono_class_from_name(s_Data.CoreImage, "Loopie", "HeaderAttribute");
 		MonoClass* tooltipAttrClass = mono_class_from_name(s_Data.CoreImage, "Loopie", "TooltipAttribute");
 		MonoClass* spaceAttrClass = mono_class_from_name(s_Data.CoreImage, "Loopie", "SpaceAttribute");
@@ -398,11 +399,13 @@ namespace Loopie {
 		MonoClass* readOnlyAttrClass = mono_class_from_name(s_Data.CoreImage, "Loopie", "ReadOnlyAttribute");
 		MonoClass* textAreaAttrClass = mono_class_from_name(s_Data.CoreImage, "Loopie", "TextAreaAttribute");
 
+		// Parameterless Attributes (Flags)
 		attributes.HideInInspector = mono_custom_attrs_has_attr(attrInfo, hideAttrClass);
 		attributes.ShowInInspector = mono_custom_attrs_has_attr(attrInfo, showAttrClass);
 		attributes.ReadOnly = mono_custom_attrs_has_attr(attrInfo, readOnlyAttrClass);
 		attributes.TextArea = mono_custom_attrs_has_attr(attrInfo, textAreaAttrClass);
 
+		// Header Attribute
 		if (mono_custom_attrs_has_attr(attrInfo, headerAttrClass)) {
 			MonoObject* attrObj = mono_custom_attrs_get_attr(attrInfo, headerAttrClass);
 			MonoClassField* textField = mono_class_get_field_from_name(headerAttrClass, "Text");
@@ -415,6 +418,7 @@ namespace Loopie {
 			}
 		}
 
+		// Tooltip Attribute
 		if (mono_custom_attrs_has_attr(attrInfo, tooltipAttrClass)) {
 			MonoObject* attrObj = mono_custom_attrs_get_attr(attrInfo, tooltipAttrClass);
 			MonoClassField* textField = mono_class_get_field_from_name(tooltipAttrClass, "Text");
@@ -427,12 +431,14 @@ namespace Loopie {
 			}
 		}
 
+		// Space Attribute
 		if (mono_custom_attrs_has_attr(attrInfo, spaceAttrClass)) {
 			MonoObject* attrObj = mono_custom_attrs_get_attr(attrInfo, spaceAttrClass);
 			MonoClassField* heightField = mono_class_get_field_from_name(spaceAttrClass, "Height");
 			mono_field_get_value(attrObj, heightField, &attributes.Space);
 		}
 
+		// Range Attribute
 		if (mono_custom_attrs_has_attr(attrInfo, rangeAttrClass)) {
 			attributes.HasRange = true;
 			MonoObject* attrObj = mono_custom_attrs_get_attr(attrInfo, rangeAttrClass);
@@ -442,6 +448,7 @@ namespace Loopie {
 			mono_field_get_value(attrObj, maxField, &attributes.RangeMax);
 		}
 
+		// Free the attribute info memory
 		mono_custom_attrs_free(attrInfo);
 
 		return attributes;

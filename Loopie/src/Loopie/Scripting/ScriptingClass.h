@@ -57,6 +57,23 @@ namespace Loopie {
 		{ "Loopie.Vector4",  ScriptFieldType::Vector4 }
 	};
 
+	struct FieldAttributes
+	{
+		bool HideInInspector = false;
+		bool ShowInInspector = false;
+		bool ReadOnly = false;
+
+		std::string Header;
+		std::string Tooltip;
+
+		float Space = 0.0f;
+
+		bool HasRange = false;
+		float RangeMin = 0.0f;
+		float RangeMax = 0.0f;
+
+		bool TextArea = false;
+	};
 	
 
 	struct ScriptField
@@ -65,6 +82,7 @@ namespace Loopie {
 		std::string Name;
 
 		_MonoClassField* ClassField = nullptr;
+		FieldAttributes Attributes;
 	};
 
 	class ScriptingClass {

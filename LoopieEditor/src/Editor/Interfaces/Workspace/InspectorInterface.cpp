@@ -1313,21 +1313,47 @@ namespace Loopie {
 			const std::vector<ScriptField>& fields = scriptingClass->GetFields();
 			for (const ScriptField& field : fields)
 			{
+
+				if(!field.Attributes.Header.empty())
+					ImGui::SeparatorText(field.Attributes.Header.c_str());
+
+				if(field.Attributes.ReadOnly)
+					ImGui::BeginDisabled();
+
+				if(field.Attributes.Space>0.0f)
+					ImGui::Dummy(ImVec2(0.0f, field.Attributes.Space));
+
 				const std::string& name = field.Name;
 				switch (field.Type)
 				{
 				case ScriptFieldType::Float:
 				{
-					float v = isRuntime ? scriptClass->GetRuntimeFieldValue<float>(name) : scriptClass->GetFieldValue<float>(name);
-					if (ImGui::DragFloat(name.c_str(), &v, 0.1f))
-						isRuntime ? scriptClass->SetRuntimeFieldValue(name, v) : scriptClass->SetFieldValue(name, v);
+					if (field.Attributes.HasRange) {
+						float v = isRuntime ? scriptClass->GetRuntimeFieldValue<float>(name) : scriptClass->GetFieldValue<float>(name);
+						if (ImGui::SliderFloat(name.c_str(), &v, field.Attributes.RangeMin, field.Attributes.RangeMax))
+							isRuntime ? scriptClass->SetRuntimeFieldValue(name, v) : scriptClass->SetFieldValue(name, v);
+					}
+					else
+					{
+						float v = isRuntime ? scriptClass->GetRuntimeFieldValue<float>(name) : scriptClass->GetFieldValue<float>(name);
+						if (ImGui::DragFloat(name.c_str(), &v, 0.1f))
+							isRuntime ? scriptClass->SetRuntimeFieldValue(name, v) : scriptClass->SetFieldValue(name, v);
+					}	
 					break;
 				}
 				case ScriptFieldType::Double:
 				{
-					double v = isRuntime ? scriptClass->GetRuntimeFieldValue<double>(name) : scriptClass->GetFieldValue<double>(name);
-					if (ImGui::DragScalar(name.c_str(), ImGuiDataType_Double, &v, 0.1f))
-						isRuntime ? scriptClass->SetRuntimeFieldValue(name, v) : scriptClass->SetFieldValue(name, v);
+					if (field.Attributes.HasRange) {
+						double v = isRuntime ? scriptClass->GetRuntimeFieldValue<double>(name) : scriptClass->GetFieldValue<double>(name);
+						if (ImGui::SliderScalar(name.c_str(), ImGuiDataType_Double, &v, &field.Attributes.RangeMin, &field.Attributes.RangeMax))
+							isRuntime ? scriptClass->SetRuntimeFieldValue(name, v) : scriptClass->SetFieldValue(name, v);
+					}
+					else
+					{
+						double v = isRuntime ? scriptClass->GetRuntimeFieldValue<double>(name) : scriptClass->GetFieldValue<double>(name);
+						if (ImGui::DragScalar(name.c_str(), ImGuiDataType_Double, &v, 0.1f))
+							isRuntime ? scriptClass->SetRuntimeFieldValue(name, v) : scriptClass->SetFieldValue(name, v);
+					}
 					break;
 				}
 				case ScriptFieldType::Bool:
@@ -1358,31 +1384,57 @@ namespace Loopie {
 				case ScriptFieldType::Int:
 				case ScriptFieldType::UInt:
 				{
-					int v = isRuntime ? scriptClass->GetRuntimeFieldValue<int>(name) : scriptClass->GetFieldValue<int>(name);
-					if (ImGui::DragInt(name.c_str(), &v))
-						isRuntime ? scriptClass->SetRuntimeFieldValue(name, v) : scriptClass->SetFieldValue(name, v);
+					if (field.Attributes.HasRange) {
+						int v = isRuntime ? scriptClass->GetRuntimeFieldValue<int>(name) : scriptClass->GetFieldValue<int>(name);
+						if (ImGui::SliderInt(name.c_str(), &v, (int)field.Attributes.RangeMin, (int)field.Attributes.RangeMax))
+							isRuntime ? scriptClass->SetRuntimeFieldValue(name, v) : scriptClass->SetFieldValue(name, v);
+					}
+					else {
+						int v = isRuntime ? scriptClass->GetRuntimeFieldValue<int>(name) : scriptClass->GetFieldValue<int>(name);
+						if (ImGui::DragInt(name.c_str(), &v))
+							isRuntime ? scriptClass->SetRuntimeFieldValue(name, v) : scriptClass->SetFieldValue(name, v);
+					}
 					break;
 				}
 
 				case ScriptFieldType::Long:
 				case ScriptFieldType::ULong:
 				{
-					int64_t v = isRuntime ? scriptClass->GetRuntimeFieldValue<int64_t>(name) : scriptClass->GetFieldValue<int64_t>(name);
-					if (ImGui::DragScalar(name.c_str(), ImGuiDataType_S64, &v))
-						isRuntime ? scriptClass->SetRuntimeFieldValue(name, v) : scriptClass->SetFieldValue(name, v);
+					if (field.Attributes.HasRange) {
+						int64_t v = isRuntime ? scriptClass->GetRuntimeFieldValue<int64_t>(name) : scriptClass->GetFieldValue<int64_t>(name);
+						if (ImGui::SliderScalar(name.c_str(), ImGuiDataType_S64, &v, &field.Attributes.RangeMin, &field.Attributes.RangeMax))
+							isRuntime ? scriptClass->SetRuntimeFieldValue(name, v) : scriptClass->SetFieldValue(name, v);
+					}
+					else {
+						int64_t v = isRuntime ? scriptClass->GetRuntimeFieldValue<int64_t>(name) : scriptClass->GetFieldValue<int64_t>(name);
+						if (ImGui::DragScalar(name.c_str(), ImGuiDataType_S64, &v))
+							isRuntime ? scriptClass->SetRuntimeFieldValue(name, v) : scriptClass->SetFieldValue(name, v);
+					}
 					break;
 				}
 
 				case ScriptFieldType::String:
 				{
 					std::string value = isRuntime ? scriptClass->GetRuntimeFieldString(name) :  scriptClass->GetFieldString(name);
+					if (field.Attributes.TextArea)
+					{
+						char buffer[2048];
+						memset(buffer, 0, sizeof(buffer));
+						strncpy(buffer, value.c_str(), sizeof(buffer) - 1);
 
-					char buffer[256];
-					memset(buffer, 0, sizeof(buffer));
-					strncpy(buffer, value.c_str(), sizeof(buffer) - 1);
+						if (ImGui::InputTextMultiline(name.c_str(), buffer, sizeof(buffer)))
+							isRuntime ? scriptClass->SetRuntimeFieldString(name, std::string(buffer)) : scriptClass->SetFieldString(name, std::string(buffer));
+					}
+					else {
 
-					if (ImGui::InputText(name.c_str(), buffer, sizeof(buffer)))
-						isRuntime ? scriptClass->SetRuntimeFieldString(name, std::string(buffer)) : scriptClass->SetFieldString(name, std::string(buffer));
+						char buffer[256];
+						memset(buffer, 0, sizeof(buffer));
+						strncpy(buffer, value.c_str(), sizeof(buffer) - 1);
+
+						if (ImGui::InputText(name.c_str(), buffer, sizeof(buffer)))
+							isRuntime ? scriptClass->SetRuntimeFieldString(name, std::string(buffer)) : scriptClass->SetFieldString(name, std::string(buffer));
+					}
+					
 
 					break;
 				}
@@ -1444,6 +1496,12 @@ namespace Loopie {
 					ImGui::Text("Unsupported Field: %s", name.c_str());
 					break;
 				}
+
+				if (!field.Attributes.Tooltip.empty())
+					ImGui::SetItemTooltip(field.Attributes.Tooltip.c_str());
+
+				if (field.Attributes.ReadOnly)
+					ImGui::EndDisabled();
 			}
 		}
 		ImGui::PopID();
