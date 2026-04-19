@@ -11,6 +11,7 @@ namespace Loopie
             ID = id;
             transform = new Transform();
             transform.entity = this;
+            transform.ID = "";
         }
         public string ID { get; internal set; } = "";
         public Transform transform { get; }
