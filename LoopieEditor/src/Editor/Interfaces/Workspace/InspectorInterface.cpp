@@ -1313,6 +1313,8 @@ namespace Loopie {
 			const std::vector<ScriptField>& fields = scriptingClass->GetFields();
 			for (const ScriptField& field : fields)
 			{
+				if(field.Attributes.Space>0.0f)
+					ImGui::Dummy(ImVec2(0.0f, field.Attributes.Space));
 
 				if(!field.Attributes.Header.empty())
 					ImGui::SeparatorText(field.Attributes.Header.c_str());
@@ -1320,8 +1322,6 @@ namespace Loopie {
 				if(field.Attributes.ReadOnly)
 					ImGui::BeginDisabled();
 
-				if(field.Attributes.Space>0.0f)
-					ImGui::Dummy(ImVec2(0.0f, field.Attributes.Space));
 
 				const std::string& name = field.Name;
 				switch (field.Type)
