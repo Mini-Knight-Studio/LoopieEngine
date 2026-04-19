@@ -2281,6 +2281,58 @@ namespace Loopie
 	}
 #pragma endregion
 
+#pragma region UIElement
+	static int UIElement_GetSortingLayer(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return 0;
+		Component* component = Utils::GetComponent<Component>(entity, componentID);
+		if (!component)
+			return 0;
+		UIElement* ui = component->AsUIElement();
+		return ui ? ui->GetSortingLayer() : 0;
+	}
+
+	static void UIElement_SetSortingLayer(MonoString* entityID, MonoString* componentID, int layer)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		Component* component = Utils::GetComponent<Component>(entity, componentID);
+		if (!component)
+			return;
+		UIElement* ui = component->AsUIElement();
+		if (ui)
+			ui->SetSortingLayer(layer);
+	}
+
+	static int UIElement_GetOrderInLayer(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return 0;
+		Component* component = Utils::GetComponent<Component>(entity, componentID);
+		if (!component)
+			return 0;
+		UIElement* ui = component->AsUIElement();
+		return ui ? ui->GetOrderInLayer() : 0;
+	}
+
+	static void UIElement_SetOrderInLayer(MonoString* entityID, MonoString* componentID, int order)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		Component* component = Utils::GetComponent<Component>(entity, componentID);
+		if (!component)
+			return;
+		UIElement* ui = component->AsUIElement();
+		if (ui)
+			ui->SetOrderInLayer(order);
+	}
+#pragma endregion
+
 #pragma region Image
 	static void Image_GetTint(MonoString* entityID, MonoString* componentID, vec4* outTint)
 	{
@@ -2961,6 +3013,11 @@ namespace Loopie
 
 
 
+
+		ADD_INTERNAL_CALL(UIElement_GetSortingLayer);
+		ADD_INTERNAL_CALL(UIElement_SetSortingLayer);
+		ADD_INTERNAL_CALL(UIElement_GetOrderInLayer);
+		ADD_INTERNAL_CALL(UIElement_SetOrderInLayer);
 
 		ADD_INTERNAL_CALL(Image_GetTint);
 		ADD_INTERNAL_CALL(Image_SetTint);

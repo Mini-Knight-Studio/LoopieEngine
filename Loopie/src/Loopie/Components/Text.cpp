@@ -135,6 +135,8 @@ namespace Loopie {
 		if (m_font)
 			textNode.CreateField<std::string>("font_uuid", m_font->GetUUID().Get());
 
+		SerializeDrawOrder(textNode);
+
 		return textNode;
 	}
 
@@ -178,6 +180,7 @@ namespace Loopie {
 		}
 
 		SetFont(nullptr);
+		DeserializeDrawOrder(data);
 	}
 	void Text::Clone(const std::shared_ptr<Entity> entity, const Component& other)
 	{
@@ -191,5 +194,6 @@ namespace Loopie {
 		m_horizontalAlignment = otherText.m_horizontalAlignment;
 		m_verticalAlignment = otherText.m_verticalAlignment;
 		m_font = otherText.m_font;
+		CloneDrawOrder(otherText);
 	}
 }

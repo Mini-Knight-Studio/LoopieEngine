@@ -125,6 +125,7 @@ namespace Loopie {
 		JsonNode canvasObj = parent.CreateObjectField("canvas");
 		canvasObj.CreateField<bool>("draw_gizmo", m_drawGizmo);
 		canvasObj.CreateField<int>("render_mode", static_cast<int>(m_renderMode));
+		SerializeDrawOrder(canvasObj);
 
 		JsonNode colorObj = canvasObj.CreateObjectField("color");
 		colorObj.CreateField("r", m_color.r);
@@ -141,6 +142,7 @@ namespace Loopie {
 			m_drawGizmo = data.GetValue<bool>("draw_gizmo", true).Result;
 		if (data.Contains("render_mode"))
 			m_renderMode = static_cast<CanvasRenderMode>(data.GetValue<int>("render_mode", static_cast<int>(CanvasRenderMode::WorldSpace)).Result);
+		DeserializeDrawOrder(data);
 
 		JsonNode colorObj = data.Child("color");
 		if (colorObj.IsValid() && colorObj.IsObject())
@@ -160,6 +162,7 @@ namespace Loopie {
 		m_color = otherCanvas.m_color;
 		m_drawGizmo = otherCanvas.m_drawGizmo;
 		m_renderMode = otherCanvas.m_renderMode;
+		CloneDrawOrder(otherCanvas);
 		m_cornersDirty = true;
 	}
 }

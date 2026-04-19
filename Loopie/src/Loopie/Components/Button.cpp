@@ -304,6 +304,7 @@ namespace Loopie
 	JsonNode Button::Serialize(JsonNode& parent) const
 	{
 		JsonNode node = parent.CreateObjectField("button");
+		SerializeDrawOrder(node);
 
 		node.CreateField<bool>("interactable", m_interactable);
 		node.CreateField<int>("transition_mode", static_cast<int>(m_transitionMode));
@@ -357,6 +358,7 @@ namespace Loopie
 
 	void Button::Deserialize(const JsonNode& data)
 	{
+		DeserializeDrawOrder(data);
 		m_interactable = data.GetValue<bool>("interactable", true).Result;
 		m_transitionMode = static_cast<VisualTransitionMode>(data.GetValue<int>("transition_mode", 0).Result);
 
@@ -449,6 +451,7 @@ namespace Loopie
 	void Button::Clone(const std::shared_ptr<Entity> entity, const Component& other)
 	{
 		const Button& otherButton = static_cast<const Button&>(other);
+		CloneDrawOrder(otherButton);
 		m_interactable = otherButton.m_interactable;
 		m_transitionMode = otherButton.m_transitionMode;
 		m_normalColor = otherButton.m_normalColor;

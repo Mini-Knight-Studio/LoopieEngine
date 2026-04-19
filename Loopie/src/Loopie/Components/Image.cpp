@@ -114,6 +114,8 @@ namespace Loopie
 		uvObj.CreateField<float>("max_u", m_uvRect.z);
 		uvObj.CreateField<float>("max_v", m_uvRect.w);
 
+		SerializeDrawOrder(imgNode);
+
 		return imgNode;
 	}
 
@@ -170,6 +172,7 @@ namespace Loopie
 			SetTexture(Texture::GetDefault());
 
 		m_uvRect = uvRect;
+		DeserializeDrawOrder(data);
 	}
 
 	void Image::Clone(const std::shared_ptr<Entity> entity, const Component& other)
@@ -178,6 +181,7 @@ namespace Loopie
 		m_tint = otherImage.m_tint;
 		m_uvRect = otherImage.m_uvRect;
 		SetTexture(otherImage.m_texture);
+		CloneDrawOrder(otherImage);
 	}
 
 }

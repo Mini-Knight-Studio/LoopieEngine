@@ -577,6 +577,21 @@ namespace Loopie
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal extern static float ParticleSystem_GetEmitterPropLifetime(string entityID, string componentID, int emitterIndex);
         #endregion
+
+        #region UIElement
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static int UIElement_GetSortingLayer(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void UIElement_SetSortingLayer(string entityID, string componentID, int layer);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static int UIElement_GetOrderInLayer(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void UIElement_SetOrderInLayer(string entityID, string componentID, int order);
+        #endregion
+
         #region Image
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Image_GetTint(string entityID, string componentID, out Vector4 tint);

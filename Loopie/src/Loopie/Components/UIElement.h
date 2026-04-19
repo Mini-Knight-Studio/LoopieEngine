@@ -71,13 +71,39 @@ namespace Loopie
 		bool IsFocusable() const { return m_focusable; }
 		void SetFocusable(bool focusable) { m_focusable = focusable; }
 
+		int GetSortingLayer() const { return m_sortingLayer; }
+		void SetSortingLayer(int layer) { m_sortingLayer = layer; }
+
+		int GetOrderInLayer() const { return m_orderInLayer; }
+		void SetOrderInLayer(int order) { m_orderInLayer = order; }
+
 	protected:
 		virtual void OnFocused() {}
 		virtual void OnBlurred() {}
 
+		void SerializeDrawOrder(JsonNode& node) const
+		{
+			node.CreateField<int>("sorting_layer", m_sortingLayer);
+			node.CreateField<int>("order_in_layer", m_orderInLayer);
+		}
+
+		void DeserializeDrawOrder(const JsonNode& node)
+		{
+			m_sortingLayer = node.GetValue<int>("sorting_layer", 0).Result;
+			m_orderInLayer = node.GetValue<int>("order_in_layer", 0).Result;
+		}
+
+		void CloneDrawOrder(const UIElement& other)
+		{
+			m_sortingLayer = other.m_sortingLayer;
+			m_orderInLayer = other.m_orderInLayer;
+		}
+
 	private:
 		bool m_focusable = false;
 		bool m_focused = false;
+		int m_sortingLayer = 0;
+		int m_orderInLayer = 0;
 		std::array<UUID, 4> m_neighbors{ UUID::Invalid, UUID::Invalid, UUID::Invalid, UUID::Invalid };
 	};
 }
