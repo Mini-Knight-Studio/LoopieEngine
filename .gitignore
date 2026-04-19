@@ -12,7 +12,7 @@ _deps
 build
 out
 .vs
-
+enc_temp_folder
 
 *.vscode
 *.kdev4
