@@ -164,6 +164,9 @@ namespace Loopie {
 		m_horizontalAlignment = (TextHorizontalAlignment)data.GetValue<int>("horizontal_alignment", (int)TextHorizontalAlignment::Left).Result;
 		m_verticalAlignment = (TextVerticalAlignment)data.GetValue<int>("vertical_alignment", (int)TextVerticalAlignment::Top).Result;
 
+		DeserializeDrawOrder(data);
+
+		bool fontSet = false;
 		if (data.Contains("font_uuid"))
 		{
 			UUID uuid = data.GetValue<std::string>("font_uuid").Result;
@@ -174,13 +177,13 @@ namespace Loopie {
 				if (font && font->Load())
 				{
 					SetFont(font);
-					return;
+					fontSet = true;
 				}
 			}
 		}
 
-		SetFont(nullptr);
-		DeserializeDrawOrder(data);
+		if (!fontSet)
+			SetFont(nullptr);
 	}
 	void Text::Clone(const std::shared_ptr<Entity> entity, const Component& other)
 	{
