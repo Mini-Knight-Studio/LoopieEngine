@@ -197,6 +197,14 @@ namespace Loopie {
 		int32_t numTypes = mono_table_info_get_rows(typeDefinitionsTable);
 		MonoClass* component = mono_class_from_name(s_Data.CoreImage, "Loopie", "Component");
 
+		MonoClass* headerAttrClass = mono_class_from_name(s_Data.CoreImage, "Loopie", "HeaderAttribute");
+		MonoClass* tooltipAttrClass = mono_class_from_name(s_Data.CoreImage, "Loopie", "TooltipAttribute");
+		MonoClass* spaceAttrClass = mono_class_from_name(s_Data.CoreImage, "Loopie", "SpaceAttribute");
+		MonoClass* rangeAttrClass = mono_class_from_name(s_Data.CoreImage, "Loopie", "RangeAttribute");
+		MonoClass* hideAttrClass = mono_class_from_name(s_Data.CoreImage, "Loopie", "HideInInspectorAttribute");
+		MonoClass* showAttrClass = mono_class_from_name(s_Data.CoreImage, "Loopie", "ShowInInspectorAttribute");
+		MonoClass* readOnlyAttrClass = mono_class_from_name(s_Data.CoreImage, "Loopie", "ReadOnlyAttribute");
+
 		for (int32_t i = 0; i < numTypes; i++)
 		{
 			uint32_t cols[MONO_TYPEDEF_SIZE];
@@ -231,13 +239,27 @@ namespace Loopie {
 
 			while (MonoClassField* field = mono_class_get_fields(monoClass, &iterator))
 			{
-				const char* fieldName = mono_field_get_name(field);
 				uint32_t flags = mono_field_get_flags(field);
-				if (flags & MONO_FIELD_ATTR_PUBLIC)
+
+				ScriptField scriptField;
+				scriptField.Attributes = ExtractFieldAttributes(monoClass, field);
+
+
+				bool isPublic = flags & MONO_FIELD_ATTR_PUBLIC;
+				bool hide = scriptField.Attributes.HideInInspector;
+				bool forceShow = scriptField.Attributes.ShowInInspector;
+
+				bool visible = (isPublic || forceShow) && !hide;
+
+				if (visible)
 				{
+					const char* fieldName = mono_field_get_name(field);
+
 					MonoType* type = mono_field_get_type(field);
 					std::string typeName = mono_type_get_name(type);
 					ScriptFieldType fieldType = MonoTypeToScriptFieldType(type);
+
+					
 
 					if (fieldType == ScriptFieldType::None)
 					{
@@ -250,8 +272,12 @@ namespace Loopie {
 						
 					}
 
+					scriptField.Type = fieldType;
+					scriptField.Name = fieldName;
+					scriptField.ClassField = field;
+
 					fieldsOrderMap[fieldName] = fieldsVector.size();
-					fieldsVector.push_back({ fieldType, fieldName, field });
+					fieldsVector.push_back(scriptField);
 					Log::Warn("   {0} -> {1}", fieldName, typeName);
 				}
 			}
@@ -353,6 +379,72 @@ namespace Loopie {
 			mono_free(err); 
 		} 
 		return success;
+	}
+
+	FieldAttributes ScriptingManager::ExtractFieldAttributes(_MonoClass* monoClass, _MonoClassField* field)
+	{
+		FieldAttributes attributes;
+
+		MonoCustomAttrInfo* attrInfo = mono_custom_attrs_from_field(monoClass, field);
+		if (!attrInfo)
+			return attributes;
+
+		MonoClass* headerAttrClass = mono_class_from_name(s_Data.CoreImage, "Loopie", "HeaderAttribute");
+		MonoClass* tooltipAttrClass = mono_class_from_name(s_Data.CoreImage, "Loopie", "TooltipAttribute");
+		MonoClass* spaceAttrClass = mono_class_from_name(s_Data.CoreImage, "Loopie", "SpaceAttribute");
+		MonoClass* rangeAttrClass = mono_class_from_name(s_Data.CoreImage, "Loopie", "RangeAttribute");
+		MonoClass* hideAttrClass = mono_class_from_name(s_Data.CoreImage, "Loopie", "HideInInspectorAttribute");
+		MonoClass* showAttrClass = mono_class_from_name(s_Data.CoreImage, "Loopie", "ShowInInspectorAttribute");
+		MonoClass* readOnlyAttrClass = mono_class_from_name(s_Data.CoreImage, "Loopie", "ReadOnlyAttribute");
+		MonoClass* textAreaAttrClass = mono_class_from_name(s_Data.CoreImage, "Loopie", "TextAreaAttribute");
+
+		attributes.HideInInspector = mono_custom_attrs_has_attr(attrInfo, hideAttrClass);
+		attributes.ShowInInspector = mono_custom_attrs_has_attr(attrInfo, showAttrClass);
+		attributes.ReadOnly = mono_custom_attrs_has_attr(attrInfo, readOnlyAttrClass);
+		attributes.TextArea = mono_custom_attrs_has_attr(attrInfo, textAreaAttrClass);
+
+		if (mono_custom_attrs_has_attr(attrInfo, headerAttrClass)) {
+			MonoObject* attrObj = mono_custom_attrs_get_attr(attrInfo, headerAttrClass);
+			MonoClassField* textField = mono_class_get_field_from_name(headerAttrClass, "Text");
+			MonoString* textStr = nullptr;
+			mono_field_get_value(attrObj, textField, &textStr);
+			if (textStr) {
+				char* cStr = mono_string_to_utf8(textStr);
+				attributes.Header = cStr;
+				mono_free(cStr);
+			}
+		}
+
+		if (mono_custom_attrs_has_attr(attrInfo, tooltipAttrClass)) {
+			MonoObject* attrObj = mono_custom_attrs_get_attr(attrInfo, tooltipAttrClass);
+			MonoClassField* textField = mono_class_get_field_from_name(tooltipAttrClass, "Text");
+			MonoString* textStr = nullptr;
+			mono_field_get_value(attrObj, textField, &textStr);
+			if (textStr) {
+				char* cStr = mono_string_to_utf8(textStr);
+				attributes.Tooltip = cStr;
+				mono_free(cStr);
+			}
+		}
+
+		if (mono_custom_attrs_has_attr(attrInfo, spaceAttrClass)) {
+			MonoObject* attrObj = mono_custom_attrs_get_attr(attrInfo, spaceAttrClass);
+			MonoClassField* heightField = mono_class_get_field_from_name(spaceAttrClass, "Height");
+			mono_field_get_value(attrObj, heightField, &attributes.Space);
+		}
+
+		if (mono_custom_attrs_has_attr(attrInfo, rangeAttrClass)) {
+			attributes.HasRange = true;
+			MonoObject* attrObj = mono_custom_attrs_get_attr(attrInfo, rangeAttrClass);
+			MonoClassField* minField = mono_class_get_field_from_name(rangeAttrClass, "Min");
+			MonoClassField* maxField = mono_class_get_field_from_name(rangeAttrClass, "Max");
+			mono_field_get_value(attrObj, minField, &attributes.RangeMin);
+			mono_field_get_value(attrObj, maxField, &attributes.RangeMax);
+		}
+
+		mono_custom_attrs_free(attrInfo);
+
+		return attributes;
 	}
 
 	void ScriptingManager::InitCoroutines()

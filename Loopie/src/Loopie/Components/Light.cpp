@@ -12,7 +12,7 @@ namespace Loopie
 		m_color = color;
 		m_intensity = intensity;
 		m_type = type;
-		m_shadowColor = color;
+		m_shadowColor = vec3(0.0f, 0.0f, 0.0f);
 		Renderer::RegisterLight(this);
 	}
 
@@ -284,6 +284,7 @@ namespace Loopie
 	// Creates a matrix from the light pov, is used to produce shadows
 	matrix4 Light::GetLightSpaceMatrix(const vec3& sceneCenter, float orthoSize, float nearPlane, float farPlane) const
 	{
+		// TODO: Might want to clean up this function since directional is not being used anymore
 		matrix4 viewMat;
 		matrix4 projMatrix;
 
@@ -302,8 +303,8 @@ namespace Loopie
 			{
 				up = vec3(1.0f, 0.0f, 0.0f);
 			}
-			viewMat = glm::lookAt(lightPos, sceneCenter, up);
-			projMatrix = glm::ortho(-orthoSize, orthoSize, -orthoSize, orthoSize, nearPlane, farPlane);
+			viewMat = glm::lookAtLH(lightPos, sceneCenter, up);
+			projMatrix = glm::orthoLH(-orthoSize, orthoSize, -orthoSize, orthoSize, nearPlane, farPlane);
 			break;
 		}
 		case LightType::Spot: 
@@ -316,9 +317,9 @@ namespace Loopie
 			{
 				up = vec3(1.0f, 0.0f, 0.0f);
 			}
-			viewMat = glm::lookAt(lightPos, lightPos + lightDir, up);
+			viewMat = glm::lookAtLH(lightPos, lightPos + lightDir, up);
 			// Modify the nearPlane value below to play with the precision of shadows (how far shadows are casted)
-			projMatrix = glm::perspective(radians(m_outerConeAngle * 2.0f), 1.0f, 3.0f, farPlane); 
+			projMatrix = glm::perspectiveLH(radians(m_outerConeAngle * 2.0f), 1.0f, 3.0f, farPlane); 
 			break;
 		}
 		case LightType::Point:

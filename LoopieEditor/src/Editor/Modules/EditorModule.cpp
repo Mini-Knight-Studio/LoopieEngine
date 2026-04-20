@@ -354,7 +354,6 @@ namespace Loopie
 			}
 		}
 
-
 		{
 			LP_SCOPE_N("Editor UI Updates");
 			m_hierarchy.Update(inputEvent);
@@ -393,15 +392,7 @@ namespace Loopie
 
 				{
 					LP_SCOPE_N("Shadow Pass");
-					Renderer::AssignShadowSlots(cam->GetTransform()->GetWorldPosition());
-					for (int i = 0; i < Renderer::GetShadowCastingLightCount(); ++i)
-					{
-						if (Renderer::BeginShadowPass(i))
-						{
-							RenderShadows(cam);
-							Renderer::EndShadowPass(i);
-						}
-					}
+					RenderShadows(cam);
 				}
 
 				{
@@ -698,25 +689,50 @@ namespace Loopie
 		}
 	}
 
-	void EditorModule::RenderShadows(Camera* camera)
+	void EditorModule::RenderShadows(const Camera* cam)
 	{
 		LP_FUNC();
 
-		std::unordered_set<Entity*> entities;
-		m_currentScene->GetOctree().CollectVisibleEntitiesFrustum(camera->GetFrustum(), entities); // Should be optimized
+		Renderer::AssignShadowSlots(cam->GetViewProjectionMatrix(), cam->GetProjection(), m_currentScene->GetEntitySpanningBounds());
+		for (int i = 0; i < Renderer::GetShadowCastingLightCount(); ++i)
+		{
+			Frustum frustum;
+			frustum.FromMatrix(Renderer::GetShadowSlotMatrix(i));
 
+			std::unordered_set<Entity*> allEntities;
+			m_currentScene->GetOctree().CollectVisibleEntitiesFrustum(frustum, allEntities);
+
+			std::unordered_set<Entity*> staticEntities;
+			std::unordered_set<Entity*> dynamicEntities;
+			SeparateEntities(allEntities, staticEntities, dynamicEntities);
+
+			LP_SCOPE_N("Shadow Casters");
+			// Static pass, only when dirty
+			if (Renderer::BeginStaticShadowPass(i))
+			{
+				RenderEntityShadows(staticEntities);
+				Renderer::EndStaticShadowPass(i);
+			}
+
+			// Dynamic pass, every frame
+			if (Renderer::BeginDynamicShadowPass(i))
+			{
+				RenderEntityShadows(dynamicEntities);
+				Renderer::EndDynamicShadowPass(i);
+			}
+		}
+	}
+
+	void EditorModule::RenderEntityShadows(const std::unordered_set<Entity*>& entities)
+	{
 		std::vector<MeshRenderer*> renderers;
 		renderers.reserve(1);
 
 		for (const auto& entity : entities)
 		{
-			LP_SCOPE_N("Shadow Casters");
-			if (!entity->GetIsActive())
-				continue;
-
 			const std::vector<Component*>& components = entity->GetComponents();
 			renderers.clear();
-			
+
 			for (size_t i = 0; i < components.size(); i++)
 			{
 				Component* component = components[i];
@@ -779,6 +795,20 @@ namespace Loopie
 		}
 		Renderer::EnableDepthMask();
 		Renderer::DisableBlend();
+	}
+
+	void EditorModule::SeparateEntities(const std::unordered_set<Entity*>& entities, std::unordered_set<Entity*>& staticEntities,
+										std::unordered_set<Entity*>& dynamicEntities)
+	{
+		for (auto entity : entities)
+		{
+			if (!entity->GetIsActive())
+				continue;
+			if (entity->GetIsStatic())
+				staticEntities.insert(entity);
+			else
+				dynamicEntities.insert(entity);
+		}
 	}
 
 	void EditorModule::RenderUIRecursive(const std::shared_ptr<Entity>& entity, vec2& scale)

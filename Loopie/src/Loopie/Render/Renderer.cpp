@@ -17,10 +17,10 @@ namespace Loopie {
 	std::shared_ptr<UniformBuffer> Renderer::s_MatricesUniformBuffer = nullptr;
 	std::shared_ptr<UniformBuffer> Renderer::s_LightingUniformBuffer = nullptr;
 	std::shared_ptr<UniformBuffer> Renderer::s_ShadowingUniformBuffer = nullptr;
+	std::shared_ptr<UniformBuffer> Renderer::s_StaticMatricesUniformBuffer = nullptr;
 	std::shared_ptr<ShaderStorageBuffer> Renderer::s_BonesSSBO = nullptr;
 	unsigned int Renderer::s_BoneBufferOffset = 0;
 	unsigned int Renderer::s_BoneBufferCapacity = 0;
-
 	std::shared_ptr<VertexBuffer> Renderer::s_BillboardVBO = nullptr;
 	std::shared_ptr<VertexBuffer> Renderer::s_PosSizeVBO = nullptr;
 	std::shared_ptr<VertexBuffer> Renderer::s_ColorVBO = nullptr;
@@ -148,17 +148,26 @@ namespace Loopie {
 			Log::Error("Shadow depth shader failed to compile!");
 		}
 
-		BufferLayout shadowingLayout;
+		BufferLayout dynamicShadowingLayout;
 		for (int i = 0; i < MAX_SHADOW_CASTING_LIGHTS; ++i)
 		{
-			s_ShadowSlots[i].map = std::make_shared<ShadowMap>();
-			shadowingLayout.AddLayoutElement(i, GLVariableType::MATRIX4, 1, "LightSpaceMatrix");
+			s_ShadowSlots[i].dynamicMap = std::make_shared<ShadowMap>();
+			dynamicShadowingLayout.AddLayoutElement(i, GLVariableType::MATRIX4, 1, "DynamicLightSpaceMatrix");
 		}
-		s_ShadowingUniformBuffer = std::make_shared<UniformBuffer>(shadowingLayout);
+		s_ShadowingUniformBuffer = std::make_shared<UniformBuffer>(dynamicShadowingLayout);
 		s_ShadowingUniformBuffer->BindToLayout(3);
+
+		BufferLayout staticShadowingLayout;
+		for (int i = 0; i < MAX_SHADOW_CASTING_LIGHTS; ++i)
+		{
+			s_ShadowSlots[i].staticMap = std::make_shared<ShadowMap>(STATIC_SHADOW_TEXTURE_DEFINITION, STATIC_SHADOW_TEXTURE_DEFINITION);
+			staticShadowingLayout.AddLayoutElement(i, GLVariableType::MATRIX4, 1, "StaticLightSpaceMatrix");
+		}
+		s_StaticMatricesUniformBuffer = std::make_shared<UniformBuffer>(staticShadowingLayout);
+		s_StaticMatricesUniformBuffer->BindToLayout(4);
 	}
 
-	void Renderer::AssignShadowSlots(const vec3& sceneCenter)
+	void Renderer::AssignShadowSlots(const matrix4& cameraViewProj, const Loopie::CameraProjection& camProj, const AABB& sceneAABB)
 	{
 		s_ShadowCount = 0;
 		for (int i = 0; i < MAX_SHADOW_CASTING_LIGHTS; ++i)
@@ -174,28 +183,69 @@ namespace Loopie {
 			if (!l->GetIsActive())
 				continue;
 
-			bool canCastShadow = l->GetCastsShadows() && l->GetLightType() != LightType::Ambient
-													  && l->GetLightType() != LightType::Point; // May be TODO, but it's very hard. I think beyond our scope.
+			Loopie::LightType lType = l->GetLightType();
+
+			
+			bool canCastShadow = l->GetCastsShadows() && lType != LightType::Ambient
+													  && lType != LightType::Point; // May be TODO, but it's very hard. I think beyond our scope.
 			if (canCastShadow)
 			{
-				if (s_ShadowCount < MAX_SHADOW_CASTING_LIGHTS)
+				if (lType == LightType::Directional)
 				{
-					s_ShadowSlots[s_ShadowCount].lightIndex = activeLightCount;
-					s_ShadowSlots[s_ShadowCount].rawLightIndex = j;
-					s_ShadowSlots[s_ShadowCount].lightSpaceMatrix = l->GetLightSpaceMatrix(sceneCenter);
-					s_ShadowCount++;
+					if (s_ShadowCount < MAX_SHADOW_CASTING_LIGHTS)
+					{
+						s_ShadowSlots[s_ShadowCount].lightIndex = activeLightCount;
+						s_ShadowSlots[s_ShadowCount].rawLightIndex = j;
+						s_ShadowSlots[s_ShadowCount].dynamicLightSpaceMatrix = ComputeDirectionalLightMatrix(cameraViewProj, l->GetTransform()->Forward(), camProj);
+						matrix4 newStaticMatrix = ComputeDirectionalLightMatrixFromAABB(sceneAABB, l->GetTransform()->Forward());
+						if (newStaticMatrix != s_ShadowSlots[s_ShadowCount].staticLightSpaceMatrix)
+						{
+							s_ShadowSlots[s_ShadowCount].staticLightSpaceMatrix = newStaticMatrix;
+							s_ShadowSlots[s_ShadowCount].isDirty = true;
+						}
+						s_ShadowCount++;
+					}
+					else
+					{
+						Log::Warn("Unable to cast shadows on all requested lights...");
+					}
 				}
-				else
+				else if (lType == LightType::Spot)
 				{
-					Log::Warn("Unable to cast shadows on all requested lights...");
+					if (s_ShadowCount < MAX_SHADOW_CASTING_LIGHTS)
+					{
+						s_ShadowSlots[s_ShadowCount].lightIndex = activeLightCount;
+						s_ShadowSlots[s_ShadowCount].rawLightIndex = j;
+						s_ShadowSlots[s_ShadowCount].dynamicLightSpaceMatrix = l->GetLightSpaceMatrix();
+						matrix4 newStaticMatrix = l->GetLightSpaceMatrix();
+						if (newStaticMatrix != s_ShadowSlots[s_ShadowCount].staticLightSpaceMatrix)
+						{
+							s_ShadowSlots[s_ShadowCount].staticLightSpaceMatrix = newStaticMatrix;
+							s_ShadowSlots[s_ShadowCount].isDirty = true;
+						}
+						s_ShadowCount++;
+					}
+					else
+					{
+						Log::Warn("Unable to cast shadows on all requested lights...");
+					}
 				}
+
 			}
 
 			activeLightCount++;
 		}
 	}
 
-	bool Renderer::BeginShadowPass(int shadowSlotIndex)
+	void Renderer::SetShadowsDirty()
+	{
+		for (int i = 0; i < MAX_SHADOW_CASTING_LIGHTS; ++i)
+		{
+			s_ShadowSlots[i].isDirty = true;
+		}
+	}
+
+	bool Renderer::BeginDynamicShadowPass(int shadowSlotIndex)
 	{
 		ShadowSlot& sl = s_ShadowSlots[shadowSlotIndex];
 		if (sl.lightIndex < 0)
@@ -210,12 +260,50 @@ namespace Loopie {
 		{
 		case LightType::Directional:
 		case LightType::Spot:
-			sl.map->Bind();
-			SetViewport(0, 0, sl.map->GetWidth(), sl.map->GetHeight());
-			sl.map->Clear();
+			sl.dynamicMap->Bind();
+			SetViewport(0, 0, sl.dynamicMap->GetWidth(), sl.dynamicMap->GetHeight());
+			sl.dynamicMap->Clear();
 			s_ShadowMapShader->Bind();
 			s_ShadowMapShader->SetUniformInt("lp_ShadowSlotIndex", shadowSlotIndex);
-			s_ShadowingUniformBuffer->SetData(&sl.lightSpaceMatrix, shadowSlotIndex);
+			s_ShadowingUniformBuffer->SetData(&sl.dynamicLightSpaceMatrix, shadowSlotIndex);
+			break;
+		case LightType::Point:
+			Log::Warn("Point lights' shadows not implemented yet.");
+			break;
+		case LightType::Ambient:
+		default:
+			Log::Warn("Tried to cast shadows of ambient or unknown type light.");
+			return false;
+		}
+		return true;
+	}
+
+	bool Renderer::BeginStaticShadowPass(int shadowSlotIndex)
+	{
+		ShadowSlot& sl = s_ShadowSlots[shadowSlotIndex];
+		if (sl.lightIndex < 0)
+		{
+			return false;
+		}
+
+		if (!sl.isDirty)
+		{
+			return false;
+		}
+
+		EnableDepth();
+		EnableDepthMask();
+
+		switch (s_Lights[sl.rawLightIndex]->GetLightType())
+		{
+		case LightType::Directional:
+		case LightType::Spot:
+			sl.staticMap->Bind();
+			SetViewport(0, 0, sl.staticMap->GetWidth(), sl.staticMap->GetHeight());
+			sl.staticMap->Clear();
+			s_ShadowMapShader->Bind();
+			s_ShadowMapShader->SetUniformInt("lp_ShadowSlotIndex", shadowSlotIndex);
+			s_ShadowingUniformBuffer->SetData(&sl.staticLightSpaceMatrix, shadowSlotIndex);
 			break;
 		case LightType::Point:
 			Log::Warn("Point lights' shadows not implemented yet.");
@@ -242,23 +330,135 @@ namespace Loopie {
 		vao->Unbind();
 	}
 
-	void Renderer::EndShadowPass(int shadowSlotIndex)
+	void Renderer::EndDynamicShadowPass(int shadowSlotIndex)
 	{
-		s_ShadowSlots[shadowSlotIndex].map->Unbind();
+		s_ShadowSlots[shadowSlotIndex].dynamicMap->Unbind();
 		s_ShadowMapShader->Unbind();
 	}
 
-	void Renderer::BindShadowTexturesForMainPass()
+	void Renderer::EndStaticShadowPass(int shadowSlotIndex)
+	{
+		s_ShadowSlots[shadowSlotIndex].staticMap->Unbind();
+		s_ShadowMapShader->Unbind();
+		s_ShadowSlots[shadowSlotIndex].isDirty = false;
+	}
+
+	void Renderer::BindStaticShadowTexturesForMainPass()
 	{
 		for (int i = 0; i < MAX_SHADOW_CASTING_LIGHTS; ++i)
 		{
-			s_ShadowSlots[i].map->BindTexture(8+i); // 8 -> High number to avoid collissions
+			s_ShadowSlots[i].staticMap->BindTexture(STATIC_SHADOW_TEXTURE_INDEX + i);
+		}
+	}
+
+	void Renderer::BindDynamicShadowTexturesForMainPass()
+	{
+		for (int i = 0; i < MAX_SHADOW_CASTING_LIGHTS; ++i)
+		{
+			s_ShadowSlots[i].dynamicMap->BindTexture(DYNAMIC_SHADOW_TEXTURE_INDEX +i);
 		}
 	}
 
 	int Renderer::GetShadowCastingLightCount()
 	{
 		return int(s_ShadowCount);
+	}
+
+	matrix4 Renderer::GetShadowSlotMatrix(unsigned int slotIndex)
+	{
+		if (slotIndex >= MAX_SHADOW_CASTING_LIGHTS || s_ShadowSlots[slotIndex].lightIndex < 0)
+			return matrix4(1.0f);
+		return s_ShadowSlots[slotIndex].dynamicLightSpaceMatrix;
+	}
+
+	matrix4 Renderer::ComputeDirectionalLightMatrix(const matrix4& cameraViewProj, const vec3& lightDir, const Loopie::CameraProjection& camProj)
+	{
+		vec3 v[8];
+		for (int n = 0; n < 8; ++n) 
+		{
+			v[n].x = (n & 1) ? 1.0f : -1.0f;
+			v[n].y = (n & 2) ? 1.0f : -1.0f;
+			v[n].z = (n & 4) ? 1.0f : -1.0f;
+		}
+
+		vec4 worldV[8];
+		for (int i = 0; i < 8; ++i)
+		{
+			worldV[i] = inverse(cameraViewProj) * vec4(v[i], 1.0f);
+			worldV[i] /= worldV[i].w;
+		}
+
+		float shadowRatio = (camProj == CameraProjection::Orthographic) ? 1.0f : 0.10f;
+		for (int i = 0; i < 8; ++i)
+		{
+			// Corners with z = +1 are the far corners (indices 4-7, where bit 4 is set)
+			if (v[i].z > 0.0f)
+			{
+				vec3 nearCorner = vec3(worldV[i - 4]);  // corresponding near corner
+				vec3 farCorner = vec3(worldV[i]);
+				worldV[i] = vec4(glm::mix(nearCorner, farCorner, shadowRatio), 1.0f);
+			}
+		}
+
+		vec3 centroid = vec3(0.0f);
+		for (int j = 0; j < 8; ++j)
+		{
+			centroid += vec3(worldV[j]);
+		}
+		centroid /= 8.0f;
+
+		vec3 eye = centroid - lightDir * 100.0f;
+		vec3 upVec = abs(dot(lightDir, vec3(0.0f, 1.0f, 0.0f))) > 0.99 ? vec3(1.0f, 0.0f, 0.0f) : vec3(0.0f, 1.0f, 0.0f);
+		matrix4 lightView = glm::lookAtLH(eye, centroid, upVec);
+
+		
+		vec3 minBounds = vec3(lightView * worldV[0]);
+		vec3 maxBounds = minBounds;
+
+		for (int k = 1; k < 8; ++k)
+		{
+			vec3 p = vec3(lightView * worldV[k]);
+			minBounds = glm::min(minBounds, p);
+			maxBounds = glm::max(maxBounds, p);
+		}
+
+		matrix4 orthogonalMat = glm::orthoLH(minBounds.x, maxBounds.x, minBounds.y, maxBounds.y, minBounds.z - 50.0f, maxBounds.z);
+		return orthogonalMat * lightView;
+	}
+
+	matrix4 Renderer::ComputeDirectionalLightMatrixFromAABB(const AABB& sceneBounds, const vec3& lightDir)
+	{
+		vec3 v[8];
+		for (int n = 0; n < 8; ++n)
+		{
+			v[n].x = (n & 1) ? sceneBounds.MaxPoint.x : sceneBounds.MinPoint.x;
+			v[n].y = (n & 2) ? sceneBounds.MaxPoint.y : sceneBounds.MinPoint.y;
+			v[n].z = (n & 4) ? sceneBounds.MaxPoint.z : sceneBounds.MinPoint.z;
+		}		
+
+		vec3 centroid = vec3(0.0f);
+		for (int j = 0; j < 8; ++j)
+		{
+			centroid += v[j];
+		}
+		centroid /= 8.0f;
+
+		vec3 eye = centroid - lightDir * 100.0f;
+		vec3 upVec = abs(dot(lightDir, vec3(0.0f, 1.0f, 0.0f))) > 0.99 ? vec3(1.0f, 0.0f, 0.0f) : vec3(0.0f, 1.0f, 0.0f);
+		matrix4 lightView = glm::lookAtLH(eye, centroid, upVec);
+
+		vec3 minBounds = vec3(lightView * vec4(v[0], 1.0f));
+		vec3 maxBounds = minBounds;
+
+		for (int k = 1; k < 8; ++k)
+		{
+			vec3 p = vec3(lightView * vec4(v[k], 1.0f));
+			minBounds = glm::min(minBounds, p);
+			maxBounds = glm::max(maxBounds, p);
+		}
+
+		matrix4 orthogonalMat = glm::orthoLH(minBounds.x, maxBounds.x, minBounds.y, maxBounds.y, minBounds.z - 50.0f, maxBounds.z);
+		return orthogonalMat * lightView;
 	}
 
 	void Renderer::RegisterCamera(Camera& camera) {
@@ -322,7 +522,13 @@ namespace Loopie {
 		vec4 cameraPosLightCount = vec4(cameraPos, activeLightCount);
 		s_LightingUniformBuffer->SetData(&cameraPosLightCount, 0);
 
-		BindShadowTexturesForMainPass();
+		BindDynamicShadowTexturesForMainPass();
+		BindStaticShadowTexturesForMainPass();
+
+		for (int i = 0; i < MAX_SHADOW_CASTING_LIGHTS; ++i)
+		{
+			s_StaticMatricesUniformBuffer->SetData(&s_ShadowSlots[i].staticLightSpaceMatrix, i);
+		}
 
 		s_BoneBufferOffset = 0;
 
@@ -463,7 +669,14 @@ namespace Loopie {
 		{
 			std::string name = "lp_ShadowMaps[" + std::to_string(i) + "]";
 			if (material->GetShader().GetUniformLocation(name) != -1)
-				material->GetShader().SetUniformInt(name, 8 + i);
+				material->GetShader().SetUniformInt(name, DYNAMIC_SHADOW_TEXTURE_INDEX + i);
+		}
+
+		for (int i = 0; i < MAX_SHADOW_CASTING_LIGHTS; ++i)
+		{
+			std::string name = "lp_StaticShadowMaps[" + std::to_string(i) + "]";
+			if (material->GetShader().GetUniformLocation(name) != -1)
+				material->GetShader().SetUniformInt(name, STATIC_SHADOW_TEXTURE_INDEX + i);
 		}
 
 		if (!bones.empty())

@@ -9,8 +9,8 @@ namespace Loopie
 	{
 		Ambient = 0, // Lights all the scene equally, no direction (placed on camera)
 		Directional, // Has a direction, color and intensity (sun / moon)
-		Spot, // Has a position, direction, a cone and attenuation (falloff)
-		Point // Has a position and attenuation (falloff), spreads in all directions 
+		Spot,		 // Has a position, direction, a cone and attenuation (falloff)
+		Point		 // Has a position and attenuation (falloff), spreads in all directions 
 	};
 
 	class Light : public Component

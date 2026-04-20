@@ -1,6 +1,6 @@
 #pragma once
 
-#define LP_PROFILER_ENABLE
+//#define LP_PROFILER_ENABLE
 
 #ifdef LP_PROFILER_ENABLE
 	#include <tracy/Tracy.hpp>
