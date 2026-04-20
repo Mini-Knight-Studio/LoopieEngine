@@ -120,55 +120,55 @@ namespace Loopie
 
 			switch (job.Type)
 			{
-				case UIJobType::Image:
+			case UIJobType::Image:
+			{
+				Image* img = entity->GetComponent<Image>();
+				if (!img || !img->GetIsActive())
+					return;
+
+				const vec3 p = rt->GetWorldPosition();
+				const vec3 ws3 = rt->GetWorldScale();
+				const vec2 ws(ws3.x, ws3.y);
+				const vec3 bmin = rt->GetLocalBoundsMin();
+				const vec3 bmax = rt->GetLocalBoundsMax();
+				const vec2 s(bmax.x - bmin.x, bmax.y - bmin.y);
+
+				const vec2 pixelSize(s.x * ws.x * job.OverlayScale.x, s.y * ws.y * job.OverlayScale.y);
+				const vec2 pixelPos((p.x + bmin.x * ws.x) * job.OverlayScale.x, (p.y + bmin.y * ws.y) * job.OverlayScale.y);
+
+				vec4 color = img->GetTint();
+				std::shared_ptr<Texture> texture = img->GetTexture();
+
+				if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
 				{
-					Image* img = entity->GetComponent<Image>();
-					if (!img || !img->GetIsActive())
-						return;
-
-					const vec3 p = rt->GetWorldPosition();
-					const vec3 ws3 = rt->GetWorldScale();
-					const vec2 ws(ws3.x, ws3.y);
-					const vec3 bmin = rt->GetLocalBoundsMin();
-					const vec3 bmax = rt->GetLocalBoundsMax();
-					const vec2 s(bmax.x - bmin.x, bmax.y - bmin.y);
-
-					const vec2 pixelSize(s.x * ws.x * job.OverlayScale.x, s.y * ws.y * job.OverlayScale.y);
-					const vec2 pixelPos((p.x + bmin.x * ws.x) * job.OverlayScale.x, (p.y + bmin.y * ws.y) * job.OverlayScale.y);
-
-					vec4 color = img->GetTint();
-					std::shared_ptr<Texture> texture = img->GetTexture();
-
-					if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
-					{
-						button->GetCurrentColor(color);
-						button->GetCurrentTexture(texture);
-					}
-
-					UIRenderer::DrawImage(pixelPos, pixelSize, texture, color, img->GetUVRect());
-					break;
+					button->GetCurrentColor(color);
+					button->GetCurrentTexture(texture);
 				}
 
-				case UIJobType::Text:
-				{
-					Text* text = entity->GetComponent<Text>();
-					if (!text || !text->GetIsActive())
-						return;
+				UIRenderer::DrawImage(pixelPos, pixelSize, texture, color, img->GetUVRect());
+				break;
+			}
 
-					const vec3 p = rt->GetWorldPosition();
-					const vec3 ws3 = rt->GetWorldScale();
-					const vec2 ws(ws3.x, ws3.y);
-					const vec3 bmin = rt->GetLocalBoundsMin();
-					const vec3 bmax = rt->GetLocalBoundsMax();
-					const vec2 s(bmax.x - bmin.x, bmax.y - bmin.y);
+			case UIJobType::Text:
+			{
+				Text* text = entity->GetComponent<Text>();
+				if (!text || !text->GetIsActive())
+					return;
 
-					const vec2 pixelPos((p.x + bmin.x * ws.x) * job.OverlayScale.x, (p.y + bmin.y * ws.y) * job.OverlayScale.y);
-					const vec2 pixelSize(s.x * ws.x * job.OverlayScale.x, s.y * ws.y * job.OverlayScale.y);
+				const vec3 p = rt->GetWorldPosition();
+				const vec3 ws3 = rt->GetWorldScale();
+				const vec2 ws(ws3.x, ws3.y);
+				const vec3 bmin = rt->GetLocalBoundsMin();
+				const vec3 bmax = rt->GetLocalBoundsMax();
+				const vec2 s(bmax.x - bmin.x, bmax.y - bmin.y);
 
-					UIRenderer::DrawText(pixelPos, pixelSize, text->GetText(), text->GetFont(), text->GetColor(), text->GetScale(),
-						text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment());
-					break;
-				}
+				const vec2 pixelPos((p.x + bmin.x * ws.x) * job.OverlayScale.x, (p.y + bmin.y * ws.y) * job.OverlayScale.y);
+				const vec2 pixelSize(s.x * ws.x * job.OverlayScale.x, s.y * ws.y * job.OverlayScale.y);
+
+				UIRenderer::DrawText(pixelPos, pixelSize, text->GetText(), text->GetFont(), text->GetColor(), text->GetScale(),
+					text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment());
+				break;
+			}
 			}
 		}
 
@@ -215,133 +215,56 @@ namespace Loopie
 
 			switch (job.Type)
 			{
-				case UIJobType::Image:
-				{
-					Image* img = entity->GetComponent<Image>();
-					if (!img || !img->GetIsActive())
-						return;
-
-					const std::shared_ptr<Texture> tex = img->GetTexture();
-					if (!tex)
-						return;
-
-					const vec3 bmin = rt->GetLocalBoundsMin();
-					const vec3 bmax = rt->GetLocalBoundsMax();
-					const float w = bmax.x - bmin.x;
-					const float h = bmax.y - bmin.y;
-
-					matrix4 model = rt->GetLocalToWorldMatrix()
-						* glm::translate(matrix4(1.0f), vec3(bmin.x, bmin.y, 0.0f))
-						* glm::scale(matrix4(1.0f), vec3(w, h, 1.0f));
-
-					vec4 color = img->GetTint();
-					std::shared_ptr<Texture> texture = img->GetTexture();
-
-					if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
-					{
-						button->GetCurrentColor(color);
-						button->GetCurrentTexture(texture);
-					}
-
-					UIRenderer::DrawImageWorld(model, texture, color, img->GetUVRect());
-					break;
-				}
-
-				case UIJobType::Text:
-				{
-					Text* text = entity->GetComponent<Text>();
-					if (!text || !text->GetIsActive())
-						return;
-
-					const vec3 bmin = rt->GetLocalBoundsMin();
-					const vec3 bmax = rt->GetLocalBoundsMax();
-					const float w = bmax.x - bmin.x;
-					const float h = bmax.y - bmin.y;
-
-					const matrix4 model = rt->GetLocalToWorldMatrix() * glm::translate(matrix4(1.0f), vec3(bmin.x, bmin.y, 0.0f));
-
-					UIRenderer::DrawTextWorld(model, vec2(w, h), text->GetText(), text->GetFont(), text->GetColor(), text->GetScale(),
-						text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment());
-					break;
-				}
-			}
-		}
-
-		struct ButtonJob
-		{
-			std::shared_ptr<Entity> Entity;
-			Button* ButtonComp = nullptr;
-			RectTransform* Rect = nullptr;
-			vec2 MouseCanvas{ 0.0f, 0.0f };
-			int CanvasSortingLayer = 0;
-			int CanvasOrderInLayer = 0;
-			int ElementSortingLayer = 0;
-			int ElementOrderInLayer = 0;
-			uint64_t TraversalIndex = 0;
-		};
-
-		static bool ButtonJobLess(const ButtonJob& a, const ButtonJob& b)
-		{
-			if (a.CanvasSortingLayer != b.CanvasSortingLayer) return a.CanvasSortingLayer < b.CanvasSortingLayer;
-			if (a.CanvasOrderInLayer != b.CanvasOrderInLayer) return a.CanvasOrderInLayer < b.CanvasOrderInLayer;
-			if (a.ElementSortingLayer != b.ElementSortingLayer) return a.ElementSortingLayer < b.ElementSortingLayer;
-			if (a.ElementOrderInLayer != b.ElementOrderInLayer) return a.ElementOrderInLayer < b.ElementOrderInLayer;
-			return a.TraversalIndex < b.TraversalIndex;
-		}
-
-		static bool IsButtonJobHovered(const ButtonJob& job)
-		{
-			if (!job.Entity || !job.Entity->GetIsActive())
-				return false;
-			if (!job.ButtonComp || !job.Rect || !job.ButtonComp->GetIsActive())
-				return false;
-
-			const vec3 p = job.Rect->GetWorldPosition();
-			const vec3 ws3 = job.Rect->GetWorldScale();
-			const vec2 ws(ws3.x, ws3.y);
-			const vec3 bmin = job.Rect->GetLocalBoundsMin();
-			const vec3 bmax = job.Rect->GetLocalBoundsMax();
-
-			const float x0 = p.x + bmin.x * ws.x;
-			const float y0 = p.y + bmin.y * ws.y;
-			const float x1 = p.x + bmax.x * ws.x;
-			const float y1 = p.y + bmax.y * ws.y;
-
-			const float minX = glm::min(x0, x1);
-			const float maxX = glm::max(x0, x1);
-			const float minY = glm::min(y0, y1);
-			const float maxY = glm::max(y0, y1);
-
-			return (job.MouseCanvas.x >= minX && job.MouseCanvas.x <= maxX && job.MouseCanvas.y >= minY && job.MouseCanvas.y <= maxY);
-		}
-
-		static void CollectOverlayButtonJobsRecursive(const std::shared_ptr<Entity>& e, const vec2& mouseCanvas,
-			int canvasSortingLayer, int canvasOrderInLayer,
-			std::vector<ButtonJob>& out, uint64_t& inOutTraversal)
-		{
-			if (!e || !e->GetIsActive())
-				return;
-
-			Button* button = e->GetComponent<Button>();
-			RectTransform* rt = e->GetComponent<RectTransform>();
-			if (button && button->GetIsActive() && rt)
+			case UIJobType::Image:
 			{
-				int elementSortingLayer = button->GetSortingLayer();
-				int elementOrderInLayer = button->GetOrderInLayer();
-				if (Image* img = e->GetComponent<Image>(); img && img->GetIsActive())
+				Image* img = entity->GetComponent<Image>();
+				if (!img || !img->GetIsActive())
+					return;
+
+				const std::shared_ptr<Texture> tex = img->GetTexture();
+				if (!tex)
+					return;
+
+				const vec3 bmin = rt->GetLocalBoundsMin();
+				const vec3 bmax = rt->GetLocalBoundsMax();
+				const float w = bmax.x - bmin.x;
+				const float h = bmax.y - bmin.y;
+
+				matrix4 model = rt->GetLocalToWorldMatrix()
+					* glm::translate(matrix4(1.0f), vec3(bmin.x, bmin.y, 0.0f))
+					* glm::scale(matrix4(1.0f), vec3(w, h, 1.0f));
+
+				vec4 color = img->GetTint();
+				std::shared_ptr<Texture> texture = img->GetTexture();
+
+				if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
 				{
-					elementSortingLayer = img->GetSortingLayer();
-					elementOrderInLayer = img->GetOrderInLayer();
+					button->GetCurrentColor(color);
+					button->GetCurrentTexture(texture);
 				}
 
-				out.push_back(ButtonJob{ e, button, rt, mouseCanvas,
-					canvasSortingLayer, canvasOrderInLayer,
-					elementSortingLayer, elementOrderInLayer,
-					inOutTraversal++ });
+				UIRenderer::DrawImageWorld(model, texture, color, img->GetUVRect());
+				break;
 			}
 
-			for (const auto& child : e->GetChildren())
-				CollectOverlayButtonJobsRecursive(child, mouseCanvas, canvasSortingLayer, canvasOrderInLayer, out, inOutTraversal);
+			case UIJobType::Text:
+			{
+				Text* text = entity->GetComponent<Text>();
+				if (!text || !text->GetIsActive())
+					return;
+
+				const vec3 bmin = rt->GetLocalBoundsMin();
+				const vec3 bmax = rt->GetLocalBoundsMax();
+				const float w = bmax.x - bmin.x;
+				const float h = bmax.y - bmin.y;
+
+				const matrix4 model = rt->GetLocalToWorldMatrix() * glm::translate(matrix4(1.0f), vec3(bmin.x, bmin.y, 0.0f));
+
+				UIRenderer::DrawTextWorld(model, vec2(w, h), text->GetText(), text->GetFont(), text->GetColor(), text->GetScale(),
+					text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment());
+				break;
+			}
+			}
 		}
 	}
 
@@ -392,6 +315,7 @@ namespace Loopie
 		Application::GetInstance().m_notifier.RemoveObserver(this);
 	}
 
+	static bool dirtyShadows = false;
 	void GameModule::OnUpdate()
 	{
 
@@ -399,66 +323,65 @@ namespace Loopie
 		InputEventManager& inputEvent = app.GetInputEvent();
 		AudioManager::Update();
 
-		//// Update Components
+		// Update components
 		if (!UpdateComponents(mode)) {
 			mode = DebugGameMode::END;
 		}
 		CollisionProcessor::Process();
-		//// 
 
-		/// RenderToTarget
-		Camera* cam = Camera::GetMainCamera();
-		if (cam && cam->GetIsActive())
-		{
-			Renderer::AssignShadowSlots(cam->GetTransform()->GetWorldPosition());
-			for (int i = 0; i < Renderer::GetShadowCastingLightCount(); ++i)
-			{
-				if (Renderer::BeginShadowPass(i))
-				{
-					RenderShadows(cam);
-					Renderer::EndShadowPass(i);
-				}
+		LooseOctree& octree = m_currentScene->GetOctree();
+		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities()) {
+			if (entity->GetTransform()->HasChangedThisFrame()) {
+				octree.Update(entity);
+				entity->GetTransform()->CleanChangesFlag();
 			}
-
-			const std::vector<Camera*>& cameras = Renderer::GetRendererCameras();
-			for (Camera* rtCam : cameras)
-			{
-				if (!rtCam->GetIsActive())
-					continue;
-				std::shared_ptr<FrameBuffer> buffer = rtCam->GetRenderTarget();
-				if (!buffer)
-					continue;
-
-				buffer->Bind();
-				Renderer::SetViewport(0, 0, buffer->GetWidth(), buffer->GetHeight());
-				Renderer::BeginScene(rtCam->GetViewMatrix(), rtCam->GetProjectionMatrix(), false);
-				RenderWorld(rtCam);
-				RenderParticles(rtCam);
-				Renderer::EndScene();
-				buffer->Unbind();
-			}
-
-			/// GameWindowRender
-			ivec2 size = Application::GetInstance().GetWindow().GetSize();
-			cam->SetViewport(0, 0, size.x, size.y);
-			Renderer::SetViewport(0, 0, size.x, size.y);
-			Renderer::BeginScene(cam->GetViewMatrix(), cam->GetProjectionMatrix(), false);
-			RenderWorld(cam);
-			RenderParticles(cam);
-			Renderer::EndScene();
-			RenderUI();
 		}
 
-		///
+		const std::vector<Camera*>& cameras = Renderer::GetRendererCameras();
+		for (Camera* cam : cameras) {
+			if (!cam->GetIsActive())
+				continue;
+
+			std::shared_ptr<FrameBuffer> buffer = cam->GetRenderTarget();
+			bool mainCamera = cam == Camera::GetMainCamera();
+
+			RenderShadows(cam);
+
+			if (mainCamera) {
+				ivec2 windowSize = app.GetWindow().GetSize();
+				cam->SetViewport(0, 0, windowSize.x, windowSize.y);
+				Renderer::SetViewport(0, 0, windowSize.x, windowSize.y);
+			}
+			else {
+				buffer->Bind();
+				Renderer::SetViewport(0, 0, buffer->GetWidth(), buffer->GetHeight());
+			}
+
+			
+
+			Renderer::BeginScene(cam->GetViewMatrix(), cam->GetProjectionMatrix(), cam->GetIsEditorCamera());
+			RenderWorld(cam);
+			RenderParticles(cam);
+			Renderer::SetSceneDepthTexture(buffer ? buffer->GetDepthId() : 0);
+			Renderer::SetSceneFrustrumValues(cam->GetNearPlane(), cam->GetFarPlane());
+			Renderer::EndScene();
+
+			if (!mainCamera) {
+				buffer->Unbind();
+			}
+		}
+
+		RenderUI();
 
 		ProcessOverlayButtonsInput();
 
 		m_currentScene->FlushRemovedEntities();
 
-		if(mode == DebugGameMode::START)
+		if (mode == DebugGameMode::START)
 			mode = DebugGameMode::UPDATING;
-		if(mode == END)
+		if (mode == END)
 			mode = DebugGameMode::DEACTIVATED;
+
 	}
 
 
@@ -483,6 +406,9 @@ namespace Loopie
 			}
 
 			ScriptingManager::RuntimeStart();
+
+			m_currentScene->OnStaticGeometryChanged();
+
 		}
 
 		ScriptingManager::UpdateCoroutines();
@@ -610,19 +536,42 @@ namespace Loopie
 		Renderer::DisableBlend();
 	}
 
-	void GameModule::RenderShadows(Camera* camera)
+	void GameModule::RenderShadows(Camera* cam)
 	{
-		std::unordered_set<Entity*> entities;
-		m_currentScene->GetOctree().CollectVisibleEntitiesFrustum(camera->GetFrustum(), entities);
+		Renderer::AssignShadowSlots(cam->GetViewProjectionMatrix(), cam->GetProjection(), m_currentScene->GetEntitySpanningBounds());
+		for (int i = 0; i < Renderer::GetShadowCastingLightCount(); ++i)
+		{
+			Frustum frustum;
+			frustum.FromMatrix(Renderer::GetShadowSlotMatrix(i));
 
+			std::unordered_set<Entity*> allEntities;
+			m_currentScene->GetOctree().CollectVisibleEntitiesFrustum(frustum, allEntities);
+
+			std::unordered_set<Entity*> staticEntities;
+			std::unordered_set<Entity*> dynamicEntities;
+			SeparateEntities(allEntities, staticEntities, dynamicEntities);
+
+			if (Renderer::BeginStaticShadowPass(i))
+			{
+				Log::Info("Dasdasdasdas");
+				RenderEntityShadows(staticEntities);
+				Renderer::EndStaticShadowPass(i);
+			}
+			if (Renderer::BeginDynamicShadowPass(i))
+			{
+				RenderEntityShadows(dynamicEntities);
+				Renderer::EndDynamicShadowPass(i);
+			}
+		}
+	}
+
+	void GameModule::RenderEntityShadows(const std::unordered_set<Entity*>& entities)
+	{
 		std::vector<MeshRenderer*> renderers;
 		renderers.reserve(1);
 
 		for (const auto& entity : entities)
 		{
-			if (!entity->GetIsActive())
-				continue;
-
 			const std::vector<Component*>& components = entity->GetComponents();
 			renderers.clear();
 
@@ -653,6 +602,20 @@ namespace Loopie
 
 				Renderer::FlushShadowItem(renderer->GetMesh()->GetVAO(), entity->GetTransform(), bones);
 			}
+		}
+	}
+
+	void GameModule::SeparateEntities(const std::unordered_set<Entity*>& entities, std::unordered_set<Entity*>& staticEntities,
+		std::unordered_set<Entity*>& dynamicEntities)
+	{
+		for (auto entity : entities)
+		{
+			if (!entity->GetIsActive())
+				continue;
+			if (entity->GetIsStatic())
+				staticEntities.insert(entity);
+			else
+				dynamicEntities.insert(entity);
 		}
 	}
 
@@ -881,22 +844,23 @@ namespace Loopie
 		Renderer::DisableBlend();
 	}
 
-
 	void GameModule::ProcessOverlayButtonsInput()
 	{
 		Application& app = Application::GetInstance();
 		InputEventManager& inputEvent = app.GetInputEvent();
 
-		if (m_currentScene)
+		if (!m_currentScene)
+			return;
+
+		if (m_currentScene && ScriptingManager::IsRunning() && !inputEvent.IsReadingInputText())
 			m_uiNavigation.UpdateOverlay(*m_currentScene, inputEvent);
 
-		const vec2 mouseLocalPx = inputEvent.GetMousePosition();
-		ivec2 size = Application::GetInstance().GetWindow().GetSize();
-		const vec2 targetPixels(static_cast<float>(size.x), static_cast<float>(size.y));
+		ivec2 gameSize = Application::GetInstance().GetWindow().GetSize();
+		if (gameSize.x <= 0 || gameSize.y <= 0)
+			return;
 
-		std::vector<Jobs::ButtonJob> buttonJobs;
-		buttonJobs.reserve(64);
-		uint64_t traversal = 0;
+		const vec2 mouseLocalPx = inputEvent.GetMousePosition();
+		const vec2 targetPixels(static_cast<float>(gameSize.x), static_cast<float>(gameSize.y));
 
 		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities())
 		{
@@ -929,66 +893,76 @@ namespace Loopie
 			const float sy = targetPixels.y / ch;
 
 			const vec2 mouseCanvas(mouseLocalPx.x / sx, ch - (mouseLocalPx.y / sy));
-			CollectOverlayButtonJobsRecursive(entity, mouseCanvas, canvas->GetSortingLayer(), canvas->GetOrderInLayer(), buttonJobs, traversal);
-		}
 
-		std::sort(buttonJobs.begin(), buttonJobs.end(), Jobs::ButtonJobLess);
-
-		const bool down = (inputEvent.GetMouseButtonStatus(0) == KeyState::DOWN) || (inputEvent.GetMouseButtonStatus(0) == KeyState::REPEAT);
-		const bool justDown = (inputEvent.GetMouseButtonStatus(0) == KeyState::DOWN);
-		const bool up = (inputEvent.GetMouseButtonStatus(0) == KeyState::UP);
-
-		static bool s_pressedInside = false;
-		static UUID s_pressedButtonUUID = UUID::Invalid;
-
-		Jobs::ButtonJob* topHovered = nullptr;
-		for (auto it = buttonJobs.rbegin(); it != buttonJobs.rend(); ++it)
-		{
-			if (IsButtonJobHovered(*it))
-			{
-				topHovered = &(*it);
-				break;
+			static bool s_pressedInside = false;
+			static bool s_releasedInside = false;
+			ProcessOverlayButtonsRecursive(entity, mouseCanvas, true, inputEvent, s_pressedInside, s_releasedInside);
+			if (s_releasedInside) {
+				s_pressedInside = false;
+				s_releasedInside = false;
 			}
 		}
 
-		if (justDown && topHovered)
-		{
-			s_pressedInside = true;
-			s_pressedButtonUUID = topHovered->ButtonComp ? topHovered->ButtonComp->GetUUID() : UUID::Invalid;
-		}
-
-		for (Jobs::ButtonJob& job : buttonJobs)
-		{
-			if (!job.ButtonComp)
-				continue;
-
-			const bool focused = job.ButtonComp->IsFocused();
-			const bool hovered = (topHovered && topHovered->ButtonComp == job.ButtonComp) ? Jobs::IsButtonJobHovered(job) : false;
-			job.ButtonComp->SetHovered(hovered || focused);
-
-			const bool isPressedTarget = (UUID::IsValid(s_pressedButtonUUID.Get())) && (job.ButtonComp->GetUUID() == s_pressedButtonUUID);
-			job.ButtonComp->SetPressed(down && isPressedTarget && (hovered || focused) && s_pressedInside);
-		}
-
-		if (up && s_pressedInside)
-		{
-			for (Jobs::ButtonJob& job : buttonJobs)
-			{
-				if (!job.ButtonComp)
-					continue;
-
-				if (!(job.ButtonComp->GetUUID() == s_pressedButtonUUID))
-					continue;
-
-				const bool hovered = (topHovered && topHovered->ButtonComp == job.ButtonComp) ? Jobs::IsButtonJobHovered(job) : false;
-				if (hovered)
-					job.ButtonComp->TriggerClick();
-				break;
-			}
-
-			s_pressedInside = false;
-			s_pressedButtonUUID = UUID::Invalid;
-		}
 	}
 
+	void GameModule::ProcessOverlayButtonsRecursive(const std::shared_ptr<Loopie::Entity>& entity, const vec2& mouseCanvas, bool mouseOverGame, const Loopie::InputEventManager& input, bool& pressedInsideAny, bool& releasedInsideAny)
+	{
+		if (!entity || !entity->GetIsActive())
+			return;
+
+		Button* button = entity->GetComponent<Button>();
+		RectTransform* rt = entity->GetComponent<RectTransform>();
+
+		bool hovered = false;
+		if (mouseOverGame && button && rt && button->GetIsActive())
+		{
+			const vec3 p = rt->GetWorldPosition();
+			const vec3 ws3 = rt->GetWorldScale();
+			const vec2 ws(ws3.x, ws3.y);
+			const vec3 bmin = rt->GetLocalBoundsMin();
+			const vec3 bmax = rt->GetLocalBoundsMax();
+
+			const float x0 = p.x + bmin.x * ws.x;
+			const float y0 = p.y + bmin.y * ws.y;
+			const float x1 = p.x + bmax.x * ws.x;
+			const float y1 = p.y + bmax.y * ws.y;
+
+			const float minX = glm::min(x0, x1);
+			const float maxX = glm::max(x0, x1);
+			const float minY = glm::min(y0, y1);
+			const float maxY = glm::max(y0, y1);
+
+			hovered = (mouseCanvas.x >= minX && mouseCanvas.x <= maxX &&
+				mouseCanvas.y >= minY && mouseCanvas.y <= maxY);
+
+			const bool focused = button->IsFocused();
+			button->SetHovered(hovered || focused);
+
+			const bool down = (input.GetMouseButtonStatus(0) == KeyState::DOWN) ||
+				(input.GetMouseButtonStatus(0) == KeyState::REPEAT);
+			const bool justDown = (input.GetMouseButtonStatus(0) == KeyState::DOWN);
+			const bool up = (input.GetMouseButtonStatus(0) == KeyState::UP);
+
+			if (justDown && hovered)
+			{
+				pressedInsideAny = true;
+			}
+
+			button->SetPressed(down && (hovered || focused) && pressedInsideAny);
+
+			if (up && pressedInsideAny)
+			{
+				if (hovered) {
+					button->TriggerClick();
+					pressedInsideAny = false;
+				}
+
+				releasedInsideAny = true;
+				button->SetPressed(false);
+			}
+		}
+
+		for (const auto& child : entity->GetChildren())
+			ProcessOverlayButtonsRecursive(child, mouseCanvas, mouseOverGame, input, pressedInsideAny, releasedInsideAny);
+	}
 }

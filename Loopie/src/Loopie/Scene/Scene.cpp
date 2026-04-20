@@ -449,7 +449,7 @@ namespace Loopie {
 		return *m_octree;
 	}
 
-	AABB Scene::GetEntitySpanningBounds() const
+	const AABB& Scene::GetEntitySpanningBounds() const
 	{
 		return m_entitySpanningBounds;
 	}
@@ -818,6 +818,14 @@ namespace Loopie {
 				configData.ToFile(config.string());
 			}
 		}
+
+		for (const auto& [uuid, entity] : GetAllEntities()) {
+			if (entity->GetTransform()->HasChangedThisFrame()) {
+				m_octree->Update(entity);
+				entity->GetTransform()->CleanChangesFlag();
+			}
+		}
+
 		OnStaticGeometryChanged();
 
 		return true;

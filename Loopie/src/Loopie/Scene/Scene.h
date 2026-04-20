@@ -52,7 +52,7 @@ namespace Loopie {
 		LooseOctree& GetOctree() const;
 
 		void OnStaticGeometryChanged();
-		AABB GetEntitySpanningBounds() const;
+		const AABB& GetEntitySpanningBounds() const;
 		void UpdateEntitySpanningBounds();
 		// Returns the unordered_map of the UUID and Entity ptrs
 		// Usage: for (const auto& [uuid, entity] : scene.GetAllEntities()) {entity->Update();}

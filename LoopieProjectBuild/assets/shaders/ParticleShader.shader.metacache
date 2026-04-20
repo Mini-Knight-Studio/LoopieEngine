@@ -1,4 +1,7 @@
 {
-    "HasCache": false,
+    "Caches": [
+        "Shaders\\b6fb5281-ac16-ce59-5fe4-f61a769d1ef2.shader"
+    ],
+    "HasCache": true,
     "LastModified": 1775465432
 }
