@@ -406,9 +406,6 @@ namespace Loopie
 			}
 
 			ScriptingManager::RuntimeStart();
-
-			m_currentScene->OnStaticGeometryChanged();
-
 		}
 
 		ScriptingManager::UpdateCoroutines();
@@ -553,7 +550,6 @@ namespace Loopie
 
 			if (Renderer::BeginStaticShadowPass(i))
 			{
-				Log::Info("Dasdasdasdas");
 				RenderEntityShadows(staticEntities);
 				Renderer::EndStaticShadowPass(i);
 			}
