@@ -57,22 +57,23 @@ namespace Loopie {
 	{
 		JsonData saveData;
 		JsonNode entitiesObj = saveData.CreateArrayField("entities");
-		
+
 		for (const auto& [id, entity] : GetAllEntities())
 		{
 			JsonData entityObj = JsonData();
-			
+
 			entityObj.CreateField<std::string>("uuid", id.Get());
 			entityObj.CreateField<std::string>("name", entity->GetName());
 			entityObj.CreateField<bool>("active", entity->GetIsActiveInHierarchy());
 			entityObj.CreateField<bool>("static", entity->GetIsStaticInHierarchy());
+			entityObj.CreateField<int>("order", entity->GetOrder());
 
 			if (std::shared_ptr<Entity> parentEntity = entity->GetParent().lock())
 				entityObj.CreateField<std::string>("parent_uuid", parentEntity->GetUUID().Get());
 
 			// Creates an array of components
 			JsonNode componentsObj = entityObj.CreateArrayField("components");
-			
+
 			for (auto const& component : entity->GetComponents())
 			{
 				JsonData componentObj = JsonData();
@@ -98,7 +99,7 @@ namespace Loopie {
 	// the last entity may not be accurate. 
 	// A rebuild / update of the entity should be called AFTER the entity gets its mesh.
 	std::shared_ptr<Entity> Scene::CreateEntity(const std::string& name,
-												std::shared_ptr<Entity> parentEntity)
+		std::shared_ptr<Entity> parentEntity)
 	{
 		std::shared_ptr<Entity> realParent = parentEntity ? parentEntity : m_rootEntity;
 		std::string uniqueName = GetUniqueName(realParent, name);
@@ -116,7 +117,7 @@ namespace Loopie {
 	}
 
 	std::shared_ptr<Entity> Scene::CreateEntity(const UUID& uuid, const std::string& name,
-												 std::shared_ptr<Entity> parentEntity)
+		std::shared_ptr<Entity> parentEntity)
 	{
 
 		std::shared_ptr<Entity> realParent = parentEntity ? parentEntity : m_rootEntity;
@@ -137,7 +138,7 @@ namespace Loopie {
 	}
 
 	std::shared_ptr<Entity> Scene::CreateEntity(const vec3& position, const quaternion& rotation, const vec3& scale,
-												std::shared_ptr<Entity> parentEntity, const std::string& name)
+		std::shared_ptr<Entity> parentEntity, const std::string& name)
 	{
 		std::shared_ptr<Entity> realParent = parentEntity ? parentEntity : m_rootEntity;
 		std::string uniqueName = GetUniqueName(realParent, name);
@@ -154,8 +155,8 @@ namespace Loopie {
 	}
 
 	std::shared_ptr<Entity> Scene::CreateEntity(Transform* transform,
-										std::shared_ptr<Entity> parentEntity,
-										const std::string& name)
+		std::shared_ptr<Entity> parentEntity,
+		const std::string& name)
 	{
 		std::shared_ptr<Entity> realParent = parentEntity ? parentEntity : m_rootEntity;
 		std::string uniqueName = GetUniqueName(realParent, name);
@@ -189,7 +190,7 @@ namespace Loopie {
 
 	void Scene::RemoveEntity(std::shared_ptr<Entity> entity)
 	{
-		if (!entity) 
+		if (!entity)
 			return;
 
 		RemoveEntityRecursive(entity);
@@ -292,7 +293,7 @@ namespace Loopie {
 				scriptClass->SetIsActive(component->GetLocalIsActive());
 				continue;
 			}
-			 // Canvas
+			// Canvas
 			else if (compType == Canvas::GetTypeIDStatic())
 			{
 				auto canvas = clone->AddComponent<Canvas>();
@@ -506,7 +507,7 @@ namespace Loopie {
 		if (!sceneAsset->Load())
 			return false;
 
-		
+
 		return ReadAndLoadSceneFile((Application::GetInstance().m_activeProject.GetChachePath() / sceneAsset->GetSceneFilePath()).string(), false);
 	}
 
@@ -520,7 +521,7 @@ namespace Loopie {
 
 		m_rootEntity = std::make_shared<Entity>("scene");
 		m_rootEntity->AddComponent<Transform>();
-		
+
 		JsonData saveData = Json::ReadFromFile(filePath);
 
 		if (saveData.IsEmpty())
@@ -553,7 +554,7 @@ namespace Loopie {
 
 			std::shared_ptr<Entity> entity = CreateEntity(uuid, name, nullptr);
 			entity->SetName(name);
-			entity->SetIsActive(active);		
+			entity->SetIsActive(active);
 			entity->SetIsStatic(isStatic);
 		}
 
@@ -575,9 +576,11 @@ namespace Loopie {
 				UUID parentUUID = UUID(entityNode.GetValue<std::string>("parent_uuid").Result);
 				if (m_entities.find(parentUUID) != m_entities.end())
 				{
-					entity->SetParent(m_entities[parentUUID]);
+					entity->SetParent(m_entities[parentUUID], true, false);
 				}
 			}
+
+			entity->SetOrder(entityNode.GetValue<int>("order", -1).Result);
 
 			JsonNode componentsObj = entityNode.Child("components");
 			if (componentsObj.IsValid() && componentsObj.IsArray())
@@ -590,7 +593,7 @@ namespace Loopie {
 					JsonResult<std::string> componentUUIDResult = componentNode.GetValue<std::string>("uuid");
 					JsonResult<bool> componentActiveResult = componentNode.GetValue<bool>("is_active", true);
 					UUID componentUUID = UUID();
-					if(componentUUIDResult.Found)
+					if (componentUUIDResult.Found)
 					{
 						componentUUID = UUID(componentUUIDResult.Result);
 					}
@@ -797,11 +800,11 @@ namespace Loopie {
 
 		Log::Info("Scene loaded successfully");
 
-		if(ScriptingManager::IsRunning())
+		if (ScriptingManager::IsRunning())
 		{
 			Application::GetInstance().m_notifier.Notify(EngineNotification::OnRuntimeStart);
 		}
-		
+
 
 		if (safeSceneAsLastLoaded) {
 			m_filePath = filePath;
@@ -819,7 +822,10 @@ namespace Loopie {
 			}
 		}
 
+		m_rootEntity->SortChildrenByOrder();
 		for (const auto& [uuid, entity] : GetAllEntities()) {
+			entity->SortChildrenByOrder();
+
 			if (entity->GetTransform()->HasChangedThisFrame()) {
 				m_octree->Update(entity);
 				entity->GetTransform()->CleanChangesFlag();
@@ -851,13 +857,13 @@ namespace Loopie {
 
 	void Scene::OnNotify(const EngineNotification& id)
 	{
-		if(id == EngineNotification::OnRuntimeStart)
+		if (id == EngineNotification::OnRuntimeStart)
 		{
 			AudioManager::StartSceneAudio(this);
 
-			for(const auto& [uuid, entity] : m_entities)
+			for (const auto& [uuid, entity] : m_entities)
 			{
-				std::vector<ScriptClass*> scripts =entity->GetComponents<ScriptClass>();
+				std::vector<ScriptClass*> scripts = entity->GetComponents<ScriptClass>();
 				for (size_t i = 0; i < scripts.size(); i++)
 				{
 					scripts[i]->SetUp();
@@ -933,7 +939,7 @@ namespace Loopie {
 
 	void Scene::RemoveEntityRecursive(std::shared_ptr<Entity> entity)
 	{
-		if (!entity) 
+		if (!entity)
 			return;
 
 		auto children = entity->GetChildren(); // Making a copy instead of referencing just in case
@@ -953,11 +959,11 @@ namespace Loopie {
 			auto destroy = [&](std::vector<ScriptClass*>& components) -> void {
 				for (size_t i = 0; i < components.size(); i++)
 					components[i]->InvokeOnDestroy();
-			};
+				};
 
 			destroy(entity->GetComponents<ScriptClass>());
 		}
-		
+
 
 		m_octree->Remove(entity);
 		m_entities.erase(entity->GetUUID());

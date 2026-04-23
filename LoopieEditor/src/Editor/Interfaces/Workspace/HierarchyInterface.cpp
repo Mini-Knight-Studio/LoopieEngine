@@ -16,16 +16,17 @@
 
 namespace Loopie {
 	std::weak_ptr<Entity> HierarchyInterface::s_SelectedEntity;
+	std::weak_ptr<Entity> HierarchyInterface::s_PendingSelectEntity;
 	Event<OnEntityOrFileNotification> HierarchyInterface::s_OnEntitySelected;
 
 	HierarchyInterface::HierarchyInterface() {
-		
+
 	}
 
 	void HierarchyInterface::Update(const InputEventManager& inputEvent)
 	{
-		if(m_focused)
-			HotKeysSelectedEntiy(inputEvent);	
+		if (m_focused)
+			HotKeysSelectedEntiy(inputEvent);
 	}
 
 	void HierarchyInterface::Render() {
@@ -33,7 +34,7 @@ namespace Loopie {
 		if (ImGui::Begin("Hierarchy")) {
 
 			m_focused = ImGui::IsWindowHovered();
-			
+
 			if (!m_scene) {
 				ImGui::End();
 				return;
@@ -49,25 +50,22 @@ namespace Loopie {
 				ImGui::EndPopup();
 			}
 
-			for (const auto& entity : m_scene->GetRootEntity()->GetChildren())
+			const auto rootChildren = m_scene->GetRootEntity()->GetChildren();
+			for (int i = 0; i < (int)rootChildren.size(); i++)
 			{
-				if (!entity)
+				if (!rootChildren[i])
 					continue;
-				DrawEntitySlot(entity, entity->GetIsActiveInHierarchy());
-				
+				DrawInsertionZone(m_scene->GetRootEntity(), i);
+				DrawEntitySlot(rootChildren[i], rootChildren[i]->GetIsActiveInHierarchy());
 			}
-		
+			DrawInsertionZone(m_scene->GetRootEntity(), (int)rootChildren.size());
 
-			ImVec2 size = ImGui::GetContentRegionAvail();
-			if(size.x !=0 && size.y != 0)
+			if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
 			{
-				//ImGui::SetCursorPos(cursorPos);  /// And move up the avail
-				ImGui::SetNextItemAllowOverlap();
-				ImGui::InvisibleButton("##DropTarget", size, ImGuiButtonFlags_None);
-				Drop(m_scene->GetRootEntity());
+				if (auto pending = s_PendingSelectEntity.lock())
+					SelectEntity(pending);
+				s_PendingSelectEntity.reset();
 			}
-
-			
 		}
 		ImGui::End();
 	}
@@ -106,14 +104,17 @@ namespace Loopie {
 		{
 			ImGui::PopStyleColor();
 		}
+
+		if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen())
+		{
+			s_PendingSelectEntity = entity;
+		}
+
 		bool dragStarted = false;
 		Drag(entity, dragStarted);
+		if (dragStarted)
+			s_PendingSelectEntity.reset();
 		Drop(entity);
-
-		if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && ImGui::IsItemHovered() && !dragStarted)
-		{
-			SelectEntity(entity);
-		}
 
 		if (ImGui::BeginPopupContextItem())
 		{
@@ -123,12 +124,76 @@ namespace Loopie {
 
 		if (opened && hasChildren)
 		{
-			for (const auto& child : children)
+			for (int i = 0; i < (int)children.size(); i++)
 			{
-				DrawEntitySlot(child, isActive);
+				DrawInsertionZone(entity, i);
+				DrawEntitySlot(children[i], isActive);
 			}
+			DrawInsertionZone(entity, (int)children.size());
 			ImGui::TreePop();
 		}
+	}
+
+	void HierarchyInterface::DrawInsertionZone(const std::shared_ptr<Entity> parent, int insertIndex)
+	{
+		ImGui::PushID((parent->GetUUID().Get() + "_iz_" + std::to_string(insertIndex)).c_str());
+
+		ImVec2 cursorPos = ImGui::GetCursorPos();
+		cursorPos.y -= 4;
+		ImGui::SetCursorPos(cursorPos);
+
+		ImVec2 zoneSize = ImVec2(ImGui::GetContentRegionAvail().x, 3.0f);
+		ImGui::SetNextItemAllowOverlap();
+		ImGui::InvisibleButton("##iz", zoneSize);
+
+		if (ImGui::BeginDragDropTarget())
+		{
+			ImDrawList* drawList = ImGui::GetWindowDrawList();
+			ImVec2 pMin = ImGui::GetItemRectMin();
+			ImVec2 pMax = ImGui::GetItemRectMax();
+			float midY = (pMin.y + pMax.y) * 0.5f;
+			const ImU32 lineColor = IM_COL32(66, 150, 250, 255);
+			drawList->AddCircleFilled(ImVec2(pMin.x + 4.0f, midY), 3.0f, lineColor);
+			drawList->AddLine(ImVec2(pMin.x + 4.0f, midY), ImVec2(pMax.x, midY), lineColor, 2.0f);
+
+
+			ImGui::PushStyleColor(ImGuiCol_DragDropTarget, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY_UUID"))
+			{
+				std::string uuidStr(static_cast<const char*>(payload->Data));
+				std::shared_ptr<Entity> dragged = m_scene->GetEntity(UUID(uuidStr));
+
+				if (dragged && dragged != parent)
+				{
+					auto currentParent = dragged->GetParent().lock();
+					int targetIndex = insertIndex;
+
+					if (currentParent == parent)
+					{
+						int currentOrder = dragged->GetOrder();
+						if (currentOrder < targetIndex)
+							targetIndex--;
+						parent->ReorderChild(dragged, targetIndex);
+					}
+					else
+					{
+						dragged->SetParent(parent);
+						targetIndex = std::min(targetIndex, parent->GetChildCount() - 1);
+						parent->ReorderChild(dragged, targetIndex);
+					}
+				}
+			}
+
+			ImGui::PopStyleColor();
+
+			ImGui::EndDragDropTarget();
+		}
+
+		cursorPos = ImGui::GetCursorPos();
+		cursorPos.y -= 3;
+		ImGui::SetCursorPos(cursorPos);
+
+		ImGui::PopID();
 	}
 
 	void HierarchyInterface::DrawContextMenu(const std::shared_ptr<Entity> entity)
@@ -140,7 +205,7 @@ namespace Loopie {
 		{
 			std::shared_ptr<Entity> newEntity = m_scene->CreateEntity("Entity", entity);
 			SelectEntity(newEntity);
-		}	
+		}
 
 		/*if (ImGui::MenuItem("Copy"))
 		{
@@ -163,7 +228,7 @@ namespace Loopie {
 			s_SelectedEntity = newEntity;
 		}
 
-		if (ImGui::MenuItem("Delete",nullptr, false, entity != nullptr))
+		if (ImGui::MenuItem("Delete", nullptr, false, entity != nullptr))
 		{
 			if (s_SelectedEntity.lock() == entity)
 				SelectEntity(nullptr);
@@ -192,7 +257,7 @@ namespace Loopie {
 		{
 			if (ImGui::MenuItem("Canvas"))
 				SelectEntity(CreateCanvas("Canvas", entity));
-			
+
 			if (ImGui::MenuItem("Image"))
 			{
 				if (auto newImage = CreateImage("Image", entity))
@@ -307,7 +372,7 @@ namespace Loopie {
 
 		return newEntity;
 	}
-	
+
 	std::shared_ptr<Entity> HierarchyInterface::CreateCanvas(const std::string& name, const std::shared_ptr<Entity> parent)
 	{
 		std::shared_ptr<Entity> newEntity = m_scene->CreateEntity(name, parent);
@@ -383,7 +448,7 @@ namespace Loopie {
 	{
 		std::shared_ptr<Entity> newEntity = m_scene->CreateEntity(name, parent);
 		newEntity->AddComponent<Light>(vec3(1.0f, 1.0f, 1.0f), 0.5f, type);
-	
+
 		return newEntity;
 	}
 }

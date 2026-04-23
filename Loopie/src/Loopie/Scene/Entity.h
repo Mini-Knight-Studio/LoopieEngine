@@ -80,7 +80,7 @@ namespace Loopie {
 				if (component->GetTypeID() == T::GetTypeIDStatic())
 					return static_cast<T*>(component.get());
 			}
-			
+
 			return nullptr;
 		}
 
@@ -124,7 +124,7 @@ namespace Loopie {
 
 			for (size_t i = 0; i < m_components.size(); i++)
 			{
-				if (m_components[i]->GetTypeID() == T::GetTypeIDStatic()){
+				if (m_components[i]->GetTypeID() == T::GetTypeIDStatic()) {
 					m_componentsByUUID.erase(m_components[i]->GetUUID());
 					m_components.erase(m_components.begin() + i);
 
@@ -138,9 +138,10 @@ namespace Loopie {
 		bool RemoveComponent(Component* component);
 
 		// If a child is set up, then it means this is its parent and will update it accordingly
-		void AddChild(const std::shared_ptr<Entity>& child);
-		void RemoveChild(const std::shared_ptr<Entity>& child);
-		void RemoveChild(UUID childUuid);
+		void AddChild(const std::shared_ptr<Entity>& child, bool setOrder = true);
+		void RemoveChild(const std::shared_ptr<Entity>& child, bool setOrder = true);
+		void RemoveChild(UUID childUuid, bool setOrder = true);
+		void ReorderChild(const std::shared_ptr<Entity>& child, int newIndex);
 
 		const UUID& GetUUID() const;
 		const std::string& GetName() const;
@@ -153,6 +154,7 @@ namespace Loopie {
 		std::shared_ptr<Entity> GetChild(const std::string& name, bool deepSearch = false) const;
 
 		int GetComponentCount() const;
+		int GetOrder() const;
 
 		int GetChildCount() const;
 		const std::vector<std::shared_ptr<Entity>>& GetChildren() const;
@@ -165,8 +167,15 @@ namespace Loopie {
 		void SetName(const std::string& name);
 		void SetIsActive(bool active);
 		void SetIsStatic(bool active);
+
+		void SetOrder(int order);
+		void SortChildrenByOrder();
+
 		// If a parent is set up, then it means this is its child and will update it accordingly
-		void SetParent(const std::shared_ptr<Entity>& parent, bool keepLocal = true);
+		void SetParent(const std::shared_ptr<Entity>& parent, bool keepLocal = true, bool setOrder = true);
+
+
+
 	private:
 		void GetRecursiveChildren(std::vector<std::shared_ptr<Entity>>& childrenEntities);
 
@@ -181,5 +190,6 @@ namespace Loopie {
 		std::string m_name;
 		bool m_isActive = true;
 		bool m_isStatic = true;
+		int m_order = -1;
 	};
 }

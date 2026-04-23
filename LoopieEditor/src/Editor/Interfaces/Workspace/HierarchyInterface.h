@@ -20,6 +20,7 @@ namespace Loopie {
 
 	private:
 		void DrawEntitySlot(const std::shared_ptr<Entity> entity, bool active);
+		void DrawInsertionZone(const std::shared_ptr<Entity> parent, int insertIndex);
 
 		void DrawContextMenu(const std::shared_ptr<Entity> entity);
 		void HotKeysSelectedEntiy(const InputEventManager& inputEvent);
@@ -37,6 +38,7 @@ namespace Loopie {
 	public:
 
 		static std::weak_ptr<Entity> s_SelectedEntity;
+		static std::weak_ptr<Entity> s_PendingSelectEntity;
 		static Event<OnEntityOrFileNotification> s_OnEntitySelected;
 	private:
 		Scene* m_scene = nullptr;
