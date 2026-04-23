@@ -407,6 +407,9 @@ namespace Loopie
         internal extern static float Time_GetFixedDeltaTime();
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static float Time_GetUnscaledDeltaTime();
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static float Time_GetTimeScale();
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]

@@ -20,6 +20,15 @@ namespace Loopie
             return InternalCalls.Time_GetFixedDeltaTime();
         }
 
+        public static float unscaledDeltaTime
+        {
+            get { return GetUnscaledDeltaTime(); }
+        }
+        private static float GetUnscaledDeltaTime()
+        {
+            return InternalCalls.Time_GetUnscaledDeltaTime();
+        }
+
         public static float timeScale
         {
             get { return GetTimeScale(); }

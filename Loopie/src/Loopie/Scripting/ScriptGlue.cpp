@@ -1410,6 +1410,11 @@ namespace Loopie
 		return (float)Time::GetFixedDeltaTime();
 	}
 
+	static float Time_GetUnscaledDeltaTime()
+	{
+		return (float)Time::GetUnscaledDeltaTime();
+	}
+
 	static float Time_GetTimeScale()
 	{
 		return Time::GetTimeScale();
@@ -2920,6 +2925,7 @@ namespace Loopie
 
 		ADD_INTERNAL_CALL(Time_GetDeltaTime);
 		ADD_INTERNAL_CALL(Time_GetFixedDeltaTime);
+		ADD_INTERNAL_CALL(Time_GetUnscaledDeltaTime);
 		ADD_INTERNAL_CALL(Time_GetTimeScale);
 		ADD_INTERNAL_CALL(Time_SetTimeScale);
 
