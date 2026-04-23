@@ -5,6 +5,7 @@
 #include "Loopie/Render/Renderer.h"
 #include "Loopie/Render/Gizmo.h"
 #include "Loopie/Components/Transform.h"
+#include "Loopie/Collisions/CollisionProcessor.h"
 
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Resources/ResourceManager.h"
@@ -35,7 +36,8 @@ namespace Loopie {
 			"assets/icons/icon_trs.png",
 			"assets/icons/icon_grid.png",
 			"assets/icons/icon_octree.png",
-			"assets/icons/icon_snap.png"
+			"assets/icons/icon_snap.png",
+			"assets/icons/icon_collisions.png"
 		};
 
 		std::vector<Metadata> iconsToLoadMetadatas;
@@ -53,6 +55,7 @@ namespace Loopie {
 		m_gridIcon = ResourceManager::GetTexture(iconsToLoadMetadatas[4]);
 		m_octreeIcon = ResourceManager::GetTexture(iconsToLoadMetadatas[5]);
 		m_snapIcon = ResourceManager::GetTexture(iconsToLoadMetadatas[6]);
+		m_collisionsIcon = ResourceManager::GetTexture(iconsToLoadMetadatas[7]);
 
 
 		m_gizmoOperation = ImGuizmo::TRANSLATE;
@@ -330,6 +333,18 @@ namespace Loopie {
 			m_gizmoOperation = (int)ImGuizmo::SCALE;
 		}
 		RemoveStyleButton(hasStyle);
+
+
+		ImGui::SameLine();
+		availableWidth = ImGui::GetContentRegionAvail().x - buttonsSize.x - framePadding.x * 2;
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + availableWidth);
+
+		hasStyle = AddStyleButton(CollisionProcessor::IsGizmoVisible());
+		if (ImGui::ImageButton("collisions", (ImTextureID)m_collisionsIcon->GetRendererId(), buttonsSize)) {
+			CollisionProcessor::SetGizmosVisibility(!CollisionProcessor::IsGizmoVisible());
+		}
+		RemoveStyleButton(hasStyle);
+
 
 		hasStyle = AddStyleButton(m_gizmoOperation == (int)ImGuizmo::UNIVERSAL);
 		if (ImGui::ImageButton("all", (ImTextureID)m_trsIcon->GetRendererId(), buttonsSize))

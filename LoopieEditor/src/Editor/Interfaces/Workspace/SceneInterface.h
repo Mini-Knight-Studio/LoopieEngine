@@ -77,5 +77,6 @@ namespace Loopie {
 		std::shared_ptr<Texture> m_octreeIcon;
 		std::shared_ptr<Texture> m_gridIcon;
 		std::shared_ptr<Texture> m_snapIcon;
+		std::shared_ptr<Texture> m_collisionsIcon;
 	};
 }

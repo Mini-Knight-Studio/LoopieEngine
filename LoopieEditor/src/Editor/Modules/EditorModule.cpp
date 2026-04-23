@@ -686,6 +686,7 @@ namespace Loopie
 					comp->RenderGizmo();
 			}
 			m_currentScene->GetOctree().DebugDraw(Color::MAGENTA);
+			CollisionProcessor::RenderGizmos();
 		}
 	}
 

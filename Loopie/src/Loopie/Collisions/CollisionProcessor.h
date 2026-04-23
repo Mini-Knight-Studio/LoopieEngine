@@ -48,6 +48,10 @@ namespace Loopie {
 		static bool GetLayerCollision(unsigned int a, unsigned int b);
 		static void SetLayerCollision(unsigned int a, unsigned int b, bool value);
 
+		static bool IsGizmoVisible() { return s_renderGizmos; }
+		static void SetGizmosVisibility(bool visibility) { s_renderGizmos = visibility; }
+		static void RenderGizmos();
+
 		static void SaveLayers();
 	private:
 
@@ -57,5 +61,7 @@ namespace Loopie {
 		static std::array<CollisionLayer, MAX_LAYERS> s_layers;
 
 		static bool s_collisionMatrix[MAX_LAYERS][MAX_LAYERS];
+
+		static bool s_renderGizmos;
 	};
 }

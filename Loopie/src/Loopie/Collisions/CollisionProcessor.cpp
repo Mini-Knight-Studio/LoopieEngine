@@ -15,6 +15,7 @@ namespace Loopie {
 	std::vector<BoxCollider*> CollisionProcessor::s_colliders;
     bool CollisionProcessor::s_collisionMatrix[MAX_LAYERS][MAX_LAYERS];
     std::array<CollisionLayer, MAX_LAYERS> CollisionProcessor::s_layers;
+    bool CollisionProcessor::s_renderGizmos = false;
 
     void CollisionProcessor::Initialize()
     {
@@ -251,6 +252,17 @@ namespace Loopie {
 
         s_collisionMatrix[a][b] = value;
         s_collisionMatrix[b][a] = value;
+    }
+
+    void CollisionProcessor::RenderGizmos() {
+        if (!s_renderGizmos)
+            return;
+
+        for (auto* collider : s_colliders)
+        {
+            if(collider)
+                collider->RenderGizmo();
+        }
     }
 
     void CollisionProcessor::SaveLayers()
