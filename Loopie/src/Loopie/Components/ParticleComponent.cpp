@@ -269,10 +269,9 @@ namespace Loopie
 					}
 
 					UUID spriteID = UUID(node.GetValue<std::string>("sprite_uuid").Result);
-					if (UUID::IsValid(spriteID.Get()))
+					if (UUID::IsValid(spriteID.Get()) && spriteID.Get() != UUID::Invalid.Get())
 					{
-						UUID id = UUID(data.GetValue<std::string>("sprite_uuid").Result);
-						Metadata* meta = AssetRegistry::GetMetadata(id);
+						Metadata* meta = AssetRegistry::GetMetadata(spriteID);
 						if (meta)
 							m_partSystem.GetEmitterArray()[i]->SetSprite(ResourceManager::GetTexture(*meta));
 					}

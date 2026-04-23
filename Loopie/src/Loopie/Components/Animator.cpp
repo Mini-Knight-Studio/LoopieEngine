@@ -239,6 +239,9 @@ namespace Loopie {
 					m_currentTime = 0.0f;
 					m_currentClipIndex = index;
 					m_clipCacheDirty = true;
+					m_nextClip = nullptr;
+					m_nextClipIndex = 0;
+					m_inTransition = false;
 				}
 				else {
 					m_nextClip = &clip;
