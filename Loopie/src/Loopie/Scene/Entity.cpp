@@ -49,9 +49,9 @@ namespace Loopie {
 
 			if (setOrder) {
 				child->m_order = (int)m_childrenEntities.size();
-				m_childrenEntities.push_back(child);
-				child->m_parentEntity = weak_from_this();
 			}	
+			m_childrenEntities.push_back(child);
+			child->m_parentEntity = weak_from_this();
 		}
 	}
 
