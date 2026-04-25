@@ -35,13 +35,13 @@ namespace Loopie
 
         public static bool operator ==(Component a, Component b)
         {
-            if (ReferenceEquals(a, b))
+            bool aIsNullLike = a is null || a.IsNullComponent();
+            bool bIsNullLike = b is null || b.IsNullComponent();
+
+            if (aIsNullLike && bIsNullLike)
                 return true;
 
-            if (a is null || b is null)
-                return false;
-
-            if (a.IsNullComponent() || b.IsNullComponent())
+            if (aIsNullLike || bIsNullLike)
                 return false;
 
             return a.ID == b.ID && a.entity == b.entity;
