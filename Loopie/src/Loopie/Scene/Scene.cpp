@@ -513,6 +513,8 @@ namespace Loopie {
 
 	bool Scene::ReadAndLoadSceneFile(std::string filePath, bool safeSceneAsLastLoaded)
 	{
+		ResourceManager::ProtectResources();
+
 		m_loadRequest = false;
 		m_entities.clear();
 		m_octree->Clear();
@@ -833,6 +835,8 @@ namespace Loopie {
 		}
 
 		OnStaticGeometryChanged();
+
+		ResourceManager::UnprotectResources();
 
 		return true;
 	}

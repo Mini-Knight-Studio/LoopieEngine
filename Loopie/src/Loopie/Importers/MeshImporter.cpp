@@ -57,7 +57,7 @@ namespace Loopie {
 
 	void MeshImporter::LoadModel(const std::string& path, Mesh& mesh)
 	{
-		Project project = Application::GetInstance().m_activeProject;
+        const Project& project = Application::GetInstance().m_activeProject;
 		std::filesystem::path filepath = project.GetChachePath() / path;
 
 		if (!std::filesystem::exists(filepath))
@@ -508,7 +508,7 @@ namespace Loopie {
         }
 
         ////// File Creation
-        Project project = Application::GetInstance().m_activeProject;
+        const Project& project = Application::GetInstance().m_activeProject;
         UUID id;
         std::filesystem::path locationPath = "Meshes";
         locationPath /= id.Get() + ".mesh";

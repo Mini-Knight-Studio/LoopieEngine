@@ -19,7 +19,7 @@ namespace Loopie {
             return;
         }
 
-        Project project = Application::GetInstance().m_activeProject;
+        const Project& project = Application::GetInstance().m_activeProject;
 
         UUID id;
         std::filesystem::path extension = std::filesystem::path(filepath).extension();

@@ -4,6 +4,7 @@
 
 namespace Loopie {
 	std::unordered_map<ResourceKey, std::weak_ptr<Resource>, ResourceKeyHash> ResourceManager::s_Resources;
+	std::vector<std::shared_ptr<Resource>> ResourceManager::s_ProtectedResources;
 
     std::shared_ptr<Texture> ResourceManager::GetTexture(const Metadata& metadata) {
         ResourceKey key{ metadata, 0 };
@@ -116,5 +117,27 @@ namespace Loopie {
             else
                 it = s_Resources.erase(it);
         }
+    }
+    void ResourceManager::ProtectResources()
+    {
+        s_ProtectedResources.clear();
+        s_ProtectedResources.reserve(s_Resources.size());
+
+        for (auto it = s_Resources.begin(); it != s_Resources.end(); )
+        {
+            if (auto shared = it->second.lock())
+            {
+                s_ProtectedResources.push_back(shared);
+                ++it;
+            }
+            else
+            {
+                it = s_Resources.erase(it);
+            }
+        }
+    }
+    void ResourceManager::UnprotectResources()
+    {
+        s_ProtectedResources.clear();
     }
 }

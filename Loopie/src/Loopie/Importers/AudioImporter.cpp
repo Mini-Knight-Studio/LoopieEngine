@@ -22,7 +22,7 @@ namespace Loopie {
             return;
         }
 
-        Project project = Application::GetInstance().m_activeProject;
+        const Project& project = Application::GetInstance().m_activeProject;
 
         UUID id;
         std::filesystem::path extension = std::filesystem::path(filepath).extension();
@@ -52,7 +52,7 @@ namespace Loopie {
 
 	void AudioImporter::LoadAudio(const std::string& filepath, AudioClip& audioClip) {
 
-        Project project = Application::GetInstance().m_activeProject;
+        const Project& project = Application::GetInstance().m_activeProject;
         std::filesystem::path fullPath = project.GetChachePath() / filepath;
 
         if (!std::filesystem::exists(fullPath))

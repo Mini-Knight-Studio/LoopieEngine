@@ -183,7 +183,7 @@ void Loopie::FontImporter::ImportFont(const std::string& filepath, Metadata& met
 		return;
 	}
 
-	Project project = Application::GetInstance().m_activeProject;
+	const Project& project = Application::GetInstance().m_activeProject;
 	UUID id;
 
 	std::filesystem::path locationPath = "Fonts";
@@ -252,7 +252,7 @@ void Loopie::FontImporter::ImportFont(const std::string& filepath, Metadata& met
 
 void Loopie::FontImporter::LoadFont(const std::string& cachePath, Font& font)
 {
-	Project project = Application::GetInstance().m_activeProject;
+	const Project& project = Application::GetInstance().m_activeProject;
 	std::filesystem::path filepath = project.GetChachePath() / cachePath;
 
 	if (!std::filesystem::exists(filepath))

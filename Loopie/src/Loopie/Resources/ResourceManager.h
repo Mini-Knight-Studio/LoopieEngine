@@ -45,11 +45,15 @@ namespace Loopie {
 
         static std::vector<std::shared_ptr<Resource>> GetResourcesByType(ResourceKey key);
 
+        static void ProtectResources();
+        static void UnprotectResources();
 
     private:
         static std::shared_ptr<Resource> GetResource(const ResourceKey& key);
 
     private:
 		static std::unordered_map<ResourceKey, std::weak_ptr<Resource>, ResourceKeyHash> s_Resources;
+
+		static std::vector<std::shared_ptr<Resource>> s_ProtectedResources;
     };
 }

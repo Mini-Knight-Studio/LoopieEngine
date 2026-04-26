@@ -63,6 +63,7 @@ namespace Loopie {
 				if (ImGui::MenuItem("Save Scene [WIP]", nullptr, false, existsPath))
 				{
 					Application::GetInstance().GetScene().SaveScene(Application::GetInstance().GetScene().GetFilePath());
+					AssetRegistry::RefreshAssetRegistry();
 				}
 
 				if (ImGui::MenuItem("Save Scene As [WIP]"))

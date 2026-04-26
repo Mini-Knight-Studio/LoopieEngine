@@ -32,8 +32,8 @@ namespace Loopie {
             metadata.UUID = UUID(metadataData.GetValue<std::string>("Id").Result);
             metadata.Type = (ResourceType)metadataData.GetValue<int>("Type").Result;
             metadata.HasCache = metadataCacheData.GetValue<bool>("HasCache").Result;
-            metadata.LastModified = metadataCacheData.GetValue<std::time_t>("LastModified").Result;
-            std::time_t currentTime = GetLastModifiedFromPath(assetPath);
+            metadata.LastModified = metadataCacheData.GetValue<uint64_t>("LastModified").Result;
+            uint64_t currentTime = GetLastModifiedFromPath(assetPath);
             metadata.IsOutdated = currentTime != metadata.LastModified;
 
             if (metadata.HasCache) {
@@ -68,7 +68,7 @@ namespace Loopie {
         metadataData.CreateField<std::string>("Id",metadata.UUID.Get());
         metadataData.CreateField<int>("Type",metadata.Type);
         metadataCacheData.CreateField<bool>("HasCache", metadata.HasCache);
-        metadataCacheData.CreateField<time_t>("LastModified", metadata.LastModified);
+        metadataCacheData.CreateField<uint64_t>("LastModified", metadata.LastModified);
 
         if (metadata.HasCache) {
             metadataCacheData.CreateArrayField("Caches");
@@ -87,12 +87,13 @@ namespace Loopie {
         return extension == METADATA_EXTENSION || extension == METADATA_CACHE_EXTENSION;
     }
 
-    std::time_t MetadataRegistry::GetLastModifiedFromPath(const std::string& assetPath) {
+    uint64_t MetadataRegistry::GetLastModifiedFromPath(const std::string& assetPath) {
+        if (!std::filesystem::exists(assetPath)) {
+            return 0;
+        }
 
         auto ftime = std::filesystem::last_write_time(assetPath);
-        auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
-            ftime - decltype(ftime)::clock::now() + std::chrono::system_clock::now()
-        );
-        return std::chrono::system_clock::to_time_t(sctp);
+        auto duration = ftime.time_since_epoch();
+        return static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(duration).count());
     }
 }

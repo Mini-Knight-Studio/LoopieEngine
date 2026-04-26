@@ -85,7 +85,7 @@ namespace Loopie {
 			return;
 		}
 
-		Project project = Application::GetInstance().m_activeProject;
+		const Project& project = Application::GetInstance().m_activeProject;
 
 		UUID id;
 		std::filesystem::path extension = std::filesystem::path(filepath).extension();
@@ -114,7 +114,7 @@ namespace Loopie {
 	}
 
 	void MaterialImporter::LoadMaterial(const std::string& path, Material& material) {
-		Project project = Application::GetInstance().m_activeProject;
+		const Project& project = Application::GetInstance().m_activeProject;
 		std::filesystem::path filepath = project.GetChachePath() / path;
 		if (!std::filesystem::exists(filepath)) {
 			Log::Warn("Material cache file not found: {0}", filepath.string());

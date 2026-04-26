@@ -51,10 +51,8 @@ namespace Loopie {
         }
 
         int maxCompressedSize = LZ4_compressBound(static_cast<int>(imageSize));
-        std::vector<char> compressedBuffer;
-        compressedBuffer.resize(maxCompressedSize);
-
-        int compressedSize = LZ4_compress_default(reinterpret_cast<const char*>(data), compressedBuffer.data(), static_cast<int>(imageSize), maxCompressedSize);
+        std::unique_ptr<char[]> compressedBuffer(new char[maxCompressedSize]);
+        int compressedSize = LZ4_compress_default(reinterpret_cast<const char*>(data), compressedBuffer.get(), static_cast<int>(imageSize), maxCompressedSize);
 
         if (compressedSize <= 0) {
             Log::Error("Failed to compress image {0}", filepath);
@@ -63,7 +61,7 @@ namespace Loopie {
         }
         ilDeleteImages(1, &imageID);
 
-        Project project = Application::GetInstance().m_activeProject;
+        const Project& project = Application::GetInstance().m_activeProject;
         UUID id;
         std::filesystem::path locationPath = "Textures";
         locationPath /= id.Get() + ".texture";
@@ -79,12 +77,8 @@ namespace Loopie {
         fs.write(reinterpret_cast<const char*>(&height), sizeof(height));
         fs.write(reinterpret_cast<const char*>(&channels), sizeof(channels));
         fs.write(reinterpret_cast<const char*>(&compressedSize), sizeof(compressedSize));
-        fs.write(compressedBuffer.data(), compressedSize);
+        fs.write(compressedBuffer.get(), compressedSize);
         fs.close();
-
-
-        compressedBuffer.clear();
-        compressedBuffer.shrink_to_fit();
 
         metadata.HasCache = true;
         metadata.CachesPath.clear();
@@ -99,7 +93,7 @@ namespace Loopie {
 
     void TextureImporter::LoadImage(const std::string& path, Texture& texture)
     {
-        Project project = Application::GetInstance().m_activeProject;
+        const Project& project = Application::GetInstance().m_activeProject;
         std::filesystem::path filepath = project.GetChachePath() / path;
 
         if (!std::filesystem::exists(filepath)) {
@@ -125,26 +119,21 @@ namespace Loopie {
             return;
         }
 
-        std::vector<char> compressedData(compressedSize);
-        file.read(compressedData.data(), compressedSize);
+        std::unique_ptr<char[]> compressedData(new char[compressedSize]);
+        file.read(compressedData.get(), compressedSize);
         file.close();
 
         unsigned int imageSize = static_cast<unsigned int>(texture.m_width) * texture.m_height * texture.m_channels;
-        std::vector<unsigned char> decompressedData(imageSize);
+        std::unique_ptr<unsigned char[]> decompressedData(new unsigned char[imageSize]);
 
-        int decompressedSize = LZ4_decompress_safe(compressedData.data(), reinterpret_cast<char*>(decompressedData.data()), compressedSize, static_cast<int>(imageSize));
+        int result = LZ4_decompress_safe(compressedData.get(), reinterpret_cast<char*>(decompressedData.get()), compressedSize, static_cast<int>(imageSize));
 
-        if (decompressedSize < 0) {
+        if (result < 0) {
             Log::Error("Failed to decompress texture: {0}", path);
             return;
         }
 
-        texture.m_tb = std::make_shared<TextureBuffer>(decompressedData.data(), texture.m_width, texture.m_height, texture.m_channels);
-
-        decompressedData.clear();
-        decompressedData.shrink_to_fit();
-        compressedData.clear();
-        compressedData.shrink_to_fit();
+        texture.m_tb = std::make_shared<TextureBuffer>(decompressedData.get(), texture.m_width, texture.m_height, texture.m_channels);
 
         Log::Trace("Texture uploaded to GPU -> {0} ({1}x{2}), RAM freed", path, texture.m_width, texture.m_height);
     }
