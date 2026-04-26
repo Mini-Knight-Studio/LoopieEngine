@@ -244,6 +244,13 @@ namespace Loopie {
 					m_inTransition = false;
 				}
 				else {
+
+					if (m_nextClip != nullptr) {
+						m_currentClip = m_nextClip;
+						m_currentTime = m_nextTime;
+						m_currentClipIndex = m_nextClipIndex;
+					}
+
 					m_nextClip = &clip;
 					m_nextClipIndex = index;
 

@@ -1270,6 +1270,15 @@ namespace Loopie {
 			emitter->SetSprite(std::static_pointer_cast<Texture>(spriteResource));
 		}
 
+		if (ImGui::BeginPopupContextItem("Particle Sprite Options"))
+		{
+			if (ImGui::MenuItem("Clear"))
+			{
+				emitter->SetSprite(nullptr);
+			}
+			ImGui::EndPopup();
+		}
+
 		//PARTICLE PROPERTIES
 		ImGui::Separator();
 		ImGui::Text("Particle Properties");
@@ -1475,6 +1484,15 @@ namespace Loopie {
 					{
 						std::string newID = selected->GetUUID().Get();
 						isRuntime ? scriptClass->SetRuntimeEntityField(name, newID) : scriptClass->SetFieldString(name, newID);
+					}
+
+					if (ImGui::BeginPopupContextItem(("Script EntityField##"+name).c_str()))
+					{
+						if (ImGui::MenuItem("Clear"))
+						{
+							isRuntime ? scriptClass->SetRuntimeEntityField(name, "") : scriptClass->SetFieldString(name, "");
+						}
+						ImGui::EndPopup();
 					}
 
 					break;
