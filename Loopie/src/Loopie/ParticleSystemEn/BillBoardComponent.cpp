@@ -3,6 +3,11 @@
 
 namespace Loopie
 {
+    Billboard::Billboard() {
+        m_Btype = BillboardType::CAMERA_FACING;
+        m_position = vec3(0);
+        m_transform = matrix4(1.0f);
+    }
 	Billboard::Billboard(vec3 pos, BillboardType t)
 	{
 		m_Btype = t;
@@ -30,7 +35,7 @@ namespace Loopie
 
             toCamera -= glm::dot(toCamera, axis) * axis;
 
-            if (glm::length(toCamera) < 0.0001f) //If camera is just on the edge
+            if (glm::length(toCamera) < 0.0001f)
             {
                 break;
             }
@@ -56,7 +61,7 @@ namespace Loopie
         return m_transform;
     }
 
-    matrix4 Billboard::UpdateCalcRotation(Camera* cam)
+    matrix4 Billboard::UpdateCalcRotation(Camera* cam, const quaternion& emitterRot)
     {
         vec3 billboardPos = m_position;
         vec3 cameraPos = cam->GetPosition();
@@ -73,7 +78,6 @@ namespace Loopie
             rotOnly[0] = vec4(vec3(fullInverse[0]), 0.0f);
             rotOnly[1] = vec4(vec3(fullInverse[1]), 0.0f);
             rotOnly[2] = vec4(vec3(fullInverse[2]), 0.0f);
-            rotOnly[3] = vec4(0.0f, 0.0f, 0.0f, 1.0f);
             break;
         }
         case AXIS_ALIGNED:
@@ -87,26 +91,30 @@ namespace Loopie
 
             vec3 forward = glm::normalize(toCamera);
             vec3 right = glm::normalize(glm::cross(axis, forward));
-            vec3 up = glm::normalize(glm::cross(forward, right));
+            vec3 up = axis;
 
             rotOnly[0] = vec4(right, 0.0f);
             rotOnly[1] = vec4(up, 0.0f);
             rotOnly[2] = vec4(forward, 0.0f);
-            rotOnly[3] = vec4(0.0f, 0.0f, 0.0f, 1.0f);
             break;
         }
         case SCREEN_ALIGNED:
         {
-            matrix4 lookAtMatrix = glm::lookAt(billboardPos, cameraPos, cameraUp);
+            vec3 camForward = glm::normalize(billboardPos - cameraPos); 
+            matrix4 lookAtMatrix = glm::lookAt(vec3(0.0f), -camForward, cameraUp);
             matrix4 fullInverse = glm::inverse(lookAtMatrix);
             rotOnly[0] = vec4(vec3(fullInverse[0]), 0.0f);
             rotOnly[1] = vec4(vec3(fullInverse[1]), 0.0f);
             rotOnly[2] = vec4(vec3(fullInverse[2]), 0.0f);
-            rotOnly[3] = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+            break;
+        }
+        case NONE:
+        {
+            rotOnly = glm::mat4_cast(emitterRot);
             break;
         }
         }
-
+        rotOnly[3] = vec4(0.0f, 0.0f, 0.0f, 1.0f);
         return rotOnly;
     }
 

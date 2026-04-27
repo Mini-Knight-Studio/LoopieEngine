@@ -81,6 +81,7 @@ namespace Loopie
 			JsonNode emitterNode = particleObj.CreateObjectField(std::to_string(i));
 			emitterNode.CreateField("name", m_partSystem.GetEmitterArray()[i]->GetName());
 			emitterNode.CreateField("spawnrate", m_partSystem.GetEmitterArray()[i]->GetSpawnrate());
+			emitterNode.CreateField("billboard", static_cast<int>(m_partSystem.GetEmitterArray()[i]->GetBillboard().GetType()));
 			emitterNode.CreateField("maxparticles", m_partSystem.GetEmitterArray()[i]->GetMaxParticles());
 			emitterNode.CreateField("emmitertimer", m_partSystem.GetEmitterArray()[i]->GetEmitterTimer());
 			emitterNode.CreateField("active", m_partSystem.GetEmitterArray()[i]->GetIsActive());
@@ -168,6 +169,7 @@ namespace Loopie
 			{
 				m_partSystem.GetEmitterArray()[i]->SetName(node.GetValue<string>("name").Result);
 				m_partSystem.GetEmitterArray()[i]->SetSpawnRate(node.GetValue<unsigned int>("spawnrate").Result);
+				m_partSystem.GetEmitterArray()[i]->GetBillboard().SetType(static_cast<BillboardType>(node.GetValue<int>("billboard",0).Result));
 				m_partSystem.GetEmitterArray()[i]->SetMaxParticles(node.GetValue<unsigned int>("maxparticles").Result);
 				m_partSystem.GetEmitterArray()[i]->SetEmitterTimer(node.GetValue<float>("emmitertimer").Result);
 				m_partSystem.GetEmitterArray()[i]->SetActive(node.GetValue<bool>("active",false).Result);

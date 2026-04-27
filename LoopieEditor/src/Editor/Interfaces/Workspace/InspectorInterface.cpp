@@ -1231,6 +1231,23 @@ namespace Loopie {
 			emitter->SetMaxParticles(maxParticles);
 		}
 
+		static const char* EmitterShapeNames[] =
+		{
+			"CAMERA FACING",
+			"AXIS ALIGNED",
+			"SCREEN ALIGNED",
+			"EMITTER ALIGN"
+		};
+
+		Billboard& billboard = emitter->GetBillboard();
+		int currentIndex = static_cast<int>(billboard.GetType());
+
+		if (ImGui::Combo("BillboardType", &currentIndex, EmitterShapeNames, (int)BillboardType::DEBUG_COUNT))
+		{
+			billboard.SetType(static_cast<BillboardType>(currentIndex));
+		}
+
+
 		vec3 positionOffSet = emitter->GetPositionOffSet();
 		if (ImGui::DragFloat3("Emitter Position OffSet", &positionOffSet.x))
 		{

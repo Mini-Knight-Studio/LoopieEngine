@@ -5,9 +5,12 @@ namespace Loopie
 {
 	class Camera;
 	enum BillboardType
-	{   CAMERA_FACING, 
-		AXIS_ALIGNED, 
-		SCREEN_ALIGNED
+	{
+		CAMERA_FACING,
+		AXIS_ALIGNED,
+		SCREEN_ALIGNED,
+		NONE,
+		DEBUG_COUNT
 	};
 	class Billboard  
 	{               
@@ -17,12 +20,13 @@ namespace Loopie
 			vec3 m_position;
 			matrix4 m_transform;
 			AABB m_Bbox;
-			vec3 m_axisAlignedAxis = vec3(0.0f, 1.0f, 0.0f); //I leave Y-axis for now
+			vec3 m_axisAlignedAxis = vec3(0.0f, 1.0f, 0.0f);
 
 		public:
+			Billboard();
 			Billboard(vec3 pos, BillboardType t);
 			matrix4  UpdateCalc(Camera* cam);
-			matrix4 UpdateCalcRotation(Camera* cam);
+			matrix4 UpdateCalcRotation(Camera* cam, const quaternion& emitterRot);
 
 			BillboardType GetType()const;
 			void SetType(BillboardType t);

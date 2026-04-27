@@ -16,7 +16,7 @@ namespace Loopie
 
 	Emitter::Emitter(unsigned int maxParticles, BillboardType bType, vec3 position, unsigned int spawnRate, vec3 posOffSet)
 	{
-		m_billboard = std::make_shared<Billboard>(position, bType);
+		m_billboard = Billboard(position, bType);
 		m_spawnRate = spawnRate;
 	    m_maxParticles = maxParticles;
 		m_emitterTimer = 0;
@@ -81,8 +81,8 @@ namespace Loopie
 			return;
 		}
 
-		m_billboard->SetPosition(m_position);
-		matrix4 billboardRotation = m_billboard->UpdateCalcRotation(cam);
+		m_billboard.SetPosition(m_position);
+		matrix4 billboardRotation = m_billboard.UpdateCalcRotation(cam, m_rotation);
 
 		for (auto it = m_particlePool.rbegin(); it != m_particlePool.rend(); ++it)
 		{
@@ -278,4 +278,8 @@ namespace Loopie
 
 	bool Emitter::GetIsFollowingOwner() const { return m_followOwner; }
 	void Emitter::SetFollowingOwner(bool follow) { m_followOwner = follow; }
+	Billboard& Emitter::GetBillboard()
+	{
+		return m_billboard;
+	}
 }

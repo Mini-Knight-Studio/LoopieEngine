@@ -49,7 +49,7 @@ namespace Loopie
 			std::vector<ParticleModule> m_particlePool;
 			unsigned int m_poolIndex;
 
-			std::shared_ptr<Billboard> m_billboard;
+			Billboard m_billboard;
 
 
 
@@ -106,6 +106,8 @@ namespace Loopie
 
 			bool GetIsFollowingOwner() const;
 			void SetFollowingOwner(bool follow);
+
+			Billboard& GetBillboard();
 
 	};
 }
