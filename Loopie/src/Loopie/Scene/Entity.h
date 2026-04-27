@@ -149,7 +149,7 @@ namespace Loopie {
 		bool GetIsActiveInHierarchy() const;
 		bool GetIsStatic() const;
 		bool GetIsStaticInHierarchy() const;
-		std::shared_ptr<Entity> GetChild(UUID uuid) const;
+		std::shared_ptr<Entity> GetChild(UUID uuid, bool deepSearch = false) const;
 		std::shared_ptr<Entity> GetChild(int index) const;
 		std::shared_ptr<Entity> GetChild(const std::string& name, bool deepSearch = false) const;
 
@@ -175,9 +175,9 @@ namespace Loopie {
 		void SetParent(const std::shared_ptr<Entity>& parent, bool keepLocal = true, bool setOrder = true);
 
 
+		void GetRecursiveChildren(std::vector<std::shared_ptr<Entity>>& childrenEntities);
 
 	private:
-		void GetRecursiveChildren(std::vector<std::shared_ptr<Entity>>& childrenEntities);
 
 	private:
 		std::weak_ptr<Entity> m_parentEntity;

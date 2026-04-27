@@ -151,13 +151,21 @@ namespace Loopie {
 		return m_isStatic;
 	}
 
-	std::shared_ptr<Entity> Entity::GetChild(UUID uuid) const
+	std::shared_ptr<Entity> Entity::GetChild(UUID uuid, bool deepSearch) const
 	{
 		for (const auto& child : m_childrenEntities)
 		{
 			if (child->GetUUID() == uuid)
 			{
 				return child;
+			}
+		}
+
+		if (deepSearch) {
+			for (const auto& child : m_childrenEntities) {
+				auto result = child->GetChild(uuid, true);
+				if (result)
+					return result;
 			}
 		}
 		return nullptr;

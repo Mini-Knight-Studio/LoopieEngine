@@ -1,5 +1,7 @@
 #include "ScriptClass.h"
 
+#include "Loopie/Core/Application.h"
+
 #include "Loopie/Scripting/ScriptingManager.h"
 #include "Loopie/Scene/Entity.h"
 #include "Loopie/Core/Log.h"
@@ -424,6 +426,39 @@ namespace Loopie
 		m_className = otherScript.m_className;
 		m_scriptingClass = ScriptingManager::GetScriptingClass(m_className);
 		m_scriptFields = otherScript.m_scriptFields;
+
+		const auto& fields = m_scriptingClass->GetFields();
+		for (const ScriptField& field : fields)
+		{
+			const std::string& name = field.Name;
+			if (field.Type == ScriptFieldType::Entity) {
+				std::string& value = GetFieldString(name);
+				UUID uuid = UUID(value);
+
+				ScriptFieldData& fieldData = m_scriptFields[name];
+				if (entity->GetUUID() == uuid)
+					fieldData.SetString(GetOwner()->GetUUID().Get());
+				else{
+					std::vector<std::shared_ptr<Entity>> childrens;
+					std::vector<std::shared_ptr<Entity>> thisChildrens;
+					entity->GetRecursiveChildren(childrens);
+					GetOwner()->GetRecursiveChildren(thisChildrens);
+
+					int index = 0;
+					for (int i = 0; i < childrens.size(); i++) {
+						const auto& child = childrens[i];
+
+						if (child->GetUUID() == uuid) {
+							const auto& thisChild = thisChildrens[i];
+							fieldData.SetString(thisChild->GetUUID().Get());
+							break;
+						}
+					}		
+				}
+
+			}
+		}
+
 	}
 
 }
