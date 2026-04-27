@@ -35,10 +35,12 @@ namespace Loopie
 			unsigned int m_maxParticles;
 			float m_emitterTimer;
 			vec3 m_position;
+			vec3 m_scale;
 			vec3 m_positionOffSet;
 			bool m_active;
 			bool m_particleFollowEmitter;
 			bool m_localVelocity = false;
+			bool m_applyScale = false;
 			quaternion m_rotation;
 			bool m_followOwner = true;
 			std::shared_ptr<Texture> m_sprite = nullptr;
@@ -101,8 +103,14 @@ namespace Loopie
 			const quaternion& GetEmitterRotation() const;
 			void SetEmitterRotation(const quaternion &rot);
 
+			const vec3& GetEmitterScale() const;
+			void SetEmitterScale(const vec3& scale);
+
 			bool GetLocalVelocity() const;
 			void SetLocalVelocity(bool local);
+
+			bool GetIfApplyScale() const;
+			void SetIfApplyScale(bool apply);
 
 			bool GetIsFollowingOwner() const;
 			void SetFollowingOwner(bool follow);

@@ -51,7 +51,7 @@ namespace Loopie
 		}
 
 	}
-	void ParticleModule::Render(std::shared_ptr<VertexArray> quadVAO, std::shared_ptr<Material> material, const matrix4& billboardRotation)
+	void ParticleModule::Render(std::shared_ptr<VertexArray> quadVAO, std::shared_ptr<Material> material, const matrix4& billboardRotation, const vec3& emitterScale)
 	{
 		LP_FUNC();
 		if (!m_active)
@@ -77,6 +77,8 @@ namespace Loopie
 		transform = transform * billboardRotation;
 		transform = rotate(transform, m_rotation, vec3(0.0f, 0.0f, 1.0f));
 		transform = scale(transform, vec3(size, size, 1.0f));
+		transform = scale(transform, emitterScale);
+
 
 
 		//material

@@ -44,6 +44,7 @@ namespace Loopie
 		Transform* transform = GetTransform();
 		vec3 pos = transform->GetPosition();
 		quaternion rot = transform->GetRotation();
+		vec3 scale = transform->GetWorldScale();
 
 		const auto& emitters = m_partSystem.GetEmitterArray();
 		for (auto& emitter : emitters) {
@@ -52,6 +53,7 @@ namespace Loopie
 				emitter->SetPosition(pos + rotatedOffset);
 			}
 			emitter->SetEmitterRotation(rot);
+			emitter->SetEmitterScale(scale);
 		}
 		m_partSystem.OnUpdate((float)Time::GetDeltaTime(), m_playing);
 	}
@@ -88,6 +90,7 @@ namespace Loopie
 			emitterNode.CreateField("poolindex", m_partSystem.GetEmitterArray()[i]->GetPoolIndex());
 			emitterNode.CreateField("particlefollowemitter", m_partSystem.GetEmitterArray()[i]->GetParticlesFollowEmitter());
 			emitterNode.CreateField("localvelocity", m_partSystem.GetEmitterArray()[i]->GetLocalVelocity());
+			emitterNode.CreateField("applyScale", m_partSystem.GetEmitterArray()[i]->GetIfApplyScale());
 			emitterNode.CreateField("followowner", m_partSystem.GetEmitterArray()[i]->GetIsFollowingOwner());
 			if(m_partSystem.GetEmitterArray()[i]->GetSprite())
 				emitterNode.CreateField("sprite_uuid", m_partSystem.GetEmitterArray()[i]->GetSprite()->GetUUID().Get());
@@ -176,6 +179,7 @@ namespace Loopie
 				m_partSystem.GetEmitterArray()[i]->SetPoolIndex(node.GetValue<unsigned int>("poolindex").Result);
 				m_partSystem.GetEmitterArray()[i]->SetParticlesFollowEmitter(node.GetValue<bool>("particlefollowemitter", false).Result);
 				m_partSystem.GetEmitterArray()[i]->SetLocalVelocity(node.GetValue<bool>("localvelocity", false).Result);
+				m_partSystem.GetEmitterArray()[i]->SetIfApplyScale(node.GetValue<bool>("applyScale", false).Result);
 				m_partSystem.GetEmitterArray()[i]->SetFollowingOwner(node.GetValue<bool>("followowner", true).Result);
 
 				JsonNode positionNode = node.Child("position");
@@ -316,6 +320,7 @@ namespace Loopie
 			newEmitter->SetPoolIndex(otherEmitter->GetPoolIndex());
 			newEmitter->SetParticlesFollowEmitter(otherEmitter->GetParticlesFollowEmitter());
 			newEmitter->SetLocalVelocity(otherEmitter->GetLocalVelocity());
+			newEmitter->SetIfApplyScale(otherEmitter->GetIfApplyScale());
 			newEmitter->SetEmitterRotation(otherEmitter->GetEmitterRotation());
 
 			newEmitter->SetEmisionProperties(otherEmitter->GetEmissionProperties());

@@ -25,6 +25,7 @@ namespace Loopie
 		m_active = true;
 		m_particleFollowEmitter = true;
 		m_rotation = quaternion(1, 0, 0, 0);
+		m_scale = vec3(1);
 		m_localVelocity = true;
 		m_poolIndex = 0;
 		m_followOwner = true;
@@ -84,6 +85,7 @@ namespace Loopie
 		m_billboard.SetPosition(m_position);
 		matrix4 billboardRotation = m_billboard.UpdateCalcRotation(cam, m_rotation);
 
+		vec3 scale = m_applyScale ? m_scale : vec3(1);
 		for (auto it = m_particlePool.rbegin(); it != m_particlePool.rend(); ++it)
 		{
 			auto& particle = *it;
@@ -100,7 +102,7 @@ namespace Loopie
 			if(sprite)
 				material->SetTexture("u_Sprite", particle.GetSprite());
 
-			particle.Render(quadVAO, material, billboardRotation);
+			particle.Render(quadVAO, material, billboardRotation, scale);
 		}
 	}
 	void Emitter::Emit(const ParticleProps& particleProps)
@@ -273,8 +275,28 @@ namespace Loopie
 	const quaternion& Emitter::GetEmitterRotation() const { return m_rotation; }
 	void Emitter::SetEmitterRotation(const quaternion& rot) { m_rotation = rot; }
 
+	const vec3& Emitter::GetEmitterScale() const
+	{
+		return m_scale;
+	}
+
+	void Emitter::SetEmitterScale(const vec3& scale)
+	{
+		m_scale = scale;
+	}
+
 	bool Emitter::GetLocalVelocity() const { return m_localVelocity; }
 	void Emitter::SetLocalVelocity(bool local) { m_localVelocity = local; }
+
+	bool Emitter::GetIfApplyScale() const
+	{
+		return m_applyScale;
+	}
+
+	void Emitter::SetIfApplyScale(bool apply)
+	{
+		m_applyScale = apply;
+	}
 
 	bool Emitter::GetIsFollowingOwner() const { return m_followOwner; }
 	void Emitter::SetFollowingOwner(bool follow) { m_followOwner = follow; }

@@ -32,7 +32,7 @@ namespace Loopie
 
 			ParticleModule();
 			void Update(float dt);
-			void Render(std::shared_ptr<VertexArray> quadVAO, std::shared_ptr<Material> material, const matrix4& billboardRotation);
+			void Render(std::shared_ptr<VertexArray> quadVAO, std::shared_ptr<Material> material, const matrix4& billboardRotation, const vec3& emitterScale);
 
 			vec3 GetPosition() const;
 			void SetPosition(const vec3& pos);

@@ -1372,6 +1372,12 @@ namespace Loopie {
 			emitter->SetLocalVelocity(!localVelocity);
 		}
 
+		bool applyScale = emitter->GetIfApplyScale();
+		if (ImGui::Button(applyScale ? "Apply Scale: ON" : "Apply Scale: OFF"))
+		{
+			emitter->SetIfApplyScale(!applyScale);
+		}
+
 		std::shared_ptr<Texture> sprite = emitter->GetSprite();
 		ImGui::Text("Sprite: %s", sprite ? "Exists" : "None");
 		ImGui::Button(" [ Drop Sprite Here ] ");
@@ -1397,7 +1403,7 @@ namespace Loopie {
 
 		ParticleProps& props = emitter->GetEmissionProperties();
 
-		ImGui::DragFloat3("Position", &props.Position.x, 0.1f, -1000.0f, 1000.0f, "%.2f");
+		//ImGui::DragFloat3("Position", &props.Position.x, 0.1f, -1000.0f, 1000.0f, "%.2f");
 		ImGui::DragFloat3("Position Variation", &props.PositionVariation.x, 0.1f, 0.0f, 500.0f, "%.2f");
 		ImGui::DragFloat3("Velocity", &props.Velocity.x, 0.1f, -500.0f, 500.0f, "%.2f");
 		ImGui::DragFloat3("Velocity Variation", &props.VelocityVariation.x, 0.1f, 0.0f, 200.0f, "%.2f");
