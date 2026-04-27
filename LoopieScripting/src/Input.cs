@@ -121,6 +121,23 @@ namespace Loopie
             return axis;
         }
 
+
+        public static float LeftTrigger
+        { get { return GetLeftTrigger(); } }
+
+        public static float RightTrigger
+        { get { return GetRightTrigger(); } }
+
+        private static float GetLeftTrigger()
+        {
+            return InternalCalls.Input_GetLeftTrigger();
+        }
+        private static float GetRightTrigger()
+        {
+            return InternalCalls.Input_GetRightTrigger();
+        }
+
+
         public static float AxisDeadzone
         { get { return GetAxisDeadzone(); } set { SetAxisDeadzone(value); } }
 

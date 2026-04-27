@@ -381,6 +381,12 @@ namespace Loopie
         internal extern static void Input_GetRightAxis(out Vector2 axis);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static float Input_GetLeftTrigger();
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static float Input_GetRightTrigger();
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static bool Input_IsAnyKeyDown();
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]

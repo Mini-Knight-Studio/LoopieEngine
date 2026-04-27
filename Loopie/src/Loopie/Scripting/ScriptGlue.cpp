@@ -1370,6 +1370,15 @@ namespace Loopie
 		*axis = Application::GetInstance().GetInputEvent().GetRightAxis();
 	}
 
+	static float Input_GetLeftTrigger() {
+		return Application::GetInstance().GetInputEvent().GetLeftTrigger();
+	}
+
+	static float Input_GetRightTrigger() {
+		return Application::GetInstance().GetInputEvent().GetRightTrigger();
+	}
+
+
 	static MonoBoolean Input_IsAnyKeyDown() {
 		return Application::GetInstance().GetInputEvent().AnyKeyDown();
 	}
@@ -2916,6 +2925,8 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Input_GetScrollDelta);
 		ADD_INTERNAL_CALL(Input_GetLeftAxis);
 		ADD_INTERNAL_CALL(Input_GetRightAxis);
+		ADD_INTERNAL_CALL(Input_GetLeftTrigger);
+		ADD_INTERNAL_CALL(Input_GetRightTrigger);
 		ADD_INTERNAL_CALL(Input_IsAnyKeyDown);
 		ADD_INTERNAL_CALL(Input_IsAnyButtonDown);
 		ADD_INTERNAL_CALL(Input_IsAnyMouseButtonDown);
