@@ -591,47 +591,141 @@ namespace Loopie {
 		if (ImGui::Button("Anchor Presets"))
 		{
 			ImGui::OpenPopup("AnchorPresetsPopup");
-
 		}
 
 		if (ImGui::BeginPopup("AnchorPresetsPopup"))
 		{
 			const ImVec2 btnSize(28, 28);
 
-			auto SetPreset = [&](float minX, float minY, float maxX, float maxY)
-			{
-				rt->SetAnchorMin(vec2{ minX, minY });
-				rt->SetAnchorMax(vec2{ maxX, maxY });
-				modified = true;
-				ImGui::CloseCurrentPopup();
-			};
+			bool alt = Application::GetInstance().GetInputEvent().GetKeyStatus(SDL_SCANCODE_LALT) == KeyState::REPEAT;
+			bool shift = Application::GetInstance().GetInputEvent().GetKeyStatus(SDL_SCANCODE_LSHIFT) == KeyState::REPEAT;
 
-			if (ImGui::Button("TL", btnSize)) 
-				SetPreset(0, 1, 0, 1);
-			ImGui::SameLine();
-			if (ImGui::Button("T", btnSize)) 
-				SetPreset(0.5f, 1, 0.5f, 1);
-			ImGui::SameLine();
-			if (ImGui::Button("TR", btnSize)) 
-				SetPreset(1, 1, 1, 1);
+			std::string shiftText = "";
 
-			if (ImGui::Button("L", btnSize))  
-				SetPreset(0, 0.5f, 0, 0.5f);
-			ImGui::SameLine();
-			if (ImGui::Button("C", btnSize))  
-				SetPreset(0.5f, 0.5f, 0.5f, 0.5f);
-			ImGui::SameLine();
-			if (ImGui::Button("R", btnSize))  
-				SetPreset(1, 0.5f, 1, 0.5f);
+			ImVec4 textDefaultColor = ImGui::GetStyleColorVec4(ImGuiCol_Text);
 
-			if (ImGui::Button("BL", btnSize)) 
-				SetPreset(0, 0, 0, 0);
+			vec2 pivotValue = rt->GetPivot();
+
+			auto SetPreset = [&](vec2 min, vec2 max, vec2 pivot, bool alternative, bool resize = false)
+				{
+					rt->SetAnchorMin(min);
+					rt->SetAnchorMax(max);
+
+					if (alternative)
+						rt->SetAnchoredPosition(vec2{ 0.0f, 0.0f });
+
+					rt->SetPivot(pivot);
+
+					if (resize)
+					{
+						rt->SetWidth(1);
+						rt->SetHeight(1);
+					}
+
+					modified = true;
+					ImGui::CloseCurrentPopup();
+				};
+
+			auto Tooltip = [&](const char* text)
+				{
+					if (ImGui::IsItemHovered()) {
+						ImGui::PushStyleColor(ImGuiCol_Text, textDefaultColor);
+						ImGui::SetTooltip("%s%s%s", text, alt ? "\n(Alt: also resets position)" : "", shift ? "\n(Shift: also changes pivot)" : "");
+						ImGui::PopStyleColor();
+					}
+				};
+
+			if(shift)
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0, 0.75, 0.5, 1.0));
+
+			if (ImGui::Button("TL", btnSize)) SetPreset(vec2(0, 1), vec2(0, 1), shift ? vec2(0,1) : pivotValue, alt);
+			Tooltip("Top Left");
+
 			ImGui::SameLine();
-			if (ImGui::Button("B", btnSize)) 
-				SetPreset(0.5f, 0, 0.5f, 0);
+			if (ImGui::Button("TC", btnSize)) SetPreset(vec2(0.5f, 1), vec2(0.5f, 1), shift ? vec2(0.5f,1) : pivotValue, alt);
+			Tooltip("Top Center");
+
 			ImGui::SameLine();
-			if (ImGui::Button("BR", btnSize)) 
-				SetPreset(1, 0, 1, 0);
+			if (ImGui::Button("TR", btnSize)) SetPreset(vec2(1, 1), vec2(1, 1), shift ? vec2(1,1) : pivotValue, alt);
+			Tooltip("Top Right");
+
+			if (alt) {
+				ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0, 0.5, 0.75, 1.0));
+				ImGui::SameLine();
+				if (ImGui::Button("TS", btnSize))
+					SetPreset(vec2(0, 1), vec2(1, 1), shift ? vec2(0.5f, 1) : pivotValue, true, true);
+				Tooltip("Stretch Top (Full Width)");
+				ImGui::PopStyleColor();
+			}
+
+			if (ImGui::Button("ML", btnSize)) SetPreset(vec2(0, 0.5f), vec2(0, 0.5f), shift ? vec2(0,0.5f) : pivotValue, alt);
+			Tooltip("Middle Left");
+
+			ImGui::SameLine();
+			if (ImGui::Button("MC", btnSize)) SetPreset(vec2(0.5f, 0.5f), vec2(0.5f, 0.5f), shift ? vec2(0.5F,0.5F) : pivotValue, alt);
+			Tooltip("Center");
+
+			ImGui::SameLine();
+			if (ImGui::Button("MR", btnSize)) SetPreset(vec2(1, 0.5f), vec2(1, 0.5f), shift ? vec2(1,0.5f) : pivotValue, alt);
+			Tooltip("Middle Right");
+
+			if (alt) {
+				ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0, 0.5, 0.75, 1.0));
+				ImGui::SameLine();
+				if (ImGui::Button("MS", btnSize))
+					SetPreset(vec2(0, 0.5f), vec2(1, 0.5f), shift ? vec2(0.5f,0.5f) : pivotValue, true, true);
+				Tooltip("Stretch Middle (Horizontal)");
+				ImGui::PopStyleColor();
+			}
+
+			if (ImGui::Button("BL", btnSize)) SetPreset(vec2(0, 0), vec2(0, 0), shift ? vec2(0,0) : pivotValue, alt);
+			Tooltip("Bottom Left");
+
+			ImGui::SameLine();
+			if (ImGui::Button("BC", btnSize)) SetPreset(vec2(0.5f, 0), vec2(0.5f, 0), shift ? vec2(0.5f,0) : pivotValue, alt);
+			Tooltip("Bottom Center");
+
+			ImGui::SameLine();
+			if (ImGui::Button("BR", btnSize)) SetPreset(vec2(1, 0), vec2(1, 0), shift ? vec2(1,0) : pivotValue, alt);
+			Tooltip("Bottom Right");
+
+			if (alt) {
+				ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0, 0.5, 0.75, 1.0));
+
+				ImGui::SameLine();
+				if (ImGui::Button("BS", btnSize))
+					SetPreset(vec2(0, 0), vec2(1, 0), shift ? vec2(0.5f,0) : pivotValue, true, true);
+				Tooltip("Stretch Bottom (Full Width)");
+
+				if (ImGui::Button("SL", btnSize))
+					SetPreset(vec2(0, 0), vec2(0, 1), shift ? vec2(0,0.5f) : pivotValue, true, true);
+				Tooltip("Stretch Left (Full Height)");
+
+				ImGui::SameLine();
+				if (ImGui::Button("SC", btnSize))
+					SetPreset(vec2(0.5f, 0), vec2(0.5f, 1), shift ? vec2(0.5f,0.5f) : pivotValue, true, true);
+				Tooltip("Stretch Middle (Vertical)");
+
+				ImGui::SameLine();
+				if (ImGui::Button("SR", btnSize))
+					SetPreset(vec2(1, 1), vec2(1, 0), shift ? vec2(1,0.5f) : pivotValue, true, true);
+				Tooltip("Stretch Right (Full Height)");
+
+				ImGui::SameLine();
+				if (ImGui::Button("SS", btnSize))
+					SetPreset(vec2(0, 0), vec2(1, 1), shift ? vec2(0.5f,0.5f) : pivotValue, true, true);
+				Tooltip("Full Stretch (Fill Parent)");
+
+				ImGui::PopStyleColor();
+			}
+
+			if (shift)
+				ImGui::PopStyleColor();
+
+			ImGui::Separator();
+
+			ImGui::TextDisabled("LAlt: resets position");
+			ImGui::TextDisabled("LShift: changes pivot");
 
 			ImGui::EndPopup();
 		}
