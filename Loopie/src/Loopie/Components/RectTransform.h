@@ -45,6 +45,7 @@ namespace Loopie
 
     private:
 		vec2 GetParentSize() const;
+		vec2 GetParentRectMin() const;
 		vec2 GetComputedSize() const;
 		vec2 GetAnchorReferencePoint(const vec2& parentSize) const;
 		vec2 ComputePivotTranslation(const vec2& size) const;

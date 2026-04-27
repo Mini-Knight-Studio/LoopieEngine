@@ -68,6 +68,20 @@ Loopie::vec2 Loopie::RectTransform::GetParentSize() const
 	return vec2(parentTransform->GetWidth(), parentTransform->GetHeight());
 }
 
+Loopie::vec2 Loopie::RectTransform::GetParentRectMin() const
+{
+	const auto parent = GetOwner()->GetParent().lock();
+	if (!parent)
+		return vec2(0.0f);
+
+	const auto parentTransform = parent->GetTransform();
+	if (!parentTransform || !parentTransform->HasSize())
+		return vec2(0.0f);
+
+	const vec3 minL = parentTransform->GetLocalBoundsMin();
+	return vec2(minL.x, minL.y);
+}
+
 Loopie::vec2 Loopie::RectTransform::GetComputedSize() const
 {
 	const vec2 parentSize = GetParentSize();
@@ -79,7 +93,8 @@ Loopie::vec2 Loopie::RectTransform::GetComputedSize() const
 Loopie::vec2 Loopie::RectTransform::GetAnchorReferencePoint(const vec2& parentSize) const
 {
 	const vec2 anchorCenter = (m_anchorMin + m_anchorMax) * 0.5f;
-	return parentSize * anchorCenter;
+	const vec2 parentRectMin = GetParentRectMin();
+	return parentRectMin + (parentSize * anchorCenter);
 }
 
 Loopie::vec2 Loopie::RectTransform::ComputePivotTranslation(const vec2& size) const

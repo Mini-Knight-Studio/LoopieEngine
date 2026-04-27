@@ -37,10 +37,19 @@ namespace Loopie
 
 		if (m_scaleMode == CanvasScaleMode::ScaleWithCanvasSize)
 		{
-			float widthScale = targetPixels.x / m_referenceResolution.x;
-			float heightScale = targetPixels.y / m_referenceResolution.y;
+			(void)canvasUnits;
 
-			float scale = glm::mix(widthScale, heightScale, m_matchWidthOrHeight);
+			const float refW = glm::max(m_referenceResolution.x, 1.0f);
+			const float refH = glm::max(m_referenceResolution.y, 1.0f);
+
+			const float widthScale = targetPixels.x / refW;
+			const float heightScale = targetPixels.y / refH;
+
+			const float match = glm::clamp(m_matchWidthOrHeight, 0.0f, 1.0f);
+			const float logWidth = glm::log2(glm::max(widthScale, 0.0001f));
+			const float logHeight = glm::log2(glm::max(heightScale, 0.0001f));
+			const float logWeighted = glm::mix(logWidth, logHeight, match);
+			const float scale = glm::exp2(logWeighted);
 
 			return vec2(scale, scale);
 		}
@@ -55,10 +64,20 @@ namespace Loopie
 
 		if (m_scaleMode == CanvasScaleMode::ScaleWithCanvasSize)
 		{
-			float widthScale = targetPixels.x / m_referenceResolution.x;
-			float heightScale = targetPixels.y / m_referenceResolution.y;
+			const float refW = glm::max(m_referenceResolution.x, 1.0f);
+			const float refH = glm::max(m_referenceResolution.y, 1.0f);
 
-			float scale = glm::mix(widthScale, heightScale, m_matchWidthOrHeight);
+			const float widthScale = targetPixels.x / refW;
+			const float heightScale = targetPixels.y / refH;
+
+			const float match = glm::clamp(m_matchWidthOrHeight, 0.0f, 1.0f);
+			const float logWidth = glm::log2(glm::max(widthScale, 0.0001f));
+			const float logHeight = glm::log2(glm::max(heightScale, 0.0001f));
+			const float logWeighted = glm::mix(logWidth, logHeight, match);
+			const float scale = glm::exp2(logWeighted);
+
+			if (scale <= 0.0f)
+				return targetPixels;
 
 			return targetPixels / scale;
 		}
