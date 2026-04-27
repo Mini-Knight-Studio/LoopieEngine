@@ -284,15 +284,6 @@ namespace Loopie {
 				pc->SetIsActive(component->GetLocalIsActive());
 				continue;
 			}
-			// ScriptClass
-			else if (compType == ScriptClass::GetTypeIDStatic())
-			{
-				const ScriptClass* scriptComp = static_cast<const ScriptClass*>(component);
-				ScriptClass* scriptClass = clone->AddComponent<ScriptClass>(scriptComp->GetClassName());
-				scriptClass->Clone(source, *component);
-				scriptClass->SetIsActive(component->GetLocalIsActive());
-				continue;
-			}
 			// Canvas
 			else if (compType == Canvas::GetTypeIDStatic())
 			{
@@ -399,6 +390,15 @@ namespace Loopie {
 				auto animator = clone->AddComponent<Animator>();
 				animator->Clone(source, *component);
 				animator->SetIsActive(component->GetLocalIsActive());
+				continue;
+			}
+			// ScriptClass
+			else if (compType == ScriptClass::GetTypeIDStatic())
+			{
+				const ScriptClass* scriptComp = static_cast<const ScriptClass*>(component);
+				ScriptClass* scriptClass = clone->AddComponent<ScriptClass>(scriptComp->GetClassName());
+				scriptClass->Clone(source, *component);
+				scriptClass->SetIsActive(component->GetLocalIsActive());
 				continue;
 			}
 		}
