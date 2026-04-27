@@ -302,7 +302,7 @@ namespace Loopie
 
 			auto newEmitter = std::make_shared<Emitter>(
 				otherEmitter->GetMaxParticles(),
-				CAMERA_FACING,
+				otherEmitter->GetBillboard().GetType(),
 				otherEmitter->GetPosition(),
 				otherEmitter->GetSpawnrate(),
 				otherEmitter->GetPositionOffSet()
