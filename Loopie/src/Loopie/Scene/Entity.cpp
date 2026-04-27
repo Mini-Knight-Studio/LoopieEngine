@@ -3,6 +3,7 @@
 #include "Loopie/Components/Component.h"
 #include "Loopie/Components/Transform.h"
 #include "Loopie/Core/Log.h"
+#include "Loopie/Core/Application.h"
 
 #include <algorithm>
 
@@ -270,6 +271,10 @@ namespace Loopie {
 	void Entity::SetIsActive(bool active)
 	{
 		m_isActive = active;
+		if (m_isStatic)
+		{
+			Application::GetInstance().GetScene().OnStaticGeometryChanged();
+		}
 	}
 
 	void Entity::SetIsStatic(bool active)

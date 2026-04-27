@@ -374,10 +374,6 @@ namespace Loopie {
 		if (ImGui::Checkbox("##", &isActive)) 
 		{
 			entity->SetIsActive(isActive);	
-			if (entity->GetIsStatic())
-			{
-				Application::GetInstance().GetScene().OnStaticGeometryChanged();
-			}
 		}
 
 		ImGui::SameLine();
