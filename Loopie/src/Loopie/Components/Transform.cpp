@@ -423,7 +423,8 @@ namespace Loopie
         m_localPosition = otherTransform.m_localPosition;
         m_localRotation = otherTransform.m_localRotation;
 		m_localScale = otherTransform.m_localScale;
-		SetEulerAngles(otherTransform.GetLocalEulerAngles());
+
+        MarkLocalDirty();
     }
 
     void Transform::RefreshMatrices() const
