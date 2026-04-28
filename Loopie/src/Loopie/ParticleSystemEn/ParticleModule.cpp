@@ -51,7 +51,7 @@ namespace Loopie
 		}
 
 	}
-	void ParticleModule::Render(std::shared_ptr<VertexArray> quadVAO, std::shared_ptr<Material> material, const matrix4& billboardRotation, const vec3& emitterScale)
+	void ParticleModule::Render(std::shared_ptr<VertexArray>& quadVAO, std::shared_ptr<Material>& material, const matrix4& billboardRotation, const vec3& emitterScale)
 	{
 		LP_FUNC();
 		if (!m_active)
@@ -85,10 +85,11 @@ namespace Loopie
 		UniformValue colorUni;
 		colorUni.type = UniformType_vec4;
 		colorUni.value = color;
-		material->SetShaderVariable("u_Color", colorUni);
 
+		material->SetShaderVariable("u_Color", colorUni);
+		material->Bind();
 		//AddParticleRenderItem - > If max capacity reached, flush (this inside AddParticle function), draw and clear pos and color vectors
-		Renderer::FlushRenderItem(quadVAO, material, transform);
+		Renderer::FlushRenderItem(quadVAO, material, transform, true);
 	}
 	
 	vec3 ParticleModule::GetPosition() const

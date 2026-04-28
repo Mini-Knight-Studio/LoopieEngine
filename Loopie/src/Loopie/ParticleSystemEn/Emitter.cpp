@@ -73,7 +73,7 @@ namespace Loopie
 		}
 	
 	}
-	void Emitter::OnRender(std::shared_ptr<VertexArray> quadVAO, std::shared_ptr<Material> material, Camera* cam)
+	void Emitter::OnRender(std::shared_ptr<VertexArray>& quadVAO, std::shared_ptr<Material>& material, Camera* cam)
 	{
 		LP_FUNC();
 		if (!cam)
@@ -84,23 +84,26 @@ namespace Loopie
 
 		m_billboard.SetPosition(m_position);
 		matrix4 billboardRotation = m_billboard.UpdateCalcRotation(cam, m_rotation);
-
 		vec3 scale = m_applyScale ? m_scale : vec3(1);
+
+
+		std::shared_ptr<Texture> sprite = GetSprite();
+		UniformValue useSprite;
+		useSprite.type = UniformType_bool;
+		useSprite.value = sprite != nullptr;
+
+		if (sprite)
+			material->SetTexture("u_Sprite", sprite);
+		else
+			material->SetTexture("u_Sprite", Texture::GetDefault());
+
+		material->SetShaderVariable("u_UseSprite", useSprite);
+
 		for (auto it = m_particlePool.rbegin(); it != m_particlePool.rend(); ++it)
 		{
 			auto& particle = *it;
 			if (!particle.GetActive())
 				continue;
-
-
-			std::shared_ptr<Texture> sprite = particle.GetSprite();
-
-			UniformValue useSprite;
-			useSprite.type = UniformType_bool;
-			useSprite.value = sprite != nullptr;
-			material->SetShaderVariable("u_UseSprite", useSprite);
-			if(sprite)
-				material->SetTexture("u_Sprite", particle.GetSprite());
 
 			particle.Render(quadVAO, material, billboardRotation, scale);
 		}
@@ -160,7 +163,7 @@ namespace Loopie
 		//sprite
 		particle.SetSprite(m_sprite);
 
-		m_poolIndex = (m_poolIndex - 1) % m_particlePool.size();
+		m_poolIndex = (m_poolIndex == 0) ? m_particlePool.size() - 1 : m_poolIndex - 1;
 	}
 	const std::string& Emitter::GetName() const
 	{

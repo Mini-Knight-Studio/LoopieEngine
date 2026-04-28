@@ -9,6 +9,7 @@
 #include "Loopie/Components/Light.h"
 
 #include <filesystem>
+#include <unordered_set>
 
 #define MAX_LIGHTS 16 // Can be increased if necessary. Watch out that performance though!
 #define MAX_SHADOW_CASTING_LIGHTS 4 // Can be increased if necessary. Watch out that performance though!
@@ -140,8 +141,8 @@ namespace Loopie {
 		static void EndScene();
 
 		static void AddRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones = {});
-		static void FlushRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones = {});
-		static void FlushRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const matrix4& modelMatrix, const std::vector<matrix4>& bones = {});
+		static void FlushRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const Transform* transform, bool avoidMaterialBind = false, const std::vector<matrix4>& bones = {});
+		static void FlushRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const matrix4& modelMatrix, bool avoidMaterialBind = false, const std::vector<matrix4>& bones = {});
 
 		static void EnableDepth();
 		static void DisableDepth();
@@ -165,6 +166,7 @@ namespace Loopie {
 		static void SetDepthWrite(bool enable);
 
 	private:
+		static void SetFrameUniforms(Shader& shader);
 		static void SetRenderUniforms(std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones = {});
 		static void SetRenderUniforms(std::shared_ptr<Material> material, const matrix4& modelMatrix, const std::vector<matrix4>& bones = {});
 		static void FlushRenderQueue();
@@ -172,12 +174,14 @@ namespace Loopie {
 		static unsigned int UploadBones(const std::vector<matrix4>& bones);
 
 	private:
-		static std::vector<RenderItem> s_RenderQueue;
+		static std::vector<RenderItem> s_OpaqueRenderQueue;
+		static std::vector<RenderItem> s_TransparentRenderQueue;
 		static std::vector<Camera*> s_RenderCameras;
 		static std::shared_ptr<UniformBuffer> s_MatricesUniformBuffer;
 		static std::shared_ptr<UniformBuffer> s_LightingUniformBuffer;
 		static std::shared_ptr<UniformBuffer> s_ShadowingUniformBuffer;
 		static std::shared_ptr<UniformBuffer> s_StaticMatricesUniformBuffer;
+		static std::unordered_set<Shader*> s_FrameUpdatedShaders;
 
 		static std::shared_ptr<ShaderStorageBuffer> s_BonesSSBO;
 		static unsigned int s_BoneBufferOffset;
@@ -199,5 +203,6 @@ namespace Loopie {
 		static unsigned int s_SceneDepthTextureID;
 		static float s_NearPlane;
 		static float s_FarPlane;
+
 	};
 }

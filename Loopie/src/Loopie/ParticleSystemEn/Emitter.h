@@ -60,7 +60,7 @@ namespace Loopie
 			Emitter(unsigned int maxParticles, BillboardType bType, vec3 position, unsigned int spawnRate, vec3 posOffSet = vec3(0));
 
 			void OnUpdate(float dt, bool active);
-			void OnRender(std::shared_ptr<VertexArray> quadVAO, std::shared_ptr<Material> material, Camera* cam);
+			void OnRender(std::shared_ptr<VertexArray>& quadVAO, std::shared_ptr<Material>& material, Camera* cam);
 			void Emit(const ParticleProps& particleProps);
 			
 			const std::string& GetName()const;
