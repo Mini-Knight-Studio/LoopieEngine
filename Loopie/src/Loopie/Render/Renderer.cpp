@@ -22,9 +22,8 @@ namespace Loopie {
 	std::shared_ptr<ShaderStorageBuffer> Renderer::s_BonesSSBO = nullptr;
 	unsigned int Renderer::s_BoneBufferOffset = 0;
 	unsigned int Renderer::s_BoneBufferCapacity = 0;
-	std::shared_ptr<VertexBuffer> Renderer::s_BillboardVBO = nullptr;
-	std::shared_ptr<VertexBuffer> Renderer::s_PosSizeVBO = nullptr;
-	std::shared_ptr<VertexBuffer> Renderer::s_ColorVBO = nullptr;
+
+	Renderer::ParticlesData Renderer::s_ParticlesData;
 
 	std::unordered_set<Shader*> Renderer::s_FrameUpdatedShaders;
 
@@ -96,6 +95,12 @@ namespace Loopie {
 		s_BonesSSBO->SetData(nullptr, s_BoneBufferCapacity);
 
 		s_BonesSSBO->BindToLayout(2);
+
+
+		s_ParticlesData.TransformVBO = std::make_shared<VertexBuffer>(nullptr, MAX_PARTICLES * sizeof(matrix4));
+		s_ParticlesData.ColorVBO = std::make_shared<VertexBuffer>(nullptr, MAX_PARTICLES * sizeof(vec4));
+		s_ParticlesData.transformsBatch.reserve(MAX_PARTICLES);
+		s_ParticlesData.colorsBatch.reserve(MAX_PARTICLES);
 
 		s_OpaqueRenderQueue.reserve(1000);
 		s_TransparentRenderQueue.reserve(300);
@@ -626,6 +631,45 @@ namespace Loopie {
 
 		s_OpaqueRenderQueue.clear();
 		s_TransparentRenderQueue.clear();
+	}
+
+	void Renderer::ClearParticles()
+	{
+		s_ParticlesData.transformsBatch.clear();
+		s_ParticlesData.colorsBatch.clear();
+	}
+
+	void Renderer::AddParticle(const matrix4& transform, const vec4& color)
+	{
+		s_ParticlesData.colorsBatch.emplace_back(color);
+		s_ParticlesData.transformsBatch.emplace_back(transform);
+	}
+
+	void Renderer::FlushParticles(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material)
+	{
+		if (s_ParticlesData.transformsBatch.empty()) return;
+
+		vao->Bind();
+		s_ParticlesData.TransformVBO->SetData(s_ParticlesData.transformsBatch.data(), s_ParticlesData.transformsBatch.size() * sizeof(matrix4));
+
+		for (int i = 0; i < 4; i++) {
+			glEnableVertexAttribArray(2 + i);
+			glVertexAttribPointer(2 + i, 4, GL_FLOAT, GL_FALSE, sizeof(matrix4), (void*)(sizeof(vec4) * i));
+			glVertexAttribDivisor(2 + i, 1);
+		}
+
+		s_ParticlesData.ColorVBO->SetData(s_ParticlesData.colorsBatch.data(), s_ParticlesData.colorsBatch.size() * sizeof(vec4));
+
+		glEnableVertexAttribArray(6);
+		glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(vec4), (void*)0);
+		glVertexAttribDivisor(6, 1);
+
+		material->Bind();
+		SetFrameUniforms(material->GetShader());
+
+		glDrawElementsInstanced(GL_TRIANGLES, vao->GetIndexBuffer().GetCount(), GL_UNSIGNED_INT, nullptr, s_ParticlesData.transformsBatch.size());
+
+		vao->Unbind();
 	}
 
 	unsigned int Renderer::UploadBones(const std::vector<matrix4>& bones)

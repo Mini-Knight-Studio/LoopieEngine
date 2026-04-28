@@ -51,7 +51,7 @@ namespace Loopie
 		}
 
 	}
-	void ParticleModule::Render(std::shared_ptr<VertexArray>& quadVAO, std::shared_ptr<Material>& material, const matrix4& billboardRotation, const vec3& emitterScale)
+	void ParticleModule::Render(const matrix4& billboardRotation, const vec3& emitterScale)
 	{
 		LP_FUNC();
 		if (!m_active)
@@ -59,37 +59,22 @@ namespace Loopie
 			return;
 		}
 		
-		//interpolations
 		float life = m_lifeRemaining / m_lifetime;
 		if (life <=0) { life = 0; }
 
-		vec4 color;
-		color.r = mix(m_colorEnd.r, m_colorBegin.r, life);
-		color.g = mix(m_colorEnd.g, m_colorBegin.g, life);
-		color.b = mix(m_colorEnd.b, m_colorBegin.b, life);
-		color.a = mix(m_colorEnd.a, m_colorBegin.a, life);
-
+		vec4 color = mix(m_colorEnd, m_colorBegin, life);
 		float size = mix(m_sizeEnd, m_sizeBegin, life);
 
 		// transform 
-		matrix4 transform = matrix4(1.0f);
-		transform = translate(transform, m_position);         
-		transform = transform * billboardRotation;
-		transform = rotate(transform, m_rotation, vec3(0.0f, 0.0f, 1.0f));
-		transform = scale(transform, vec3(size, size, 1.0f));
-		transform = scale(transform, emitterScale);
+		vec3 finalScale = vec3(size, size, 1.0f) * emitterScale;
+		matrix4 transform =
+			translate(matrix4(1.0f), m_position) *
+			billboardRotation *
+			rotate(matrix4(1.0f), m_rotation, vec3(0.0f, 0.0f, 1.0f)) *
+			scale(matrix4(1.0f), finalScale);
 
 
-
-		//material
-		UniformValue colorUni;
-		colorUni.type = UniformType_vec4;
-		colorUni.value = color;
-
-		material->SetShaderVariable("u_Color", colorUni);
-		material->Bind();
-		//AddParticleRenderItem - > If max capacity reached, flush (this inside AddParticle function), draw and clear pos and color vectors
-		Renderer::FlushRenderItem(quadVAO, material, transform, true);
+		Renderer::AddParticle(transform, color);
 	}
 	
 	vec3 ParticleModule::GetPosition() const
@@ -192,7 +177,6 @@ namespace Loopie
 			m_velocityOffset = vec3(0.0f);
 			m_followEmitter = false;
 			m_localOffset = vec3(0.0f);
-			m_sprite = nullptr;
 		}
 	}
 	vec3 ParticleModule::GetLocalOffset() const 
@@ -220,13 +204,5 @@ namespace Loopie
 	void ParticleModule::SetFollowEmitter(bool follow)
 	{ 
 		m_followEmitter = follow; 
-	}
-	std::shared_ptr<Texture> ParticleModule::GetSprite() const
-	{
-		return m_sprite;
-	}
-	void ParticleModule::SetSprite(std::shared_ptr<Texture> sprite)
-	{
-		m_sprite = sprite;
 	}
 }

@@ -2,6 +2,7 @@
 #include "ParticleSystem.h"
 #include "Emitter.h"
 #include "Loopie/Core/Log.h"
+#include "Loopie/Components/Transform.h"
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Resources/ResourceManager.h"
 #include "Loopie/Importers/MaterialImporter.h"
@@ -10,17 +11,29 @@
 
 namespace Loopie 
 {
+	std::shared_ptr<Shader> ParticleSystem::s_ParticleShader = nullptr;
+	std::shared_ptr<Material> ParticleSystem::s_ParticleMaterial = nullptr;
+
+	std::shared_ptr<VertexArray> ParticleSystem::s_QuadVAO = nullptr;
+	std::shared_ptr<VertexBuffer> ParticleSystem::s_QuadVBO = nullptr;
+	std::shared_ptr<IndexBuffer> ParticleSystem::s_QuadIBO = nullptr;
+
 	ParticleSystem::ParticleSystem()
 	{
-		if (m_particleShader.GetProgramID() != 0)
-		{
-			InitializeQuad();
-		    InitializeMaterial();
+		if (s_ParticleShader == nullptr) {
+			s_ParticleShader = std::make_shared<Shader>("assets/shaders/ParticleShader.shader");
+
+			if (s_ParticleShader->GetProgramID() != 0)
+			{
+				InitializeQuad();
+				InitializeMaterial();
+			}	
+			else
+			{
+				Log::Error("Particle Shader not set!");
+			}
 		}
-		else 
-		{
-			Log::Error("Particle Shader not set!"); 
-		}
+
 
 		m_emittersArray.reserve(3);
 	}
@@ -46,16 +59,16 @@ namespace Loopie
 			2, 3, 0
 		};
 
-		m_quadVBO = std::make_shared<VertexBuffer>(vertices, sizeof(vertices));
-		m_quadIBO = std::make_shared<IndexBuffer>(indices, 6);
+		s_QuadVBO = std::make_shared<VertexBuffer>(vertices, sizeof(vertices));
+		s_QuadIBO = std::make_shared<IndexBuffer>(indices, 6);
 
 		BufferLayout layout;
 		layout.AddLayoutElement(0, GLVariableType::FLOAT, 3, "Position");
 		layout.AddLayoutElement(1, GLVariableType::FLOAT, 2, "TexCoord");
-		m_quadVBO->SetLayout(layout);
+		s_QuadVBO->SetLayout(layout);
 
-		m_quadVAO = std::make_shared<VertexArray>();
-		m_quadVAO->AddBuffer(m_quadVBO.get(), m_quadIBO.get());
+		s_QuadVAO = std::make_shared<VertexArray>();
+		s_QuadVAO->AddBuffer(s_QuadVBO.get(), s_QuadIBO.get());
 	}
 	void ParticleSystem::InitializeMaterial() 
 	{
@@ -64,27 +77,39 @@ namespace Loopie
 		{
 			MaterialImporter::ImportMaterial("assets/materials/ParticleMaterial.mat", metadata);
 		}
-		m_particleMaterial = ResourceManager::GetMaterial(metadata);
-		m_particleMaterial->Load();
-		m_particleMaterial->SetShader(m_particleShader);
+		s_ParticleMaterial = ResourceManager::GetMaterial(metadata);
+		s_ParticleMaterial->Load();
+		s_ParticleMaterial->SetShader(*s_ParticleShader.get());
 
-		if (!m_particleMaterial)
+		if (!s_ParticleMaterial)
 		{
 			Log::Error("Failed to load particle material!");
 		}
 		
 	}
 
-	void ParticleSystem::OnUpdate(float dt, bool active)
+	void ParticleSystem::OnUpdate(Transform* transform, float dt, bool active)
 	{
 		
 		if (!m_emittersArray.empty())
 		{
-			
+		
+			vec3 pos = transform->GetPosition();
+			quaternion rot = transform->GetRotation();
+			vec3 scale = transform->GetWorldScale();
+
 			for (const auto& emitter : m_emittersArray)
 			{
 				if (emitter)
 				{
+
+					if (emitter->GetIsFollowingOwner()) {
+						vec3 rotatedOffset = rot * emitter->GetPositionOffSet();
+						emitter->SetPosition(pos + rotatedOffset);
+					}
+					emitter->SetEmitterRotation(rot);
+					emitter->SetEmitterScale(scale);
+
 					emitter->OnUpdate(dt, active);
 				}
 			}
@@ -98,7 +123,7 @@ namespace Loopie
 	void ParticleSystem::OnRender(Camera* cam)
 	{
 		LP_FUNC();
-		if (!m_quadVAO || !m_particleMaterial)
+		if (!s_QuadVAO || !s_ParticleMaterial)
 		{
 			Log::Error("ParticleSystem missing material or quad");
 			return;
@@ -109,7 +134,7 @@ namespace Loopie
 		{
 			if (emitter)
 			{
-				emitter->OnRender(m_quadVAO, m_particleMaterial,cam);
+				emitter->OnRender(s_QuadVAO, s_ParticleMaterial,cam);
 			}
 		}
 	}

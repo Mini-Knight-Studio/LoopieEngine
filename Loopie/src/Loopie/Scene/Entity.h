@@ -40,6 +40,7 @@ namespace Loopie {
 			}
 
 			m_componentsByUUID[componentPtr->GetUUID()] = componentPtr;
+			m_componentsByType[T::GetTypeIDStatic()].push_back(componentPtr);
 
 			m_transform->MarkHasChangedThisFrame();
 			return componentPtr;
@@ -56,11 +57,7 @@ namespace Loopie {
 			glm::quat rotation = oldTransform->GetLocalRotation();
 			glm::vec3 scale = oldTransform->GetLocalScale();
 
-			m_components.push_back(std::make_unique<T>());
-			T* newTransform = static_cast<T*>(m_components.back().get());
-
-			newTransform->m_owner = weak_from_this();
-			newTransform->Init();
+			T* newTransform = AddComponent<T>();
 
 			newTransform->SetLocalPosition(position);
 			newTransform->SetLocalRotation(rotation);
@@ -76,10 +73,9 @@ namespace Loopie {
 		template<typename T, typename = std::enable_if_t<std::is_base_of_v<Component, T>>>
 		T* GetComponent() const
 		{
-			for (const auto& component : m_components) {
-				if (component->GetTypeID() == T::GetTypeIDStatic())
-					return static_cast<T*>(component.get());
-			}
+			auto it = m_componentsByType.find(T::GetTypeIDStatic());
+			if (it != m_componentsByType.end() && !it->second.empty())
+				return static_cast<T*>(it->second.front());
 
 			return nullptr;
 		}
@@ -100,13 +96,28 @@ namespace Loopie {
 		template<typename T, typename = std::enable_if_t<std::is_base_of_v<Component, T>>>
 		std::vector<T*> GetComponents() const
 		{
-			std::vector<T*> componentsOfType;
-			for (const auto& component : m_components) {
-				if (component->GetTypeID() == T::GetTypeIDStatic())
-					componentsOfType.emplace_back(static_cast<T*>(component.get()));
-			}
+			std::vector<T*> result;
 
-			return componentsOfType;
+			auto it = m_componentsByType.find(T::GetTypeIDStatic());
+			if (it == m_componentsByType.end())
+				return result;
+
+			result.reserve(it->second.size());
+
+			for (auto* c : it->second)
+				result.push_back(static_cast<T*>(c));
+
+			return result;
+		}
+
+		template<typename T, typename = std::enable_if_t<std::is_base_of_v<Component, T>>>
+		const std::vector<Component*>* GetComponentsRaw() const
+		{
+			auto it = m_componentsByType.find(T::GetTypeIDStatic());
+			if (it != m_componentsByType.end())
+				return &it->second;
+
+			return nullptr;
 		}
 
 		template<typename T, typename = std::enable_if_t<std::is_base_of_v<Component, T>>>
@@ -115,24 +126,18 @@ namespace Loopie {
 			return GetComponent<T>() != nullptr;
 		}
 
-		// Removes first component of that specific type
 		template<typename T, typename = std::enable_if_t<std::is_base_of_v<Component, T>>>
 		bool RemoveComponent()
 		{
 			if constexpr (std::is_same_v<T, Transform>)
 				return false;
 
-			for (size_t i = 0; i < m_components.size(); i++)
-			{
-				if (m_components[i]->GetTypeID() == T::GetTypeIDStatic()) {
-					m_componentsByUUID.erase(m_components[i]->GetUUID());
-					m_components.erase(m_components.begin() + i);
+			auto it = m_componentsByType.find(T::GetTypeIDStatic());
+			if (it == m_componentsByType.end() || it->second.empty())
+				return false;
 
-					m_transform->MarkHasChangedThisFrame();
-					return true;
-				}
-			}
-			return false;
+			Component* component = it->second.back();
+			return RemoveComponent(component);
 		}
 
 		bool RemoveComponent(Component* component);
@@ -160,6 +165,7 @@ namespace Loopie {
 		const std::vector<std::shared_ptr<Entity>>& GetChildren() const;
 		std::weak_ptr<Entity> GetParent() const;
 		std::vector<Component*> GetComponents() const;
+		const std::vector<std::unique_ptr<Component>>& GetComponentsRaw() const { return m_components; }
 		Transform* GetTransform() const;
 
 		void SetUUID(const std::string& uuid);
@@ -184,6 +190,9 @@ namespace Loopie {
 		std::vector<std::shared_ptr<Entity>> m_childrenEntities;
 		std::vector<std::unique_ptr<Component>> m_components; // Might want to re-do this to a map for optimization
 		std::unordered_map<UUID, Component*> m_componentsByUUID;
+
+		std::unordered_map<size_t, std::vector<Component*>> m_componentsByType;
+
 		Transform* m_transform = nullptr;
 
 		UUID m_uuid;

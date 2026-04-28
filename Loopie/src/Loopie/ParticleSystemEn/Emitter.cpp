@@ -1,6 +1,7 @@
 #include "Emitter.h"
 #include "Loopie/ParticleSystemEn/ParticleModule.h"
 #include "Loopie/Core/Log.h"
+#include "Loopie/Render/Renderer.h"
 #include "Loopie/Core/Random.h"
 #include "Loopie/Math/MathUtils.h"
 
@@ -11,7 +12,7 @@ namespace Loopie
 	
 	float RandomFloat(float min, float max)
 	{	
-		return Random::Get(min, max);;
+		return FRandom::Get(min, max);
 	}
 
 	Emitter::Emitter(unsigned int maxParticles, BillboardType bType, vec3 position, unsigned int spawnRate, vec3 posOffSet)
@@ -42,6 +43,9 @@ namespace Loopie
 		
 		m_particlePool.resize(m_maxParticles);
 		m_poolIndex = m_maxParticles - 1;
+
+		m_useSprite.type = UniformType_bool;
+
 	}
 	void Emitter::OnUpdate(float dt, bool active)
 	{
@@ -86,31 +90,32 @@ namespace Loopie
 		matrix4 billboardRotation = m_billboard.UpdateCalcRotation(cam, m_rotation);
 		vec3 scale = m_applyScale ? m_scale : vec3(1);
 
+		Renderer::ClearParticles();
 
-		std::shared_ptr<Texture> sprite = GetSprite();
-		UniformValue useSprite;
-		useSprite.type = UniformType_bool;
-		useSprite.value = sprite != nullptr;
-
-		if (sprite)
-			material->SetTexture("u_Sprite", sprite);
-		else
-			material->SetTexture("u_Sprite", Texture::GetDefault());
-
-		material->SetShaderVariable("u_UseSprite", useSprite);
-
-		for (auto it = m_particlePool.rbegin(); it != m_particlePool.rend(); ++it)
+		for (auto it = m_particlePool.begin(); it != m_particlePool.end(); ++it)
 		{
-			auto& particle = *it;
-			if (!particle.GetActive())
+			if (!it->GetActive())
 				continue;
 
-			particle.Render(quadVAO, material, billboardRotation, scale);
+			it->Render(billboardRotation, scale);
 		}
+
+		m_useSprite.value = m_sprite != nullptr;
+
+		if (m_sprite) {
+			material->SetTexture("u_Sprite", m_sprite);
+		}
+
+		material->SetShaderVariable("u_UseSprite", m_useSprite);
+
+		material->Bind();
+
+		Renderer::FlushParticles(quadVAO, material);
 	}
 	void Emitter::Emit(const ParticleProps& particleProps)
 	{
 		ParticleModule& particle = m_particlePool[m_poolIndex];
+		vec3 scale = m_applyScale ? m_scale : vec3(1);
 
 		particle.SetActive(true);
 		particle.SetVelocityOffset(vec3(0.0f));
@@ -121,6 +126,7 @@ namespace Loopie
 		spawnOffset.x = RandomFloat(-particleProps.PositionVariation.x, particleProps.PositionVariation.x);
 		spawnOffset.z = RandomFloat(-particleProps.PositionVariation.z, particleProps.PositionVariation.z);
 		spawnOffset.y = RandomFloat(-particleProps.PositionVariation.y, particleProps.PositionVariation.y);
+		spawnOffset *= scale;
 
 		if (m_particleFollowEmitter)
 		{
@@ -159,9 +165,6 @@ namespace Loopie
 		particle.SetSizeBegin(sizeBegin);
 		particle.SetSizeEnd(particleProps.SizeEnd);
 		particle.SetLifetime(particleProps.LifeTime);
-
-		//sprite
-		particle.SetSprite(m_sprite);
 
 		m_poolIndex = (m_poolIndex == 0) ? m_particlePool.size() - 1 : m_poolIndex - 1;
 	}

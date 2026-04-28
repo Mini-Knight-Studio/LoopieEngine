@@ -53,7 +53,7 @@ namespace Loopie
 
 			Billboard m_billboard;
 
-
+			UniformValue m_useSprite;
 
 		public:
 			

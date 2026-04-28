@@ -13,7 +13,9 @@
 
 #define MAX_LIGHTS 16 // Can be increased if necessary. Watch out that performance though!
 #define MAX_SHADOW_CASTING_LIGHTS 4 // Can be increased if necessary. Watch out that performance though!
-#define MAX_BONES_TOTAL 10000 
+#define MAX_BONES_TOTAL 30000 
+
+#define MAX_PARTICLES 100000 
 
 //#define STATIC_SHADOW_TEXTURE_DEFINITION 8192
 #define STATIC_SHADOW_TEXTURE_DEFINITION 4096
@@ -77,10 +79,13 @@ namespace Loopie {
 			std::vector<matrix4> Bones;
 		};
 
-		struct ParticleVertex
-		{
-			matrix4 Transform;
-			vec4 Color;
+
+		struct ParticlesData {
+			std::shared_ptr<VertexBuffer> TransformVBO;
+			std::shared_ptr<VertexBuffer> ColorVBO;
+
+			std::vector<matrix4> transformsBatch;
+			std::vector<vec4> colorsBatch;
 		};
 
 		struct ShadowSlot
@@ -143,6 +148,10 @@ namespace Loopie {
 		static void AddRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones = {});
 		static void FlushRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const Transform* transform, bool avoidMaterialBind = false, const std::vector<matrix4>& bones = {});
 		static void FlushRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const matrix4& modelMatrix, bool avoidMaterialBind = false, const std::vector<matrix4>& bones = {});
+		
+		static void ClearParticles();
+		static void AddParticle(const matrix4& transform, const vec4& color);
+		static void FlushParticles(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material);
 
 		static void EnableDepth();
 		static void DisableDepth();
@@ -187,9 +196,7 @@ namespace Loopie {
 		static unsigned int s_BoneBufferOffset;
 		static unsigned int s_BoneBufferCapacity;
 
-		static std::shared_ptr<VertexBuffer> s_BillboardVBO;
-		static std::shared_ptr<VertexBuffer> s_PosSizeVBO;
-		static std::shared_ptr<VertexBuffer> s_ColorVBO;
+		static ParticlesData s_ParticlesData;
 
 		static vec4 s_CurrentViewport;
 
