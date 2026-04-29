@@ -574,16 +574,15 @@ namespace Loopie {
 			s_OpaqueRenderQueue.emplace_back(RenderItem{ vao, vao->GetIndexBuffer().GetCount(), material, transform, bones});
 	}
 
-	void Renderer::FlushRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const Transform* transform, bool avoidMaterialBind, const std::vector<matrix4>& bones)
+	void Renderer::FlushRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones)
 	{
-		FlushRenderItem(vao, material, transform->GetLocalToWorldMatrix(), avoidMaterialBind, bones);
+		FlushRenderItem(vao, material, transform->GetLocalToWorldMatrix(), bones);
 	}
 
-	void Renderer::FlushRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const matrix4& modelMatrix, bool avoidMaterialBind, const std::vector<matrix4>& bones)
+	void Renderer::FlushRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const matrix4& modelMatrix, const std::vector<matrix4>& bones)
 	{
 		vao->Bind();
-		if(!avoidMaterialBind)
-			material->Bind();
+		material->Bind();
 		SetFrameUniforms(material->GetShader());
 		SetRenderUniforms(material, modelMatrix, bones);
 		glDrawElements(GL_TRIANGLES, vao->GetIndexBuffer().GetCount(), GL_UNSIGNED_INT, nullptr);

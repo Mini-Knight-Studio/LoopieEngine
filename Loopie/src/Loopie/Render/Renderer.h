@@ -146,8 +146,8 @@ namespace Loopie {
 		static void EndScene();
 
 		static void AddRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones = {});
-		static void FlushRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const Transform* transform, bool avoidMaterialBind = false, const std::vector<matrix4>& bones = {});
-		static void FlushRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const matrix4& modelMatrix, bool avoidMaterialBind = false, const std::vector<matrix4>& bones = {});
+		static void FlushRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones = {});
+		static void FlushRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const matrix4& modelMatrix, const std::vector<matrix4>& bones = {});
 		
 		static void ClearParticles();
 		static void AddParticle(const matrix4& transform, const vec4& color);

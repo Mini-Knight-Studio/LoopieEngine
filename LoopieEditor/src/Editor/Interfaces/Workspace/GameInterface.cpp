@@ -30,7 +30,8 @@ namespace Loopie {
 			m_mouseOverGame = ImGui::IsWindowHovered() && local.x >= 0.0f && local.y >= 0.0f &&
 				local.x < size.x && local.y < size.y;
 
-			ImGui::Image((ImTextureID)m_buffer->GetTextureId(), size, ImVec2(0, 1), ImVec2(1, 0));
+			if(GetCamera())
+				ImGui::Image((ImTextureID)m_buffer->GetTextureId(), size, ImVec2(0, 1), ImVec2(1, 0));
 		}
 		else
 		{

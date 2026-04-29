@@ -292,6 +292,8 @@ namespace Loopie {
 
 	void Entity::SetIsActive(bool active)
 	{
+		if (m_isActive == active)
+			return;
 		m_isActive = active;
 		if (m_isStatic)
 		{

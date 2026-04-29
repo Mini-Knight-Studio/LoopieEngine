@@ -367,14 +367,17 @@ namespace Loopie
 		{
 			LP_SCOPE_N("Camera Setup");
 			bool visibleEditorCam = m_scene.IsVisible();
-			if (visibleEditorCam)
+			if (visibleEditorCam) {
 				m_scene.PrepareFrameBuffer();
-			m_scene.GetCamera()->SetRenderTarget(visibleEditorCam ? m_scene.GetFrameBuffer() : nullptr);
+				m_scene.GetCamera()->SetRenderTarget(visibleEditorCam ? m_scene.GetFrameBuffer() : nullptr);
+			}
 
 			visibleEditorCam = m_game.IsVisible() && m_game.GetCamera() && m_game.GetCamera()->GetIsActive();
-			if (visibleEditorCam)
+			if (visibleEditorCam) {
 				m_game.PrepareFrameBuffer();
-			m_game.GetCamera()->SetRenderTarget(visibleEditorCam ? m_game.GetFrameBuffer() : nullptr);
+				m_game.GetCamera()->SetRenderTarget(visibleEditorCam ? m_game.GetFrameBuffer() : nullptr);
+			}
+
 		}
 
 		{
@@ -659,12 +662,12 @@ namespace Loopie
 						Renderer::SetStencilOp(Renderer::StencilOp::KEEP, Renderer::StencilOp::KEEP, Renderer::StencilOp::REPLACE);
 						Renderer::SetStencilMask(0xFF);
 
-						Renderer::FlushRenderItem(renderer->GetMesh()->GetVAO(), renderer->GetMaterial(), entity->GetTransform(), false, bones);
+						Renderer::FlushRenderItem(renderer->GetMesh()->GetVAO(), renderer->GetMaterial(), entity->GetTransform(), bones);
 
 						Renderer::SetStencilFunc(Renderer::StencilFunc::NOTEQUAL, 1, 0xFF);
 						Renderer::SetStencilMask(0x00);
 
-						Renderer::FlushRenderItem(renderer->GetMesh()->GetVAO(), m_selectedObjectMaterial, entity->GetTransform(), false);
+						Renderer::FlushRenderItem(renderer->GetMesh()->GetVAO(), m_selectedObjectMaterial, entity->GetTransform());
 
 						Renderer::SetStencilMask(0xFF);
 						Renderer::EnableDepth();
@@ -724,11 +727,6 @@ namespace Loopie
 
 	void EditorModule::RenderEntityShadows(const std::unordered_set<Entity*>& entities)
 	{
-		std::vector<MeshRenderer*> renderers;
-		renderers.reserve(1);
-
-
-
 		for (const auto& entity : entities)
 		{
 			auto* components = entity->GetComponentsRaw<MeshRenderer>();
@@ -741,7 +739,7 @@ namespace Loopie
 					continue;
 
 				MeshRenderer* renderer = static_cast<MeshRenderer*>(component);
-				if (renderer->GetCastsShadows() || !renderer->GetMesh())
+				if (!renderer->GetCastsShadows() || !renderer->GetMesh())
 					continue;
 				const MeshData& data = renderer->GetMesh()->GetData();
 
