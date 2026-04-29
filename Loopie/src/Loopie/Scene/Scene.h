@@ -53,11 +53,14 @@ namespace Loopie {
 
 		void OnStaticGeometryChanged();
 		const AABB& GetEntitySpanningBounds() const;
+		const std::unordered_set<Entity*> GetStaticEntities() const;
 		void UpdateEntitySpanningBounds();
+		void UpdateStaticEntities();
 		// Returns the unordered_map of the UUID and Entity ptrs
 		// Usage: for (const auto& [uuid, entity] : scene.GetAllEntities()) {entity->Update();}
 		const std::unordered_map<UUID, std::shared_ptr<Entity>>& GetAllEntities() const;
 		std::vector<std::shared_ptr<Entity>> GetAllEntitiesHierarchical(std::shared_ptr<Entity> parentEntity = nullptr) const;
+		std::unordered_set<Entity*> GetAllStaticEntitiesHierarchical(std::shared_ptr<Entity> parentEntity = nullptr) const;
 		std::vector<std::shared_ptr<Entity>> GetAllSiblings(std::shared_ptr<Entity> parentEntity = nullptr) const;
 
 		bool ReadAndLoadSceneFile(const UUID& uuid);
@@ -74,6 +77,8 @@ namespace Loopie {
 		std::string GetUniqueName(std::shared_ptr<Entity> parentEntity, const std::string& desiredName);
 		void CollectEntitiesRecursive(std::shared_ptr<Entity> entity,
 									  std::vector<std::shared_ptr<Entity>>& outEntities) const;
+		void CollectStaticEntitiesRecursive(Entity* entity,
+			std::unordered_set<Entity*>& outEntities) const;
 		void RemoveEntityRecursive(std::shared_ptr<Entity> parent);
 
 	private:
@@ -84,7 +89,7 @@ namespace Loopie {
 		std::string m_filePath;
 		const AABB DEFAULT_WORLD_BOUNDS = AABB(vec3(-500, -450, -500), vec3(500, 550, 500));
 		AABB m_entitySpanningBounds = AABB(); // The AABB that makes the whole scene in particular
-
+		std::unordered_set<Entity*> m_staticEntities; // for the entities whose shadow is static
 
 		bool m_loadRequest = false;
 		UUID m_requestedSceneToLoad;

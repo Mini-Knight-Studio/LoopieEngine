@@ -533,6 +533,17 @@ namespace Loopie
 		Renderer::DisableBlend();
 	}
 
+	void GameModule::SeparateDynamicEntities(const std::unordered_set<Entity*>& entities, std::unordered_set<Entity*>& dynamicEntities)
+	{
+		for (const auto& entity : entities)
+		{
+			if (!entity->GetIsActive())
+				continue;
+			if (!entity->GetIsStatic())
+				dynamicEntities.insert(entity);
+		}
+	}
+
 	void GameModule::RenderShadows(Camera* cam)
 	{
 		Renderer::AssignShadowSlots(cam->GetViewProjectionMatrix(), cam->GetProjection(), m_currentScene->GetEntitySpanningBounds());
@@ -542,11 +553,11 @@ namespace Loopie
 			frustum.FromMatrix(Renderer::GetShadowSlotMatrix(i));
 
 			std::unordered_set<Entity*> allEntities;
-			m_currentScene->GetOctree().CollectVisibleEntitiesFrustum(frustum, allEntities);
-
-			std::unordered_set<Entity*> staticEntities;
 			std::unordered_set<Entity*> dynamicEntities;
-			SeparateEntities(allEntities, staticEntities, dynamicEntities);
+			m_currentScene->GetOctree().CollectVisibleEntitiesFrustum(frustum, allEntities);
+			SeparateDynamicEntities(allEntities, dynamicEntities);
+
+			std::unordered_set<Entity*> staticEntities = m_currentScene->GetStaticEntities();
 
 			if (Renderer::BeginStaticShadowPass(i))
 			{
@@ -598,20 +609,6 @@ namespace Loopie
 
 				Renderer::FlushShadowItem(renderer->GetMesh()->GetVAO(), entity->GetTransform(), bones);
 			}
-		}
-	}
-
-	void GameModule::SeparateEntities(const std::unordered_set<Entity*>& entities, std::unordered_set<Entity*>& staticEntities,
-		std::unordered_set<Entity*>& dynamicEntities)
-	{
-		for (auto entity : entities)
-		{
-			if (!entity->GetIsActive())
-				continue;
-			if (entity->GetIsStatic())
-				staticEntities.insert(entity);
-			else
-				dynamicEntities.insert(entity);
 		}
 	}
 

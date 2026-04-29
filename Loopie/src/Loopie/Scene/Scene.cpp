@@ -442,6 +442,7 @@ namespace Loopie {
 	void Scene::OnStaticGeometryChanged()
 	{
 		UpdateEntitySpanningBounds();
+		UpdateStaticEntities();
 		Renderer::SetShadowsDirty();
 	}
 
@@ -455,9 +456,19 @@ namespace Loopie {
 		return m_entitySpanningBounds;
 	}
 
+	const std::unordered_set<Entity*> Scene::GetStaticEntities() const
+	{
+		return m_staticEntities;
+	}
+
 	void Scene::UpdateEntitySpanningBounds()
 	{
 		m_entitySpanningBounds = m_octree->ComputeSceneAABB();
+	}
+
+	void Scene::UpdateStaticEntities()
+	{
+		m_staticEntities = GetAllStaticEntitiesHierarchical();
 	}
 
 	const std::unordered_map<UUID, std::shared_ptr<Entity>>& Scene::GetAllEntities() const
@@ -475,6 +486,19 @@ namespace Loopie {
 		}
 
 		CollectEntitiesRecursive(parentEntity, entities);
+		return entities;
+	}
+
+	std::unordered_set<Entity*> Scene::GetAllStaticEntitiesHierarchical(std::shared_ptr<Entity> parentEntity) const
+	{
+		std::unordered_set<Entity*> entities;
+
+		if (!parentEntity)
+		{
+			parentEntity = m_rootEntity;
+		}
+
+		CollectStaticEntitiesRecursive(parentEntity.get(), entities);
 		return entities;
 	}
 
@@ -938,6 +962,23 @@ namespace Loopie {
 		for (const auto& child : entity->GetChildren())
 		{
 			CollectEntitiesRecursive(child, outEntities);
+		}
+	}
+
+	void Scene::CollectStaticEntitiesRecursive(Entity* entity,
+		std::unordered_set<Entity*>& outEntities) const
+	{
+		if (!entity)
+			return;
+
+		if (!entity->GetIsStatic())
+			return;
+
+		outEntities.insert(entity);
+
+		for (const auto& child : entity->GetChildren())
+		{
+			CollectStaticEntitiesRecursive(child.get(), outEntities);
 		}
 	}
 
