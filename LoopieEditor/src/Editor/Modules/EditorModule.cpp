@@ -702,11 +702,11 @@ namespace Loopie
 			frustum.FromMatrix(Renderer::GetShadowSlotMatrix(i));
 
 			std::unordered_set<Entity*> allEntities;
-			m_currentScene->GetOctree().CollectVisibleEntitiesFrustum(frustum, allEntities);
-
-			std::unordered_set<Entity*> staticEntities;
 			std::unordered_set<Entity*> dynamicEntities;
-			SeparateEntities(allEntities, staticEntities, dynamicEntities);
+			m_currentScene->GetOctree().CollectVisibleEntitiesFrustum(frustum, allEntities);
+			SeparateDynamicEntities(allEntities, dynamicEntities);
+
+			std::unordered_set<Entity*> staticEntities = m_currentScene->GetStaticEntities();
 
 			LP_SCOPE_N("Shadow Casters");
 			// Static pass, only when dirty
@@ -793,19 +793,17 @@ namespace Loopie
 		
 	}
 
-	void EditorModule::SeparateEntities(const std::unordered_set<Entity*>& entities, std::unordered_set<Entity*>& staticEntities,
-										std::unordered_set<Entity*>& dynamicEntities)
+	void EditorModule::SeparateDynamicEntities(const std::unordered_set<Entity*>& entities, std::unordered_set<Entity*>& dynamicEntities)
 	{
-		for (auto entity : entities)
+		for (const auto& entity : entities)
 		{
 			if (!entity->GetIsActive())
 				continue;
-			if (entity->GetIsStatic())
-				staticEntities.insert(entity);
-			else
+			if (!entity->GetIsStatic())
 				dynamicEntities.insert(entity);
 		}
 	}
+
 
 	void EditorModule::RenderUIRecursive(const std::shared_ptr<Entity>& entity, vec2& scale)
 	{
