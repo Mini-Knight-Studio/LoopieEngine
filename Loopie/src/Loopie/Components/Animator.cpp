@@ -41,7 +41,9 @@ namespace Loopie {
 
 		RendererData data;
 		data.Renderer = renderer;
-		data.FinalBoneMatrices.resize(renderer->GetMesh()->GetData().Skeleton.size(), matrix4(1));
+
+		if(renderer->GetMesh())
+			data.FinalBoneMatrices.resize(renderer->GetMesh()->GetData().Skeleton.size(), matrix4(1));
 		m_renderers[id] = data;
 
 

@@ -32,4 +32,10 @@ namespace Loopie
 		Bind();
 		glBufferSubData(GL_ARRAY_BUFFER, 0, size, data);
 	}
+	void VertexBuffer::SetDataDynamic(const void* data, unsigned int size)
+	{
+		Bind();
+		glBufferData(GL_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW);
+
+	}
 }

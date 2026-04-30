@@ -42,20 +42,7 @@ namespace Loopie
 	void ParticleComponent::OnUpdate() {
 
 		Transform* transform = GetTransform();
-		vec3 pos = transform->GetPosition();
-		quaternion rot = transform->GetRotation();
-		vec3 scale = transform->GetWorldScale();
-
-		const auto& emitters = m_partSystem.GetEmitterArray();
-		for (auto& emitter : emitters) {
-			if (emitter->GetIsFollowingOwner()) {
-				vec3 rotatedOffset = rot * emitter->GetPositionOffSet();
-				emitter->SetPosition(pos + rotatedOffset);
-			}
-			emitter->SetEmitterRotation(rot);
-			emitter->SetEmitterScale(scale);
-		}
-		m_partSystem.OnUpdate((float)Time::GetDeltaTime(), m_playing);
+		m_partSystem.OnUpdate(transform,(float)Time::GetDeltaTime(), m_playing);
 	}
 
 	void ParticleComponent::Render(Camera* cam)

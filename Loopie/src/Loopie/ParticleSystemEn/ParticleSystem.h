@@ -9,17 +9,19 @@ namespace Loopie
 {
 	class Emitter;
 	class Camera;
+	class Transform;
 
 	class ParticleSystem
 	{
 		private:
 			std::vector <std::shared_ptr<Emitter>> m_emittersArray;
 
-			std::shared_ptr<VertexArray> m_quadVAO;
-			std::shared_ptr<VertexBuffer> m_quadVBO;
-			std::shared_ptr<IndexBuffer> m_quadIBO;
-			std::shared_ptr<Material> m_particleMaterial;
-			Shader m_particleShader = Shader("assets/shaders/ParticleShader.shader");;
+			static std::shared_ptr<VertexArray> s_QuadVAO;
+			static std::shared_ptr<VertexBuffer> s_QuadVBO;
+			static std::shared_ptr<IndexBuffer> s_QuadIBO;
+
+			static std::shared_ptr<Material> s_ParticleMaterial;
+			static std::shared_ptr<Shader> s_ParticleShader;
 
 			void InitializeQuad();
 			void InitializeMaterial();
@@ -29,7 +31,7 @@ namespace Loopie
 			~ParticleSystem();
 	
 
-			void OnUpdate(float dt, bool active);
+			void OnUpdate(Transform* transform, float dt, bool active);
 			void OnRender(Camera* cam);
 
 			void AddElemToEmitterArray(const std::shared_ptr<Emitter>& em);
@@ -42,5 +44,7 @@ namespace Loopie
 			std::shared_ptr<VertexArray> GetQuadVAO() const;
 			std::shared_ptr<Material> GetMaterial() const;	
 			int GetActiveParticles() const;	
+
+
 	};
 }

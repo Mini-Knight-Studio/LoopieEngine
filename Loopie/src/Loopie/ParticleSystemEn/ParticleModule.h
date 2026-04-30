@@ -26,13 +26,11 @@ namespace Loopie
 			vec3 m_emitterPos; 
 			bool m_followEmitter;
 			vec3 m_velocityOffset;
-			std::shared_ptr<Texture> m_sprite = nullptr;
-
 		public:
 
 			ParticleModule();
 			void Update(float dt);
-			void Render(std::shared_ptr<VertexArray> quadVAO, std::shared_ptr<Material> material, const matrix4& billboardRotation, const vec3& emitterScale);
+			void Render(const matrix4& billboardRotation, const vec3& emitterScale);
 
 			vec3 GetPosition() const;
 			void SetPosition(const vec3& pos);
@@ -75,8 +73,5 @@ namespace Loopie
 
 			bool GetFollowEmitter() const;
 			void SetFollowEmitter(bool follow);
-
-			std::shared_ptr<Texture> GetSprite() const;
-			void SetSprite(std::shared_ptr<Texture> sprite);
 	};
 }

@@ -12,7 +12,8 @@
 #include <IL/ilu.h>
 
 namespace Loopie {
-	std::vector<Renderer::RenderItem> Renderer::s_RenderQueue = std::vector<Renderer::RenderItem>();
+	std::vector<Renderer::RenderItem> Renderer::s_OpaqueRenderQueue = std::vector<Renderer::RenderItem>();
+	std::vector<Renderer::RenderItem> Renderer::s_TransparentRenderQueue = std::vector<Renderer::RenderItem>();
 	std::vector<Camera*> Renderer::s_RenderCameras = std::vector<Camera*>();
 	std::shared_ptr<UniformBuffer> Renderer::s_MatricesUniformBuffer = nullptr;
 	std::shared_ptr<UniformBuffer> Renderer::s_LightingUniformBuffer = nullptr;
@@ -21,9 +22,10 @@ namespace Loopie {
 	std::shared_ptr<ShaderStorageBuffer> Renderer::s_BonesSSBO = nullptr;
 	unsigned int Renderer::s_BoneBufferOffset = 0;
 	unsigned int Renderer::s_BoneBufferCapacity = 0;
-	std::shared_ptr<VertexBuffer> Renderer::s_BillboardVBO = nullptr;
-	std::shared_ptr<VertexBuffer> Renderer::s_PosSizeVBO = nullptr;
-	std::shared_ptr<VertexBuffer> Renderer::s_ColorVBO = nullptr;
+
+	Renderer::ParticlesData Renderer::s_ParticlesData;
+
+	std::unordered_set<Shader*> Renderer::s_FrameUpdatedShaders;
 
 	vec4 Renderer::s_CurrentViewport = {0,0,0,0};
 
@@ -37,6 +39,15 @@ namespace Loopie {
 	unsigned int Renderer::s_SceneDepthTextureID = 0;
 	float Renderer::s_NearPlane = 0.3f;
 	float Renderer::s_FarPlane = 200.0f;
+
+
+	static bool CompareByMaterial(const Renderer::RenderItem& a, const Renderer::RenderItem& b)
+	{
+		if (a.Material->GetShader().GetProgramID() != b.Material->GetShader().GetProgramID())
+			return a.Material->GetShader().GetProgramID() < b.Material->GetShader().GetProgramID();
+
+		return a.Material.get() < b.Material.get();
+	}
 
 	void Renderer::Init(void* context) {
 		ASSERT(!gladLoadGLLoader((GLADloadproc)context), "Failed to Initialize GLAD!");
@@ -84,6 +95,16 @@ namespace Loopie {
 		s_BonesSSBO->SetData(nullptr, s_BoneBufferCapacity);
 
 		s_BonesSSBO->BindToLayout(2);
+
+
+		s_ParticlesData.TransformVBO = std::make_shared<VertexBuffer>(nullptr, MAX_PARTICLES * sizeof(matrix4));
+		s_ParticlesData.ColorVBO = std::make_shared<VertexBuffer>(nullptr, MAX_PARTICLES * sizeof(vec4));
+		s_ParticlesData.transformsBatch.reserve(MAX_PARTICLES);
+		s_ParticlesData.colorsBatch.reserve(MAX_PARTICLES);
+
+		s_OpaqueRenderQueue.reserve(1000);
+		s_TransparentRenderQueue.reserve(300);
+		s_FrameUpdatedShaders.reserve(30);
 		
 
 		s_LightCount = 0;
@@ -532,6 +553,8 @@ namespace Loopie {
 
 		s_BoneBufferOffset = 0;
 
+		s_FrameUpdatedShaders.clear();
+
 		if (s_UseGizmos)
 			Gizmo::BeginGizmo();
 	}
@@ -545,7 +568,10 @@ namespace Loopie {
 
 	void Renderer::AddRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones)
 	{
-		s_RenderQueue.emplace_back(RenderItem{ vao, vao->GetIndexBuffer().GetCount(), material, transform, bones});
+		if(material->GetHasTransparency())
+			s_TransparentRenderQueue.emplace_back(RenderItem{ vao, vao->GetIndexBuffer().GetCount(), material, transform, bones});
+		else
+			s_OpaqueRenderQueue.emplace_back(RenderItem{ vao, vao->GetIndexBuffer().GetCount(), material, transform, bones});
 	}
 
 	void Renderer::FlushRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones)
@@ -557,6 +583,7 @@ namespace Loopie {
 	{
 		vao->Bind();
 		material->Bind();
+		SetFrameUniforms(material->GetShader());
 		SetRenderUniforms(material, modelMatrix, bones);
 		glDrawElements(GL_TRIANGLES, vao->GetIndexBuffer().GetCount(), GL_UNSIGNED_INT, nullptr);
 		vao->Unbind();
@@ -570,15 +597,16 @@ namespace Loopie {
 		// rendering by material, I decided to do it by transparency.
 		// There's a check in the Material -> Material Has Transparency.
 		// Items without transparency are drawn before items with transparency.
-		for (const RenderItem& item : s_RenderQueue) {
-			if (!item.Material->GetHasTransparency())
-			{
-				item.VAO->Bind();
-				item.Material->Bind();
-				SetRenderUniforms(item.Material, item.Transform, item.Bones);
-				glDrawElements(GL_TRIANGLES, item.IndexCount, GL_UNSIGNED_INT, nullptr);
-				item.VAO->Unbind();
-			}
+
+		std::sort(s_OpaqueRenderQueue.begin(), s_OpaqueRenderQueue.end(), CompareByMaterial);
+
+		for (const RenderItem& item : s_OpaqueRenderQueue) {
+			item.VAO->Bind();
+			item.Material->Bind();
+			SetFrameUniforms(item.Material->GetShader());
+			SetRenderUniforms(item.Material, item.Transform, item.Bones);
+			glDrawElements(GL_TRIANGLES, item.IndexCount, GL_UNSIGNED_INT, nullptr);
+			item.VAO->Unbind();
 		}
 
 		glTextureBarrier();
@@ -588,21 +616,59 @@ namespace Loopie {
 
 		EnableBlend();
 		DisableDepthMask();
-		for (const RenderItem& item : s_RenderQueue) {
-			if (item.Material->GetHasTransparency())
-			{
-				item.VAO->Bind();
-				item.Material->Bind();
-				SetRenderUniforms(item.Material, item.Transform, item.Bones);
-				glDrawElements(GL_TRIANGLES, item.IndexCount, GL_UNSIGNED_INT, nullptr);
-				item.VAO->Unbind();
-			}
+		for (const RenderItem& item : s_TransparentRenderQueue) {
+			item.VAO->Bind();
+			item.Material->Bind();
+			SetFrameUniforms(item.Material->GetShader());
+			SetRenderUniforms(item.Material, item.Transform, item.Bones);
+			glDrawElements(GL_TRIANGLES, item.IndexCount, GL_UNSIGNED_INT, nullptr);
+			item.VAO->Unbind();
 		}
 		EnableDepthMask();
 		DisableBlend();
 		///
 
-		s_RenderQueue.clear();
+		s_OpaqueRenderQueue.clear();
+		s_TransparentRenderQueue.clear();
+	}
+
+	void Renderer::ClearParticles()
+	{
+		s_ParticlesData.transformsBatch.clear();
+		s_ParticlesData.colorsBatch.clear();
+	}
+
+	void Renderer::AddParticle(const matrix4& transform, const vec4& color)
+	{
+		s_ParticlesData.colorsBatch.emplace_back(color);
+		s_ParticlesData.transformsBatch.emplace_back(transform);
+	}
+
+	void Renderer::FlushParticles(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material)
+	{
+		if (s_ParticlesData.transformsBatch.empty()) return;
+
+		vao->Bind();
+		s_ParticlesData.TransformVBO->SetData(s_ParticlesData.transformsBatch.data(), s_ParticlesData.transformsBatch.size() * sizeof(matrix4));
+
+		for (int i = 0; i < 4; i++) {
+			glEnableVertexAttribArray(2 + i);
+			glVertexAttribPointer(2 + i, 4, GL_FLOAT, GL_FALSE, sizeof(matrix4), (void*)(sizeof(vec4) * i));
+			glVertexAttribDivisor(2 + i, 1);
+		}
+
+		s_ParticlesData.ColorVBO->SetData(s_ParticlesData.colorsBatch.data(), s_ParticlesData.colorsBatch.size() * sizeof(vec4));
+
+		glEnableVertexAttribArray(6);
+		glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(vec4), (void*)0);
+		glVertexAttribDivisor(6, 1);
+
+		material->Bind();
+		SetFrameUniforms(material->GetShader());
+
+		glDrawElementsInstanced(GL_TRIANGLES, vao->GetIndexBuffer().GetCount(), GL_UNSIGNED_INT, nullptr, s_ParticlesData.transformsBatch.size());
+
+		vao->Unbind();
 	}
 
 	unsigned int Renderer::UploadBones(const std::vector<matrix4>& bones)
@@ -628,6 +694,41 @@ namespace Loopie {
 		return offset;
 	}
 
+	void Renderer::SetFrameUniforms(Shader& shader)
+	{
+		if (s_FrameUpdatedShaders.find(&shader) != s_FrameUpdatedShaders.end())
+			return;
+
+		// ---- GLOBAL UNIFORMS ----
+		if (shader.GetUniformLocation("lp_Time") != -1)
+			shader.SetUniformFloat("lp_Time", Time::GetRunTime());
+
+		if (shader.GetUniformLocation("lp_SceneDepth") != -1)
+			shader.SetUniformInt("lp_SceneDepth", 12);
+
+		if (shader.GetUniformLocation("lp_Near") != -1)
+			shader.SetUniformFloat("lp_Near", s_NearPlane);
+
+		if (shader.GetUniformLocation("lp_Far") != -1)
+			shader.SetUniformFloat("lp_Far", s_FarPlane);
+
+		for (int i = 0; i < MAX_SHADOW_CASTING_LIGHTS; ++i)
+		{
+			std::string name = "lp_ShadowMaps[" + std::to_string(i) + "]";
+			if (shader.GetUniformLocation(name) != -1)
+				shader.SetUniformInt(name, DYNAMIC_SHADOW_TEXTURE_INDEX + i);
+		}
+
+		for (int i = 0; i < MAX_SHADOW_CASTING_LIGHTS; ++i)
+		{
+			std::string name = "lp_StaticShadowMaps[" + std::to_string(i) + "]";
+			if (shader.GetUniformLocation(name) != -1)
+				shader.SetUniformInt(name, STATIC_SHADOW_TEXTURE_INDEX + i);
+		}
+
+		s_FrameUpdatedShaders.insert(&shader);
+	}
+
 	void Renderer::SetRenderUniforms(std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones)
 	{
 		SetRenderUniforms(material, transform->GetLocalToWorldMatrix(), bones);
@@ -635,54 +736,18 @@ namespace Loopie {
 
 	void Renderer::SetRenderUniforms(std::shared_ptr<Material> material, const matrix4& modelMatrix, const std::vector<matrix4>& bones)
 	{
-		if (material->GetShader().GetUniformLocation("lp_Transform") != -1)
-		{
-			material->GetShader().SetUniformMat4("lp_Transform", modelMatrix);
-		}
+		Shader& shader = material->GetShader();
 
-		if (material->GetShader().GetUniformLocation("lp_Time") != -1)
-		{
-			material->GetShader().SetUniformFloat("lp_Time", Time::GetRunTime());
-		}
+		if (shader.GetUniformLocation("lp_Transform") != -1)
+			shader.SetUniformMat4("lp_Transform", modelMatrix);
 
-		if (material->GetShader().GetUniformLocation("lp_Skinned") != -1)
-		{
-			material->GetShader().SetUniformInt("lp_Skinned", !bones.empty() ? 1 : 0);
-		}
-
-		if (material->GetShader().GetUniformLocation("lp_SceneDepth") != -1)
-		{
-			material->GetShader().SetUniformInt("lp_SceneDepth", 12);
-		}
-
-		if (material->GetShader().GetUniformLocation("lp_Near") != -1)
-		{
-			material->GetShader().SetUniformFloat("lp_Near", s_NearPlane);
-		}
-
-		if (material->GetShader().GetUniformLocation("lp_Far") != -1)
-		{
-			material->GetShader().SetUniformFloat("lp_Far", s_FarPlane);
-		}
-
-		for (int i = 0; i < MAX_SHADOW_CASTING_LIGHTS; ++i)
-		{
-			std::string name = "lp_ShadowMaps[" + std::to_string(i) + "]";
-			if (material->GetShader().GetUniformLocation(name) != -1)
-				material->GetShader().SetUniformInt(name, DYNAMIC_SHADOW_TEXTURE_INDEX + i);
-		}
-
-		for (int i = 0; i < MAX_SHADOW_CASTING_LIGHTS; ++i)
-		{
-			std::string name = "lp_StaticShadowMaps[" + std::to_string(i) + "]";
-			if (material->GetShader().GetUniformLocation(name) != -1)
-				material->GetShader().SetUniformInt(name, STATIC_SHADOW_TEXTURE_INDEX + i);
-		}
+		if (shader.GetUniformLocation("lp_Skinned") != -1)
+			shader.SetUniformInt("lp_Skinned", !bones.empty() ? 1 : 0);
 
 		if (!bones.empty())
 		{
 			int boneOffset = (int)UploadBones(bones);
-			material->GetShader().SetUniformInt("lp_BoneOffset", boneOffset);
+			shader.SetUniformInt("lp_BoneOffset", boneOffset);
 		}
 	}
 

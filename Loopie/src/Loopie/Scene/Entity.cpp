@@ -22,19 +22,41 @@ namespace Loopie {
 
 	bool Entity::RemoveComponent(Component* component)
 	{
-		//if (component->GetTypeID() == m_transform->GetTypeID())
-			//return false;
+		if (!component)
+			return false;
+
+		size_t typeID = component->GetTypeID();
 
 		for (size_t i = 0; i < m_components.size(); i++)
 		{
-			if (m_components[i].get() == component) {
+			if (m_components[i].get() == component)
+			{
+				m_componentsByUUID.erase(component->GetUUID());
+
+				auto& vec = m_componentsByType[typeID];
+				for (size_t j = 0; j < vec.size(); j++)
+				{
+					if (vec[j] == component)
+					{
+						std::swap(vec[j], vec.back());
+						vec.pop_back();
+						break;
+					}
+				}
+
+				std::swap(m_components[i], m_components.back());
+				m_components.pop_back();
+
 				if (component == m_transform)
 					m_transform = nullptr;
-				m_components.erase(m_components.begin() + i);
+
+				if (m_transform)
+					m_transform->MarkHasChangedThisFrame();
+
 				return true;
 			}
 		}
-		m_transform->MarkHasChangedThisFrame();
+
 		return false;
 	}
 
@@ -270,6 +292,8 @@ namespace Loopie {
 
 	void Entity::SetIsActive(bool active)
 	{
+		if (m_isActive == active)
+			return;
 		m_isActive = active;
 		if (m_isStatic)
 		{

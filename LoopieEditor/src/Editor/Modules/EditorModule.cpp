@@ -367,14 +367,17 @@ namespace Loopie
 		{
 			LP_SCOPE_N("Camera Setup");
 			bool visibleEditorCam = m_scene.IsVisible();
-			if (visibleEditorCam)
+			if (visibleEditorCam) {
 				m_scene.PrepareFrameBuffer();
-			m_scene.GetCamera()->SetRenderTarget(visibleEditorCam ? m_scene.GetFrameBuffer() : nullptr);
+				m_scene.GetCamera()->SetRenderTarget(visibleEditorCam ? m_scene.GetFrameBuffer() : nullptr);
+			}
 
 			visibleEditorCam = m_game.IsVisible() && m_game.GetCamera() && m_game.GetCamera()->GetIsActive();
-			if (visibleEditorCam)
+			if (visibleEditorCam) {
 				m_game.PrepareFrameBuffer();
-			m_game.GetCamera()->SetRenderTarget(visibleEditorCam ? m_game.GetFrameBuffer() : nullptr);
+				m_game.GetCamera()->SetRenderTarget(visibleEditorCam ? m_game.GetFrameBuffer() : nullptr);
+			}
+
 		}
 
 		{
@@ -409,23 +412,27 @@ namespace Loopie
 					{
 						{
 							LP_SCOPE_N("Gizmos");
-							for (const auto& [uuid, entity] : m_currentScene->GetAllEntities()) {
+
+							auto& entities = m_currentScene->GetAllEntities();
+
+							for (const auto& [id, entity] : entities)
+							{
 								if (!entity->GetIsActive())
 									continue;
 
-								const std::vector<Component*>& components = entity->GetComponents();
-								for (size_t i = 0; i < components.size(); i++)
+								auto* components = entity->GetComponentsRaw<ScriptClass>();
+								if (!components)
+									continue;
+
+								for (auto* component : *components)
 								{
-									Component* component = components[i];
-									if (!component->GetLocalIsActive())
+									if (!component->GetIsActive())
 										continue;
-									if (component->GetTypeID() == ScriptClass::GetTypeIDStatic())
-									{
-										ScriptClass* script = static_cast<ScriptClass*>(component);
-										if (!script->IsValid())
-											continue;
-										script->InvokeOnDrawGizmo();
-									}
+
+									ScriptClass* script = static_cast<ScriptClass*>(component);
+									if (!script->IsValid())
+										continue;
+									script->InvokeOnDrawGizmo();
 								}
 							}
 						}
@@ -507,15 +514,19 @@ namespace Loopie
 
 			bool errors = false;
 			for (const auto& [uuid, entity] : m_currentScene->GetAllEntities()) {
-				std::vector<ScriptClass*> scripts = entity->GetComponents<ScriptClass>();
-				for (size_t i = 0; i < scripts.size(); i++)
+				if (auto* scripts = entity->GetComponentsRaw<ScriptClass>())
 				{
-					if (!scripts[i]->GetScriptingClass()) {
-						errors = true;
-						Log::Error("Failed to start the game. Check the scripts || Entity: {0}   Component UUID: {1}", scripts[i]->GetOwner()->GetName(), scripts[i]->GetUUID().Get());
+					for (Component* comp : *scripts)
+					{
+						ScriptClass* script = static_cast<ScriptClass*>(comp);
+						if (!script->GetScriptingClass()) {
+							errors = true;
+							Log::Error("Failed to start the game. Check the scripts || Entity: {0}   Component UUID: {1}", script->GetOwner()->GetName(), script->GetUUID().Get());
+						}
 					}
 				}
 			}
+
 			if (errors)
 			{
 				return false;
@@ -534,14 +545,13 @@ namespace Loopie
 
 		{
 			LP_SCOPE_N("Components Update Loops");
+
 			for (const auto& [uuid, entity] : m_currentScene->GetAllEntities()) {
 				if (!entity->GetIsActive())
 					continue;
 
-				const std::vector<Component*>& components = entity->GetComponents();
-				for (size_t i = 0; i < components.size(); i++)
+				for (auto& component : entity->GetComponentsRaw())
 				{
-					Component* component = components[i];
 					if (!component->GetLocalIsActive())
 						continue;
 					component->OnUpdate();
@@ -549,7 +559,7 @@ namespace Loopie
 					if (component->GetTypeID() == ScriptClass::GetTypeIDStatic())
 					{
 						{
-							ScriptClass* script = static_cast<ScriptClass*>(component);
+							ScriptClass* script = static_cast<ScriptClass*>(component.get());
 							LP_SCOPE_N("Script Update");
 							if (!script->IsValid())
 								continue;
@@ -602,46 +612,38 @@ namespace Loopie
 			m_currentScene->GetOctree().CollectVisibleEntitiesFrustum(camera->GetFrustum(), entities);
 		}
 
-		std::vector<MeshRenderer*> renderers;
-		renderers.reserve(1);
-
 		auto selectedEntity = HierarchyInterface::s_SelectedEntity.lock();
-		for (const auto& entity : entities)
+
 		{
-			if (!entity->GetIsActive())
-				continue;
-
-			const std::vector<Component*>& components = entity->GetComponents();
-			renderers.clear();
-
+			LP_SCOPE_N("Render Submission");
+			for (const auto& entity : entities)
 			{
-				LP_SCOPE_N("Mesh Collection");
-				for (size_t i = 0; i < components.size(); i++)
-				{
-					Component* component = components[i];
-					if (!component->GetLocalIsActive())
-						continue;
-					if (component->GetTypeID() == MeshRenderer::GetTypeIDStatic()) {
-						MeshRenderer* renderer = static_cast<MeshRenderer*>(component);
-						if(renderer->GetMesh())
-							renderers.push_back(renderer);
-					}
+				if (!entity->GetIsActive())
+					continue;
 
-					if (Renderer::IsGizmoActive()) {
-						if (component->GetTypeID() != Camera::GetTypeIDStatic()) {
-							if (HierarchyInterface::s_SelectedEntity.lock().get() == entity)
-								component->RenderGizmo();
-							if (entity->HasComponent<Canvas>())
-								component->RenderGizmo();
-						}
+				if (Renderer::IsGizmoActive() && HierarchyInterface::s_SelectedEntity.lock().get() == entity) {
+					
+					const auto& components = entity->GetComponentsRaw();
+					for (const auto& component : components)
+					{
+
+						component->RenderGizmo();
 					}
 				}
-			}
-			{
-				LP_SCOPE_N("Render Submission");
-				for (size_t i = 0; i < renderers.size(); i++)
+
+				auto* renderers = entity->GetComponentsRaw<MeshRenderer>();
+				if (!renderers)
+					continue;
+
+				for (auto* component : *renderers)
 				{
-					MeshRenderer* renderer = renderers[i];
+					if (!component->GetIsActive())
+						continue;
+
+					MeshRenderer* renderer = static_cast<MeshRenderer*>(component);
+					if (!renderer->GetMesh())
+						continue;
+
 					const MeshData& data = renderer->GetMesh()->GetData();
 
 					std::vector<matrix4> bones = {};
@@ -681,9 +683,8 @@ namespace Loopie
 		if (Renderer::IsGizmoActive()) {
 			if (selectedEntity)
 			{
-				std::vector<Component*> comps = selectedEntity->GetComponents();
-				for(const auto* comp : comps)
-					comp->RenderGizmo();
+				for (auto& component : selectedEntity->GetComponentsRaw())
+					component->RenderGizmo();
 			}
 			m_currentScene->GetOctree().DebugDraw(Color::MAGENTA);
 			CollisionProcessor::RenderGizmos();
@@ -726,29 +727,20 @@ namespace Loopie
 
 	void EditorModule::RenderEntityShadows(const std::unordered_set<Entity*>& entities)
 	{
-		std::vector<MeshRenderer*> renderers;
-		renderers.reserve(1);
-
 		for (const auto& entity : entities)
 		{
-			const std::vector<Component*>& components = entity->GetComponents();
-			renderers.clear();
+			auto* components = entity->GetComponentsRaw<MeshRenderer>();
+			if (!components)
+				continue;
 
-			for (size_t i = 0; i < components.size(); i++)
+			for (auto* component : *components)
 			{
-				Component* component = components[i];
-				if (!component->GetLocalIsActive())
+				if (!component->GetIsActive())
 					continue;
-				if (component->GetTypeID() == MeshRenderer::GetTypeIDStatic()) {
-					MeshRenderer* renderer = static_cast<MeshRenderer*>(component);
-					if (renderer->GetMesh() && renderer->GetCastsShadows())
-						renderers.push_back(renderer);
-				}
-			}
 
-			for (size_t i = 0; i < renderers.size(); i++)
-			{
-				MeshRenderer* renderer = renderers[i];
+				MeshRenderer* renderer = static_cast<MeshRenderer*>(component);
+				if (!renderer->GetCastsShadows() || !renderer->GetMesh())
+					continue;
 				const MeshData& data = renderer->GetMesh()->GetData();
 
 				std::vector<matrix4> bones = {};
@@ -775,27 +767,30 @@ namespace Loopie
 		Renderer::BlendFunction();
 
 		auto& particleEntities = m_currentScene->GetAllEntities();
+
 		for (const auto& [id, entity] : particleEntities)
 		{
 			if (!entity->GetIsActive())
 				continue;
 
-			const std::vector<Component*>& components = entity->GetComponents();
-			for (size_t i = 0; i < components.size(); i++)
-			{
-				Component* component = components[i];
-				if (!component->GetIsActive())
-					continue;
-				if (component->GetTypeID() == ParticleComponent::GetTypeIDStatic())
-				{
-					ParticleComponent* particleSystem = static_cast<ParticleComponent*>(component);
-					particleSystem->Render(cam);
-				}
-			}
+			auto* components = entity->GetComponentsRaw<ParticleComponent>();
+			if (!components)
+				continue;
 
+			for (auto* c : *components)
+			{
+				if (!c->GetIsActive())
+					continue;
+
+				static_cast<ParticleComponent*>(c)->Render(cam);
+			}
 		}
+
 		Renderer::EnableDepthMask();
 		Renderer::DisableBlend();
+
+
+		
 	}
 
 	void EditorModule::SeparateDynamicEntities(const std::unordered_set<Entity*>& entities, std::unordered_set<Entity*>& dynamicEntities)

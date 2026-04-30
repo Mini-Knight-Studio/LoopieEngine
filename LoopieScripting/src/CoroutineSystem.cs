@@ -15,6 +15,15 @@ namespace Loopie
         }
     }
 
+    public class WaitForUnscaledSeconds : YieldInstruction
+    {
+        public float TimeLeft;
+        public WaitForUnscaledSeconds(float seconds)
+        {
+            TimeLeft = seconds;
+        }
+    }
+
     public class Coroutine
     {
         public string OwnerID;
@@ -66,6 +75,12 @@ namespace Loopie
                     {
                         wait.TimeLeft -= Time.deltaTime;
                         if (wait.TimeLeft > 0)
+                            continue;
+                    }
+                    else if (c.Yielded is WaitForUnscaledSeconds waitU)
+                    {
+                        waitU.TimeLeft -= Time.unscaledDeltaTime;
+                        if (waitU.TimeLeft > 0)
                             continue;
                     }
 
