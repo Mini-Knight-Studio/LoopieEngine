@@ -1636,6 +1636,13 @@ namespace Loopie {
 						isRuntime ? scriptClass->SetRuntimeFieldValue<vec4>(name, v) : scriptClass->SetFieldValue<vec4>(name, v);
 					break;
 				}
+				case ScriptFieldType::Color:
+				{
+					vec4 v = isRuntime ? scriptClass->GetRuntimeFieldValue<vec4>(name) : scriptClass->GetFieldValue<vec4>(name);
+					if (ImGui::ColorEdit4(name.c_str(), &v.x, 0.1f))
+						isRuntime ? scriptClass->SetRuntimeFieldValue<vec4>(name, v) : scriptClass->SetFieldValue<vec4>(name, v);
+					break;
+				}
 
 				default:
 					ImGui::Text("Unsupported Field: %s", name.c_str());

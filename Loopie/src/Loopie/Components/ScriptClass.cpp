@@ -301,7 +301,8 @@ namespace Loopie
 				break;
 			}
 
-			case ScriptFieldType::Vector4:{
+			case ScriptFieldType::Vector4:
+			case ScriptFieldType::Color:{
 				JsonNode vectorNode = node.CreateObjectField(name);
 				vec4 vector = GetFieldValue<vec4>(name);
 				vectorNode.CreateField<float>("x", vector.x);
@@ -402,7 +403,8 @@ namespace Loopie
 				break;
 			}
 
-			case ScriptFieldType::Vector4: {
+			case ScriptFieldType::Vector4:
+			case ScriptFieldType::Color: {
 				vec4 vector = vec4(1);
 				JsonNode vectorNode = node.Child(name);
 				vector.x = vectorNode.GetValue<float>("x").Result;

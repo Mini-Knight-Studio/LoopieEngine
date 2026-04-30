@@ -80,6 +80,20 @@ namespace Loopie {
 			return nullptr;
 		}
 
+		template<typename T, typename = std::enable_if_t<std::is_base_of_v<Component, T>>>
+		T* GetComponent(int index) const
+		{
+			auto it = m_componentsByType.find(T::GetTypeIDStatic());
+
+			if (it != m_componentsByType.end() &&
+				index >= 0 &&
+				index < static_cast<int>(it->second.size()))
+			{
+				return static_cast<T*>(it->second[index]);
+			}
+
+			return nullptr;
+		}
 
 		template<typename T, typename = std::enable_if_t<std::is_base_of_v<Component, T>>>
 		T* GetComponent(UUID uuid) {

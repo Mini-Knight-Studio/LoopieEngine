@@ -19,10 +19,10 @@ namespace Loopie
         public bool HasComponent<T>() where T : Component, new()
         {
             Type componentType = typeof(T);
-            return InternalCalls.Entity_HasComponent(ID, componentType) || InternalCalls.Entity_GetScriptInstance(ID, componentType.FullName)!=null;
+            return InternalCalls.Entity_HasComponent(ID, componentType) || InternalCalls.Entity_GetScriptInstance(ID, componentType.FullName,0)!=null;
         }
 
-        public T GetComponent<T>() where T : Component, new()
+        public T GetComponent<T>(int index = 0) where T : Component, new()
         {
             Type componentType = typeof(T);
 
@@ -32,14 +32,14 @@ namespace Loopie
 
             if (InternalCalls.Entity_HasComponent(ID, componentType))
             {
-                if (!InternalCalls.Entity_GetComponent(ID, componentType, out string componentID))
+                if (!InternalCalls.Entity_GetComponent(ID, componentType, index, out string componentID))
                     return component;
                 component.ID = componentID;
                 return component;
             }
 
             string typeName = typeof(T).FullName;
-            object scriptInstance = InternalCalls.Entity_GetScriptInstance(ID, typeName);
+            object scriptInstance = InternalCalls.Entity_GetScriptInstance(ID, typeName, index);
             if (scriptInstance != null)
             {
                 return scriptInstance as T;

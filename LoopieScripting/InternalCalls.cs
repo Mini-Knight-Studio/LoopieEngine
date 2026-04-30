@@ -423,7 +423,7 @@ namespace Loopie
         #endregion
         #region Entity
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static object Entity_GetScriptInstance(string entityID, string componentFullName);
+        internal extern static object Entity_GetScriptInstance(string entityID, string componentFullName, int index);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static string Entity_Create(string entityName, string parentId);
@@ -441,7 +441,7 @@ namespace Loopie
         internal extern static bool Entity_HasComponent(string entityID, Type componentType);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static bool Entity_GetComponent(string entityID, Type componentType, out string componentID);
+        internal extern static bool Entity_GetComponent(string entityID, Type componentType, int index, out string componentID);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static string Entity_FindEntityByName(string name);

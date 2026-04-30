@@ -42,7 +42,7 @@
 namespace Loopie
 {
 	static std::unordered_map<_MonoType*, std::function<bool(std::shared_ptr<Entity>)>> s_EntityHasComponentFuncs;
-	static std::unordered_map<_MonoType*, std::function<UUID(std::shared_ptr<Entity>)>> s_EntityGetComponentFuncs;
+	static std::unordered_map<_MonoType*, std::function<UUID(std::shared_ptr<Entity>,int)>> s_EntityGetComponentFuncs;
 
 	namespace Utils {
 		std::string MonoStringToString(MonoString* string)
@@ -141,6 +141,17 @@ namespace Loopie
 		}
 
 		template<typename T, typename = std::enable_if_t<std::is_base_of_v<Component, T>>>
+		T* GetComponent(std::shared_ptr<Entity> entity, int index)
+		{
+			if (!entity)
+				return nullptr;
+			T* component = entity->GetComponent<T>(index);
+			if (!component)
+				Log::Error("Component {} not found", T::GetIdentificableName());
+			return component;
+		}
+
+		template<typename T, typename = std::enable_if_t<std::is_base_of_v<Component, T>>>
 		static T* GetComponentNoLog(std::shared_ptr<Entity> entity, MonoString* componentID)
 		{
 			if (!entity)
@@ -199,7 +210,7 @@ namespace Loopie
 #pragma endregion
 
 #pragma region Components
-	static MonoObject* Entity_GetScriptInstance(MonoString* entityID, MonoString* componentFullName)
+	static MonoObject* Entity_GetScriptInstance(MonoString* entityID, MonoString* componentFullName, int index)
 	{
 		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
 		if(!entity)
@@ -208,6 +219,7 @@ namespace Loopie
 		std::vector<ScriptClass*> scriptComponents = entity->GetComponents<ScriptClass>();
 
 		std::string compFullName = Utils::MonoStringToString(componentFullName);
+		int indexFind = 0;
 		for (ScriptClass* script : scriptComponents)
 		{
 			if (!script || !script->GetScriptingClass())
@@ -215,7 +227,9 @@ namespace Loopie
 
 			if (script->IsSameType(compFullName))
 			{
-				return script->GetInstance();
+				if(indexFind==index)
+					return script->GetInstance();
+				indexFind++;
 			}
 		}
 
@@ -342,7 +356,7 @@ namespace Loopie
 		return s_EntityHasComponentFuncs.at(managedType)(entity);
 	}
 
-	static MonoBoolean Entity_GetComponent(MonoString* entityID, MonoReflectionType* componentType, MonoString** componentID)
+	static MonoBoolean Entity_GetComponent(MonoString* entityID, MonoReflectionType* componentType, int index, MonoString** componentID)
 	{
 		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
 		if (!entity)
@@ -351,7 +365,7 @@ namespace Loopie
 		MonoType* managedType = mono_reflection_type_get_type(componentType);
 		if (s_EntityHasComponentFuncs.find(managedType) == s_EntityHasComponentFuncs.end())
 			return false;
-		UUID componentUUID = s_EntityGetComponentFuncs.at(managedType)(entity);
+		UUID componentUUID = s_EntityGetComponentFuncs.at(managedType)(entity, index);
 		if (componentUUID == UUID::Invalid)
 			return false;
 
@@ -2774,8 +2788,8 @@ namespace Loopie
 					return;
 				}
 				s_EntityHasComponentFuncs[managedType] = [](std::shared_ptr<Entity> entity) { return entity->HasComponent<Comp>(); };
-				s_EntityGetComponentFuncs[managedType] = [](std::shared_ptr<Entity> entity) { 
-					Comp* compo = entity->GetComponent<Comp>(); 
+				s_EntityGetComponentFuncs[managedType] = [](std::shared_ptr<Entity> entity, int index) { 
+					Comp* compo = entity->GetComponent<Comp>(index);
 					return compo ? compo->GetUUID() : UUID::Invalid; };
 			}());
 	}

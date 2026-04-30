@@ -34,6 +34,7 @@ namespace Loopie {
 		Vector2,
 		Vector3,
 		Vector4,
+		Color,
 	};
 
 	static std::unordered_map<std::string, ScriptFieldType> s_ScriptFieldTypeMap =
@@ -54,7 +55,8 @@ namespace Loopie {
 		{ "Loopie.Component",  ScriptFieldType::Component },
 		{ "Loopie.Vector2",  ScriptFieldType::Vector2 },
 		{ "Loopie.Vector3",  ScriptFieldType::Vector3 },
-		{ "Loopie.Vector4",  ScriptFieldType::Vector4 }
+		{ "Loopie.Vector4",  ScriptFieldType::Vector4 },
+		{ "Loopie.Color",  ScriptFieldType::Color }
 	};
 
 	struct FieldAttributes
