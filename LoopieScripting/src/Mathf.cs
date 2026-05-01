@@ -285,5 +285,101 @@ namespace Loopie
             value |= value >> 16;
             return value + 1;
         }
+
+        ////// LERPING EXTRA FEATURES
+        ///
+        public enum LerpCurve
+        {
+            Linear,
+            EaseIn,
+            EaseOut,
+            EaseInOut,
+            SmoothStep,
+            SmootherStep,
+            SinIn,
+            SinOut,
+            SinInOut,
+            ExponentialIn,
+            ExponentialOut,
+            ExponentialInOut
+        }
+
+        public enum LerpStrengthMode
+        {
+            Blend,
+            Power
+        }
+
+        public static float Lerp(float a, float b, float t, LerpCurve curve, float strength = 1f, LerpStrengthMode mode = LerpStrengthMode.Blend)
+        {
+            t = Clamp01(t);
+
+            float curvedT = ApplyCurve(t, curve);
+
+            switch (mode)
+            {
+                case LerpStrengthMode.Power:
+                    if (curvedT <= 0f) return a;
+                    curvedT = Pow(curvedT, strength);
+                    break;
+
+                case LerpStrengthMode.Blend:
+                default:
+                    curvedT = LerpUnclamped(t, curvedT, strength);
+                    break;
+            }
+
+            return a + (b - a) * curvedT;
+        }
+
+        public static float ApplyCurve(float t, LerpCurve curve)
+        {
+            switch (curve)
+            {
+                default:
+                case LerpCurve.Linear:
+                    return t;
+
+                case LerpCurve.EaseIn:
+                    return t * t;
+
+                case LerpCurve.EaseOut:
+                    return 1f - (1f - t) * (1f - t);
+
+                case LerpCurve.EaseInOut:
+                    return t < 0.5f
+                        ? 2f * t * t
+                        : 1f - Pow(-2f * t + 2f, 2f) / 2f;
+
+                case LerpCurve.SmoothStep:
+                    return t * t * (3f - 2f * t);
+
+                case LerpCurve.SmootherStep:
+                    return t * t * t * (t * (6f * t - 15f) + 10f);
+
+                case LerpCurve.SinIn:
+                    return 1f - Cos(t * PI * 0.5f);
+
+                case LerpCurve.SinOut:
+                    return Sin(t * PI * 0.5f);
+
+                case LerpCurve.SinInOut:
+                    return -(Cos(PI * t) - 1f) * 0.5f;
+
+                case LerpCurve.ExponentialIn:
+                    return t == 0f ? 0f : Pow(2f, 10f * (t - 1f));
+
+                case LerpCurve.ExponentialOut:
+                    return t == 1f ? 1f : 1f - Pow(2f, -10f * t);
+
+                case LerpCurve.ExponentialInOut:
+                    if (t == 0f) return 0f;
+                    if (t == 1f) return 1f;
+                    return t < 0.5f
+                        ? Pow(2f, 20f * t - 10f) / 2f
+                        : (2f - Pow(2f, -20f * t + 10f)) / 2f;
+            }
+        }
     }
+   
 }

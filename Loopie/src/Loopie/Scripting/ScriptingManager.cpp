@@ -3,6 +3,7 @@
 #include "Loopie/Scripting/ScriptGlue.h"
 
 #include "Loopie/Core/Log.h"
+#include "Loopie/Core/Time.h"
 #include "Loopie/Core/Application.h"
 #include "Loopie/Events/Event.h"
 
@@ -172,12 +173,14 @@ namespace Loopie {
 	void ScriptingManager::RuntimeStart()
 	{
 		s_IsRunning = true;
+		Time::SetTimeScale(1);
 		Application::GetInstance().m_notifier.Notify(EngineNotification::OnRuntimeStart);
 	}
 
 	void ScriptingManager::RuntimeStop()
 	{
 		s_IsRunning = false;
+		Time::SetTimeScale(1);
 		Application::GetInstance().m_notifier.Notify(EngineNotification::OnRuntimeStop);
 		Reload();
 	}
