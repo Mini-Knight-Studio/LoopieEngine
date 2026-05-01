@@ -38,7 +38,14 @@ namespace Loopie
 
     public static class Collisions
     {
-        public static bool Raycast(Vector3 origin, Vector3 direction, float maxDistance, out RaycastHit hit, int layerMask = -1, BoxCollider avoidCollider = null)
+
+        public static bool Raycast(Vector3 origin, Vector3 direction, float maxDistance, out RaycastHit hit, int layerMask = -1)
+        {
+            hit = new RaycastHit();
+            return InternalCalls.Collisions_Raycast(origin, direction, maxDistance, out hit, layerMask);
+        }
+
+        public static bool Raycast(Vector3 origin, Vector3 direction, float maxDistance, out RaycastHit hit, BoxCollider avoidCollider, int layerMask = -1)
         {
             hit = new RaycastHit();
             if(avoidCollider == null)
@@ -46,7 +53,7 @@ namespace Loopie
             return InternalCalls.Collisions_RaycastWithColliderAvoidance(origin, direction, maxDistance, out hit, layerMask, avoidCollider.entity.ID, avoidCollider.ID);
         }
 
-        public static bool Raycast(Vector3 origin, Vector3 direction, float maxDistance, out RaycastHit hit, int layerMask = -1, Entity avoidEntity = null)
+        public static bool Raycast(Vector3 origin, Vector3 direction, float maxDistance, out RaycastHit hit, Entity avoidEntity, int layerMask = -1)
         {
             hit = new RaycastHit();
             if (avoidEntity == null)
