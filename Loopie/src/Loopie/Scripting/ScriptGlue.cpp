@@ -1829,7 +1829,30 @@ namespace Loopie
 		float distance;
 	};
 
-	static MonoBoolean Collisions_Raycast(vec3* origin, vec3* direction, float maxDistance, MonoRaycastHit* outHit, int layerMask, MonoString* entityToAvoidID, MonoString* componentToAvoidID)
+	static MonoBoolean Collisions_Raycast(vec3* origin, vec3* direction, float maxDistance, MonoRaycastHit* outHit, int layerMask)
+	{
+		Ray ray(*origin, *direction, maxDistance);
+		RaycastHit nativeHit;
+
+		if (!CollisionProcessor::Raycast(ray, nativeHit, layerMask))
+			return false;
+
+		BoxCollider* collider = nativeHit.collider;
+		if (!collider)
+			return false;
+
+		std::shared_ptr<Entity> entity = collider->GetOwner();
+		UUID componentUUID = collider->GetUUID();
+
+		outHit->entityID = ScriptingManager::CreateString(entity->GetUUID().Get().c_str());
+		outHit->componentID = ScriptingManager::CreateString(componentUUID.Get().c_str());
+		outHit->point = nativeHit.point;
+		outHit->distance = nativeHit.distance;
+
+		return true;
+	}
+
+	static MonoBoolean Collisions_RaycastWithColliderAvoidance(vec3* origin, vec3* direction, float maxDistance, MonoRaycastHit* outHit, int layerMask, MonoString* entityToAvoidID, MonoString* componentToAvoidID)
 	{
 		Ray ray(*origin, *direction, maxDistance);
 
@@ -1847,9 +1870,32 @@ namespace Loopie
 
 		BoxCollider* collider = nativeHit.collider;
 		if (!collider)
+			return false;	
+
+		std::shared_ptr<Entity> entity = collider->GetOwner();
+		UUID componentUUID = collider->GetUUID();
+
+		outHit->entityID = ScriptingManager::CreateString(entity->GetUUID().Get().c_str());
+		outHit->componentID = ScriptingManager::CreateString(componentUUID.Get().c_str());
+		outHit->point = nativeHit.point;
+		outHit->distance = nativeHit.distance;
+
+		return true;
+	}
+
+	static MonoBoolean Collisions_RaycastWithEntityAvoidance(vec3* origin, vec3* direction, float maxDistance, MonoRaycastHit* outHit, int layerMask, MonoString* entityToAvoidID)
+	{
+		Ray ray(*origin, *direction, maxDistance);
+
+		std::shared_ptr<Entity> avoidEntity = Utils::GetEntityNoLog(entityToAvoidID);
+		RaycastHit nativeHit;
+
+		if (!CollisionProcessor::Raycast(ray, nativeHit, layerMask, avoidEntity))
 			return false;
 
-		
+		BoxCollider* collider = nativeHit.collider;
+		if (!collider)
+			return false;
 
 		std::shared_ptr<Entity> entity = collider->GetOwner();
 		UUID componentUUID = collider->GetUUID();
@@ -3016,6 +3062,8 @@ namespace Loopie
 		ADD_INTERNAL_CALL(AudioSource_GetSet3DMinMaxDistance);
 
 		ADD_INTERNAL_CALL(Collisions_Raycast);
+		ADD_INTERNAL_CALL(Collisions_RaycastWithColliderAvoidance);
+		ADD_INTERNAL_CALL(Collisions_RaycastWithEntityAvoidance);
 		ADD_INTERNAL_CALL(Collisions_GetLayerBit);
 
 		ADD_INTERNAL_CALL(Gizmo_DrawLine);

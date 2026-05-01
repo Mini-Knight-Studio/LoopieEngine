@@ -31,7 +31,9 @@ namespace Loopie {
 		static void Register(BoxCollider* collider);
 		static void Unregister(BoxCollider* collider);
 
-		static bool Raycast(const Ray& ray, RaycastHit& hit, int layerMask, BoxCollider* avoidCollider = nullptr); // Now it doesnt use the octree
+		static bool Raycast(const Ray& ray, RaycastHit& hit, int layerMask); // Now it doesnt use the octree
+		static bool Raycast(const Ray& ray, RaycastHit& hit, int layerMask, BoxCollider* avoidCollider); // Now it doesnt use the octree
+		static bool Raycast(const Ray& ray, RaycastHit& hit, int layerMask, std::shared_ptr<Entity> entityCollider); // Now it doesnt use the octree
 
 		static void Process(); // Now it doesnt use the octree
 
