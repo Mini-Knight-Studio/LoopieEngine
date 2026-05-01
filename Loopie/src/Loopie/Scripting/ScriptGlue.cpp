@@ -1379,17 +1379,29 @@ namespace Loopie
 	static void Input_GetLeftAxis(vec2* axis) {
 		*axis = Application::GetInstance().GetInputEvent().GetLeftAxis();
 	}
+	static void Input_GetLeftAxisRaw(vec2* axis) {
+		*axis = Application::GetInstance().GetInputEvent().GetLeftAxisRaw();
+	}
 
 	static void Input_GetRightAxis(vec2* axis) {
 		*axis = Application::GetInstance().GetInputEvent().GetRightAxis();
+	}
+	static void Input_GetRightAxisRaw(vec2* axis) {
+		*axis = Application::GetInstance().GetInputEvent().GetRightAxisRaw();
 	}
 
 	static float Input_GetLeftTrigger() {
 		return Application::GetInstance().GetInputEvent().GetLeftTrigger();
 	}
+	static float Input_GetLeftTriggerRaw() {
+		return Application::GetInstance().GetInputEvent().GetLeftTriggerRaw();
+	}
 
 	static float Input_GetRightTrigger() {
 		return Application::GetInstance().GetInputEvent().GetRightTrigger();
+	}
+	static float Input_GetRightTriggerRaw() {
+		return Application::GetInstance().GetInputEvent().GetRightTriggerRaw();
 	}
 
 
@@ -1867,6 +1879,15 @@ namespace Loopie
 	static void Gizmo_DrawLine(vec3* start, vec3* end, vec4* color) {
 		Gizmo::DrawLine(*start, *end, *color);
 	}
+
+	static void Gizmo_DrawCircle(vec3* center, float radius, vec3* normal, float steps, vec4* color) {
+		Gizmo::DrawCircle(*center, radius, *normal, steps, *color);
+	}
+
+	static void Gizmo_DrawSphere(vec3* center, float radius, float steps, vec4* color) {
+		Gizmo::DrawSphere(*center, radius, steps, *color);
+	}
+
 #pragma endregion
 
 #pragma region Scene
@@ -2938,9 +2959,13 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Input_GetMouseDelta);
 		ADD_INTERNAL_CALL(Input_GetScrollDelta);
 		ADD_INTERNAL_CALL(Input_GetLeftAxis);
+		ADD_INTERNAL_CALL(Input_GetLeftAxisRaw);
 		ADD_INTERNAL_CALL(Input_GetRightAxis);
+		ADD_INTERNAL_CALL(Input_GetRightAxisRaw);
 		ADD_INTERNAL_CALL(Input_GetLeftTrigger);
+		ADD_INTERNAL_CALL(Input_GetLeftTriggerRaw);
 		ADD_INTERNAL_CALL(Input_GetRightTrigger);
+		ADD_INTERNAL_CALL(Input_GetRightTriggerRaw);
 		ADD_INTERNAL_CALL(Input_IsAnyKeyDown);
 		ADD_INTERNAL_CALL(Input_IsAnyButtonDown);
 		ADD_INTERNAL_CALL(Input_IsAnyMouseButtonDown);
@@ -2994,6 +3019,8 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Collisions_GetLayerBit);
 
 		ADD_INTERNAL_CALL(Gizmo_DrawLine);
+		ADD_INTERNAL_CALL(Gizmo_DrawCircle);
+		ADD_INTERNAL_CALL(Gizmo_DrawSphere);
 
 		ADD_INTERNAL_CALL(Scene_LoadByID);
 

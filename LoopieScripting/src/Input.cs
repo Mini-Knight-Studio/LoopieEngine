@@ -104,7 +104,13 @@ namespace Loopie
         { get { return GetLeftAxis(); } }
 
         public static Vector2 RightAxis
-        { get { return GetRightAxis(); } }
+        { get { return GetRightAxisRaw(); } }
+
+        public static Vector2 LeftAxisRaw
+        { get { return GetLeftAxis(); } }
+
+        public static Vector2 RightAxisRaw
+        { get { return GetRightAxisRaw(); } }
 
         private static Vector2 GetLeftAxis()
         {
@@ -121,12 +127,33 @@ namespace Loopie
             return axis;
         }
 
+        private static Vector2 GetLeftAxisRaw()
+        {
+            Vector2 axis = Vector2.Zero;
+            InternalCalls.Input_GetLeftAxisRaw(out axis);
+            axis.y *= -1;
+            return axis;
+        }
+        private static Vector2 GetRightAxisRaw()
+        {
+            Vector2 axis = Vector2.Zero;
+            InternalCalls.Input_GetRightAxisRaw(out axis);
+            axis.y *= -1;
+            return axis;
+        }
+
 
         public static float LeftTrigger
         { get { return GetLeftTrigger(); } }
 
         public static float RightTrigger
         { get { return GetRightTrigger(); } }
+
+        public static float LeftTriggerRaw
+        { get { return GetLeftTriggerRaw(); } }
+
+        public static float RightTriggerRaw
+        { get { return GetRightTriggerRaw(); } }
 
         private static float GetLeftTrigger()
         {
@@ -135,6 +162,15 @@ namespace Loopie
         private static float GetRightTrigger()
         {
             return InternalCalls.Input_GetRightTrigger();
+        }
+
+        private static float GetLeftTriggerRaw()
+        {
+            return InternalCalls.Input_GetLeftTriggerRaw();
+        }
+        private static float GetRightTriggerRaw()
+        {
+            return InternalCalls.Input_GetRightTriggerRaw();
         }
 
 

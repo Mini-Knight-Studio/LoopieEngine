@@ -1,5 +1,6 @@
 #include "InputEventManager.h"
 #include "Loopie/Core/Log.h"
+#include "Loopie/Core/Time.h"
 
 #include "Loopie/Core/Application.h"
 #include "Loopie/Core/Window.h"
@@ -14,7 +15,8 @@ namespace Loopie {
 		m_keyboard.fill(KeyState::IDLE);
 		m_gamepad.fill(KeyState::IDLE);
 		m_mouse.fill(KeyState::IDLE);
-		m_axes.fill(0.0f);
+		m_axesRaw.fill(0.0f);
+		m_axesSmoothed.fill(0.0f);
 
 		m_touchedEvents.reserve(15);
 
@@ -104,15 +106,16 @@ namespace Loopie {
 					m_scrollDelta = { event.wheel.x, event.wheel.y };
 					break;
 
-				case SDL_EVENT_GAMEPAD_AXIS_MOTION:
-					if (event.gaxis.value > 0)
-						m_axes[event.gaxis.axis] = (event.gaxis.value) / 32767.0f;
-					else
-						m_axes[event.gaxis.axis] = (event.gaxis.value) / 32768.0f;
+				case SDL_EVENT_GAMEPAD_AXIS_MOTION: {
+					float value = event.gaxis.value;
+					float normalized = value / 32768.0f;
 
-					if (std::fabs(m_axes[event.gaxis.axis]) < m_axisDeadZone)
-						m_axes[event.gaxis.axis] = 0.0f;
+					if (std::abs(normalized) < m_axisDeadZone)
+						normalized = 0.0f;
+
+					m_axesRaw[event.gaxis.axis] = normalized;
 					break;
+				}
 
 				case SDL_EVENT_GAMEPAD_ADDED: {
 					SDL_Gamepad* gamepad = SDL_OpenGamepad(event.gdevice.which);
@@ -142,7 +145,15 @@ namespace Loopie {
 					break;
 			}
 
-		}		
+		}
+
+		float dt = Time::GetDeltaTime();
+		float t = 1.0f - std::exp(-m_axisSmoothing * dt);
+		for (size_t i = 0; i < SDL_GAMEPAD_AXIS_COUNT; i++)
+		{
+			m_axesSmoothed[i] += (m_axesRaw[i] - m_axesSmoothed[i]) * t;
+		}
+
 	}
 
 	KeyState InputEventManager::GetKeyStatus(SDL_Scancode keyCode) const
@@ -211,22 +222,42 @@ namespace Loopie {
 
 	vec2 InputEventManager::GetLeftAxis() const
 	{
-		return { m_axes[SDL_GAMEPAD_AXIS_LEFTX], m_axes[SDL_GAMEPAD_AXIS_LEFTY] };
+		return { m_axesSmoothed[SDL_GAMEPAD_AXIS_LEFTX], m_axesSmoothed[SDL_GAMEPAD_AXIS_LEFTY] };
+	}
+
+	vec2 InputEventManager::GetLeftAxisRaw() const
+	{
+		return { m_axesRaw[SDL_GAMEPAD_AXIS_LEFTX], m_axesRaw[SDL_GAMEPAD_AXIS_LEFTY] };
 	}
 
 	vec2 InputEventManager::GetRightAxis() const
 	{
-		return { m_axes[SDL_GAMEPAD_AXIS_RIGHTX], m_axes[SDL_GAMEPAD_AXIS_RIGHTY] };
+		return { m_axesSmoothed[SDL_GAMEPAD_AXIS_RIGHTX], m_axesSmoothed[SDL_GAMEPAD_AXIS_RIGHTY] };
+	}
+
+	vec2 InputEventManager::GetRightAxisRaw() const
+	{
+		return { m_axesRaw[SDL_GAMEPAD_AXIS_RIGHTX], m_axesRaw[SDL_GAMEPAD_AXIS_RIGHTY] };
 	}
 
 	float InputEventManager::GetLeftTrigger() const
 	{
-		return m_axes[SDL_GAMEPAD_AXIS_LEFT_TRIGGER];
+		return m_axesSmoothed[SDL_GAMEPAD_AXIS_LEFT_TRIGGER];
+	}
+
+	float InputEventManager::GetLeftTriggerRaw() const
+	{
+		return m_axesRaw[SDL_GAMEPAD_AXIS_LEFT_TRIGGER];
 	}
 
 	float InputEventManager::GetRightTrigger() const
 	{
-		return m_axes[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER];
+		return m_axesSmoothed[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER];
+	}
+
+	float InputEventManager::GetRightTriggerRaw() const
+	{
+		return m_axesRaw[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER];
 	}
 
 	const std::vector<const char*>& InputEventManager::GetDroppedFiles() const

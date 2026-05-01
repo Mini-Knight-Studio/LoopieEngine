@@ -228,13 +228,13 @@ namespace Loopie
 
         public static bool operator ==(Entity a, Entity b)
         {
-            if (ReferenceEquals(a, b))
+            bool aIsNullLike = a is null || a.IsNullEntity();
+            bool bIsNullLike = b is null || b.IsNullEntity();
+
+            if (aIsNullLike && bIsNullLike)
                 return true;
 
-            if (a is null || b is null)
-                return false;
-
-            if (a.IsNullEntity() || b.IsNullEntity())
+            if (aIsNullLike || bIsNullLike)
                 return false;
 
             return a.ID == b.ID;

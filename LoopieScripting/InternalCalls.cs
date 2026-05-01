@@ -378,13 +378,25 @@ namespace Loopie
         internal extern static void Input_GetLeftAxis(out Vector2 axis);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Input_GetLeftAxisRaw(out Vector2 axis);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Input_GetRightAxis(out Vector2 axis);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Input_GetRightAxisRaw(out Vector2 axis);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static float Input_GetLeftTrigger();
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static float Input_GetLeftTriggerRaw();
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static float Input_GetRightTrigger();
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static float Input_GetRightTriggerRaw();
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static bool Input_IsAnyKeyDown();
@@ -499,6 +511,10 @@ namespace Loopie
         #region Gizmo
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Gizmo_DrawLine(Vector3 start, Vector3 end, Vector4 color);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Gizmo_DrawCircle(Vector3 center, float radius, Vector3 normal, float steps, Vector4 color);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Gizmo_DrawSphere(Vector3 center, float radius, float steps, Vector4 color);
         #endregion
         #region ParticleSystem
         [MethodImpl(MethodImplOptions.InternalCall)]

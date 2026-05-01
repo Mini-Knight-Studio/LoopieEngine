@@ -44,11 +44,16 @@ namespace Loopie {
 		const vec2& GetMousePosition() const;
 		const vec2& GetMouseDelta() const;
 		const vec2& GetScrollDelta() const;
+
 		vec2 GetLeftAxis() const;
+		vec2 GetLeftAxisRaw() const;
 		vec2 GetRightAxis() const;
+		vec2 GetRightAxisRaw() const;
 
 		float GetLeftTrigger() const;
+		float GetLeftTriggerRaw() const;
 		float GetRightTrigger() const;
+		float GetRightTriggerRaw() const;
 
 		const std::vector<const char*>& GetDroppedFiles() const;
 		const char* GetDroppedFile(int index) const;
@@ -93,7 +98,8 @@ namespace Loopie {
 
 		std::array<KeyState, SDL_SCANCODE_COUNT> m_keyboard;
 		std::array<KeyState, SDL_GAMEPAD_BUTTON_COUNT> m_gamepad;
-		std::array<float, SDL_GAMEPAD_AXIS_COUNT> m_axes;
+		std::array<float, SDL_GAMEPAD_AXIS_COUNT> m_axesRaw;
+		std::array<float, SDL_GAMEPAD_AXIS_COUNT> m_axesSmoothed;
 		std::array<KeyState, 5> m_mouse;
 
 		bool anyKey=false;
@@ -106,6 +112,7 @@ namespace Loopie {
 		vec2 m_scrollDelta = { 0.0f, 0.0f };
 
 		float m_axisDeadZone = 0.15f;
+		float m_axisSmoothing = 64.0f;
 
 		std::vector<const char*> m_droppedFiles;
 
