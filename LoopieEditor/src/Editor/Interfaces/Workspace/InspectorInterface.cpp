@@ -1368,6 +1368,12 @@ namespace Loopie {
 			emitter->SetLocalVelocity(!localVelocity);
 		}
 
+		bool applyRotation = emitter->GetIfApplyRotation();
+		if (ImGui::Button(applyRotation ? "Apply Rotation: ON" : "Apply Rotation: OFF"))
+		{
+			emitter->SetIfApplyRotation(!applyRotation);
+		}
+
 		bool applyScale = emitter->GetIfApplyScale();
 		if (ImGui::Button(applyScale ? "Apply Scale: ON" : "Apply Scale: OFF"))
 		{

@@ -126,7 +126,8 @@ namespace Loopie
 		spawnOffset.x = RandomFloat(-particleProps.PositionVariation.x, particleProps.PositionVariation.x);
 		spawnOffset.z = RandomFloat(-particleProps.PositionVariation.z, particleProps.PositionVariation.z);
 		spawnOffset.y = RandomFloat(-particleProps.PositionVariation.y, particleProps.PositionVariation.y);
-		spawnOffset *= scale;
+		
+		spawnOffset = (m_applyRotation ? m_rotation : quaternion(1,0,0,0)) * (spawnOffset * scale);
 
 		if (m_particleFollowEmitter)
 		{
@@ -302,6 +303,16 @@ namespace Loopie
 	void Emitter::SetIfApplyScale(bool apply)
 	{
 		m_applyScale = apply;
+	}
+
+	bool Emitter::GetIfApplyRotation() const
+	{
+		return m_applyRotation;
+	}
+
+	void Emitter::SetIfApplyRotation(bool apply)
+	{
+		m_applyRotation = apply;
 	}
 
 	bool Emitter::GetIsFollowingOwner() const { return m_followOwner; }

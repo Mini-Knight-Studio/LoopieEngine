@@ -41,6 +41,7 @@ namespace Loopie
 			bool m_particleFollowEmitter;
 			bool m_localVelocity = false;
 			bool m_applyScale = false;
+			bool m_applyRotation = false;
 			quaternion m_rotation;
 			bool m_followOwner = true;
 			std::shared_ptr<Texture> m_sprite = nullptr;
@@ -111,6 +112,10 @@ namespace Loopie
 
 			bool GetIfApplyScale() const;
 			void SetIfApplyScale(bool apply);
+
+
+			bool GetIfApplyRotation() const;
+			void SetIfApplyRotation(bool apply);
 
 			bool GetIsFollowingOwner() const;
 			void SetFollowingOwner(bool follow);

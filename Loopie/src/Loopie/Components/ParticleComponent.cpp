@@ -78,6 +78,7 @@ namespace Loopie
 			emitterNode.CreateField("particlefollowemitter", m_partSystem.GetEmitterArray()[i]->GetParticlesFollowEmitter());
 			emitterNode.CreateField("localvelocity", m_partSystem.GetEmitterArray()[i]->GetLocalVelocity());
 			emitterNode.CreateField("applyScale", m_partSystem.GetEmitterArray()[i]->GetIfApplyScale());
+			emitterNode.CreateField("applyRotation", m_partSystem.GetEmitterArray()[i]->GetIfApplyRotation());
 			emitterNode.CreateField("followowner", m_partSystem.GetEmitterArray()[i]->GetIsFollowingOwner());
 			if(m_partSystem.GetEmitterArray()[i]->GetSprite())
 				emitterNode.CreateField("sprite_uuid", m_partSystem.GetEmitterArray()[i]->GetSprite()->GetUUID().Get());
@@ -167,6 +168,7 @@ namespace Loopie
 				m_partSystem.GetEmitterArray()[i]->SetParticlesFollowEmitter(node.GetValue<bool>("particlefollowemitter", false).Result);
 				m_partSystem.GetEmitterArray()[i]->SetLocalVelocity(node.GetValue<bool>("localvelocity", false).Result);
 				m_partSystem.GetEmitterArray()[i]->SetIfApplyScale(node.GetValue<bool>("applyScale", false).Result);
+				m_partSystem.GetEmitterArray()[i]->SetIfApplyRotation(node.GetValue<bool>("applyRotation", false).Result);
 				m_partSystem.GetEmitterArray()[i]->SetFollowingOwner(node.GetValue<bool>("followowner", true).Result);
 
 				JsonNode positionNode = node.Child("position");
@@ -308,6 +310,7 @@ namespace Loopie
 			newEmitter->SetParticlesFollowEmitter(otherEmitter->GetParticlesFollowEmitter());
 			newEmitter->SetLocalVelocity(otherEmitter->GetLocalVelocity());
 			newEmitter->SetIfApplyScale(otherEmitter->GetIfApplyScale());
+			newEmitter->SetIfApplyRotation(otherEmitter->GetIfApplyRotation());
 			newEmitter->SetEmitterRotation(otherEmitter->GetEmitterRotation());
 
 			newEmitter->SetEmisionProperties(otherEmitter->GetEmissionProperties());
