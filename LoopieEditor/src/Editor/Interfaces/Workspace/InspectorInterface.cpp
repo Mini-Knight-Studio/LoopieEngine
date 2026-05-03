@@ -3581,7 +3581,7 @@ namespace Loopie {
 
 						ImGui::PushStyleColor(ImGuiCol_ChildBg, bgColor);
 
-						ImGui::BeginChild("BindingCard", ImVec2(0, 80), true);
+						ImGui::BeginChild("BindingCard", ImVec2(0, 70), true);
 
 						int typeIndex = (int)b.Type;
 						const char* typeLabels[] = { "Keyboard", "Gamepad Button", "Gamepad Axis" };
