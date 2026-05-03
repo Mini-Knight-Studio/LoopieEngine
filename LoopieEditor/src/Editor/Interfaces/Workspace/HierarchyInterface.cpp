@@ -68,32 +68,42 @@ namespace Loopie {
 			}
 		}
 
-		if (m_showRenameChildrenPopup)
+		if (m_showRenamePopup)
 		{
-			ImGui::OpenPopup("Rename Children");
-			m_showRenameChildrenPopup = false;
+			ImGui::OpenPopup("Rename");
+			m_showRenamePopup = false;
 		}
 
 		// Draw the Modal
-		if (ImGui::BeginPopupModal("Rename Children", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		if (ImGui::BeginPopupModal("Rename", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			ImGui::Text("Enter new name:");
 			ImGui::InputText("##new_name", m_renameBuffer, IM_ARRAYSIZE(m_renameBuffer));
 
 			if (ImGui::Button("Confirm", ImVec2(120, 0)))
 			{
-				if (auto target = m_renameTargetEntity.lock())
-				{
-					const auto& children = target->GetChildren();
-					for (size_t i = 0; i < children.size(); i++)
+				if (m_renameChilds) {
+					if (auto target = m_renameTargetEntity.lock())
 					{
-						if (children[i])
+						const auto& children = target->GetChildren();
+						for (size_t i = 0; i < children.size(); i++)
 						{
-							std::string newName = std::string(m_renameBuffer) + "_" + std::to_string(i);
-							children[i]->SetName(newName);
+							if (children[i])
+							{
+								std::string newName = std::string(m_renameBuffer) + "_" + std::to_string(i);
+								children[i]->SetName(newName);
+							}
 						}
 					}
 				}
+				else {
+					if (auto target = m_renameTargetEntity.lock())
+					{
+						target->SetName(std::string(m_renameBuffer));
+					}
+				}
+
+				
 				ImGui::CloseCurrentPopup();
 				m_renameTargetEntity.reset();
 			}
@@ -278,9 +288,20 @@ namespace Loopie {
 			m_scene->RemoveEntity(entity->GetUUID());
 		}
 
+		ImGui::Separator();
+
+		if (ImGui::MenuItem("Rename", nullptr, false, entity != nullptr))
+		{
+			m_showRenamePopup = true;
+			m_renameChilds = false;
+			m_renameTargetEntity = entity;
+			memset(m_renameBuffer, 0, sizeof(m_renameBuffer));
+		}
+
 		if (ImGui::MenuItem("Rename Children", nullptr, false, entity != nullptr && !entity->GetChildren().empty()))
 		{
-			m_showRenameChildrenPopup = true;
+			m_showRenamePopup = true;
+			m_renameChilds = true;
 			m_renameTargetEntity = entity;
 			memset(m_renameBuffer, 0, sizeof(m_renameBuffer));
 		}

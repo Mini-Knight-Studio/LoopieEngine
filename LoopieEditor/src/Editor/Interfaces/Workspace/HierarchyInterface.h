@@ -43,7 +43,8 @@ namespace Loopie {
 	private:
 		Scene* m_scene = nullptr;
 
-		bool m_showRenameChildrenPopup = false;
+		bool m_showRenamePopup = false;
+		bool m_renameChilds = false;
 		std::weak_ptr<Entity> m_renameTargetEntity;
 		char m_renameBuffer[256] = "";
 
