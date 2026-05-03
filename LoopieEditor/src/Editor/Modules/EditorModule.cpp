@@ -33,6 +33,7 @@
 #include "Loopie/Components/Image.h"
 #include "Loopie/Components/Text.h"
 #include "Loopie/Components/Button.h"
+#include "Loopie/Components/UIManager.h"
 #include "Loopie/Components/CanvasScaler.h"
 #include "Loopie/Components/Canvas.h"
 
@@ -542,6 +543,10 @@ namespace Loopie
 		if(mode == Loopie::UPDATING || mode== Loopie::NEXTFRAME)
 			ScriptingManager::UpdateCoroutines();
 
+		const bool mouseOverGame = m_game.IsVisible() && m_game.IsMouseOverGame();
+		const ivec2 gameViewSize = m_game.GetGameSize();
+		const vec2 mouseGameLocal = m_game.GetMousePosGameLocal();
+
 
 		{
 			LP_SCOPE_N("Components Update Loops");
@@ -554,6 +559,12 @@ namespace Loopie
 				{
 					if (!component->GetLocalIsActive())
 						continue;
+
+					if (component->GetTypeID() == UIManager::GetTypeIDStatic())
+					{
+						UIManager* uiManager = static_cast<UIManager*>(component);
+						uiManager->SetExternalMouseSelectionContext(mouseGameLocal, gameViewSize, mouseOverGame);
+					}
 					component->OnUpdate();
 
 					if (component->GetTypeID() == ScriptClass::GetTypeIDStatic())
@@ -1081,8 +1092,6 @@ namespace Loopie
 			return;
 
 		const bool mouseOverGame = m_game.IsVisible() && m_game.IsMouseOverGame();
-		if (m_currentScene && mouseOverGame && ScriptingManager::IsRunning() && !inputEvent.IsReadingInputText())
-			m_uiNavigation.UpdateOverlay(*m_currentScene, inputEvent);
 		if (!mouseOverGame)
 		{
 			return;

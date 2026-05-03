@@ -621,6 +621,14 @@ namespace Loopie
         internal extern static void UIElement_SetOrderInLayer(string entityID, string componentID, int order);
         #endregion
 
+        #region UIManager
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static string UIManager_GetSelectedEntity(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void UIManager_SetSelectedEntity(string entityID, string componentID, string selectedEntityID);
+        #endregion
+
         #region Image
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Image_GetTint(string entityID, string componentID, out Vector4 tint);

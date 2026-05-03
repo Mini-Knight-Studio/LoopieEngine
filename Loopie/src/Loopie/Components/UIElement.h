@@ -99,6 +99,33 @@ namespace Loopie
 			m_orderInLayer = other.m_orderInLayer;
 		}
 
+		void SerializeNavigation(JsonNode& node) const
+		{
+			node.CreateField<std::string>("nav_up", m_neighbors[static_cast<size_t>(UINavigationDirection::Up)].Get());
+			node.CreateField<std::string>("nav_down", m_neighbors[static_cast<size_t>(UINavigationDirection::Down)].Get());
+			node.CreateField<std::string>("nav_left", m_neighbors[static_cast<size_t>(UINavigationDirection::Left)].Get());
+			node.CreateField<std::string>("nav_right", m_neighbors[static_cast<size_t>(UINavigationDirection::Right)].Get());
+		}
+
+		void DeserializeNavigation(const JsonNode& node)
+		{
+			auto readUUID = [&](const char* field, UINavigationDirection dir)
+			{
+				const std::string id = node.GetValue<std::string>(field, "").Result;
+				m_neighbors[static_cast<size_t>(dir)] = id.empty() ? UUID::Invalid : UUID(id);
+			};
+
+			readUUID("nav_up", UINavigationDirection::Up);
+			readUUID("nav_down", UINavigationDirection::Down);
+			readUUID("nav_left", UINavigationDirection::Left);
+			readUUID("nav_right", UINavigationDirection::Right);
+		}
+
+		void CloneNavigation(const UIElement& other)
+		{
+			m_neighbors = other.m_neighbors;
+		}
+
 	private:
 		bool m_focusable = false;
 		bool m_focused = false;

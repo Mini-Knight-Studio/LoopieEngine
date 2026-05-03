@@ -24,6 +24,8 @@ namespace Loopie {
 	class Image;
 	class Text;
 	class Button;
+	class UIManager;
+	class UIElement;
 	class Light;
 	class AudioSource;
 	class AudioListener;
@@ -65,6 +67,8 @@ namespace Loopie {
 		void DrawImage(Image* image);
 		void DrawText(Text* text);
 		void DrawButton(Button* button);
+		void DrawUIManager(UIManager* uiManager);
+		void DrawNavigation(UIElement* element);
 		void DrawLight(Light* light);
 		void DrawBoxCollider(BoxCollider* boxCollider);
 		void DrawAudioSource(AudioSource* source);

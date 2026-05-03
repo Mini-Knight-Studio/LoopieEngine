@@ -104,6 +104,8 @@ namespace Loopie
 		static bool TryResolveTarget(const FunctionCall& functionCall, std::shared_ptr<Entity>& entity, ScriptClass*& scriptComponent);
 
 		void ApplyState(VisualState state);
+		void OnFocused() override;
+		void OnBlurred() override;
 		void InvokeOnClick();
 
 		void ApplyStateTint(class Image& image, VisualState state) const;

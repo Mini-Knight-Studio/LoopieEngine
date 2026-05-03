@@ -21,6 +21,7 @@
 #include "Loopie/Components/Image.h"
 #include "Loopie/Components/Text.h"
 #include "Loopie/Components/Button.h"
+#include "Loopie/Components/UIManager.h"
 #include "Loopie/Components/BoxCollider.h"
 #include "Loopie/Components/Light.h"
 #include "Loopie/Scripting/ScriptingManager.h"
@@ -328,6 +329,9 @@ namespace Loopie {
 			}
 			else if (component->GetTypeID() == Button::GetTypeIDStatic()) {
 				DrawButton(static_cast<Button*>(component));
+			}
+			else if (component->GetTypeID() == UIManager::GetTypeIDStatic()) {
+				DrawUIManager(static_cast<UIManager*>(component));
 			}
 			else if (component->GetTypeID() == Light::GetTypeIDStatic()) {
 				DrawLight(static_cast<Light*>(component));
@@ -1685,6 +1689,8 @@ namespace Loopie {
 			if (ImGui::DragInt("Order In Layer", &orderInLayer, 1.0f))
 				canvas->SetOrderInLayer(orderInLayer);
 
+			DrawNavigation(canvas);
+
 			CanvasRenderMode renderMode = canvas->GetRenderMode();
 			int modeIndex = (int)renderMode;
 			const char* modeLabels[] = { "World", "Overlay" };
@@ -1782,6 +1788,8 @@ namespace Loopie {
 			int orderInLayer = image->GetOrderInLayer();
 			if (ImGui::DragInt("Order In Layer", &orderInLayer, 1.0f))
 				image->SetOrderInLayer(orderInLayer);
+
+			DrawNavigation(image);
 
 			vec4 color = image->GetTint();
 			ImVec4 imColor(color.r, color.g, color.b, color.a);
@@ -1994,6 +2002,8 @@ namespace Loopie {
 			if (ImGui::DragInt("Order In Layer", &orderInLayer, 1.0f))
 				text->SetOrderInLayer(orderInLayer);
 
+			DrawNavigation(text);
+
 			std::string value = text->GetText();
 			char buffer[512];
 			memset(buffer, 0, sizeof(buffer));
@@ -2137,6 +2147,8 @@ namespace Loopie {
 			int orderInLayer = button->GetOrderInLayer();
 			if (ImGui::DragInt("Order In Layer", &orderInLayer, 1.0f))
 				button->SetOrderInLayer(orderInLayer);
+
+			DrawNavigation(button);
 
 			bool interactable = button->IsInteractable();
 			if (ImGui::Checkbox("Interactable", &interactable))
@@ -2993,6 +3005,15 @@ namespace Loopie {
 					}
 				}
 
+				if (filter.PassFilter("UIManager"))
+				{
+					if (ImGui::Selectable("UIManager"))
+					{
+						entity->AddComponent<UIManager>();
+						forceClose = true;
+					}
+				}
+
 				if (filter.PassFilter("Sprite Animator"))
 				{
 					if (ImGui::Selectable("Sprite Animator"))
@@ -3404,6 +3425,176 @@ namespace Loopie {
 			ImGui::EndPopup();
 		}
 		return false;
+	}
+
+	void InspectorInterface::DrawNavigation(UIElement* element)
+	{
+		if (!element)
+			return;
+		if (!element->IsFocusable())
+			return;
+
+		Scene& scene = Application::GetInstance().GetScene();
+
+		auto isUINavigableEntity = [&](const std::shared_ptr<Entity>& e) -> bool
+		{
+			if (!e)
+				return false;
+			for (Component* c : e->GetComponents())
+			{
+				if (!c)
+					continue;
+				UIElement* ui = c->AsUIElement();
+				if (!ui)
+					continue;
+				if (ui->IsFocusable())
+					return true;
+			}
+			return false;
+		};
+
+		auto drawNeighborSlot = [&](const char* label, UINavigationDirection dir)
+		{
+			const UUID neighborUUID = element->GetNeighborEntity(dir);
+			std::shared_ptr<Entity> neighbor = (neighborUUID == UUID::Invalid) ? nullptr : scene.GetEntity(neighborUUID);
+			std::string display = neighbor ? neighbor->GetName() : "Null Entity";
+
+			char buffer[256];
+			memset(buffer, 0, sizeof(buffer));
+			strncpy_s(buffer, display.c_str(), sizeof(buffer) - 1);
+
+			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImGui::GetStyleColorVec4(ImGuiCol_FrameBgHovered));
+			ImGui::InputText(label, buffer, sizeof(buffer), ImGuiInputTextFlags_ReadOnly);
+			ImGui::PopStyleColor();
+
+			if (std::shared_ptr<Entity> dropped = GetDragDropEntity())
+			{
+				if (isUINavigableEntity(dropped))	
+					element->SetNeighborEntity(dir, dropped->GetUUID());
+			}
+
+			if (ImGui::BeginPopupContextItem((std::string("Navigation##") + label).c_str()))
+			{
+				if (ImGui::MenuItem("Clear"))
+					element->SetNeighborEntity(dir, UUID::Invalid);
+				ImGui::EndPopup();
+			}
+		};
+
+		ImGui::SeparatorText("Navigation");
+		drawNeighborSlot("Up", UINavigationDirection::Up);
+		drawNeighborSlot("Down", UINavigationDirection::Down);
+		drawNeighborSlot("Left", UINavigationDirection::Left);
+		drawNeighborSlot("Right", UINavigationDirection::Right);
+	}
+
+	void InspectorInterface::DrawUIManager(UIManager* uiManager)
+	{
+		if (!uiManager)
+			return;
+
+		ImGui::PushID(uiManager);
+
+		bool active = uiManager->GetLocalIsActive();
+		if (ImGui::Checkbox("##comp_active", &active))
+			uiManager->SetIsActive(active);
+		ImGui::SameLine();
+
+		bool open = ImGui::CollapsingHeader("UIManager");
+		ImGui::SetItemTooltip(uiManager->GetUUID().Get().c_str());
+		if (ComponentContextMenu(uiManager))
+		{
+			ImGui::PopID();
+			return;
+		}
+
+		if (open)
+		{
+			Scene& scene = Application::GetInstance().GetScene();
+
+			ImGui::SeparatorText("Selected");
+			std::shared_ptr<Entity> selectedEntity = (uiManager->GetSelectedEntity() == UUID::Invalid)
+				? nullptr
+				: scene.GetEntity(uiManager->GetSelectedEntity());
+
+			std::string selectedName = selectedEntity ? selectedEntity->GetName() : "Null Entity";
+			char buffer[256];
+			memset(buffer, 0, sizeof(buffer));
+			strncpy_s(buffer, selectedName.c_str(), sizeof(buffer) - 1);
+			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImGui::GetStyleColorVec4(ImGuiCol_FrameBgHovered));
+			ImGui::InputText("Selected Element", buffer, sizeof(buffer), ImGuiInputTextFlags_ReadOnly);
+			ImGui::PopStyleColor();
+
+			if (std::shared_ptr<Entity> dropped = GetDragDropEntity())
+			{
+				bool hasUI = false;
+				for (Component* c : dropped->GetComponents())
+				{
+					if (c && c->AsUIElement() != nullptr)
+					{
+						hasUI = true;
+						break;
+					}
+				}
+				if (hasUI)
+					uiManager->SetSelectedEntity(dropped->GetUUID());
+			}
+
+			if (ImGui::BeginPopupContextItem("UIManagerSelected"))
+			{
+				if (ImGui::MenuItem("Clear"))
+					uiManager->ClearSelection();
+				ImGui::EndPopup();
+			}
+
+			ImGui::SeparatorText("Bindings");
+			ImGui::TextDisabled("Keyboard: SDL_Scancode (int) | Gamepad: SDL_GamepadButton (int)");
+
+			auto drawBindings = [&](const char* label, std::vector<UIManager::InputBinding>& bindings)
+			{
+				if (!ImGui::TreeNode(label))
+					return;
+
+				if (ImGui::Button((std::string("Add##") + label).c_str()))	
+					bindings.push_back(UIManager::InputBinding{});
+
+				for (size_t i = 0; i < bindings.size(); ++i)
+				{
+					ImGui::PushID((int)i);
+					UIManager::InputBinding& b = bindings[i];
+
+					int typeIndex = (b.Type == UIManager::BindingType::GamepadButton) ? 1 : 0;
+					const char* typeLabels[] = { "Keyboard", "Gamepad" };
+					ImGui::SetNextItemWidth(120.0f);
+					if (ImGui::Combo("Type", &typeIndex, typeLabels, IM_ARRAYSIZE(typeLabels)))
+						b.Type = (typeIndex == 1) ? UIManager::BindingType::GamepadButton : UIManager::BindingType::KeyboardScancode;
+
+					ImGui::SameLine();
+					ImGui::SetNextItemWidth(120.0f);
+					ImGui::DragInt("Code", &b.Code, 1.0f, 0, 32767);
+
+					ImGui::SameLine();
+					if (ImGui::Button("Remove"))
+					{
+						bindings.erase(bindings.begin() + (int)i);
+						ImGui::PopID();
+						break;
+					}
+
+					ImGui::PopID();
+				}
+
+				ImGui::TreePop();
+			};
+
+			drawBindings("Move Up", uiManager->GetMoveUpBindings());
+			drawBindings("Move Down", uiManager->GetMoveDownBindings());
+			drawBindings("Move Left", uiManager->GetMoveLeftBindings());
+			drawBindings("Move Right", uiManager->GetMoveRightBindings());
+			drawBindings("Select", uiManager->GetSelectBindings());
+		}
+
+		ImGui::PopID();
 	}
 
 	void InspectorInterface::DrawImageButtonSlot(Button* button, ButtonImageSlot slot)

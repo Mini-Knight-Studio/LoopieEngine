@@ -15,6 +15,7 @@
 #include "Loopie/Components/ParticleComponent.h"
 #include "Loopie/Components/SpriteAnimator.h"
 #include "Loopie/Components/Button.h"
+#include "Loopie/Components/UIManager.h"
 
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Resources/ResourceManager.h"
@@ -2428,6 +2429,37 @@ namespace Loopie
 	}
 #pragma endregion
 
+#pragma region UIManager
+	static MonoString* UIManager_GetSelectedEntity(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return ScriptingManager::CreateString("");
+		UIManager* uiManager = Utils::GetComponent<UIManager>(entity, componentID);
+		if (!uiManager)
+			return ScriptingManager::CreateString("");
+		UUID selected = uiManager->GetSelectedEntity();
+		return ScriptingManager::CreateString((selected == UUID::Invalid) ? "" : selected.Get().c_str());
+	}
+
+	static void UIManager_SetSelectedEntity(MonoString* entityID, MonoString* componentID, MonoString* selectedEntityID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		UIManager* uiManager = Utils::GetComponent<UIManager>(entity, componentID);
+		if (!uiManager)
+			return;
+		const std::string selected = Utils::MonoStringToString(selectedEntityID);
+		if (selected.empty() || !UUID::IsValid(selected))
+		{
+			uiManager->ClearSelection();
+			return;
+		}
+		uiManager->SetSelectedEntity(UUID(selected));
+	}
+#pragma endregion
+
 #pragma region Image
 	static void Image_GetTint(MonoString* entityID, MonoString* componentID, vec4* outTint)
 	{
@@ -2878,6 +2910,7 @@ namespace Loopie
 		RegisterComponent<Image>();
 		RegisterComponent<Text>();
 		RegisterComponent<Button>();
+		RegisterComponent<UIManager>();
 	}
 
 
@@ -3124,6 +3157,9 @@ namespace Loopie
 		ADD_INTERNAL_CALL(UIElement_SetSortingLayer);
 		ADD_INTERNAL_CALL(UIElement_GetOrderInLayer);
 		ADD_INTERNAL_CALL(UIElement_SetOrderInLayer);
+
+		ADD_INTERNAL_CALL(UIManager_GetSelectedEntity);
+		ADD_INTERNAL_CALL(UIManager_SetSelectedEntity);
 
 		ADD_INTERNAL_CALL(Image_GetTint);
 		ADD_INTERNAL_CALL(Image_SetTint);

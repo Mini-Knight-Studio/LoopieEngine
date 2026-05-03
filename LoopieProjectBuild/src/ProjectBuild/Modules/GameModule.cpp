@@ -33,6 +33,7 @@
 #include "Loopie/Components/Image.h"
 #include "Loopie/Components/Text.h"
 #include "Loopie/Components/Button.h"
+#include "Loopie/Components/UIManager.h"
 
 #include "Loopie/ParticleSystemEn/ParticleSystem.h"  
 #include "Loopie/Components/ParticleComponent.h"
@@ -844,9 +845,6 @@ namespace Loopie
 
 		if (!m_currentScene)
 			return;
-
-		if (m_currentScene && ScriptingManager::IsRunning() && !inputEvent.IsReadingInputText())
-			m_uiNavigation.UpdateOverlay(*m_currentScene, inputEvent);
 
 		ivec2 gameSize = Application::GetInstance().GetWindow().GetSize();
 		if (gameSize.x <= 0 || gameSize.y <= 0)

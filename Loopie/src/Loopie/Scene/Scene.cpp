@@ -28,6 +28,7 @@
 #include "Loopie/Components/AudioListener.h"
 #include "Loopie/Components/Text.h"
 #include "Loopie/Components/Button.h"
+#include "Loopie/Components/UIManager.h"
 #include "Loopie/Components/Light.h"
 
 #include <unordered_set>
@@ -346,6 +347,14 @@ namespace Loopie {
 				auto button = clone->AddComponent<Button>();
 				button->Clone(source, *component);
 				button->SetIsActive(component->GetLocalIsActive());
+				continue;
+			}
+			// UIManager
+			else if (compType == UIManager::GetTypeIDStatic())
+			{
+				auto uiManager = clone->AddComponent<UIManager>();
+				uiManager->Clone(source, *component);
+				uiManager->SetIsActive(component->GetLocalIsActive());
 				continue;
 			}
 			// Light
@@ -804,6 +813,17 @@ namespace Loopie {
 							scaler->Deserialize(node);
 							scaler->SetUUID(componentUUID.Get());
 							scaler->SetIsActive(componentActiveResult.Result);
+						}
+					}
+					else if (componentNode.Contains("ui_manager"))
+					{
+						JsonNode node = componentNode.Child("ui_manager");
+						auto uiManager = entity->AddComponent<UIManager>();
+						if (uiManager)
+						{
+							uiManager->Deserialize(node);
+							uiManager->SetUUID(componentUUID.Get());
+							uiManager->SetIsActive(componentActiveResult.Result);
 						}
 					}
 				}

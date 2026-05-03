@@ -14,8 +14,6 @@
 #include "Editor/Interfaces/Workspace/TopBarInterface.h"
 #include "Editor/Interfaces/Workspace/TextEditorInterface.h"
 
-#include "Loopie/UI/UINavigationSystem.h"
-
 
 namespace Loopie {
 
@@ -94,7 +92,6 @@ namespace Loopie {
 		TextEditorInterface m_textEditor;
 
 		Scene* m_currentScene = nullptr;
-		UINavigationSystem m_uiNavigation;
 		std::shared_ptr<Material> m_selectedObjectMaterial;
 		Shader* m_selectedObjectShader;
 	};

@@ -136,6 +136,7 @@ namespace Loopie {
 			textNode.CreateField<std::string>("font_uuid", m_font->GetUUID().Get());
 
 		SerializeDrawOrder(textNode);
+		SerializeNavigation(textNode);
 
 		return textNode;
 	}
@@ -165,6 +166,7 @@ namespace Loopie {
 		m_verticalAlignment = (TextVerticalAlignment)data.GetValue<int>("vertical_alignment", (int)TextVerticalAlignment::Top).Result;
 
 		DeserializeDrawOrder(data);
+		DeserializeNavigation(data);
 
 		bool fontSet = false;
 		if (data.Contains("font_uuid"))
@@ -198,5 +200,6 @@ namespace Loopie {
 		m_verticalAlignment = otherText.m_verticalAlignment;
 		m_font = otherText.m_font;
 		CloneDrawOrder(otherText);
+		CloneNavigation(otherText);
 	}
 }

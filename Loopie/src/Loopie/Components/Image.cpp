@@ -115,6 +115,7 @@ namespace Loopie
 		uvObj.CreateField<float>("max_v", m_uvRect.w);
 
 		SerializeDrawOrder(imgNode);
+		SerializeNavigation(imgNode);
 
 		return imgNode;
 	}
@@ -173,6 +174,7 @@ namespace Loopie
 
 		m_uvRect = uvRect;
 		DeserializeDrawOrder(data);
+		DeserializeNavigation(data);
 	}
 
 	void Image::Clone(const std::shared_ptr<Entity> entity, const Component& other)
@@ -182,6 +184,7 @@ namespace Loopie
 		m_uvRect = otherImage.m_uvRect;
 		SetTexture(otherImage.m_texture);
 		CloneDrawOrder(otherImage);
+		CloneNavigation(otherImage);
 	}
 
 }
