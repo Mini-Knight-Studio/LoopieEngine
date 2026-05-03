@@ -136,6 +136,40 @@ namespace Loopie
 		m_externalTargetPixels = { 0, 0 };
 	}
 
+	UIManager::UIManager()
+	{
+		// Default Keyboard
+		m_moveUpBindings.push_back({ BindingType::KeyboardScancode, SDL_SCANCODE_W });
+		m_moveUpBindings.push_back({ BindingType::KeyboardScancode, SDL_SCANCODE_UP });
+
+		m_moveDownBindings.push_back({ BindingType::KeyboardScancode, SDL_SCANCODE_S });
+		m_moveDownBindings.push_back({ BindingType::KeyboardScancode, SDL_SCANCODE_DOWN });
+
+		m_moveLeftBindings.push_back({ BindingType::KeyboardScancode, SDL_SCANCODE_A });
+		m_moveLeftBindings.push_back({ BindingType::KeyboardScancode, SDL_SCANCODE_LEFT });
+
+		m_moveRightBindings.push_back({ BindingType::KeyboardScancode, SDL_SCANCODE_D });
+		m_moveRightBindings.push_back({ BindingType::KeyboardScancode, SDL_SCANCODE_RIGHT });
+
+		m_selectBindings.push_back({ BindingType::KeyboardScancode, SDL_SCANCODE_RETURN });
+		m_selectBindings.push_back({ BindingType::KeyboardScancode, SDL_SCANCODE_SPACE });
+
+		// Default Gamepad
+		m_moveUpBindings.push_back({ BindingType::GamepadButton, SDL_GAMEPAD_BUTTON_DPAD_UP });
+		m_moveUpBindings.push_back({ BindingType::GamepadAxis, SDL_GAMEPAD_AXIS_LEFTY, -1.0f });
+
+		m_moveDownBindings.push_back({ BindingType::GamepadButton, SDL_GAMEPAD_BUTTON_DPAD_DOWN });
+		m_moveDownBindings.push_back({ BindingType::GamepadAxis, SDL_GAMEPAD_AXIS_LEFTY,  1.0f });
+
+		m_moveLeftBindings.push_back({ BindingType::GamepadAxis, SDL_GAMEPAD_AXIS_LEFTX, -1.0f });
+		m_moveLeftBindings.push_back({ BindingType::GamepadButton, SDL_GAMEPAD_BUTTON_DPAD_LEFT });
+
+		m_moveRightBindings.push_back({ BindingType::GamepadButton, SDL_GAMEPAD_BUTTON_DPAD_RIGHT });
+		m_moveRightBindings.push_back({ BindingType::GamepadAxis, SDL_GAMEPAD_AXIS_LEFTX, 1.0f });
+
+		m_selectBindings.push_back({ BindingType::GamepadButton, SDL_GAMEPAD_BUTTON_SOUTH });
+	}
+
 	void UIManager::OnUpdate()
 	{
 		Application& app = Application::GetInstance();
@@ -195,6 +229,7 @@ namespace Loopie
 				json j = json::object();
 				j["type"] = (int)binding.Type;
 				j["code"] = binding.Code;
+				j["axis_dir"] = binding.AxisDirection;
 				arr.AddArrayElement(j);
 			}
 		};
@@ -231,10 +266,30 @@ namespace Loopie
 
 				const int type = el.Result.value("type", 0);
 				const int code = el.Result.value("code", 0);
+				const float direction = el.Result.value("axis_dir", 1.0f);
 
 				InputBinding binding;
-				binding.Type = (type == 1) ? BindingType::GamepadButton : BindingType::KeyboardScancode;
-				binding.Code = code;
+				switch (type)
+				{
+					case 0:
+						binding.Type = BindingType::KeyboardScancode;
+						binding.Code = code;
+						break;
+					case 1:
+						binding.Type = BindingType::GamepadButton;
+						binding.Code = code;
+						break;
+					case 2:		
+						binding.Type = BindingType::GamepadAxis;
+						binding.Code = code;
+						binding.AxisDirection = direction;
+						break;
+					default:
+						binding.Type = BindingType::KeyboardScancode;
+						binding.Code = 0;
+						break;
+				}
+
 				out.push_back(binding);
 			}
 		};
@@ -297,25 +352,41 @@ namespace Loopie
 		if (bindings.empty())
 			return false;
 
-		InputEventManager& inputEvent = Application::GetInstance().GetInputEvent();
+		InputEventManager& input = Application::GetInstance().GetInputEvent();
 
-		for (const InputBinding& binding : bindings)
+		const float threshold = 0.5f;
+
+		for (const InputBinding& b : bindings)
 		{
-			switch (binding.Type)
+			switch (b.Type)
 			{
-			case BindingType::KeyboardScancode:
-				if (binding.Code < 0 || binding.Code >= (int)SDL_SCANCODE_COUNT)
+				case BindingType::KeyboardScancode:
+					if (input.GetKeyStatus((SDL_Scancode)b.Code) == KeyState::DOWN)
+						return true;
 					break;
-				if (inputEvent.GetKeyStatus((SDL_Scancode)binding.Code) == KeyState::DOWN)
-					return true;
-				break;
 
-			case BindingType::GamepadButton:
-				if (binding.Code < 0 || binding.Code >= (int)SDL_GAMEPAD_BUTTON_COUNT)
+				case BindingType::GamepadButton:
+					if (input.GetGamepadButtonStatus((SDL_GamepadButton)b.Code) == KeyState::DOWN)
+						return true;
 					break;
-				if (inputEvent.GetGamepadButtonStatus((SDL_GamepadButton)binding.Code) == KeyState::DOWN)
-					return true;
-				break;
+
+				case BindingType::GamepadAxis:
+				{
+					float value = input.GetAxisValueRaw((SDL_GamepadAxis)b.Code);
+					value *= b.AxisDirection;
+
+					bool active = value > threshold;
+
+					AxisKey key{ b.Code, b.AxisDirection };
+
+					bool wasActive = m_axisWasActive[key];
+					m_axisWasActive[key] = active;
+
+					if (active && !wasActive)
+						return true;
+
+					break;
+				}
 			}
 		}
 

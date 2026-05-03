@@ -23,15 +23,37 @@ namespace Loopie
 		{
 			KeyboardScancode = 0,
 			GamepadButton = 1,
+			GamepadAxis = 2
 		};
 
 		struct InputBinding
 		{
 			BindingType Type = BindingType::KeyboardScancode;
 			int Code = 0;
+			float AxisDirection = 1.0f;
 		};
 
-		UIManager() = default;
+		struct AxisKey
+		{
+			int Code;
+			float Direction;
+
+			bool operator==(const AxisKey& other) const
+			{
+				return Code == other.Code && Direction == other.Direction;
+			}
+		};
+
+		struct AxisKeyHash
+		{
+			std::size_t operator()(const AxisKey& k) const
+			{
+				return std::hash<int>()(k.Code) ^ std::hash<int>()((int)(k.Direction * 1000));
+			}
+		};
+
+
+		UIManager();
 		~UIManager() override = default;
 
 		void Init() override {}
@@ -90,5 +112,7 @@ namespace Loopie
 		bool m_externalMouseSelectionEnabled = true;
 		vec2 m_externalMouseLocalPx{ 0.0f, 0.0f };
 		ivec2 m_externalTargetPixels{ 0, 0 };
+
+		mutable std::unordered_map<AxisKey, bool, AxisKeyHash> m_axisWasActive;
 	};
 }

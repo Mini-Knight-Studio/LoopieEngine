@@ -3495,13 +3495,17 @@ namespace Loopie {
 
 		ImGui::PushID(uiManager);
 
+		// --- Active Toggle ---
 		bool active = uiManager->GetLocalIsActive();
 		if (ImGui::Checkbox("##comp_active", &active))
 			uiManager->SetIsActive(active);
+
 		ImGui::SameLine();
 
+		// --- Header ---
 		bool open = ImGui::CollapsingHeader("UIManager");
 		ImGui::SetItemTooltip(uiManager->GetUUID().Get().c_str());
+
 		if (ComponentContextMenu(uiManager))
 		{
 			ImGui::PopID();
@@ -3512,6 +3516,7 @@ namespace Loopie {
 		{
 			Scene& scene = Application::GetInstance().GetScene();
 
+			// --- Selected Entity Logic ---
 			ImGui::SeparatorText("Selected");
 			std::shared_ptr<Entity> selectedEntity = (uiManager->GetSelectedEntity() == UUID::Invalid)
 				? nullptr
@@ -3521,6 +3526,7 @@ namespace Loopie {
 			char buffer[256];
 			memset(buffer, 0, sizeof(buffer));
 			strncpy_s(buffer, selectedName.c_str(), sizeof(buffer) - 1);
+
 			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImGui::GetStyleColorVec4(ImGuiCol_FrameBgHovered));
 			ImGui::InputText("Selected Element", buffer, sizeof(buffer), ImGuiInputTextFlags_ReadOnly);
 			ImGui::PopStyleColor();
@@ -3548,44 +3554,215 @@ namespace Loopie {
 			}
 
 			ImGui::SeparatorText("Bindings");
-			ImGui::TextDisabled("Keyboard: SDL_Scancode (int) | Gamepad: SDL_GamepadButton (int)");
 
 			auto drawBindings = [&](const char* label, std::vector<UIManager::InputBinding>& bindings)
-			{
-				if (!ImGui::TreeNode(label))
-					return;
-
-				if (ImGui::Button((std::string("Add##") + label).c_str()))	
-					bindings.push_back(UIManager::InputBinding{});
-
-				for (size_t i = 0; i < bindings.size(); ++i)
 				{
-					ImGui::PushID((int)i);
-					UIManager::InputBinding& b = bindings[i];
+					if (!ImGui::TreeNode(label))
+						return;
 
-					int typeIndex = (b.Type == UIManager::BindingType::GamepadButton) ? 1 : 0;
-					const char* typeLabels[] = { "Keyboard", "Gamepad" };
-					ImGui::SetNextItemWidth(120.0f);
-					if (ImGui::Combo("Type", &typeIndex, typeLabels, IM_ARRAYSIZE(typeLabels)))
-						b.Type = (typeIndex == 1) ? UIManager::BindingType::GamepadButton : UIManager::BindingType::KeyboardScancode;
+					const auto& input = Application::GetInstance().GetInputEvent();
 
-					ImGui::SameLine();
-					ImGui::SetNextItemWidth(120.0f);
-					ImGui::DragInt("Code", &b.Code, 1.0f, 0, 32767);
+					static int recordingIdx = -1;
+					static std::string recordingLabel = "";
 
-					ImGui::SameLine();
-					if (ImGui::Button("Remove"))
+					for (size_t i = 0; i < bindings.size(); ++i)
 					{
-						bindings.erase(bindings.begin() + (int)i);
+						ImGui::PushID((int)i);
+						UIManager::InputBinding& b = bindings[i];
+
+						bool isRecording = (recordingIdx == (int)i && recordingLabel == label);
+
+						// ---------- CARD ----------
+						ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 6.0f);
+						ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 1.0f);
+
+						ImVec4 bgColor = ImGui::GetStyleColorVec4(ImGuiCol_FrameBg);
+						if (isRecording)
+							bgColor = ImVec4(0.3f, 0.1f, 0.1f, 1.0f);
+
+						ImGui::PushStyleColor(ImGuiCol_ChildBg, bgColor);
+
+						ImGui::BeginChild("BindingCard", ImVec2(0, 80), true);
+
+						// ---------- TYPE ----------
+						int typeIndex = (int)b.Type;
+						const char* typeLabels[] = { "Keyboard", "Gamepad Button", "Gamepad Axis" };
+
+						ImGui::SetNextItemWidth(140.0f);
+						if (ImGui::Combo("##Type", &typeIndex, typeLabels, IM_ARRAYSIZE(typeLabels)))
+						{
+							b.Type = static_cast<UIManager::BindingType>(typeIndex);
+							b.Code = 0;
+						}
+
+						ImGui::SameLine();
+
+						// ---------- INPUT FIELD ----------
+						if (b.Type == UIManager::BindingType::KeyboardScancode ||
+							b.Type == UIManager::BindingType::GamepadButton)
+						{
+							std::string currentName = (b.Type == UIManager::BindingType::KeyboardScancode)
+								? InputEventManager::KeyToString((SDL_Scancode)b.Code)
+								: InputEventManager::GamepadButtonToString((SDL_GamepadButton)b.Code);
+
+							ImGui::SetNextItemWidth(-FLT_MIN);
+							if (ImGui::BeginCombo("##Code", currentName.c_str()))
+							{
+								static char searchFilter[64] = { 0 };
+								ImGui::InputTextWithHint("##filter", "Search...", searchFilter, IM_ARRAYSIZE(searchFilter));
+								ImGui::Separator();
+
+								int count = (b.Type == UIManager::BindingType::KeyboardScancode)
+									? SDL_SCANCODE_COUNT
+									: SDL_GAMEPAD_BUTTON_COUNT;
+
+								for (int n = 0; n < count; ++n)
+								{
+									std::string name = (b.Type == UIManager::BindingType::KeyboardScancode)
+										? InputEventManager::KeyToString((SDL_Scancode)n)
+										: InputEventManager::GamepadButtonToString((SDL_GamepadButton)n);
+
+									if (name.empty() || name.find("Unknown") != std::string::npos)
+										continue;
+
+									if (searchFilter[0] != '\0')
+									{
+										std::string filterStr = searchFilter;
+										auto it = std::search(name.begin(), name.end(), filterStr.begin(), filterStr.end(),
+											[](char a, char b) { return std::tolower(a) == std::tolower(b); });
+
+										if (it == name.end())
+											continue;
+									}
+
+									bool isSelected = (b.Code == n);
+									if (ImGui::Selectable(name.c_str(), isSelected))
+									{
+										b.Code = n;
+										searchFilter[0] = '\0';
+									}
+
+									if (isSelected)
+										ImGui::SetItemDefaultFocus();
+								}
+
+								ImGui::EndCombo();
+							}
+						}
+						else if (b.Type == UIManager::BindingType::GamepadAxis)
+						{
+							const char* axisNames[] = {
+								"Left X", "Left Y",
+								"Right X", "Right Y",
+								"Left Trigger", "Right Trigger"
+							};
+
+							ImGui::SetNextItemWidth(140.0f);
+							int axis = b.Code;
+							if (ImGui::Combo("##Axis", &axis, axisNames, IM_ARRAYSIZE(axisNames)))
+								b.Code = axis;
+
+							ImGui::SameLine();
+
+							if (ImGui::Button(b.AxisDirection > 0 ? "+" : "-"))
+								b.AxisDirection *= -1.0f;
+						}
+
+						ImGui::Spacing();
+
+						// ---------- RECORD ----------
+						if (isRecording)
+						{
+							ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.1f, 0.1f, 1.0f));
+							if (ImGui::Button("Listening...", ImVec2(120, 0)))
+							{
+								recordingIdx = -1;
+							}
+							ImGui::PopStyleColor();
+
+							if (input.AnyKeyDown())
+							{
+								b.Type = UIManager::BindingType::KeyboardScancode;
+								b.Code = (int)input.GetLastPressedKey();
+								recordingIdx = -1;
+							}
+							else if (input.AnyButtonDown())
+							{
+								b.Type = UIManager::BindingType::GamepadButton;
+								b.Code = (int)input.GetLastPressedButton();
+								recordingIdx = -1;
+							}
+							else
+							{
+								// --- Axis detection ---
+								const float threshold = 0.6f;
+
+								for (int a = 0; a < SDL_GAMEPAD_AXIS_COUNT; ++a)
+								{
+									float v = input.GetLeftAxisRaw().x; // placeholder fix below
+								}
+
+								// Better version:
+								for (int a = 0; a < SDL_GAMEPAD_AXIS_COUNT; ++a)
+								{
+									float value = input.GetAxisValue((SDL_GamepadAxis)a);
+
+									if (fabs(value) > threshold)
+									{
+										b.Type = UIManager::BindingType::GamepadAxis;
+										b.Code = a;
+										b.AxisDirection = (value > 0.0f) ? 1.0f : -1.0f;
+										recordingIdx = -1;
+										break;
+									}
+								}
+							}
+
+							if (ImGui::IsMouseClicked(0) && !ImGui::IsItemHovered())
+								recordingIdx = -1;
+						}
+						else
+						{
+							if (ImGui::Button("Record", ImVec2(100, 0)))
+							{
+								recordingIdx = (int)i;
+								recordingLabel = label;
+							}
+						}
+
+						ImGui::SameLine();
+
+						// ---------- DELETE ----------
+						if (ImGui::Button("Delete", ImVec2(100, 0)))
+						{
+							bindings.erase(bindings.begin() + i);
+
+							ImGui::EndChild();
+							ImGui::PopStyleVar(2);
+							ImGui::PopStyleColor();
+							ImGui::PopID();
+							break;
+						}
+
+						ImGui::EndChild();
+
+						ImGui::PopStyleVar(2);
+						ImGui::PopStyleColor();
+
+						ImGui::Spacing();
+
 						ImGui::PopID();
-						break;
 					}
 
-					ImGui::PopID();
-				}
+					ImGui::Separator();
 
-				ImGui::TreePop();
-			};
+					if (ImGui::Button("Add", ImVec2(-FLT_MIN, 0)))
+					{
+						bindings.push_back(UIManager::InputBinding{});
+					}
+
+					ImGui::TreePop();
+				};
 
 			drawBindings("Move Up", uiManager->GetMoveUpBindings());
 			drawBindings("Move Down", uiManager->GetMoveDownBindings());

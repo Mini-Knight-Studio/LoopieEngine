@@ -41,6 +41,9 @@ namespace Loopie {
 		bool AnyMouseButtonDown() const { return anyMouseButton; }
 		bool AnyDown() const { return any; }
 
+		SDL_Scancode GetLastPressedKey() const;
+		SDL_GamepadButton GetLastPressedButton() const;
+
 		const vec2& GetMousePosition() const;
 		const vec2& GetMouseDelta() const;
 		const vec2& GetScrollDelta() const;
@@ -54,6 +57,9 @@ namespace Loopie {
 		float GetLeftTriggerRaw() const;
 		float GetRightTrigger() const;
 		float GetRightTriggerRaw() const;
+
+		float GetAxisValue(SDL_GamepadAxis axis) const;
+		float GetAxisValueRaw(SDL_GamepadAxis axis) const;
 
 		const std::vector<const char*>& GetDroppedFiles() const;
 		const char* GetDroppedFile(int index) const;
@@ -69,6 +75,12 @@ namespace Loopie {
 		void StartReadingInputText() const;
 		void StopReadingInputText() const;	
 		bool IsReadingInputText() const { return readingInputText; }
+
+
+		static std::string KeyToString(SDL_Scancode scancode);
+		static std::string GamepadButtonToString(SDL_GamepadButton button);
+		static std::string MouseButtonToString(int mouseButton);
+		static std::string MouseIndexToString(int mouseIndex);
 
 		
 	private:
@@ -119,5 +131,8 @@ namespace Loopie {
 		SDL_Gamepad* gamepad = nullptr;
 
 		mutable bool readingInputText = false;	
+
+		SDL_Scancode m_lastPressedKey = SDL_SCANCODE_UNKNOWN;
+		SDL_GamepadButton m_lastPressedButton = SDL_GAMEPAD_BUTTON_INVALID;
 	};
 }

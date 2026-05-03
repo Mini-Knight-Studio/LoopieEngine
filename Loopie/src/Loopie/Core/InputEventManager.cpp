@@ -66,6 +66,7 @@ namespace Loopie {
 
 					if (!event.key.repeat) {
 						m_keyboard[event.key.scancode] = KeyState::DOWN;
+						m_lastPressedKey = event.key.scancode;
 						any = true;
 						anyKey = true;
 					}
@@ -77,6 +78,7 @@ namespace Loopie {
 
 				case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
 					m_gamepad[event.gbutton.button] = KeyState::DOWN;
+					m_lastPressedButton = (SDL_GamepadButton)event.gbutton.button;
 					any = true;
 					anyButton = true;
 					break;
@@ -205,6 +207,16 @@ namespace Loopie {
 		return m_mouse[mouseIndex];
 	}
 
+	SDL_Scancode InputEventManager::GetLastPressedKey() const
+	{
+		return m_lastPressedKey;
+	}
+
+	SDL_GamepadButton InputEventManager::GetLastPressedButton() const
+	{
+		return m_lastPressedButton;
+	}
+
 	const vec2& InputEventManager::GetMousePosition() const
 	{
 		return m_mousePosition;
@@ -260,6 +272,16 @@ namespace Loopie {
 		return m_axesRaw[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER];
 	}
 
+	float InputEventManager::GetAxisValue(SDL_GamepadAxis axis) const
+	{
+		return m_axesSmoothed[axis];
+	}
+
+	float InputEventManager::GetAxisValueRaw(SDL_GamepadAxis axis) const
+	{
+		return m_axesRaw[axis];
+	}
+
 	const std::vector<const char*>& InputEventManager::GetDroppedFiles() const
 	{
 		return m_droppedFiles;
@@ -300,5 +322,31 @@ namespace Loopie {
 	{
 		SDL_StopTextInput(Application::GetInstance().GetWindow().GetSDLWindow());
 		readingInputText = false;
+	}
+	std::string InputEventManager::KeyToString(SDL_Scancode scancode)
+	{
+		const char* name = SDL_GetScancodeName(scancode);
+		return (name && name[0] != '\0') ? name : "Unknown Key";
+	}
+	std::string InputEventManager::GamepadButtonToString(SDL_GamepadButton button)
+	{
+		const char* name = SDL_GetGamepadStringForButton(button);
+		return (name && name[0] != '\0') ? name : "Unknown Button";
+	}
+	std::string InputEventManager::MouseButtonToString(int mouseButton)
+	{
+		switch (mouseButton)
+		{
+		case SDL_BUTTON_LEFT:   return "Left Mouse Button";
+		case SDL_BUTTON_MIDDLE: return "Middle Mouse Button";
+		case SDL_BUTTON_RIGHT:  return "Right Mouse Button";
+		case SDL_BUTTON_X1:     return "Mouse Button X1";
+		case SDL_BUTTON_X2:     return "Mouse Button X2";
+		default:                return "Unknown Mouse Button";
+		}
+	}
+	std::string InputEventManager::MouseIndexToString(int mouseIndex)
+	{
+		return MouseButtonToString(mouseIndex + 1);
 	}
 }
