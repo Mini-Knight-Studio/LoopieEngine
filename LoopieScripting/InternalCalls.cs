@@ -175,9 +175,9 @@ namespace Loopie
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static int Animator_GetClipIndex(string entityID, string componentID, string clipName);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static int Animator_GetClipDurationByIndex(string entityID, string componentID, int index);
+        internal extern static float Animator_GetClipDurationByIndex(string entityID, string componentID, int index);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static int Animator_GetClipDurationByName(string entityID, string componentID, string clipName);
+        internal extern static float Animator_GetClipDurationByName(string entityID, string componentID, string clipName);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static float Animator_GetPlaybackSpeed(string entityID, string componentID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]

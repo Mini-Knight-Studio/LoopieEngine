@@ -812,7 +812,7 @@ namespace Loopie
 		return 0.0f;
 	}
 
-	static float Animator_GetClipIndex(MonoString* entityID, MonoString* componentID, MonoString* clipName)
+	static int Animator_GetClipIndex(MonoString* entityID, MonoString* componentID, MonoString* clipName)
 	{
 		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
 		if (!entity)
