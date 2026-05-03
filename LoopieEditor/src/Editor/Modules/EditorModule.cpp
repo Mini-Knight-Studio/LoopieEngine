@@ -562,7 +562,7 @@ namespace Loopie
 
 					if (component->GetTypeID() == UIManager::GetTypeIDStatic())
 					{
-						UIManager* uiManager = static_cast<UIManager*>(component);
+						UIManager* uiManager = static_cast<UIManager*>(component.get());
 						uiManager->SetExternalMouseSelectionContext(mouseGameLocal, gameViewSize, mouseOverGame);
 					}
 					component->OnUpdate();
