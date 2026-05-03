@@ -42,5 +42,10 @@ namespace Loopie {
 		static Event<OnEntityOrFileNotification> s_OnEntitySelected;
 	private:
 		Scene* m_scene = nullptr;
+
+		bool m_showRenameChildrenPopup = false;
+		std::weak_ptr<Entity> m_renameTargetEntity;
+		char m_renameBuffer[256] = "";
+
 	};
 }

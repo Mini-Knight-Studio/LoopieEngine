@@ -67,6 +67,49 @@ namespace Loopie {
 				s_PendingSelectEntity.reset();
 			}
 		}
+
+		if (m_showRenameChildrenPopup)
+		{
+			ImGui::OpenPopup("Rename Children");
+			m_showRenameChildrenPopup = false;
+		}
+
+		// Draw the Modal
+		if (ImGui::BeginPopupModal("Rename Children", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::Text("Enter new name:");
+			ImGui::InputText("##new_name", m_renameBuffer, IM_ARRAYSIZE(m_renameBuffer));
+
+			if (ImGui::Button("Confirm", ImVec2(120, 0)))
+			{
+				if (auto target = m_renameTargetEntity.lock())
+				{
+					const auto& children = target->GetChildren();
+					for (size_t i = 0; i < children.size(); i++)
+					{
+						if (children[i])
+						{
+							std::string newName = std::string(m_renameBuffer) + "_" + std::to_string(i);
+							children[i]->SetName(newName);
+						}
+					}
+				}
+				ImGui::CloseCurrentPopup();
+				m_renameTargetEntity.reset();
+			}
+
+			ImGui::SetItemDefaultFocus();
+			ImGui::SameLine();
+
+			if (ImGui::Button("Cancel", ImVec2(120, 0)))
+			{
+				ImGui::CloseCurrentPopup();
+				m_renameTargetEntity.reset();
+			}
+
+			ImGui::EndPopup();
+		}
+
 		ImGui::End();
 	}
 
@@ -233,6 +276,13 @@ namespace Loopie {
 			if (s_SelectedEntity.lock() == entity)
 				SelectEntity(nullptr);
 			m_scene->RemoveEntity(entity->GetUUID());
+		}
+
+		if (ImGui::MenuItem("Rename Children", nullptr, false, entity != nullptr && !entity->GetChildren().empty()))
+		{
+			m_showRenameChildrenPopup = true;
+			m_renameTargetEntity = entity;
+			memset(m_renameBuffer, 0, sizeof(m_renameBuffer));
 		}
 
 		ImGui::Separator();
