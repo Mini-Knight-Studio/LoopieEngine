@@ -3572,7 +3572,6 @@ namespace Loopie {
 
 						bool isRecording = (recordingIdx == (int)i && recordingLabel == label);
 
-						// ---------- CARD ----------
 						ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 6.0f);
 						ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 1.0f);
 
@@ -3584,7 +3583,6 @@ namespace Loopie {
 
 						ImGui::BeginChild("BindingCard", ImVec2(0, 80), true);
 
-						// ---------- TYPE ----------
 						int typeIndex = (int)b.Type;
 						const char* typeLabels[] = { "Keyboard", "Gamepad Button", "Gamepad Axis" };
 
@@ -3597,7 +3595,6 @@ namespace Loopie {
 
 						ImGui::SameLine();
 
-						// ---------- INPUT FIELD ----------
 						if (b.Type == UIManager::BindingType::KeyboardScancode ||
 							b.Type == UIManager::BindingType::GamepadButton)
 						{
@@ -3670,7 +3667,6 @@ namespace Loopie {
 
 						ImGui::Spacing();
 
-						// ---------- RECORD ----------
 						if (isRecording)
 						{
 							ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.1f, 0.1f, 1.0f));
@@ -3694,15 +3690,13 @@ namespace Loopie {
 							}
 							else
 							{
-								// --- Axis detection ---
 								const float threshold = 0.6f;
 
 								for (int a = 0; a < SDL_GAMEPAD_AXIS_COUNT; ++a)
 								{
-									float v = input.GetLeftAxisRaw().x; // placeholder fix below
+									float v = input.GetLeftAxisRaw().x;
 								}
 
-								// Better version:
 								for (int a = 0; a < SDL_GAMEPAD_AXIS_COUNT; ++a)
 								{
 									float value = input.GetAxisValue((SDL_GamepadAxis)a);
@@ -3732,7 +3726,6 @@ namespace Loopie {
 
 						ImGui::SameLine();
 
-						// ---------- DELETE ----------
 						if (ImGui::Button("Delete", ImVec2(100, 0)))
 						{
 							bindings.erase(bindings.begin() + i);
