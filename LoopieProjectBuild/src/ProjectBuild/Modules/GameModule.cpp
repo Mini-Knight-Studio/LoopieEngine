@@ -381,10 +381,6 @@ namespace Loopie
 
 		ScriptingManager::UpdateCoroutines();
 
-		vec2 gameViewSize = { 1,1 };
-		if(Camera::GetMainCamera())
-			gameViewSize = Camera::GetMainCamera()->GetSize();
-
 		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities()) {
 			if (!entity->GetIsActive())
 				continue;
@@ -393,12 +389,6 @@ namespace Loopie
 			{
 				if (!component->GetLocalIsActive())
 					continue;
-
-				if (component->GetTypeID() == UIManager::GetTypeIDStatic())
-				{
-					UIManager* uiManager = static_cast<UIManager*>(component.get());
-					uiManager->SetExternalMouseSelectionContext({0,0}, gameViewSize, true);
-				}
 				component->OnUpdate();
 
 				if (component->GetTypeID() == ScriptClass::GetTypeIDStatic())
