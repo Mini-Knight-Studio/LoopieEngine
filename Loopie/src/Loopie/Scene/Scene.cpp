@@ -549,6 +549,24 @@ namespace Loopie {
 		ResourceManager::ProtectResources();
 
 		m_loadRequest = false;
+
+		if (ScriptingManager::IsRunning()) {
+			for(const auto& [uuid, entity] : m_entities)
+			{
+				for (Component* component : entity->GetComponents())
+				{
+					if (!component)
+						continue;
+					if (component->GetTypeID() == ScriptClass::GetTypeIDStatic())
+					{
+						ScriptClass* scriptComp = static_cast<ScriptClass*>(component);
+						scriptComp->InvokeOnDestroy();
+					}
+				}
+			}
+		}
+
+
 		m_entities.clear();
 		m_octree->Clear();
 
@@ -924,6 +942,15 @@ namespace Loopie {
 				for (size_t i = 0; i < scripts.size(); i++)
 				{
 					scripts[i]->InvokeOnCreate();
+				}
+			}
+
+			for (const auto& [uuid, entity] : m_entities)
+			{
+				std::vector<ScriptClass*> scripts = entity->GetComponents<ScriptClass>();
+				for (size_t i = 0; i < scripts.size(); i++)
+				{
+					scripts[i]->InvokeOnPostCreate();
 				}
 			}
 

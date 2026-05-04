@@ -314,6 +314,9 @@ namespace Loopie
 		auto create = [&](std::vector<ScriptClass*>& components) -> void {
 			for (size_t i = 0; i < components.size(); i++)
 				components[i]->InvokeOnCreate();
+
+			for (size_t i = 0; i < components.size(); i++)
+				components[i]->InvokeOnPostCreate();
 		};
 
 		setUp(clone->GetComponents<ScriptClass>());
@@ -342,6 +345,7 @@ namespace Loopie
 		*componentID = ScriptingManager::CreateString(scriptComponent->GetUUID().Get().c_str());
 		scriptComponent->SetUp();
 		scriptComponent->InvokeOnCreate();
+		scriptComponent->InvokeOnPostCreate();
 		return true;
 	}
 

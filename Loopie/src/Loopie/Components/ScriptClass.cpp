@@ -37,6 +37,7 @@ namespace Loopie
 		m_gcHandle = mono_gchandle_new(m_instance, true);
 
 		m_OnCreate = m_scriptingClass->GetMethod("OnCreate", 0);
+		m_OnPostCreate = m_scriptingClass->GetMethod("OnPostCreate", 0);
 		m_OnUpdate = m_scriptingClass->GetMethod("OnUpdate", 0);
 		m_OnDestroy = m_scriptingClass->GetMethod("OnDestroy", 0);
 		m_OnDrawGizmo = m_scriptingClass->GetMethod("OnDrawGizmo", 0);
@@ -104,6 +105,13 @@ namespace Loopie
 	{
 		if (m_OnCreate) {
 			m_scriptingClass->InvokeMethod(m_instance, m_OnCreate);
+		}
+	}
+
+	void ScriptClass::InvokeOnPostCreate()
+	{
+		if (m_OnPostCreate) {
+			m_scriptingClass->InvokeMethod(m_instance, m_OnPostCreate);
 		}
 	}
 
