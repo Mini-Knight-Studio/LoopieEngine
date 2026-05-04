@@ -2857,7 +2857,37 @@ namespace Loopie {
 		}
 		if (open) {
 			ImGui::Text("Audio Listener Active");
-			ImGui::TextDisabled("(No editable properties)");
+		
+			std::shared_ptr<Entity> entity = listener->GetRotationTarget().lock();
+
+			std::string label = entity ? entity->GetName() : "Null Entity";
+
+			char buffer[256];
+			memset(buffer, 0, sizeof(buffer));
+			strncpy(buffer, label.c_str(), sizeof(buffer) - 1);
+
+			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImGui::GetStyleColorVec4(ImGuiCol_FrameBgHovered));
+			ImGui::InputText("Rotation Target", buffer, sizeof(buffer), ImGuiInputTextFlags_ReadOnly);
+			ImGui::PopStyleColor();
+
+			std::shared_ptr<Entity> selected = nullptr;
+			selected = GetDragDropEntity();
+
+			if (selected)
+			{
+				std::string newID = selected->GetUUID().Get();
+				listener->SetRotationTarget(selected);
+			}
+
+			if (ImGui::BeginPopupContextItem("Rotation Target Field"))
+			{
+				if (ImGui::MenuItem("Clear"))
+				{
+					listener->RemoveRotationTarget();
+				}
+				ImGui::EndPopup();
+			}
+
 		}
 		ImGui::PopID();
 	}
