@@ -20,17 +20,17 @@ namespace Loopie
 
         public static void Log(Vector2 value)
         {
-            InternalCalls.NativeLog_Vector2(value,2);
+            InternalCalls.NativeLog_Vector2(ref value, 2);
         }
 
         public static void Log(Vector3 value)
         {
-            InternalCalls.NativeLog_Vector3(value,2);
+            InternalCalls.NativeLog_Vector3(ref value, 2);
         }
 
         public static void Log(Vector4 value)
         {
-            InternalCalls.NativeLog_Vector4(value,2);
+            InternalCalls.NativeLog_Vector4(ref value, 2);
         }
 
 
@@ -53,17 +53,17 @@ namespace Loopie
 
         public static void LogWarning(Vector2 value)
         {
-            InternalCalls.NativeLog_Vector2(value,3);
+            InternalCalls.NativeLog_Vector2(ref value, 3);
         }
 
         public static void LogWarning(Vector3 value)
         {
-            InternalCalls.NativeLog_Vector3(value,3);
+            InternalCalls.NativeLog_Vector3(ref value, 3);
         }
 
         public static void LogWarning(Vector4 value)
         {
-            InternalCalls.NativeLog_Vector4(value,3);
+            InternalCalls.NativeLog_Vector4(ref value, 3);
         }
 
 
@@ -87,17 +87,17 @@ namespace Loopie
 
         public static void LogError(Vector2 value)
         {
-            InternalCalls.NativeLog_Vector2(value,4);
+            InternalCalls.NativeLog_Vector2(ref value, 4);
         }
 
         public static void LogError(Vector3 value)
         {
-            InternalCalls.NativeLog_Vector3(value,4);
+            InternalCalls.NativeLog_Vector3(ref value, 4);
         }
 
         public static void LogError(Vector4 value)
         {
-            InternalCalls.NativeLog_Vector4(value,4);
+            InternalCalls.NativeLog_Vector4(ref value, 4);
         }
     }
 }

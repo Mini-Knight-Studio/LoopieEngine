@@ -17,53 +17,53 @@ namespace Loopie
         internal extern static void NativeLog_Float(float parameter, int mode);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void NativeLog_Vector2(Vector2 parameter, int mode);
+        internal extern static void NativeLog_Vector2(ref Vector2 parameter, int mode);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void NativeLog_Vector3(Vector3 parameter, int mode);
+        internal extern static void NativeLog_Vector3(ref Vector3 parameter, int mode);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void NativeLog_Vector4(Vector4 parameter, int mode);
+        internal extern static void NativeLog_Vector4(ref Vector4 parameter, int mode);
         #endregion
         #region Transform
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Transform_GetPosition(string entityID, out Vector3 position);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Transform_SetPosition(string entityID, Vector3 position);
+        internal extern static void Transform_SetPosition(string entityID, ref Vector3 position);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Transform_GetLocalPosition(string entityID, out Vector3 position);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Transform_SetLocalPosition(string entityID, Vector3 position);
+        internal extern static void Transform_SetLocalPosition(string entityID, ref Vector3 position);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Transform_GetRotation(string entityID, out Vector3 rotation);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Transform_SetRotation(string entityID, Vector3 rotation);
+        internal extern static void Transform_SetRotation(string entityID, ref Vector3 rotation);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Transform_GetLocalRotation(string entityID, out Vector3 rotation);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Transform_SetLocalRotation(string entityID, Vector3 rotation);
+        internal extern static void Transform_SetLocalRotation(string entityID, ref Vector3 rotation);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Transform_GetLocalScale(string entityID, out Vector3 scale);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Transform_SetLocalScale(string entityID, Vector3 scale);
+        internal extern static void Transform_SetLocalScale(string entityID, ref Vector3 scale);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Transform_Translate(string entityID, Vector3 translation, Transform.Space objectSpace);
+        internal extern static void Transform_Translate(string entityID, ref Vector3 translation, Transform.Space objectSpace);
         
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Transform_Rotate(string entityID, Vector3 eulerAngles, Transform.Space objectSpace);
+        internal extern static void Transform_Rotate(string entityID, ref Vector3 eulerAngles, Transform.Space objectSpace);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Transform_LookAt(string entityID, Vector3 target, Vector3 worldUp);
+        internal extern static void Transform_LookAt(string entityID, ref Vector3 target, ref Vector3 worldUp);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Transform_Forward(string entityID, out Vector3 forward);
@@ -83,18 +83,32 @@ namespace Loopie
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Transform_Right(string entityID, out Vector3 right);
         #endregion
+        #region Transform
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void RectTransform_GetAnchoredPosition(string entityID, out Vector2 position);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void RectTransform_SetAnchoredPosition(string entityID, ref Vector2 position);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void RectTransform_GetPivot(string entityID, out Vector2 pivot);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void RectTransform_SetPivot(string entityID, ref Vector2 pivot);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void RectTransform_GetSize(string entityID, out Vector2 size);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void RectTransform_SetSize(string entityID, ref Vector2 size);
+        #endregion
         #region BoxCollider
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void BoxCollider_GetLocalCenter(string entityID, string componentID, out Vector3 center);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void BoxCollider_SetLocalCenter(string entityID, string componentID, Vector3 center);
+        internal extern static void BoxCollider_SetLocalCenter(string entityID, string componentID, ref Vector3 center);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void BoxCollider_GetLocalExtents(string entityID, string componentID, out Vector3 extends);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void BoxCollider_SetLocalExtents(string entityID, string componentID, Vector3 extents);
+        internal extern static void BoxCollider_SetLocalExtents(string entityID, string componentID, ref Vector3 extents);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static bool BoxCollider_IsColliding(string entityID, string componentID);
@@ -335,7 +349,7 @@ namespace Loopie
         internal extern static int Camera_GetProjection(string entityID, string componentID);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static int Camera_ScreenToWorldRay(string entityID, string componentID, Vector2 mousePos, out Ray outRay);
+        internal extern static int Camera_ScreenToWorldRay(string entityID, string componentID, ref Vector2 mousePos, out Ray outRay);
         #endregion
         #region Input
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
@@ -500,11 +514,11 @@ namespace Loopie
         #endregion
         #region Collisions
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static bool Collisions_Raycast(Vector3 origin, Vector3 direction, float maxDistance, out RaycastHit hit, int layerMask);
+        internal extern static bool Collisions_Raycast(ref Vector3 origin, ref Vector3 direction, float maxDistance, out RaycastHit hit, int layerMask);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static bool Collisions_RaycastWithColliderAvoidance(Vector3 origin, Vector3 direction, float maxDistance, out RaycastHit hit, int layerMask, string entityToAvoidID, string componentToAvoidID);
+        internal extern static bool Collisions_RaycastWithColliderAvoidance(ref Vector3 origin, ref Vector3 direction, float maxDistance, out RaycastHit hit, int layerMask, string entityToAvoidID, string componentToAvoidID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static bool Collisions_RaycastWithEntityAvoidance(Vector3 origin, Vector3 direction, float maxDistance, out RaycastHit hit, int layerMask, string entityToAvoidID);
+        internal extern static bool Collisions_RaycastWithEntityAvoidance(ref Vector3 origin, ref Vector3 direction, float maxDistance, out RaycastHit hit, int layerMask, string entityToAvoidID);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static int Collisions_GetLayerBit(string layerName);
         #endregion
@@ -514,11 +528,11 @@ namespace Loopie
         #endregion
         #region Gizmo
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Gizmo_DrawLine(Vector3 start, Vector3 end, Vector4 color);
+        internal extern static void Gizmo_DrawLine(ref Vector3 start, ref Vector3 end, ref Vector4 color);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Gizmo_DrawCircle(Vector3 center, float radius, Vector3 normal, float steps, Vector4 color);
+        internal extern static void Gizmo_DrawCircle(ref Vector3 center, float radius, ref Vector3 normal, float steps, ref Vector4 color);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Gizmo_DrawSphere(Vector3 center, float radius, float steps, Vector4 color);
+        internal extern static void Gizmo_DrawSphere(ref Vector3 center, float radius, float steps, ref Vector4 color);
         #endregion
         #region ParticleSystem
         [MethodImpl(MethodImplOptions.InternalCall)]
@@ -546,15 +560,15 @@ namespace Loopie
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal extern static int ParticleSystem_GetEmitterMaxParticles(string entityID, string componentID, int emitterIndex);
         [MethodImpl(MethodImplOptions.InternalCall)]
-        internal extern static void ParticleSystem_SetEmitterPosition(string entityID, string componentID, int emitterIndex, Vector3 position);
+        internal extern static void ParticleSystem_SetEmitterPosition(string entityID, string componentID, int emitterIndex, ref Vector3 position);
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal extern static void ParticleSystem_GetEmitterPosition(string entityID, string componentID, int emitterIndex, out Vector3 position);
         [MethodImpl(MethodImplOptions.InternalCall)]
-        internal extern static void ParticleSystem_SetEmitterPositionOffset(string entityID, string componentID, int emitterIndex, Vector3 offset);
+        internal extern static void ParticleSystem_SetEmitterPositionOffset(string entityID, string componentID, int emitterIndex, ref Vector3 offset);
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal extern static void ParticleSystem_GetEmitterPositionOffset(string entityID, string componentID, int emitterIndex, out Vector3 offset);
         [MethodImpl(MethodImplOptions.InternalCall)]
-        internal extern static void ParticleSystem_SetEmitterRotation(string entityID, string componentID, int emitterIndex, Vector3 rotation);
+        internal extern static void ParticleSystem_SetEmitterRotation(string entityID, string componentID, int emitterIndex, ref Vector3 rotation);
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal extern static void ParticleSystem_GetEmitterRotation(string entityID, string componentID, int emitterIndex, out Vector3 rotation);
         [MethodImpl(MethodImplOptions.InternalCall)]
@@ -566,27 +580,27 @@ namespace Loopie
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal extern static bool ParticleSystem_GetEmitterLocalVelocity(string entityID, string componentID, int emitterIndex);
         [MethodImpl(MethodImplOptions.InternalCall)]
-        internal extern static void ParticleSystem_SetEmitterPropPosition(string entityID, string componentID, int emitterIndex, Vector3 position);
+        internal extern static void ParticleSystem_SetEmitterPropPosition(string entityID, string componentID, int emitterIndex, ref Vector3 position);
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal extern static void ParticleSystem_GetEmitterPropPosition(string entityID, string componentID, int emitterIndex, out Vector3 position);
         [MethodImpl(MethodImplOptions.InternalCall)]
-        internal extern static void ParticleSystem_SetEmitterPropVelocity(string entityID, string componentID, int emitterIndex, Vector3 velocity);
+        internal extern static void ParticleSystem_SetEmitterPropVelocity(string entityID, string componentID, int emitterIndex, ref Vector3 velocity);
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal extern static void ParticleSystem_GetEmitterPropVelocity(string entityID, string componentID, int emitterIndex, out Vector3 velocity);
         [MethodImpl(MethodImplOptions.InternalCall)]
-        internal extern static void ParticleSystem_SetEmitterPropVelocityVariation(string entityID, string componentID, int emitterIndex, Vector3 variation);
+        internal extern static void ParticleSystem_SetEmitterPropVelocityVariation(string entityID, string componentID, int emitterIndex, ref Vector3 variation);
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal extern static void ParticleSystem_GetEmitterPropVelocityVariation(string entityID, string componentID, int emitterIndex, out Vector3 variation);
         [MethodImpl(MethodImplOptions.InternalCall)]
-        internal extern static void ParticleSystem_SetEmitterPropPositionVariation(string entityID, string componentID, int emitterIndex, Vector3 variation);
+        internal extern static void ParticleSystem_SetEmitterPropPositionVariation(string entityID, string componentID, int emitterIndex, ref Vector3 variation);
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal extern static void ParticleSystem_GetEmitterPropPositionVariation(string entityID, string componentID, int emitterIndex, out Vector3 variation);
         [MethodImpl(MethodImplOptions.InternalCall)]
-        internal extern static void ParticleSystem_SetEmitterPropColorBegin(string entityID, string componentID, int emitterIndex, Vector4 color);
+        internal extern static void ParticleSystem_SetEmitterPropColorBegin(string entityID, string componentID, int emitterIndex, ref Vector4 color);
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal extern static void ParticleSystem_GetEmitterPropColorBegin(string entityID, string componentID, int emitterIndex, out Vector4 color);
         [MethodImpl(MethodImplOptions.InternalCall)]
-        internal extern static void ParticleSystem_SetEmitterPropColorEnd(string entityID, string componentID, int emitterIndex, Vector4 color);
+        internal extern static void ParticleSystem_SetEmitterPropColorEnd(string entityID, string componentID, int emitterIndex, ref Vector4 color);
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal extern static void ParticleSystem_GetEmitterPropColorEnd(string entityID, string componentID, int emitterIndex, out Vector4 color);
         [MethodImpl(MethodImplOptions.InternalCall)]
@@ -742,7 +756,7 @@ namespace Loopie
         internal extern static void Window_SetResizable(bool resizable);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Window_SetSize(Vector2 size);
+        internal extern static void Window_SetSize(ref Vector2 size);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Window_GetSize(out Vector2 size);

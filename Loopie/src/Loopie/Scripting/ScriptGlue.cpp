@@ -4,6 +4,7 @@
 
 #include "Loopie/Components/Component.h"
 #include "Loopie/Components/Transform.h"
+#include "Loopie/Components/RectTransform.h"
 #include "Loopie/Components/Camera.h"
 #include "Loopie/Components/MeshRenderer.h"
 #include "Loopie/Components/Animator.h"
@@ -655,6 +656,65 @@ namespace Loopie
 		if (!entity)
 			return;
 		*right = entity->GetTransform()->Right();
+	}
+#pragma endregion
+
+#pragma region RectTransform
+	static void RectTransform_GetSize(MonoString* entityID, vec2* size) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		RectTransform* rectTransform = Utils::GetComponent<RectTransform>(entity);
+		if (rectTransform)
+			*size = rectTransform->GetSize();
+	}
+
+	static void RectTransform_SetSize(MonoString* entityID, vec2* size) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		RectTransform* rectTransform = Utils::GetComponent<RectTransform>(entity);
+		if (rectTransform) {
+			rectTransform->SetWidth(size->x);
+			rectTransform->SetHeight(size->y);
+
+		}
+	}
+
+	static void RectTransform_GetPivot(MonoString* entityID, vec2* pivot) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		RectTransform* rectTransform = Utils::GetComponent<RectTransform>(entity);
+		if (rectTransform)
+			*pivot = rectTransform->GetPivot();
+	}
+
+	static void RectTransform_SetPivot(MonoString* entityID, vec2* pivot) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		RectTransform* rectTransform = Utils::GetComponent<RectTransform>(entity);
+		if (rectTransform)
+			rectTransform->SetPivot(*pivot);
+	}
+
+	static void RectTransform_SetAnchoredPosition(MonoString* entityID, vec2* anchoredPosition) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		RectTransform* rectTransform = Utils::GetComponent<RectTransform>(entity);
+		if (rectTransform)
+			rectTransform->SetAnchoredPosition(*anchoredPosition);
+	}
+
+	static void RectTransform_GetAnchoredPosition(MonoString* entityID, vec2* anchoredPosition) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		RectTransform* rectTransform = Utils::GetComponent<RectTransform>(entity);
+		if (rectTransform)
+			*anchoredPosition = rectTransform->GetAnchoredPosition();
 	}
 #pragma endregion
 
@@ -2899,6 +2959,7 @@ namespace Loopie
 		s_EntityHasComponentFuncs.clear();
 		s_EntityGetComponentFuncs.clear();
 		RegisterComponent<Transform>();
+		RegisterComponent<RectTransform>();
 		RegisterComponent<Animator>();
 		RegisterComponent<SpriteAnimator>();
 		RegisterComponent<Camera>();
@@ -2964,6 +3025,13 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Transform_Down);
 		ADD_INTERNAL_CALL(Transform_Left);
 		ADD_INTERNAL_CALL(Transform_Right);
+
+		ADD_INTERNAL_CALL(RectTransform_GetAnchoredPosition);
+		ADD_INTERNAL_CALL(RectTransform_SetAnchoredPosition);
+		ADD_INTERNAL_CALL(RectTransform_GetPivot);
+		ADD_INTERNAL_CALL(RectTransform_SetPivot);
+		ADD_INTERNAL_CALL(RectTransform_GetSize);
+		ADD_INTERNAL_CALL(RectTransform_SetSize);
 
 		ADD_INTERNAL_CALL(Animator_Stop);
 		ADD_INTERNAL_CALL(Animator_PlayClip);

@@ -99,7 +99,7 @@ namespace Loopie
         public static Ray ScreenToWorldRay(Camera camera, Vector2 mousePos)
         {
             Ray ray = new Ray();
-            InternalCalls.Camera_ScreenToWorldRay(camera.entity.ID, camera.ID, mousePos, out ray);
+            InternalCalls.Camera_ScreenToWorldRay(camera.entity.ID, camera.ID, ref mousePos, out ray);
             return ray;
         }
     }

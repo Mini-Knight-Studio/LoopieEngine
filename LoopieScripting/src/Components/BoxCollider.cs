@@ -27,7 +27,7 @@ namespace Loopie
 
         private void SetLocalCenter(Vector3 center)
         {
-            InternalCalls.BoxCollider_SetLocalCenter(entity.ID, ID, center);
+            InternalCalls.BoxCollider_SetLocalCenter(entity.ID, ID, ref center);
         }
 
         public Vector3 LocalExtents { get { return GetLocalExtents(); } set { SetLocalExtents(value); }}
@@ -41,7 +41,7 @@ namespace Loopie
 
         private void SetLocalExtents(Vector3 extents)
         {
-            InternalCalls.BoxCollider_SetLocalExtents(entity.ID, ID, extents);
+            InternalCalls.BoxCollider_SetLocalExtents(entity.ID, ID, ref extents);
         }
 
         public bool IsColliding { get { return GetIsColliding(); }}

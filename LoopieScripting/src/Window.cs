@@ -29,7 +29,7 @@ namespace Loopie
         }
         private static void SetSize(Vector2 size)
         {
-            InternalCalls.Window_SetSize(size);
+            InternalCalls.Window_SetSize(ref size);
         }
 
         public static void SetResizable(bool resizable)

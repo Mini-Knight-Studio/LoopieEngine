@@ -74,7 +74,7 @@ namespace Loopie
 
         public void SetPosition(int index, Vector3 position)
         {
-            InternalCalls.ParticleSystem_SetEmitterPosition(entity.ID, ID, index, position);
+            InternalCalls.ParticleSystem_SetEmitterPosition(entity.ID, ID, index, ref position);
         }
 
         public Vector3 GetPositionOffset(int index)
@@ -86,7 +86,7 @@ namespace Loopie
 
         public void SetPositionOffset(int index, Vector3 offset)
         {
-            InternalCalls.ParticleSystem_SetEmitterPositionOffset(entity.ID, ID, index, offset);
+            InternalCalls.ParticleSystem_SetEmitterPositionOffset(entity.ID, ID, index, ref offset);
         }
 
         public Vector3 GetRotation(int index)
@@ -98,7 +98,7 @@ namespace Loopie
 
         public void SetRotation(int index, Vector3 rotation)
         {
-            InternalCalls.ParticleSystem_SetEmitterRotation(entity.ID, ID, index, rotation);
+            InternalCalls.ParticleSystem_SetEmitterRotation(entity.ID, ID, index, ref rotation);
         }
 
         // Behaviour
@@ -132,7 +132,7 @@ namespace Loopie
 
         public void SetVelocity(int index, Vector3 velocity)
         {
-            InternalCalls.ParticleSystem_SetEmitterPropVelocity(entity.ID, ID, index, velocity);
+            InternalCalls.ParticleSystem_SetEmitterPropVelocity(entity.ID, ID, index, ref velocity);
         }
 
         public Vector3 GetVelocityVariation(int index)
@@ -144,7 +144,7 @@ namespace Loopie
 
         public void SetVelocityVariation(int index, Vector3 variation)
         {
-            InternalCalls.ParticleSystem_SetEmitterPropVelocityVariation(entity.ID, ID, index, variation);
+            InternalCalls.ParticleSystem_SetEmitterPropVelocityVariation(entity.ID, ID, index, ref variation);
         }
 
         public Vector3 GetPositionVariation(int index)
@@ -156,7 +156,7 @@ namespace Loopie
 
         public void SetPositionVariation(int index, Vector3 variation)
         {
-            InternalCalls.ParticleSystem_SetEmitterPropPositionVariation(entity.ID, ID, index, variation);
+            InternalCalls.ParticleSystem_SetEmitterPropPositionVariation(entity.ID, ID, index, ref variation);
         }
 
         // Color
@@ -168,7 +168,7 @@ namespace Loopie
 
         public void SetColorBegin(int index, Vector4 color)
         {
-            InternalCalls.ParticleSystem_SetEmitterPropColorBegin(entity.ID, ID, index, color);
+            InternalCalls.ParticleSystem_SetEmitterPropColorBegin(entity.ID, ID, index, ref color);
         }
 
         public Vector4 GetColorEnd(int index)
@@ -179,7 +179,7 @@ namespace Loopie
 
         public void SetColorEnd(int index, Vector4 color)
         {
-            InternalCalls.ParticleSystem_SetEmitterPropColorEnd(entity.ID, ID, index, color);
+            InternalCalls.ParticleSystem_SetEmitterPropColorEnd(entity.ID, ID, index, ref color);
         }
 
         // Size
