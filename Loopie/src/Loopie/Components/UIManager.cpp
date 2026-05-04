@@ -175,8 +175,14 @@ namespace Loopie
 		if (m_blockNavigation)
 			return;
 
-		const bool navPressed = AnyPressed(m_moveUpBindings) || AnyPressed(m_moveDownBindings) ||
-			AnyPressed(m_moveLeftBindings) || AnyPressed(m_moveRightBindings) || AnyPressed(m_selectBindings);
+		bool up = AnyPressed(m_moveUpBindings);
+		bool down = AnyPressed(m_moveDownBindings);
+		bool left = AnyPressed(m_moveLeftBindings);
+		bool right = AnyPressed(m_moveRightBindings);
+		bool selected = AnyPressed(m_selectBindings);
+
+		const bool navPressed = up || down || left || right || selected;
+
 		if (navPressed && m_selectedEntity == UUID::Invalid && !(m_initialSelectedEntity == UUID::Invalid))
 		{
 			SetSelectedEntity(m_initialSelectedEntity);
@@ -185,16 +191,16 @@ namespace Loopie
 		if (m_selectedEntity == UUID::Invalid)
 			return;
 
-		if (AnyPressed(m_moveUpBindings))
+		if (up)
 			TryMove(UINavigationDirection::Up);
-		else if (AnyPressed(m_moveDownBindings))
+		else if (down)
 			TryMove(UINavigationDirection::Down);
-		else if (AnyPressed(m_moveLeftBindings))
+		else if (left)
 			TryMove(UINavigationDirection::Left);
-		else if (AnyPressed(m_moveRightBindings))
+		else if (right)
 			TryMove(UINavigationDirection::Right);
 
-		if (AnyPressed(m_selectBindings))
+		if (selected)
 			TrySubmit();
 	}
 
