@@ -1071,16 +1071,6 @@ namespace Loopie
 		Renderer::DisableBlend();
 	}
 
-	void EditorModule::OnNotify(const EngineNotification& type)
-	{
-		if (type == EngineNotification::OnProjectChange) {
-			AssetRegistry::Initialize();
-			Application::GetInstance().GetWindow().SetTitle(Application::GetInstance().m_activeProject.GetProjectName().c_str());
-			m_assetsExplorer.Reload();
-			///LOAD SCENE
-		}
-	}
-
 	void EditorModule::ProcessOverlayButtonsInput()
 	{
 		LP_FUNC();
@@ -1207,5 +1197,16 @@ namespace Loopie
 
 		for (const auto& child : entity->GetChildren())
 			ProcessOverlayButtonsRecursive(child, mouseCanvas, mouseOverGame, input, pressedInsideAny, releasedInsideAny);
+	}
+
+
+	void EditorModule::OnNotify(const EngineNotification& type)
+	{
+		if (type == EngineNotification::OnProjectChange) {
+			AssetRegistry::Initialize();
+			Application::GetInstance().GetWindow().SetTitle(Application::GetInstance().m_activeProject.GetProjectName().c_str());
+			m_assetsExplorer.Reload();
+			///LOAD SCENE
+		}
 	}
 }

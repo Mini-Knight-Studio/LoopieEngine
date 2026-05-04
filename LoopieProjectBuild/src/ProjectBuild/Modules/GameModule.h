@@ -12,7 +12,6 @@ namespace Loopie {
 	class Camera;
 	class Material;
 	class Shader;
-	class Canvas;
 
 	enum DebugGameMode
 	{
@@ -37,9 +36,38 @@ namespace Loopie {
 		void OnUpdate() override;
 
 	private:
+
+		enum class UIJobType
+		{
+			Image,
+			Text,
+		};
+
+		struct UIJob
+		{
+			std::shared_ptr<Entity> Entity;
+			UIJobType Type;
+			vec2 OverlayScale{ 1.0f, 1.0f };
+			int CanvasSortingLayer = 0;
+			int CanvasOrderInLayer = 0;
+			int ElementSortingLayer = 0;
+			int ElementOrderInLayer = 0;
+			uint64_t TraversalIndex = 0;
+		};
+
+		static void CollectOverlayUIJobsRecursive(const std::shared_ptr<Entity>& entity, const vec2& overlayScale,
+			int canvasSortingLayer, int canvasOrderInLayer,
+			std::vector<UIJob>& outJobs, uint64_t& inOutTraversal);
+		static void DrawOverlayUIJob(const UIJob& job);
+
+		static void CollectWorldUIJobsRecursive(const std::shared_ptr<Entity>& entity,
+			int canvasSortingLayer, int canvasOrderInLayer,
+			std::vector<UIJob>& outJobs, uint64_t& inOutTraversal);
+		static void DrawWorldUIJob(const UIJob& job);
+
 		bool UpdateComponents(DebugGameMode mode);
 		void RenderWorld(Camera* camera);
-		void RenderShadows(Camera* camera);
+		void RenderShadows(const Camera* cam);
 		void RenderEntityShadows(const std::unordered_set<Entity*>& entities);
 		void RenderParticles(Camera* cam);
 

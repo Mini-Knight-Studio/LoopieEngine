@@ -40,6 +40,7 @@ namespace Loopie
 		void SetFarPlane(float farPlane);
 		float GetFarPlane() const;
 		vec4 GetViewport() const { return m_viewport; }
+		vec2 GetSize() const { return {m_viewport.z, m_viewport.w}; }
 		const Frustum& GetFrustum() const;
 
 		vec3 Camera::GetPosition()const;
