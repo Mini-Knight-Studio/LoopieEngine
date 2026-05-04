@@ -17,7 +17,7 @@ namespace Loopie {
 
 		Transform* transform = GetOwner()->GetTransform();
 
-		if (m_rotationTarget.lock())
+		if (!m_rotationTarget.lock())
 			AudioManager::SetListenerAttributes(transform->GetPosition(), transform->Forward(), transform->Up());
 		else {
 			Transform* transformRotation = m_rotationTarget.lock()->GetTransform();
