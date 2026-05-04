@@ -120,22 +120,6 @@ namespace Loopie
 		return true;
 	}
 
-	void UIManager::SetExternalMouseSelectionContext(const vec2& mouseLocalPx, const ivec2& targetPixels, bool enabled)
-	{
-		m_hasExternalMouseSelectionContext = true;
-		m_externalMouseSelectionEnabled = enabled;
-		m_externalMouseLocalPx = mouseLocalPx;
-		m_externalTargetPixels = targetPixels;
-	}
-
-	void UIManager::ClearExternalMouseSelectionContext()
-	{
-		m_hasExternalMouseSelectionContext = false;
-		m_externalMouseSelectionEnabled = true;
-		m_externalMouseLocalPx = { 0.0f, 0.0f };
-		m_externalTargetPixels = { 0, 0 };
-	}
-
 	UIManager::UIManager()
 	{
 		// Default Keyboard
@@ -175,7 +159,7 @@ namespace Loopie
 		Application& app = Application::GetInstance();
 		InputEventManager& inputEvent = app.GetInputEvent();
 
-		if (m_applySelectionOnSceneDeserialized)
+		if (m_applySelectionOnSceneDeserialized && !m_blockNavigation)
 		{
 			Scene& scene = app.GetScene();
 			if (TryApplyDeserializedSelection(scene, m_selectedEntity))
@@ -188,6 +172,15 @@ namespace Loopie
 			return;
 
 		HandleMouseSelection();
+		if (m_blockNavigation)
+			return;
+
+		const bool navPressed = AnyPressed(m_moveUpBindings) || AnyPressed(m_moveDownBindings) ||
+			AnyPressed(m_moveLeftBindings) || AnyPressed(m_moveRightBindings) || AnyPressed(m_selectBindings);
+		if (navPressed && m_selectedEntity == UUID::Invalid && !(m_initialSelectedEntity == UUID::Invalid))
+		{
+			SetSelectedEntity(m_initialSelectedEntity);
+		}
 
 		if (m_selectedEntity == UUID::Invalid)
 			return;
@@ -207,7 +200,7 @@ namespace Loopie
 
 	void UIManager::OnSceneDeserialized()
 	{
-		if (!m_applySelectionOnSceneDeserialized)
+		if (!m_applySelectionOnSceneDeserialized || m_blockNavigation)
 			return;
 
 		Scene& scene = Application::GetInstance().GetScene();
@@ -220,6 +213,7 @@ namespace Loopie
 		JsonNode node = parent.CreateObjectField("ui_manager");
 
 		node.CreateField<std::string>("selected_entity", (m_selectedEntity == UUID::Invalid) ? std::string() : m_selectedEntity.Get());
+		node.CreateField<bool>("block_navigation", m_blockNavigation);
 
 		auto writeBindings = [&](const char* field, const std::vector<InputBinding>& bindings)
 		{
@@ -247,7 +241,9 @@ namespace Loopie
 	{
 		const std::string selected = data.GetValue<std::string>("selected_entity", "").Result;
 		m_selectedEntity = selected.empty() ? UUID::Invalid : UUID(selected);
+		m_initialSelectedEntity = m_selectedEntity;
 		m_applySelectionOnSceneDeserialized = true;
+		m_blockNavigation = data.GetValue<bool>("block_navigation", false).Result;
 
 		auto readBindings = [&](const char* field, std::vector<InputBinding>& out)
 		{
@@ -305,6 +301,8 @@ namespace Loopie
 	{
 		const UIManager& otherMgr = static_cast<const UIManager&>(other);
 		m_selectedEntity = otherMgr.m_selectedEntity;
+		m_initialSelectedEntity = otherMgr.m_initialSelectedEntity;
+		m_blockNavigation = otherMgr.m_blockNavigation;
 		m_moveUpBindings = otherMgr.m_moveUpBindings;
 		m_moveDownBindings = otherMgr.m_moveDownBindings;
 		m_moveLeftBindings = otherMgr.m_moveLeftBindings;
@@ -318,6 +316,9 @@ namespace Loopie
 	{
 		if (entityUUID == m_selectedEntity)
 			return;
+
+		if (!ScriptingManager::IsRunning())
+			m_initialSelectedEntity = entityUUID;
 
 		Scene& scene = Application::GetInstance().GetScene();
 
@@ -441,12 +442,6 @@ namespace Loopie
 		bool allowMouseSelection = true;
 		ivec2 targetSize = app.GetWindow().GetSize();
 		vec2 mouseLocalPx = inputEvent.GetMousePosition();
-		if (m_hasExternalMouseSelectionContext)
-		{
-			allowMouseSelection = m_externalMouseSelectionEnabled;
-			targetSize = m_externalTargetPixels;
-			mouseLocalPx = m_externalMouseLocalPx;
-		}
 
 		if (!allowMouseSelection)
 			return;

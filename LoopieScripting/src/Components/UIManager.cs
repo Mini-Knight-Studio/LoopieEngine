@@ -2,6 +2,18 @@ namespace Loopie
 {
     public class UIManager : Component
     {
+        public bool BlockNavigation
+        {
+            get
+            {
+                return InternalCalls.UIManager_GetBlockNavigation(entity.ID, ID);
+            }
+            set
+            {
+                InternalCalls.UIManager_SetBlockNavigation(entity.ID, ID, value);
+            }
+        }
+
         public Entity SelectedElement
         {
             get

@@ -2518,6 +2518,26 @@ namespace Loopie
 		}
 		uiManager->SetSelectedEntity(UUID(selected));
 	}
+
+	static MonoBoolean UIManager_GetBlockNavigation(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return false;
+		UIManager* uiManager = Utils::GetComponent<UIManager>(entity, componentID);
+		return uiManager ? (uiManager->GetBlockNavigation() ? 1 : 0) : 0;
+	}
+
+	static void UIManager_SetBlockNavigation(MonoString* entityID, MonoString* componentID, MonoBoolean blocked)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		UIManager* uiManager = Utils::GetComponent<UIManager>(entity, componentID);
+		if (!uiManager)
+			return;
+		uiManager->SetBlockNavigation(blocked != 0);
+	}
 #pragma endregion
 
 #pragma region Image
@@ -3228,6 +3248,8 @@ namespace Loopie
 
 		ADD_INTERNAL_CALL(UIManager_GetSelectedEntity);
 		ADD_INTERNAL_CALL(UIManager_SetSelectedEntity);
+		ADD_INTERNAL_CALL(UIManager_GetBlockNavigation);
+		ADD_INTERNAL_CALL(UIManager_SetBlockNavigation);
 
 		ADD_INTERNAL_CALL(Image_GetTint);
 		ADD_INTERNAL_CALL(Image_SetTint);

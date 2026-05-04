@@ -641,6 +641,12 @@ namespace Loopie
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void UIManager_SetSelectedEntity(string entityID, string componentID, string selectedEntityID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool UIManager_GetBlockNavigation(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void UIManager_SetBlockNavigation(string entityID, string componentID, bool blocked);
         #endregion
 
         #region Image

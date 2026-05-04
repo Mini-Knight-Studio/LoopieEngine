@@ -68,8 +68,8 @@ namespace Loopie
 		void SetSelectedEntity(const UUID& entityUUID);
 		void ClearSelection();
 
-		void SetExternalMouseSelectionContext(const vec2& mouseLocalPx, const ivec2& targetPixels, bool enabled);
-		void ClearExternalMouseSelectionContext();
+		bool GetBlockNavigation() const { return m_blockNavigation; }
+		void SetBlockNavigation(bool blocked) { m_blockNavigation = blocked; }
 
 		std::vector<InputBinding>& GetMoveUpBindings() { return m_moveUpBindings; }
 		std::vector<InputBinding>& GetMoveDownBindings() { return m_moveDownBindings; }
@@ -99,6 +99,7 @@ namespace Loopie
 		void HandleMouseSelection();
 
 	private:
+		UUID m_initialSelectedEntity = UUID::Invalid;
 		UUID m_selectedEntity = UUID::Invalid;
 
 		std::vector<InputBinding> m_moveUpBindings;
@@ -108,11 +109,7 @@ namespace Loopie
 		std::vector<InputBinding> m_selectBindings;
 		bool m_applySelectionOnSceneDeserialized = false;
 
-		bool m_hasExternalMouseSelectionContext = false;
-		bool m_externalMouseSelectionEnabled = true;
-		vec2 m_externalMouseLocalPx{ 0.0f, 0.0f };
-		ivec2 m_externalTargetPixels{ 0, 0 };
-
 		mutable std::unordered_map<AxisKey, bool, AxisKeyHash> m_axisWasActive;
+		bool m_blockNavigation = false;
 	};
 }

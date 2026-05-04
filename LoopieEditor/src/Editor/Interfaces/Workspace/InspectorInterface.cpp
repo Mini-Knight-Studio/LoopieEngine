@@ -3547,6 +3547,10 @@ namespace Loopie {
 			Scene& scene = Application::GetInstance().GetScene();
 
 			// --- Selected Entity Logic ---
+			bool blockNavigation = uiManager->GetBlockNavigation();
+			if (ImGui::Checkbox("Block Navigation", &blockNavigation))
+				uiManager->SetBlockNavigation(blockNavigation);
+
 			ImGui::SeparatorText("Selected");
 			std::shared_ptr<Entity> selectedEntity = (uiManager->GetSelectedEntity() == UUID::Invalid)
 				? nullptr
