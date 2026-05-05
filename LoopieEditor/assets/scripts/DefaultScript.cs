@@ -1,9 +1,15 @@
 using System;
 using Loopie;
 
-class {$SCRIPT_NAME} : Component
+public class {$SCRIPT_NAME} : Component
 {
+       
     void OnCreate()
+    {
+
+    }
+
+    void OnPostCreate()
     {
 
     }
@@ -12,4 +18,10 @@ class {$SCRIPT_NAME} : Component
     {
 
     }
+
+    void OnDestroy()
+    {
+
+    }
+    
 };

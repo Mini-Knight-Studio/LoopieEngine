@@ -6,6 +6,8 @@ namespace Loopie
 {
     public class Entity
     {
+        static readonly string INVALID_ID = "00000000-0000-0000-0000-000000000000";
+
         internal Entity(string id)
         {
             ID = id;
@@ -260,7 +262,7 @@ namespace Loopie
 
         private bool IsNullEntity()
         {       
-            return string.IsNullOrEmpty(ID);
+            return string.IsNullOrEmpty(ID) || string.Equals(ID, INVALID_ID);
         }
     }
 }
