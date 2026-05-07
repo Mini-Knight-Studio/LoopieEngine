@@ -25,9 +25,9 @@ namespace Loopie {
 	}
 	InputEventManager::~InputEventManager()
 	{
-		if (gamepad) {
-			SDL_CloseGamepad(gamepad);
-			gamepad = nullptr;
+		if (m_gamepadController) {
+			SDL_CloseGamepad(m_gamepadController);
+			m_gamepadController = nullptr;
 		}
 	}
 
@@ -69,6 +69,9 @@ namespace Loopie {
 						m_lastPressedKey = event.key.scancode;
 						any = true;
 						anyKey = true;
+
+						m_currentDeviceType = InputDevice::MOUSE_KEYBOARD;
+
 					}
 					break;
 
@@ -81,6 +84,9 @@ namespace Loopie {
 					m_lastPressedButton = (SDL_GamepadButton)event.gbutton.button;
 					any = true;
 					anyButton = true;
+
+					m_currentDeviceType = InputDevice::CONTROLLER;
+
 					break;
 
 				case SDL_EVENT_GAMEPAD_BUTTON_UP:
@@ -92,6 +98,8 @@ namespace Loopie {
 						m_mouse[event.button.button - 1] = KeyState::DOWN;
 						any = true;
 						anyMouseButton = true;
+
+						m_currentDeviceType = InputDevice::MOUSE_KEYBOARD;
 					}
 					break;
 				case SDL_EVENT_MOUSE_BUTTON_UP:
@@ -102,10 +110,16 @@ namespace Loopie {
 				case SDL_EVENT_MOUSE_MOTION:
 					m_mouseDelta = { event.motion.xrel, event.motion.yrel };
 					m_mousePosition = { event.motion.x, event.motion.y };
+
+					if(m_mouseDelta != vec2(0,0))
+						m_currentDeviceType = InputDevice::MOUSE_KEYBOARD;
 					break;
 
 				case SDL_EVENT_MOUSE_WHEEL:
 					m_scrollDelta = { event.wheel.x, event.wheel.y };
+
+					if(m_scrollDelta!= vec2(0,0))
+						m_currentDeviceType = InputDevice::MOUSE_KEYBOARD;
 					break;
 
 				case SDL_EVENT_GAMEPAD_AXIS_MOTION: {
@@ -116,6 +130,10 @@ namespace Loopie {
 						normalized = 0.0f;
 
 					m_axesRaw[event.gaxis.axis] = normalized;
+
+					if(normalized!=0)
+						m_currentDeviceType = InputDevice::CONTROLLER;
+
 					break;
 				}
 
@@ -129,9 +147,9 @@ namespace Loopie {
 
 				case SDL_EVENT_GAMEPAD_REMOVED: {
 					Log::Info("Gamepad removed");
-					if (gamepad) {
-						SDL_CloseGamepad(gamepad);
-						gamepad = nullptr;
+					if (m_gamepadController) {
+						SDL_CloseGamepad(m_gamepadController);
+						m_gamepadController = nullptr;
 					}
 					break;
 				}
@@ -155,7 +173,6 @@ namespace Loopie {
 		{
 			m_axesSmoothed[i] += (m_axesRaw[i] - m_axesSmoothed[i]) * t;
 		}
-
 	}
 
 	KeyState InputEventManager::GetKeyStatus(SDL_Scancode keyCode) const
@@ -316,12 +333,12 @@ namespace Loopie {
 	void InputEventManager::StartReadingInputText() const
 	{
 		SDL_StartTextInput(Application::GetInstance().GetWindow().GetSDLWindow());
-		readingInputText = true;
+		m_readingInputText = true;
 	}
 	void InputEventManager::StopReadingInputText() const
 	{
 		SDL_StopTextInput(Application::GetInstance().GetWindow().GetSDLWindow());
-		readingInputText = false;
+		m_readingInputText = false;
 	}
 	std::string InputEventManager::KeyToString(SDL_Scancode scancode)
 	{

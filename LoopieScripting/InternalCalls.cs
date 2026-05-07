@@ -430,6 +430,9 @@ namespace Loopie
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static float Input_GetAxisDeadzone();
 
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static int Input_GetCurrentDeviceType();
+
         #endregion
         #region Time
         [MethodImplAttribute(MethodImplOptions.InternalCall)]

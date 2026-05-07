@@ -96,6 +96,7 @@ namespace Loopie
 
 		m_instance = nullptr;
 		m_OnCreate = nullptr;
+		m_OnPostCreate = nullptr;
 		m_OnUpdate = nullptr;
 		m_OnDestroy = nullptr;
 		m_OnDrawGizmo = nullptr;

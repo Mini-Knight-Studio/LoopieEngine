@@ -4,6 +4,12 @@ namespace Loopie
 {
     public static class Input
     {
+        public enum InputDevice
+        {
+            MouseKeyboard,
+            Gamepad
+        }
+
         public static bool IsKeyDown(KeyCode keycode)
         {
             return InternalCalls.Input_IsKeyDown(keycode);
@@ -184,6 +190,14 @@ namespace Loopie
         private static float GetAxisDeadzone()
         {
             return InternalCalls.Input_GetAxisDeadzone();
+        }
+
+        public static InputDevice CurrentInputDevice
+        { get { return GetCurrentInputDevice(); } }
+
+        private static InputDevice GetCurrentInputDevice()
+        {
+            return (InputDevice)InternalCalls.Input_GetCurrentDeviceType();
         }
     }
 }

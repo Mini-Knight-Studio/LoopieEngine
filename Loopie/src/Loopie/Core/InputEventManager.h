@@ -21,6 +21,11 @@ namespace Loopie {
 		ALT
 	};
 
+	enum class InputDevice {
+		MOUSE_KEYBOARD,
+		CONTROLLER
+	};
+
 	class InputEventManager {
 	public:
 		InputEventManager();
@@ -74,7 +79,9 @@ namespace Loopie {
 
 		void StartReadingInputText() const;
 		void StopReadingInputText() const;	
-		bool IsReadingInputText() const { return readingInputText; }
+		bool IsReadingInputText() const { return m_readingInputText; }
+
+		InputDevice GetCurrentDeviceType() const { return m_currentDeviceType; }
 
 
 		static std::string KeyToString(SDL_Scancode scancode);
@@ -128,11 +135,13 @@ namespace Loopie {
 
 		std::vector<const char*> m_droppedFiles;
 
-		SDL_Gamepad* gamepad = nullptr;
+		SDL_Gamepad* m_gamepadController = nullptr;
 
-		mutable bool readingInputText = false;	
+		mutable bool m_readingInputText = false;	
 
 		SDL_Scancode m_lastPressedKey = SDL_SCANCODE_UNKNOWN;
 		SDL_GamepadButton m_lastPressedButton = SDL_GAMEPAD_BUTTON_INVALID;
+
+		InputDevice m_currentDeviceType = InputDevice::MOUSE_KEYBOARD;
 	};
 }

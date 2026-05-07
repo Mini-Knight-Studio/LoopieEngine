@@ -1495,6 +1495,9 @@ namespace Loopie
 		return Application::GetInstance().GetInputEvent().GetAxisDeadzone();
 	}
 
+	static int Input_GetCurrentDeviceType() {
+		return (int)Application::GetInstance().GetInputEvent().GetCurrentDeviceType();
+	}
 
 
 #pragma endregion
@@ -3143,6 +3146,7 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Input_IsAnyDown);
 		ADD_INTERNAL_CALL(Input_SetAxisDeadzone);
 		ADD_INTERNAL_CALL(Input_GetAxisDeadzone);
+		ADD_INTERNAL_CALL(Input_GetCurrentDeviceType);
 
 		ADD_INTERNAL_CALL(Time_GetDeltaTime);
 		ADD_INTERNAL_CALL(Time_GetFixedDeltaTime);
