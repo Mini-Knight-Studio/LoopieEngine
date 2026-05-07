@@ -1653,6 +1653,33 @@ namespace Loopie {
 						isRuntime ? scriptClass->SetRuntimeFieldValue<vec4>(name, v) : scriptClass->SetFieldValue<vec4>(name, v);
 					break;
 				}
+				case ScriptFieldType::Enum:
+				{
+					int currentValue = isRuntime
+						? scriptClass->GetRuntimeFieldValue<int>(name)
+						: scriptClass->GetFieldValue<int>(name);
+
+					auto namesAndValues = ScriptingManager::GetEnumNamesAndValues(field.EnumClass);
+
+					std::vector<const char*> displayNames;
+					int currentIndex = 0;
+					for (size_t i = 0; i < namesAndValues.size(); ++i)
+					{
+						displayNames.push_back(namesAndValues[i].first.c_str());
+						if (namesAndValues[i].second == currentValue)
+							currentIndex = (int)i;
+					}
+
+					if (ImGui::Combo(name.c_str(), &currentIndex, displayNames.data(), (int)displayNames.size()))
+					{
+						int newValue = namesAndValues[currentIndex].second;
+						if (isRuntime)
+							scriptClass->SetRuntimeFieldValue(name, newValue);
+						else
+							scriptClass->SetFieldValue(name, newValue);
+					}
+					break;
+				}
 
 				default:
 					ImGui::Text("Unsupported Field: %s", name.c_str());

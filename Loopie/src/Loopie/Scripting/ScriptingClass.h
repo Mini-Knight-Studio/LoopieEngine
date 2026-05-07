@@ -35,6 +35,7 @@ namespace Loopie {
 		Vector3,
 		Vector4,
 		Color,
+		Enum
 	};
 
 	static std::unordered_map<std::string, ScriptFieldType> s_ScriptFieldTypeMap =
@@ -81,10 +82,13 @@ namespace Loopie {
 	struct ScriptField
 	{
 		ScriptFieldType Type = ScriptFieldType::Byte;
+
 		std::string Name;
 
 		_MonoClassField* ClassField = nullptr;
 		FieldAttributes Attributes;
+
+		_MonoClass* EnumClass = nullptr;
 	};
 
 	class ScriptingClass {

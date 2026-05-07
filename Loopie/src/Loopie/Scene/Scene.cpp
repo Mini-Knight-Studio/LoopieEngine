@@ -963,6 +963,14 @@ namespace Loopie {
 				std::vector<ScriptClass*> scripts = entity->GetComponents<ScriptClass>();
 				for (size_t i = 0; i < scripts.size(); i++)
 				{
+					scripts[i]->InvokeOnDestroy();
+				}
+			}
+			for (const auto& [uuid, entity] : m_entities)
+			{
+				std::vector<ScriptClass*> scripts = entity->GetComponents<ScriptClass>();
+				for (size_t i = 0; i < scripts.size(); i++)
+				{
 					scripts[i]->DestroyInstance();
 				}
 			}

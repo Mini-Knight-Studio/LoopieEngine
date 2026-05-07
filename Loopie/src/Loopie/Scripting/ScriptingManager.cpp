@@ -268,9 +268,15 @@ namespace Loopie {
 					{
 						MonoClass* fieldClass = mono_class_from_mono_type(type);
 						if (fieldClass) {
-							isComponent = mono_class_is_subclass_of(fieldClass, component, false);
-							if (isComponent)
+							if (mono_class_is_enum(fieldClass))
+							{
+								fieldType = ScriptFieldType::Enum;
+								scriptField.EnumClass = fieldClass;
+							}
+							else if (mono_class_is_subclass_of(fieldClass, component, false))
+							{
 								fieldType = ScriptFieldType::Component;
+							}
 						}
 						
 					}
@@ -285,6 +291,7 @@ namespace Loopie {
 				}
 			}
 		}
+
 	}
 
 	_MonoObject* ScriptingManager::InstantiateScriptingClass(_MonoClass* monoClass)
@@ -346,6 +353,25 @@ namespace Loopie {
 		}
 
 		return entityObject;
+	}
+
+	std::vector<std::pair<std::string, int>> ScriptingManager::GetEnumNamesAndValues(_MonoClass* enumClass)
+	{
+		std::vector<std::pair<std::string, int>> result;
+		void* iter = nullptr;
+		MonoClassField* field;
+		while ((field = mono_class_get_fields(enumClass, &iter)))
+		{
+			uint32_t flags = mono_field_get_flags(field);
+			if (flags & MONO_FIELD_ATTR_LITERAL)
+			{
+				const char* name = mono_field_get_name(field);
+				int value = 0;
+				mono_field_static_get_value(mono_class_vtable(mono_domain_get(), enumClass), field, &value);
+				result.emplace_back(name, value);
+			}
+		}
+		return result;
 	}
 
 	_MonoAssembly* ScriptingManager::LoadAssembly(const char* path)

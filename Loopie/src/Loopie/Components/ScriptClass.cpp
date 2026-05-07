@@ -249,6 +249,9 @@ namespace Loopie
 		const auto& fields = m_scriptingClass->GetFields();
 		for (const ScriptField& field : fields)
 		{
+			if (field.Attributes.ReadOnly)
+				continue;
+
 			const std::string& name = field.Name;
 			switch (field.Type)
 			{
@@ -273,6 +276,7 @@ namespace Loopie
 				node.CreateField(name, GetFieldValue<int16_t>(name));
 				break;
 			case ScriptFieldType::Int:
+			case ScriptFieldType::Enum:
 				node.CreateField(name, GetFieldValue<int32_t>(name));
 				break;
 			case ScriptFieldType::Long:
@@ -342,6 +346,9 @@ namespace Loopie
 		const auto& fields = m_scriptingClass->GetFields();
 		for (const ScriptField& scriptField : fields)
 		{
+			if (scriptField.Attributes.ReadOnly)
+				continue;
+
 			const std::string& name = scriptField.Name;
 			if (!node.HasKey(name))
 				continue;
@@ -371,6 +378,7 @@ namespace Loopie
 				fieldData.SetValue<int16_t>((int16_t)node.GetValue<int>(name, 0).Result);
 				break;
 			case ScriptFieldType::Int:
+			case ScriptFieldType::Enum:
 				fieldData.SetValue<int32_t>(node.GetValue<int32_t>(name, 0).Result);
 				break;
 			case ScriptFieldType::Long:

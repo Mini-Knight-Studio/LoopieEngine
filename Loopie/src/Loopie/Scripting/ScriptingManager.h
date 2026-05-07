@@ -68,6 +68,7 @@ namespace Loopie {
 		static std::shared_ptr<ScriptingClass> GetScriptingClass(const std::string& monoClassName);
 		const std::unordered_map<std::string, std::shared_ptr<ScriptingClass>>& GetScriptingClasses() { return s_Data.ScriptingClasses; }
 		static _MonoObject* CreateManagedEntity(const UUID& uuid);
+		static std::vector<std::pair<std::string, int>> GetEnumNamesAndValues(_MonoClass* enumClass);
 
 		static void UpdateCoroutines();
 

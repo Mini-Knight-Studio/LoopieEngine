@@ -176,7 +176,7 @@ namespace Loopie {
 			if (meta && meta->Type == ResourceType::FONT)
 			{
 				auto font = ResourceManager::GetFont(*meta);
-				if (font && font->Load())
+				if (font)
 				{
 					SetFont(font);
 					fontSet = true;

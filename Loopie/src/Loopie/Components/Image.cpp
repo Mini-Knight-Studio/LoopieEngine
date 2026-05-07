@@ -161,7 +161,7 @@ namespace Loopie
 			if (meta)
 			{
 				auto tex = ResourceManager::GetTexture(*meta);
-				if (tex && tex->Load())
+				if (tex)
 				{
 					SetTexture(tex);
 					textureSet = true;
