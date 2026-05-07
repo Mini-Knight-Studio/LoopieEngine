@@ -105,7 +105,7 @@ namespace Loopie
 
 					if (emitter->GetIsFollowingOwner()) {
 						vec3 rotatedOffset = rot * emitter->GetPositionOffSet();
-						emitter->SetPosition(pos + rotatedOffset);
+						emitter->SetPosition(pos);
 					}
 					emitter->SetEmitterRotation(rot);
 					emitter->SetEmitterScale(scale);

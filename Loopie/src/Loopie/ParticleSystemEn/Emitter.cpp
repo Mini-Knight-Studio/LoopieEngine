@@ -122,10 +122,10 @@ namespace Loopie
 		particle.SetRotation(RandomFloat(0, (2 * Math::PI)));
 
 		//Position
-		vec3 spawnOffset = vec3(0.0f);
-		spawnOffset.x = RandomFloat(-particleProps.PositionVariation.x, particleProps.PositionVariation.x);
-		spawnOffset.z = RandomFloat(-particleProps.PositionVariation.z, particleProps.PositionVariation.z);
-		spawnOffset.y = RandomFloat(-particleProps.PositionVariation.y, particleProps.PositionVariation.y);
+		vec3 spawnOffset = m_positionOffSet;
+		spawnOffset.x += RandomFloat(-particleProps.PositionVariation.x, particleProps.PositionVariation.x);
+		spawnOffset.z += RandomFloat(-particleProps.PositionVariation.z, particleProps.PositionVariation.z);
+		spawnOffset.y += RandomFloat(-particleProps.PositionVariation.y, particleProps.PositionVariation.y);
 		
 		spawnOffset = (m_applyRotation ? m_rotation : quaternion(1,0,0,0)) * (spawnOffset * scale);
 
