@@ -21,7 +21,7 @@ namespace Loopie
 	ParticleSystem::ParticleSystem()
 	{
 		if (s_ParticleShader == nullptr) {
-			s_ParticleShader = std::make_shared<Shader>("assets/shaders/ParticleShader.shader");
+			s_ParticleShader = std::make_shared<Shader>("assets\\shaders\\ParticleShader.shader");
 
 			if (s_ParticleShader->GetProgramID() != 0)
 			{
@@ -72,10 +72,10 @@ namespace Loopie
 	}
 	void ParticleSystem::InitializeMaterial() 
 	{
-		Metadata& metadata = AssetRegistry::GetOrCreateMetadata("assets/materials/ParticleMaterial.mat");
+		Metadata& metadata = AssetRegistry::GetOrCreateMetadata("assets\\materials\\ParticleMaterial.mat");
 		if (!metadata.HasCache) 
 		{
-			MaterialImporter::ImportMaterial("assets/materials/ParticleMaterial.mat", metadata);
+			MaterialImporter::ImportMaterial("assets\\materials\\ParticleMaterial.mat", metadata);
 		}
 		s_ParticleMaterial = ResourceManager::GetMaterial(metadata);
 		s_ParticleMaterial->Load();

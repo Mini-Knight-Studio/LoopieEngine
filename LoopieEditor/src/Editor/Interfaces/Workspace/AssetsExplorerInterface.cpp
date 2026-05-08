@@ -33,9 +33,9 @@ namespace Loopie {
 	void AssetsExplorerInterface::Init()
 	{	
 		std::vector<std::string> iconsToLoad = {
-			"assets/icons/icon_file.png",
-			"assets/icons/icon_folder.png",
-			"assets/icons/icon_folderFill.png"
+			"assets\\icons\\icon_file.png",
+			"assets\\icons\\icon_folder.png",
+			"assets\\icons\\icon_folderFill.png"
 		};
 
 		std::vector<Metadata> iconsToLoadMetadatas;

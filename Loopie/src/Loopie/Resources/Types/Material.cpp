@@ -36,9 +36,9 @@ namespace Loopie
 	{
 		if (s_Material)
 			return s_Material;
-		Metadata& metadata = AssetRegistry::GetOrCreateMetadata("assets/materials/defaultMaterial.mat");
+		Metadata& metadata = AssetRegistry::GetOrCreateMetadata("assets\\materials\\defaultMaterial.mat");
 		if (!metadata.HasCache) {
-			MaterialImporter::ImportMaterial("assets/materials/defaultMaterial.mat", metadata);
+			MaterialImporter::ImportMaterial("assets\\materials\\defaultMaterial.mat", metadata);
 		}
 		s_Material = ResourceManager::GetMaterial(metadata);
 		s_Material->Load();

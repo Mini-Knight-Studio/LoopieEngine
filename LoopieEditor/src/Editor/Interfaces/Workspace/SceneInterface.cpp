@@ -30,14 +30,14 @@ namespace Loopie {
 		m_camera->GetCamera()->GetTransform()->SetPosition({ 0,5,-10.f });
 
 		std::vector<std::string> iconsToLoad = {
-			"assets/icons/icon_move.png",
-			"assets/icons/icon_rotate.png",
-			"assets/icons/icon_scale.png",
-			"assets/icons/icon_trs.png",
-			"assets/icons/icon_grid.png",
-			"assets/icons/icon_octree.png",
-			"assets/icons/icon_snap.png",
-			"assets/icons/icon_collisions.png"
+			"assets\\icons\\icon_move.png",
+			"assets\\icons\\icon_rotate.png",
+			"assets\\icons\\icon_scale.png",
+			"assets\\icons\\icon_trs.png",
+			"assets\\icons\\icon_grid.png",
+			"assets\\icons\\icon_octree.png",
+			"assets\\icons\\icon_snap.png",
+			"assets\\icons\\icon_collisions.png"
 		};
 
 		std::vector<Metadata> iconsToLoadMetadatas;

@@ -46,7 +46,7 @@ namespace Loopie
 		s_quadVAO = std::make_shared<VertexArray>();
 		s_quadVAO->AddBuffer(s_quadVBO.get(), s_quadEBO.get());
 
-		const char* uiMatPath = "assets/materials/ui_default.mat";
+		const char* uiMatPath = "assets\\materials\\ui_default.mat";
 		Metadata& meta = AssetRegistry::GetOrCreateMetadata(uiMatPath);
 		if (!meta.HasCache)
 		{
@@ -57,7 +57,7 @@ namespace Loopie
 		s_material->SetIfEditable(true);
 		s_material->SetTextureOwnership(false);
 
-		s_shader = new Shader("assets/shaders/UIQuad.shader");
+		s_shader = new Shader("assets\\shaders\\UIQuad.shader");
 		s_material->SetShader(*s_shader);
 		s_initialized = true;
 

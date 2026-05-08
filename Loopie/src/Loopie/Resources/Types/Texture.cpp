@@ -29,9 +29,9 @@ namespace Loopie {
 	std::shared_ptr<Texture> Texture::GetDefault() {
 		if (s_Texture)
 			return s_Texture;
-		Metadata& metadata = AssetRegistry::GetOrCreateMetadata("assets/textures/simpleWhiteTexture.png");
+		Metadata& metadata = AssetRegistry::GetOrCreateMetadata("assets\\textures\\simpleWhiteTexture.png");
 		if (!metadata.HasCache) {
-			TextureImporter::ImportImage("assets/textures/simpleWhiteTexture.png", metadata);
+			TextureImporter::ImportImage("assets\\textures\\simpleWhiteTexture.png", metadata);
 		}
 		s_Texture = ResourceManager::GetTexture(metadata);
 		s_Texture->Load();

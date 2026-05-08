@@ -277,6 +277,20 @@ namespace Loopie {
 
 	void AssetRegistry::Register(const std::string& path, const Metadata& metadata)
 	{
+		auto it = s_Assets.find(metadata.UUID);
+		if (it != s_Assets.end())
+		{
+			auto existingPathIt = s_UUIDToPath.find(metadata.UUID);
+			const std::string existingPath = (existingPathIt != s_UUIDToPath.end()) ? existingPathIt->second : std::string();
+
+			if (!existingPath.empty() && existingPath != path)
+			{
+				Log::Warn("AssetRegistry: UUID collision detected. UUID {0} already mapped to '{1}'. Ignoring registration for '{2}'.", metadata.UUID.Get(), existingPath, path);
+				s_PathToUUID[path] = metadata.UUID;
+				return;
+			}
+		}
+
 		s_Assets[metadata.UUID] = metadata;
 		s_PathToUUID[path] = metadata.UUID;
 		s_UUIDToPath[metadata.UUID] = path;

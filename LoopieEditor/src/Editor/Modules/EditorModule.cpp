@@ -283,10 +283,10 @@ namespace Loopie
 		}
 		
 
-		Metadata& metadata = AssetRegistry::GetOrCreateMetadata("assets/materials/outlineMaterial.mat");
+		Metadata& metadata = AssetRegistry::GetOrCreateMetadata("assets\\materials\\outlineMaterial.mat");
 		m_selectedObjectMaterial = ResourceManager::GetMaterial(metadata);
 		m_selectedObjectMaterial->SetIfEditable(false);
-		m_selectedObjectShader = new Shader("assets/shaders/SelectionOutline.shader");
+		m_selectedObjectShader = new Shader("assets\\shaders\\SelectionOutline.shader");
 		m_selectedObjectMaterial->SetShader(*m_selectedObjectShader);
 
 		////
