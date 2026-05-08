@@ -2980,6 +2980,175 @@ namespace Loopie
 		*resourceID = ScriptingManager::CreateString(material->GetUUID().Get().c_str());
 	}
 
+	static int MeshRenderer_GetMaterialInt(MonoString* entityID, MonoString* componentID, MonoString* propertyName) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return 0;
+		MeshRenderer* meshRenderer = Utils::GetComponent<MeshRenderer>(entity, componentID);
+		if (!meshRenderer)
+			return 0;
+
+		std::shared_ptr<Material> material = meshRenderer->GetMaterial();
+		if (!material)
+			return 0;
+
+		const UniformValue* value = material->GetShaderVariable(Utils::MonoStringToString(propertyName));
+		if (value->type != UniformType::UniformType_int)
+			return 0;
+		return std::get<int>(value->value);
+	}
+
+	static float MeshRenderer_GetMaterialFloat(MonoString* entityID, MonoString* componentID, MonoString* propertyName) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return 0;
+		MeshRenderer* meshRenderer = Utils::GetComponent<MeshRenderer>(entity, componentID);
+		if (!meshRenderer)
+			return 0;
+
+		std::shared_ptr<Material> material = meshRenderer->GetMaterial();
+		if (!material)
+			return 0;
+
+		const UniformValue* value = material->GetShaderVariable(Utils::MonoStringToString(propertyName));
+		if (value->type != UniformType::UniformType_float)
+			return 0;
+		return std::get<float>(value->value);
+	}
+
+	static void MeshRenderer_GetMaterialVector2(MonoString* entityID, MonoString* componentID, MonoString* propertyName, vec2* outValue) {
+		*outValue = vec2(0.0f);
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		MeshRenderer* meshRenderer = Utils::GetComponent<MeshRenderer>(entity, componentID);
+		if (!meshRenderer)
+			return;
+		std::shared_ptr<Material> material = meshRenderer->GetMaterial();
+		if (!material)
+			return;
+		const UniformValue* value = material->GetShaderVariable(Utils::MonoStringToString(propertyName));
+		if (value->type == UniformType::UniformType_vec2)
+			*outValue = std::get<vec2>(value->value);
+	}
+
+	static void MeshRenderer_GetMaterialVector3(MonoString* entityID, MonoString* componentID, MonoString* propertyName, vec3* outValue) {
+		*outValue = vec3(0.0f);
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		MeshRenderer* meshRenderer = Utils::GetComponent<MeshRenderer>(entity, componentID);
+		if (!meshRenderer)
+			return;
+		std::shared_ptr<Material> material = meshRenderer->GetMaterial();
+		if (!material)
+			return;
+		const UniformValue* value = material->GetShaderVariable(Utils::MonoStringToString(propertyName));
+		if (value->type == UniformType::UniformType_vec3)
+			*outValue = std::get<vec3>(value->value);
+	}
+
+	static void MeshRenderer_GetMaterialVector4(MonoString* entityID, MonoString* componentID, MonoString* propertyName, vec4* outValue) {
+		*outValue = vec4(0.0f);
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		MeshRenderer* meshRenderer = Utils::GetComponent<MeshRenderer>(entity, componentID);
+		if (!meshRenderer)
+			return;
+		std::shared_ptr<Material> material = meshRenderer->GetMaterial();
+		if (!material)
+			return;
+		const UniformValue* value = material->GetShaderVariable(Utils::MonoStringToString(propertyName));
+		if (value->type == UniformType::UniformType_vec4)
+			*outValue = std::get<vec4>(value->value);
+	}
+
+	static int MeshRenderer_SetMaterialInt(MonoString* entityID, MonoString* componentID, MonoString* propertyName, int value) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return 0;
+		MeshRenderer* meshRenderer = Utils::GetComponent<MeshRenderer>(entity, componentID);
+		if (!meshRenderer)
+			return 0;
+		std::shared_ptr<Material> material = meshRenderer->GetMaterial();
+		if (!material)
+			return 0;
+		UniformValue uniform;
+		uniform.type = UniformType::UniformType_int;
+		uniform.value = value;
+		material->SetShaderVariable(Utils::MonoStringToString(propertyName), uniform);
+		return value;
+	}
+
+	static float MeshRenderer_SetMaterialFloat(MonoString* entityID, MonoString* componentID, MonoString* propertyName, float value) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return 0;
+		MeshRenderer* meshRenderer = Utils::GetComponent<MeshRenderer>(entity, componentID);
+		if (!meshRenderer)
+			return 0;
+		std::shared_ptr<Material> material = meshRenderer->GetMaterial();
+		if (!material)
+			return 0;
+		UniformValue uniform;
+		uniform.type = UniformType::UniformType_float;
+		uniform.value = value;
+		material->SetShaderVariable(Utils::MonoStringToString(propertyName), uniform);
+		return value;
+	}
+
+	static float MeshRenderer_SetMaterialVector2(MonoString* entityID, MonoString* componentID, MonoString* propertyName, vec2* value) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return 0;
+		MeshRenderer* meshRenderer = Utils::GetComponent<MeshRenderer>(entity, componentID);
+		if (!meshRenderer)
+			return 0;
+		std::shared_ptr<Material> material = meshRenderer->GetMaterial();
+		if (!material)
+			return 0;
+		UniformValue uniform;
+		uniform.type = UniformType::UniformType_vec2;
+		uniform.value = *value;
+		material->SetShaderVariable(Utils::MonoStringToString(propertyName), uniform);
+		return 0;
+	}
+
+	static float MeshRenderer_SetMaterialVector3(MonoString* entityID, MonoString* componentID, MonoString* propertyName, vec3* value) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return 0;
+		MeshRenderer* meshRenderer = Utils::GetComponent<MeshRenderer>(entity, componentID);
+		if (!meshRenderer)
+			return 0;
+		std::shared_ptr<Material> material = meshRenderer->GetMaterial();
+		if (!material)
+			return 0;
+		UniformValue uniform;
+		uniform.type = UniformType::UniformType_vec3;
+		uniform.value = *value;
+		material->SetShaderVariable(Utils::MonoStringToString(propertyName), uniform);
+		return 0;
+	}
+
+	static float MeshRenderer_SetMaterialVector4(MonoString* entityID, MonoString* componentID, MonoString* propertyName, vec4* value) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return 0;
+		MeshRenderer* meshRenderer = Utils::GetComponent<MeshRenderer>(entity, componentID);
+		if (!meshRenderer)
+			return 0;
+		std::shared_ptr<Material> material = meshRenderer->GetMaterial();
+		if (!material)
+			return 0;
+		UniformValue uniform;
+		uniform.type = UniformType::UniformType_vec4;
+		uniform.value = *value;
+		material->SetShaderVariable(Utils::MonoStringToString(propertyName), uniform);
+		return 0;
+	}
+
 #pragma endregion
 
 
@@ -2995,6 +3164,8 @@ namespace Loopie
 		if (!material)
 			return 0;
 		const UniformValue* value = material->GetShaderVariable(Utils::MonoStringToString(propertyName));
+		if (value->type != UniformType::UniformType_int)
+			return 0;
 		return std::get<int>(value->value);
 	}
 
@@ -3007,6 +3178,8 @@ namespace Loopie
 		if (!material)
 			return 0.0f;
 		const UniformValue* value = material->GetShaderVariable(Utils::MonoStringToString(propertyName));
+		if (value->type != UniformType::UniformType_float)
+			return 0.0f;
 		return std::get<float>(value->value);
 	}
 
@@ -3020,7 +3193,8 @@ namespace Loopie
 		if (!material)
 			return;
 		const UniformValue* value = material->GetShaderVariable(Utils::MonoStringToString(propertyName));
-		*outValue = std::get<vec2>(value->value);
+		if (value->type == UniformType::UniformType_vec2)
+			*outValue = std::get<vec2>(value->value);
 	}
 
 	static void Material_GetVector3(MonoString* materialID, MonoString* propertyName, vec3* outValue) {
@@ -3033,7 +3207,8 @@ namespace Loopie
 		if (!material)
 			return;
 		const UniformValue* value = material->GetShaderVariable(Utils::MonoStringToString(propertyName));
-		*outValue = std::get<vec3>(value->value);
+		if (value->type == UniformType::UniformType_vec3)
+			*outValue = std::get<vec3>(value->value);
 	}
 
 	static void Material_GetVector4(MonoString* materialID, MonoString* propertyName, vec4* outValue) {
@@ -3046,7 +3221,8 @@ namespace Loopie
 		if (!material)
 			return;
 		const UniformValue* value = material->GetShaderVariable(Utils::MonoStringToString(propertyName));
-		*outValue = std::get<vec4>(value->value);
+		if (value->type == UniformType::UniformType_vec4)
+			*outValue = std::get<vec4>(value->value);
 	}
 
 	static void Material_SetInt(MonoString* materialID, MonoString* propertyName, int value) {
@@ -3471,6 +3647,16 @@ namespace Loopie
 		ADD_INTERNAL_CALL(AudioMixer_GetBusVolume);
 
 		ADD_INTERNAL_CALL(MeshRenderer_GetInstancedMaterial);
+		ADD_INTERNAL_CALL(MeshRenderer_GetMaterialInt);
+		ADD_INTERNAL_CALL(MeshRenderer_GetMaterialFloat);
+		ADD_INTERNAL_CALL(MeshRenderer_GetMaterialVector2);
+		ADD_INTERNAL_CALL(MeshRenderer_GetMaterialVector3);
+		ADD_INTERNAL_CALL(MeshRenderer_GetMaterialVector4);
+		ADD_INTERNAL_CALL(MeshRenderer_SetMaterialInt);
+		ADD_INTERNAL_CALL(MeshRenderer_SetMaterialFloat);
+		ADD_INTERNAL_CALL(MeshRenderer_SetMaterialVector2);
+		ADD_INTERNAL_CALL(MeshRenderer_SetMaterialVector3);
+		ADD_INTERNAL_CALL(MeshRenderer_SetMaterialVector4);
 
 		/////// RESOURCES
 

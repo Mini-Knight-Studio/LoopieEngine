@@ -783,6 +783,27 @@ namespace Loopie
         #region MeshRenderer
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void MeshRenderer_GetInstancedMaterial(string entityID, string componentID, out string resourceID, out int index);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static int MeshRenderer_GetMaterialInt(string entityID, string componentID, string key);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static float MeshRenderer_GetMaterialFloat(string entityID, string componentID, string key);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void MeshRenderer_GetMaterialVector2(string entityID, string componentID, string key, out Vector2 vec2);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void MeshRenderer_GetMaterialVector3(string entityID, string componentID, string key, out Vector3 vec3);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void MeshRenderer_GetMaterialVector4(string entityID, string componentID, string key, out Vector4 vec4);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void MeshRenderer_SetMaterialInt(string entityID, string componentID, string key, int value);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void MeshRenderer_SetMaterialFloat(string entityID, string componentID, string key, float value);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void MeshRenderer_SetMaterialVector2(string entityID, string componentID, string key, ref Vector2 vec2);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void MeshRenderer_SetMaterialVector3(string entityID, string componentID, string key, ref Vector3 vec3);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void MeshRenderer_SetMaterialVector4(string entityID, string componentID, string key, ref Vector4 vec4);
+
         #endregion
 
         //////////RESOURCE INTERNAL CALLS//////////
