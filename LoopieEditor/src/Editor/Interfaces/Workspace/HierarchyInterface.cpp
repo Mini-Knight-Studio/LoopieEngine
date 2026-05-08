@@ -311,16 +311,16 @@ namespace Loopie {
 		if (ImGui::BeginMenu("3D Object"))
 		{
 			if (ImGui::MenuItem("Cube"))
-				SelectEntity(CreatePrimitiveModel("assets/models/primitives/cube.fbx", "Cube", entity));
+				SelectEntity(CreatePrimitiveModel("assets\\models\\Primitives\\cube.fbx", "Cube", entity));
 
 			if (ImGui::MenuItem("Sphere"))
-				SelectEntity(CreatePrimitiveModel("assets/models/primitives/sphere.fbx", "Sphere", entity));
+				SelectEntity(CreatePrimitiveModel("assets\\models\\Primitives\\sphere.fbx", "Sphere", entity));
 
 			if (ImGui::MenuItem("Cylinder"))
-				SelectEntity(CreatePrimitiveModel("assets/models/primitives/cylinder.fbx", "Cylinder", entity));
+				SelectEntity(CreatePrimitiveModel("assets\\models\\Primitives\\cylinder.fbx", "Cylinder", entity));
 
 			if (ImGui::MenuItem("Plane"))
-				SelectEntity(CreatePrimitiveModel("assets/models/primitives/plane.fbx", "Plane", entity));
+				SelectEntity(CreatePrimitiveModel("assets\\models\\Primitives\\plane.fbx", "Plane", entity));
 
 			ImGui::EndMenu();
 		}

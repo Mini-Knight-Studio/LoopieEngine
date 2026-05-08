@@ -780,5 +780,36 @@ namespace Loopie
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static float AudioMixer_GetBusVolume(string busName);
         #endregion
+        #region MeshRenderer
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void MeshRenderer_GetInstancedMaterial(string entityID, string componentID, out string resourceID, out int index);
+        #endregion
+
+        //////////RESOURCE INTERNAL CALLS//////////
+        ///
+
+        #region Material
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static int Material_GetInt(string materialID, string key);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static float Material_GetFloat(string materialID, string key);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Material_GetVector2(string materialID, string key, out Vector2 vec);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Material_GetVector3(string materialID, string key, out Vector3 vec);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Material_GetVector4(string materialID, string key, out Vector4 vec);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Material_SetInt(string materialID, string key, int value);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Material_SetFloat(string materialID, string key, float value);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Material_SetVector2(string materialID, string key, ref Vector2 vec);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Material_SetVector3(string materialID, string key, ref Vector3 vec);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Material_SetVector4(string materialID, string key, ref Vector4 vec);
+        #endregion
     }
 }

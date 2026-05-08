@@ -76,9 +76,22 @@ namespace Loopie {
 		return Material::GetDefault();
 	}
 
+	std::shared_ptr<Material> MeshRenderer::GetInstancedMaterial()
+	{
+		return m_instanceMaterial;
+	}
+
 	void MeshRenderer::CreateInstanceMaterial() {
-		if (!m_instanceMaterial)
-			m_instanceMaterial = std::make_shared<Material>(*m_material);
+		if (!m_instanceMaterial) {
+			if(m_material)
+				m_instanceMaterial = std::make_shared<Material>(*m_material);
+			else
+				m_instanceMaterial = std::make_shared<Material>(*Material::GetDefault());
+			m_instanceMaterial->ReloadUUID();
+			m_instanceMaterial->GetShader().Reload(false);
+			m_instanceMaterial->SetIfEditable(true);
+			ResourceManager::AddInstancedResource(m_instanceMaterial);
+		}
 	}
 
 	const AABB& MeshRenderer::GetWorldAABB() const

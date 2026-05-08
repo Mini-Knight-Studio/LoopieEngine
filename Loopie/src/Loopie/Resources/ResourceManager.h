@@ -59,17 +59,20 @@ namespace Loopie {
 
         static void RemoveResource(Resource& resource);
 
-        static std::vector<std::shared_ptr<Resource>> GetResourcesByType(ResourceKey key);
+        static void AddInstancedResource(const std::shared_ptr<Resource>& resource, int index=0);
 
-        static void AddInstancedResource();
-        static void RemoveInstancedResource();
-        static void GetInstancedResource();
+        static std::shared_ptr<Material> GetInstancedMaterial(const UUID& uuid);
+
+        static void RemoveInstancedResource(Resource& resource);
+
+        static std::vector<std::shared_ptr<Resource>> GetResourcesByType(ResourceKey key);
 
         static void ProtectResources();
         static void UnprotectResources();
 
     private:
         static std::shared_ptr<Resource> GetResource(const ResourceKey& key);
+        static std::shared_ptr<Resource> GetInstancedResource(const InstancedResourceKey& key);
 
     private:
 		static std::unordered_map<ResourceKey, std::weak_ptr<Resource>, ResourceKeyHash> s_Resources;

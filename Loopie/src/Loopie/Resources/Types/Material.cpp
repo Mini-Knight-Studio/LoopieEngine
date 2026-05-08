@@ -18,7 +18,6 @@ namespace Loopie
 
 	Material::~Material()
 	{
-
 		m_textures.clear();
 	}
 

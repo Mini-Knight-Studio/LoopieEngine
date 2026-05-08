@@ -65,8 +65,9 @@ namespace Loopie {
 		void Unbind() const;
 		// Constructor and Reload do similar things, might be a good thing to 
 		// put them together in a helper function 
-		bool Reload(const char* sourcePath = nullptr); // Recompiles from the source path currently set
-		bool Reload(const std::shared_ptr<ShaderAsset> shaderAsset); // Recompiles from the source path currently set
+		bool Reload(bool deleteOld = true); // Recompiles from the source path currently set
+		bool Reload(const char* sourcePath = nullptr, bool deleteOld = true); // Recompiles from the source path currently set
+		bool Reload(const std::shared_ptr<ShaderAsset> shaderAsset, bool deleteOld = true); // Recompiles from the source path currently set
 
 		// Add more if needed: https://registry.khronos.org/OpenGL-Refpages/gl4/html/glUniform.xhtml
 		void SetUniformInt(const std::string& name, int value);

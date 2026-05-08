@@ -56,7 +56,14 @@ namespace Loopie {
 		glUseProgram(0);
 	}
 
-	bool Shader::Reload(const char* sourcePath)
+	bool Shader::Reload(bool deleteOld) {
+		if (m_shaderAsset)
+			return Reload(m_shaderAsset, deleteOld);
+		else
+			return Reload(m_filePath.c_str(), deleteOld);
+	}
+
+	bool Shader::Reload(const char* sourcePath, bool deleteOld)
 	{
 		GLuint newProgram = 0;
 
@@ -73,7 +80,8 @@ namespace Loopie {
 		m_uniformsCached = false;
 		m_attributesCached = false;
 		m_shaderAsset = nullptr;
-		glDeleteProgram(m_rendererID);
+		if(deleteOld)
+			glDeleteProgram(m_rendererID);
 		// Delete old program and swap them
 		m_rendererID = newProgram;
 		GetUniformsGL();
@@ -82,7 +90,7 @@ namespace Loopie {
 		return true;
 	}
 
-	bool Shader::Reload(const std::shared_ptr<ShaderAsset> shaderAsset)
+	bool Shader::Reload(const std::shared_ptr<ShaderAsset> shaderAsset, bool deleteOld)
 	{
 		GLuint newProgram = 0;
 
@@ -101,7 +109,8 @@ namespace Loopie {
 		m_attributesCached = false;
 		m_shaderAsset = nullptr;
 		// Delete old program and swap them
-		glDeleteProgram(m_rendererID);
+		if(deleteOld)
+			glDeleteProgram(m_rendererID);
 		m_rendererID = newProgram;
 		m_shaderAsset = shaderAsset;
 		GetUniformsGL();

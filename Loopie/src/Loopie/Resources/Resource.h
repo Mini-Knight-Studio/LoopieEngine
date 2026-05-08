@@ -26,6 +26,7 @@ namespace Loopie
 		virtual ~Resource();
 
 		const UUID &GetUUID() { return m_uuid; }
+		void ReloadUUID() { m_uuid = UUID(); }
 
 		virtual bool Load() = 0;
 

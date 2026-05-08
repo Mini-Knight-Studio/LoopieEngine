@@ -2959,6 +2959,169 @@ namespace Loopie
 
 #pragma endregion
 
+#pragma MeshRenderer
+
+	static void MeshRenderer_GetInstancedMaterial(MonoString* entityID, MonoString* componentID, MonoString** resourceID, int* index) {
+
+		*index = 0;
+		*resourceID = ScriptingManager::CreateString("");
+
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		MeshRenderer* meshRenderer = Utils::GetComponent<MeshRenderer>(entity, componentID);
+		if (!meshRenderer)
+			return;
+
+		meshRenderer->CreateInstanceMaterial();
+		std::shared_ptr<Material> material = meshRenderer->GetInstancedMaterial();
+		if(!material)
+			return;	
+		*resourceID = ScriptingManager::CreateString(material->GetUUID().Get().c_str());
+	}
+
+#pragma endregion
+
+
+/////RESOURCED
+
+#pragma region Material
+	static int Material_GetInt(MonoString* materialID, MonoString* propertyName) {
+		UUID uuid(Utils::MonoStringToString(materialID));
+		if (uuid == UUID::Invalid) {
+			return 0;
+		}
+		std::shared_ptr<Material> material = ResourceManager::GetInstancedMaterial(uuid);
+		if (!material)
+			return 0;
+		const UniformValue* value = material->GetShaderVariable(Utils::MonoStringToString(propertyName));
+		return std::get<int>(value->value);
+	}
+
+	static float Material_GetFloat(MonoString* materialID, MonoString* propertyName) {
+		UUID uuid(Utils::MonoStringToString(materialID));
+		if (uuid == UUID::Invalid) {
+			return 0.0f;
+		}
+		std::shared_ptr<Material> material = ResourceManager::GetInstancedMaterial(uuid);
+		if (!material)
+			return 0.0f;
+		const UniformValue* value = material->GetShaderVariable(Utils::MonoStringToString(propertyName));
+		return std::get<float>(value->value);
+	}
+
+	static void Material_GetVector2(MonoString* materialID, MonoString* propertyName, vec2* outValue) {
+		*outValue = vec2(0.0f);
+		UUID uuid(Utils::MonoStringToString(materialID));
+		if (uuid == UUID::Invalid) {
+			return;
+		}
+		std::shared_ptr<Material> material = ResourceManager::GetInstancedMaterial(uuid);
+		if (!material)
+			return;
+		const UniformValue* value = material->GetShaderVariable(Utils::MonoStringToString(propertyName));
+		*outValue = std::get<vec2>(value->value);
+	}
+
+	static void Material_GetVector3(MonoString* materialID, MonoString* propertyName, vec3* outValue) {
+		*outValue = vec3(0.0f);
+		UUID uuid(Utils::MonoStringToString(materialID));
+		if (uuid == UUID::Invalid) {
+			return;
+		}
+		std::shared_ptr<Material> material = ResourceManager::GetInstancedMaterial(uuid);
+		if (!material)
+			return;
+		const UniformValue* value = material->GetShaderVariable(Utils::MonoStringToString(propertyName));
+		*outValue = std::get<vec3>(value->value);
+	}
+
+	static void Material_GetVector4(MonoString* materialID, MonoString* propertyName, vec4* outValue) {
+		*outValue = vec4(0.0f);
+		UUID uuid(Utils::MonoStringToString(materialID));
+		if (uuid == UUID::Invalid) {
+			return;
+		}
+		std::shared_ptr<Material> material = ResourceManager::GetInstancedMaterial(uuid);
+		if (!material)
+			return;
+		const UniformValue* value = material->GetShaderVariable(Utils::MonoStringToString(propertyName));
+		*outValue = std::get<vec4>(value->value);
+	}
+
+	static void Material_SetInt(MonoString* materialID, MonoString* propertyName, int value) {
+		UUID uuid(Utils::MonoStringToString(materialID));
+		if (uuid == UUID::Invalid) {
+			return;
+		}
+		std::shared_ptr<Material> material = ResourceManager::GetInstancedMaterial(uuid);
+		if (!material)
+			return;
+
+		UniformValue uniform;
+		uniform.type = UniformType::UniformType_int;
+		uniform.value = value;
+
+		material->SetShaderVariable(Utils::MonoStringToString(propertyName), uniform);
+	}
+
+	static void Material_SetFloat(MonoString* materialID, MonoString* propertyName, float value) {
+		UUID uuid(Utils::MonoStringToString(materialID));
+		if (uuid == UUID::Invalid) {
+			return;
+		}
+		std::shared_ptr<Material> material = ResourceManager::GetInstancedMaterial(uuid);
+		if (!material)
+			return;
+		UniformValue uniform;
+		uniform.type = UniformType::UniformType_float;
+		uniform.value = value;
+		material->SetShaderVariable(Utils::MonoStringToString(propertyName), uniform);
+	}
+
+	static void Material_SetVector2(MonoString* materialID, MonoString* propertyName, vec2* value) {
+		UUID uuid(Utils::MonoStringToString(materialID));
+		if (uuid == UUID::Invalid) {
+			return;
+		}
+		std::shared_ptr<Material> material = ResourceManager::GetInstancedMaterial(uuid);
+		if (!material)
+			return;
+		UniformValue uniform;
+		uniform.type = UniformType::UniformType_vec2;
+		uniform.value = *value;
+		material->SetShaderVariable(Utils::MonoStringToString(propertyName), uniform);
+	}
+
+	static void Material_SetVector3(MonoString* materialID, MonoString* propertyName, vec3* value) {
+		UUID uuid(Utils::MonoStringToString(materialID));
+		if (uuid == UUID::Invalid) {
+			return;
+		}
+		std::shared_ptr<Material> material = ResourceManager::GetInstancedMaterial(uuid);
+		if (!material)
+			return;
+		UniformValue uniform;
+		uniform.type = UniformType::UniformType_vec3;
+		uniform.value = *value;
+		material->SetShaderVariable(Utils::MonoStringToString(propertyName), uniform);
+	}
+
+	static void Material_SetVector4(MonoString* materialID, MonoString* propertyName, vec4* value) {
+		UUID uuid(Utils::MonoStringToString(materialID));
+		if (uuid == UUID::Invalid) {
+			return;
+		}
+		std::shared_ptr<Material> material = ResourceManager::GetInstancedMaterial(uuid);
+		if (!material)
+			return;
+		UniformValue uniform;
+		uniform.type = UniformType::UniformType_vec4;
+		uniform.value = *value;
+		material->SetShaderVariable(Utils::MonoStringToString(propertyName), uniform);
+	}
+#pragma endregion
+
 	template<typename Comp, typename = std::enable_if_t<std::is_base_of_v<Component, Comp>>>
 	static void RegisterComponent()
 	{
@@ -2989,6 +3152,7 @@ namespace Loopie
 		RegisterComponent<RectTransform>();
 		RegisterComponent<Animator>();
 		RegisterComponent<SpriteAnimator>();
+		RegisterComponent<MeshRenderer>();
 		RegisterComponent<Camera>();
 		RegisterComponent<MeshRenderer>();
 		RegisterComponent<BoxCollider>();
@@ -3305,5 +3469,20 @@ namespace Loopie
 
 		ADD_INTERNAL_CALL(AudioMixer_SetBusVolume);
 		ADD_INTERNAL_CALL(AudioMixer_GetBusVolume);
+
+		ADD_INTERNAL_CALL(MeshRenderer_GetInstancedMaterial);
+
+		/////// RESOURCES
+
+		ADD_INTERNAL_CALL(Material_GetInt);
+		ADD_INTERNAL_CALL(Material_GetFloat);
+		ADD_INTERNAL_CALL(Material_GetVector2);
+		ADD_INTERNAL_CALL(Material_GetVector3);
+		ADD_INTERNAL_CALL(Material_GetVector4);
+		ADD_INTERNAL_CALL(Material_SetInt);
+		ADD_INTERNAL_CALL(Material_SetFloat);
+		ADD_INTERNAL_CALL(Material_SetVector2);
+		ADD_INTERNAL_CALL(Material_SetVector3);
+		ADD_INTERNAL_CALL(Material_SetVector4);
 	}
 }

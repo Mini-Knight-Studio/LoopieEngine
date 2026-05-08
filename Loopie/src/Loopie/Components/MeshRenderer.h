@@ -31,6 +31,7 @@ namespace Loopie {
 		void SetMesh(std::shared_ptr<Mesh> mesh);
 
 		std::shared_ptr<Material> GetMaterial();
+		std::shared_ptr<Material> GetInstancedMaterial();
 		void SetMaterial(std::shared_ptr <Material> material);
 		
 		void CreateInstanceMaterial();
