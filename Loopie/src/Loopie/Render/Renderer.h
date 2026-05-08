@@ -69,6 +69,31 @@ namespace Loopie {
 			FRONT_AND_BACK = 0x0408 // GL_FRONT_AND_BACK
 		};
 
+		enum class BlendFactorMode {
+			ZERO = 0x0000,                     // GL_ZERO
+			ONE = 0x0001,                      // GL_ONE
+			SRC_COLOR = 0x0300,                // GL_SRC_COLOR
+			ONE_MINUS_SRC_COLOR = 0x0301,      // GL_ONE_MINUS_SRC_COLOR
+			SRC_ALPHA = 0x0302,                // GL_SRC_ALPHA
+			ONE_MINUS_SRC_ALPHA = 0x0303,      // GL_ONE_MINUS_SRC_ALPHA
+			DST_ALPHA = 0x0304,                // GL_DST_ALPHA
+			ONE_MINUS_DST_ALPHA = 0x0305,      // GL_ONE_MINUS_DST_ALPHA
+			DST_COLOR = 0x0306,                // GL_DST_COLOR
+			ONE_MINUS_DST_COLOR = 0x0307,      // GL_ONE_MINUS_DST_COLOR
+			CONSTANT_COLOR = 0x8001,           // GL_CONSTANT_COLOR
+			ONE_MINUS_CONSTANT_COLOR = 0x8002, // GL_ONE_MINUS_CONSTANT_COLOR
+			CONSTANT_ALPHA = 0x8003,           // GL_CONSTANT_ALPHA
+			ONE_MINUS_CONSTANT_ALPHA = 0x8004  // GL_ONE_MINUS_CONSTANT_ALPHA
+		};
+
+		enum class BlendEquationMode {
+			ADD = 0x8006,              // GL_FUNC_ADD
+			SUBTRACT = 0x800A,         // GL_FUNC_SUBTRACT
+			REVERSE_SUBTRACT = 0x800B, // GL_FUNC_REVERSE_SUBTRACT
+			MIN = 0x8007,              // GL_MIN
+			MAX = 0x8008               // GL_MAX
+		};
+
 
 		struct RenderItem {
 			std::shared_ptr<VertexArray> VAO;
@@ -148,6 +173,11 @@ namespace Loopie {
 		static void AddRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones = {});
 		static void FlushRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones = {});
 		static void FlushRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const matrix4& modelMatrix, const std::vector<matrix4>& bones = {});
+
+		static void FlushOpaqueRenderQueue();
+		static void FlushTransparentRenderQueue();
+
+		static void FlushRenderQueue();
 		
 		static void ClearParticles();
 		static void AddParticle(const matrix4& transform, const vec4& color);
@@ -155,12 +185,14 @@ namespace Loopie {
 
 		static void EnableDepth();
 		static void DisableDepth();
+		static void SetDepthFunc(DepthFunc cond);
 		static void EnableDepthMask();
 		static void DisableDepthMask();
 
 		static void EnableBlend();
 		static void DisableBlend();
-		static void BlendFunction();
+		static void BlendFunction(BlendFactorMode src, BlendFactorMode dst);
+		static void BlendEquation(BlendEquationMode eq);
 
 		static void EnableStencil();
 		static void DisableStencil();
@@ -178,7 +210,7 @@ namespace Loopie {
 		static void SetFrameUniforms(Shader& shader);
 		static void SetRenderUniforms(std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones = {});
 		static void SetRenderUniforms(std::shared_ptr<Material> material, const matrix4& modelMatrix, const std::vector<matrix4>& bones = {});
-		static void FlushRenderQueue();
+		
 
 		static unsigned int UploadBones(const std::vector<matrix4>& bones);
 

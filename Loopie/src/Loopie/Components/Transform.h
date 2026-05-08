@@ -19,11 +19,11 @@ namespace Loopie
         ~Transform() = default;
         void Init()override;
 
-        vec3 GetPosition();
+        vec3 GetPosition() const;
         const vec3& GetLocalPosition() const;
-        quaternion GetRotation();
+        quaternion GetRotation() const;
         quaternion GetLocalRotation() const;
-        vec3 GetEulerAngles();
+        vec3 GetEulerAngles() const;
         vec3 GetLocalEulerAngles() const;
         vec3 GetLocalScale() const;
 

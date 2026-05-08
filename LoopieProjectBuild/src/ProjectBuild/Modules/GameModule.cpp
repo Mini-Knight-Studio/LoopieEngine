@@ -332,10 +332,10 @@ namespace Loopie
 
 			Renderer::BeginScene(cam->GetViewMatrix(), cam->GetProjectionMatrix(), cam->GetIsEditorCamera());
 			RenderWorld(cam);
-			RenderParticles(cam);
 			Renderer::SetSceneDepthTexture(buffer ? buffer->GetDepthId() : 0);
 			Renderer::SetSceneFrustrumValues(cam->GetNearPlane(), cam->GetFarPlane());
 			Renderer::EndScene();
+			RenderParticles(cam);
 
 			if (!mainCamera) {
 				buffer->Unbind();
@@ -538,9 +538,10 @@ namespace Loopie
 	void GameModule::RenderParticles(Camera* cam) {
 		Renderer::DisableStencil();
 		Renderer::EnableDepth();
-		Renderer::EnableDepthMask();
+		Renderer::SetDepthFunc(Renderer::DepthFunc::LEQUAL);
+		Renderer::DisableDepthMask();
 		Renderer::EnableBlend();
-		Renderer::BlendFunction();
+		Renderer::BlendFunction(Renderer::BlendFactorMode::ONE, Renderer::BlendFactorMode::ONE_MINUS_SRC_ALPHA);
 
 		auto& particleEntities = m_currentScene->GetAllEntities();
 

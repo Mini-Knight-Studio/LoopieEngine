@@ -39,11 +39,13 @@ void main()
     if (u_UseSprite)
     {
         vec4 texColor = texture(u_Sprite, v_TexCoord);
-        finalColor = vec4(texColor.rgb * v_Color.rgb, texColor.a * v_Color.a);
+        finalColor = texColor * v_Color;
     }
 
     if (finalColor.a < 0.01)
         discard;
+
+    finalColor.rgb *= finalColor.a;
 
     o_Color = finalColor;
 }

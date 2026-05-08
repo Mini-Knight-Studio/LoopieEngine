@@ -589,15 +589,8 @@ namespace Loopie {
 		vao->Unbind();
 	}
 
-	void Renderer::FlushRenderQueue()
+	void Renderer::FlushOpaqueRenderQueue()
 	{
-		/// SORT By Material
-
-		// *** Sorting in FlushRendererQueue *** - PSS 09/04/2026 - Since we're not yet
-		// rendering by material, I decided to do it by transparency.
-		// There's a check in the Material -> Material Has Transparency.
-		// Items without transparency are drawn before items with transparency.
-
 		std::sort(s_OpaqueRenderQueue.begin(), s_OpaqueRenderQueue.end(), CompareByMaterial);
 
 		for (const RenderItem& item : s_OpaqueRenderQueue) {
@@ -609,8 +602,12 @@ namespace Loopie {
 			item.VAO->Unbind();
 		}
 
-		glTextureBarrier();
+		s_OpaqueRenderQueue.clear();
+	}
 
+	void Renderer::FlushTransparentRenderQueue()
+	{
+		glTextureBarrier();
 		glActiveTexture(GL_TEXTURE0 + 12); // 12 = Scene Depth Texture Slot, hard-coded
 		glBindTexture(GL_TEXTURE_2D, s_SceneDepthTextureID);
 
@@ -626,10 +623,21 @@ namespace Loopie {
 		}
 		EnableDepthMask();
 		DisableBlend();
-		///
 
-		s_OpaqueRenderQueue.clear();
 		s_TransparentRenderQueue.clear();
+	}
+
+	void Renderer::FlushRenderQueue()
+	{
+		/// SORT By Material
+
+		// *** Sorting in FlushRendererQueue *** - PSS 09/04/2026 - Since we're not yet
+		// rendering by material, I decided to do it by transparency.
+		// There's a check in the Material -> Material Has Transparency.
+		// Items without transparency are drawn before items with transparency.
+
+		FlushOpaqueRenderQueue();
+		FlushTransparentRenderQueue();
 	}
 
 	void Renderer::ClearParticles()
@@ -751,9 +759,14 @@ namespace Loopie {
 		}
 	}
 
-	void Renderer::BlendFunction()
+	void Renderer::BlendFunction(BlendFactorMode src, BlendFactorMode dst)
 	{
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glBlendFunc((unsigned int)src, (unsigned int)dst);
+	}
+
+	void Renderer::BlendEquation(BlendEquationMode eq)
+	{
+		glBlendEquation((GLenum)eq);
 	}
 
 	void Renderer::EnableDepth()
@@ -764,6 +777,11 @@ namespace Loopie {
 	void Renderer::DisableDepth()
 	{
 		glDisable(GL_DEPTH_TEST);
+	}
+
+	void Renderer::SetDepthFunc(DepthFunc cond)
+	{
+		glDepthFunc((unsigned int)cond);
 	}
 
 	void Renderer::EnableDepthMask()

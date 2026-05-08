@@ -52,7 +52,7 @@ namespace Loopie
         MarkLocalDirty();
     }
 
-    vec3 Transform::GetPosition()
+    vec3 Transform::GetPosition() const
     {
         return GetWorldPosition();
     }
@@ -62,7 +62,7 @@ namespace Loopie
         SetWorldPosition(position);
     }
 
-    quaternion Transform::GetRotation()
+    quaternion Transform::GetRotation() const
     {
         return GetWorldRotation();
     }
@@ -90,7 +90,7 @@ namespace Loopie
         MarkLocalDirty();
     }
 
-    vec3 Transform::GetEulerAngles()
+    vec3 Transform::GetEulerAngles() const
     {
         if (auto parent = GetOwner()->GetParent().lock())
         {
