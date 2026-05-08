@@ -22,6 +22,8 @@ namespace Loopie {
 
 		if (m_linkedAnimator)
 			m_linkedAnimator->RemoveMeshRenderer(this);
+
+		m_instanceMaterial = nullptr;
 	}
 
 	void MeshRenderer::Init()
@@ -67,9 +69,16 @@ namespace Loopie {
 	}
 
 	std::shared_ptr<Material> MeshRenderer::GetMaterial() {
+		if (m_instanceMaterial)
+			return m_instanceMaterial;
 		if (m_material)
 			return m_material;
 		return Material::GetDefault();
+	}
+
+	void MeshRenderer::CreateInstanceMaterial() {
+		if (!m_instanceMaterial)
+			m_instanceMaterial = std::make_shared<Material>(*m_material);
 	}
 
 	const AABB& MeshRenderer::GetWorldAABB() const

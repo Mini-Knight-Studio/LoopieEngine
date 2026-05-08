@@ -33,6 +33,7 @@ namespace Loopie {
 		std::shared_ptr<Material> GetMaterial();
 		void SetMaterial(std::shared_ptr <Material> material);
 		
+		void CreateInstanceMaterial();
 
 		void SetBoundingBoxesDirty() { m_boundingBoxesDirty = true; }
 		const AABB& GetWorldAABB() const;
@@ -75,6 +76,7 @@ namespace Loopie {
 
 	private:
 		std::shared_ptr<Material> m_material;
+		std::shared_ptr<Material> m_instanceMaterial;
 		std::shared_ptr<Mesh> m_mesh;
 
 		mutable AABB m_worldAABB = AABB();
