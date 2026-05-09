@@ -120,6 +120,26 @@ namespace Loopie
 			vectorNode.CreateField("y", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().VelocityVariation.y);
 			vectorNode.CreateField("z", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().VelocityVariation.z);
 
+			vectorNode = pProps.CreateObjectField("rotation");
+			vectorNode.CreateField("x", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().Rotation.x);
+			vectorNode.CreateField("y", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().Rotation.y);
+			vectorNode.CreateField("z", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().Rotation.z);
+
+			vectorNode = pProps.CreateObjectField("rotationVariation");
+			vectorNode.CreateField("x", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().RotationVariation.x);
+			vectorNode.CreateField("y", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().RotationVariation.y);
+			vectorNode.CreateField("z", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().RotationVariation.z);
+
+			vectorNode = pProps.CreateObjectField("rotationSpeed");
+			vectorNode.CreateField("x", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().RotationSpeed.x);
+			vectorNode.CreateField("y", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().RotationSpeed.y);
+			vectorNode.CreateField("z", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().RotationSpeed.z);
+
+			vectorNode = pProps.CreateObjectField("rotationSpeedVariation");
+			vectorNode.CreateField("x", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().RotationSpeedVariation.x);
+			vectorNode.CreateField("y", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().RotationSpeedVariation.y);
+			vectorNode.CreateField("z", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().RotationSpeedVariation.z);
+
 			vectorNode = pProps.CreateObjectField("colorbegin");
 			vectorNode.CreateField("r", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().ColorBegin.x);
 			vectorNode.CreateField("g", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().ColorBegin.y);
@@ -194,7 +214,7 @@ namespace Loopie
 				JsonNode pPropsNode = node.Child("particleprops");
 				if (pPropsNode.IsValid() && pPropsNode.IsObject())
 				{
-					ParticleProps props;
+					ParticleProps& props = m_partSystem.GetEmitterArray()[i]->GetEmissionProperties();
 
 					props.SizeBegin = pPropsNode.GetValue<float>("sizebegin").Result;
 					props.SizeEnd = pPropsNode.GetValue<float>("sizeend").Result;
@@ -215,6 +235,39 @@ namespace Loopie
 						props.PositionVariation.x = posVariationNode.GetValue<float>("x").Result;
 						props.PositionVariation.y = posVariationNode.GetValue<float>("y").Result;
 						props.PositionVariation.z = posVariationNode.GetValue<float>("z").Result;
+					}
+
+
+					JsonNode propRotationNode = pPropsNode.Child("rotation");
+					if (propRotationNode.IsValid() && propRotationNode.IsObject())
+					{
+						props.Rotation.x = propRotationNode.GetValue<float>("x").Result;
+						props.Rotation.y = propRotationNode.GetValue<float>("y").Result;
+						props.Rotation.z = propRotationNode.GetValue<float>("z").Result;
+					}
+
+					JsonNode propRotationVariationNode = pPropsNode.Child("rotationVariation");
+					if (propRotationVariationNode.IsValid() && propRotationVariationNode.IsObject())
+					{
+						props.RotationVariation.x = propRotationVariationNode.GetValue<float>("x",0).Result;
+						props.RotationVariation.y = propRotationVariationNode.GetValue<float>("y",0).Result;
+						props.RotationVariation.z = propRotationVariationNode.GetValue<float>("z",360).Result;
+					}
+
+					JsonNode rotSpeedNode = pPropsNode.Child("rotationSpeed");
+					if (rotSpeedNode.IsValid() && rotSpeedNode.IsObject())
+					{
+						props.RotationSpeed.x = rotSpeedNode.GetValue<float>("x",0).Result;
+						props.RotationSpeed.y = rotSpeedNode.GetValue<float>("y",0).Result;
+						props.RotationSpeed.z = rotSpeedNode.GetValue<float>("z",0).Result;
+					}
+
+					JsonNode rotVariationNode = pPropsNode.Child("rotationSpeedVariation");
+					if (rotVariationNode.IsValid() && rotVariationNode.IsObject())
+					{
+						props.RotationSpeedVariation.x = rotVariationNode.GetValue<float>("x",0).Result;
+						props.RotationSpeedVariation.y = rotVariationNode.GetValue<float>("y",0).Result;
+						props.RotationSpeedVariation.z = rotVariationNode.GetValue<float>("z",15).Result;
 					}
 
 					JsonNode velocityNode = pPropsNode.Child("velocity");
@@ -271,7 +324,6 @@ namespace Loopie
 							m_partSystem.GetEmitterArray()[i]->SetSprite(ResourceManager::GetTexture(*meta));
 					}
 
-					m_partSystem.GetEmitterArray()[i]->SetEmisionProperties(props);
 				}
 			}
 		}

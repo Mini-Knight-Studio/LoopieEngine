@@ -9,7 +9,8 @@ namespace Loopie
 	ParticleModule::ParticleModule()
 	{
 		m_position = vec3(0, 0, 0);
-		m_rotation = 0;
+		m_rotation = vec3(0.0f);
+		m_rotationSpeed = vec3(0.0f);
 		m_velocity = vec3(0, 0, 0);
 		m_colorBegin = vec4(1, 1, 1, 1);
 		m_colorEnd = vec4(1, 1, 1, 1);
@@ -37,7 +38,7 @@ namespace Loopie
 		}
 
 		m_lifeRemaining -= dt;
-		m_rotation += 0.01 * dt;
+		m_rotation += m_rotationSpeed * dt;
 
 		if (m_followEmitter)
 		{
@@ -68,11 +69,13 @@ namespace Loopie
 
 		// transform 
 		vec3 finalScale = vec3(size, size, 1.0f) * emitterScale;
-		matrix4 transform =
-			translate(matrix4(1.0f), m_position) *
-			billboardRotation *
-			rotate(matrix4(1.0f), m_rotation, vec3(0.0f, 0.0f, 1.0f)) *
-			scale(matrix4(1.0f), finalScale);
+		matrix4 transform = translate(matrix4(1.0f), m_position) * billboardRotation;
+
+		transform = rotate(transform, m_rotation.x, vec3(1.0f, 0.0f, 0.0f));
+		transform = rotate(transform, m_rotation.y, vec3(0.0f, 1.0f, 0.0f));
+		transform = rotate(transform, m_rotation.z, vec3(0.0f, 0.0f, 1.0f));
+
+		transform = scale(transform, finalScale);
 
 		// Calculate squared distance to camera for depth sorting
 		vec3 toCam = camPos - m_position;
@@ -107,13 +110,23 @@ namespace Loopie
 	{
 		m_velocityOffset = velOffset;
 	}
-	float ParticleModule::GetRotation() const
+
+	vec3 ParticleModule::GetRotation() const
 	{
-		return m_rotation;
+		return degrees(m_rotation);
 	}
-	void ParticleModule::SetRotation(float rot)
+	void ParticleModule::SetRotation(const vec3& rot)
 	{
-		m_rotation = rot;
+		m_rotation = radians(rot);
+	}
+
+	vec3 ParticleModule::GetRotationSpeed() const
+	{
+		return degrees(m_rotationSpeed);
+	}
+	void ParticleModule::SetRotationSpeed(const vec3& speed)
+	{
+		m_rotationSpeed = radians(speed);
 	}
 
 	vec4 ParticleModule::GetColorBegin() const

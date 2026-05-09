@@ -41,6 +41,10 @@ namespace Loopie
 		m_particleProperties.SizeEnd = 1;
 		m_particleProperties.SizeVariation = 0.5;
 		m_particleProperties.LifeTime = 1;
+
+		m_particleProperties.RotationVariation = vec3(0, 0, 360.f);
+		m_particleProperties.RotationSpeed = vec3(0, 0, 0);
+		m_particleProperties.RotationSpeedVariation = vec3(0, 0, 15.f);
 		
 		m_particlePool.resize(m_maxParticles);
 		m_poolIndex = m_maxParticles - 1;
@@ -109,7 +113,6 @@ namespace Loopie
 
 		particle.SetActive(true);
 		particle.SetVelocityOffset(vec3(0.0f));
-		particle.SetRotation(RandomFloat(0, (2 * Math::PI)));
 
 		//Position
 		vec3 spawnOffset = m_positionOffSet;
@@ -139,6 +142,17 @@ namespace Loopie
 		finalVelocity.y += RandomFloat(-particleProps.VelocityVariation.y * 1.5f, particleProps.VelocityVariation.y * 1.5f);
 		finalVelocity.z += RandomFloat(-particleProps.VelocityVariation.z * 1.5f, particleProps.VelocityVariation.z * 1.5f);
 
+		vec3 initialRot;
+		initialRot.x = particleProps.Rotation.x + RandomFloat(-particleProps.RotationVariation.x, particleProps.RotationVariation.x);
+		initialRot.y = particleProps.Rotation.y + RandomFloat(-particleProps.RotationVariation.y, particleProps.RotationVariation.y);
+		initialRot.z = particleProps.Rotation.z + RandomFloat(-particleProps.RotationVariation.z, particleProps.RotationVariation.z);
+		particle.SetRotation(initialRot);
+
+		vec3 rotSpeed;
+		rotSpeed.x = particleProps.RotationSpeed.x + RandomFloat(-particleProps.RotationSpeedVariation.x, particleProps.RotationSpeedVariation.x);
+		rotSpeed.y = particleProps.RotationSpeed.y + RandomFloat(-particleProps.RotationSpeedVariation.y, particleProps.RotationSpeedVariation.y);
+		rotSpeed.z = particleProps.RotationSpeed.z + RandomFloat(-particleProps.RotationSpeedVariation.z, particleProps.RotationSpeedVariation.z);
+		particle.SetRotationSpeed(rotSpeed);
 
 		if (m_localVelocity)
 		{

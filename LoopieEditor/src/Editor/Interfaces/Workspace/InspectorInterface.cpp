@@ -1413,6 +1413,10 @@ namespace Loopie {
 		ImGui::DragFloat3("Position Variation", &props.PositionVariation.x, 0.1f, 0.0f, 500.0f, "%.2f");
 		ImGui::DragFloat3("Velocity", &props.Velocity.x, 0.1f, -500.0f, 500.0f, "%.2f");
 		ImGui::DragFloat3("Velocity Variation", &props.VelocityVariation.x, 0.1f, 0.0f, 200.0f, "%.2f");
+		ImGui::DragFloat3("Rotation", &props.Rotation.x, 0.1f, -500.0f, 500.0f, "%.2f");
+		ImGui::DragFloat3("Rotation Variation", &props.RotationVariation.x, 0.1f, 0.0f, 200.0f, "%.2f");
+		ImGui::DragFloat3("Rotation Speed", &props.RotationSpeed.x, 0.1f, -500.0f, 500.0f, "%.2f");
+		ImGui::DragFloat3("Rotation Speed Variation", &props.RotationSpeedVariation.x, 0.1f, 0.0f, 200.0f, "%.2f");
 		ImGui::ColorEdit4("Color Begin", &props.ColorBegin.x);
 		ImGui::ColorEdit4("Color End", &props.ColorEnd.x);
 		ImGui::DragFloat("Size Begin", &props.SizeBegin, 0.01f, 0.0f, 100.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);

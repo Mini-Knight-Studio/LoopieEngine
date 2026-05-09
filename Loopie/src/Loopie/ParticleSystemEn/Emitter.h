@@ -25,6 +25,11 @@ namespace Loopie
 		float SizeEnd = 0.0f;
 		float SizeVariation = 0.0f;
 		float LifeTime = 1.0f;
+
+		vec3 Rotation = vec3(0.0f);
+		vec3 RotationVariation = vec3(0.0f);
+		vec3 RotationSpeed = vec3(0);
+		vec3 RotationSpeedVariation = vec3(0.0f);
 		
 	};
 	class Emitter

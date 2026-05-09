@@ -16,7 +16,6 @@ namespace Loopie
 			vec3 m_velocity;
 			vec4 m_colorBegin;
 			vec4 m_colorEnd;
-			float m_rotation;
 			float m_sizeBegin;
 			float m_sizeEnd;
 			float m_lifetime;
@@ -26,6 +25,9 @@ namespace Loopie
 			vec3 m_emitterPos; 
 			bool m_followEmitter;
 			vec3 m_velocityOffset;
+
+			vec3 m_rotation;
+			vec3 m_rotationSpeed;
 		public:
 
 			ParticleModule();
@@ -41,8 +43,11 @@ namespace Loopie
 			vec3 GetVelocityOffset() const;
 			void SetVelocityOffset(const vec3& velOffset);
 
-			float GetRotation() const;
-			void SetRotation(float rot);
+			vec3 GetRotation() const;
+			void SetRotation(const vec3& rot);
+
+			vec3 GetRotationSpeed() const;
+			void SetRotationSpeed(const vec3& speed);
 
 			float GetLifetime() const;
 			void SetLifetime(float time);
