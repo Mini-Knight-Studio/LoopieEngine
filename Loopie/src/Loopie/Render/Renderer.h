@@ -104,13 +104,21 @@ namespace Loopie {
 			std::vector<matrix4> Bones;
 		};
 
-
 		struct ParticlesData {
 			std::shared_ptr<VertexBuffer> TransformVBO;
 			std::shared_ptr<VertexBuffer> ColorVBO;
 
 			std::vector<matrix4> transformsBatch;
 			std::vector<vec4> colorsBatch;
+		};
+
+		struct ParticleSortData {
+			matrix4 transform;
+			vec4 color;
+			float depth;
+			std::shared_ptr<Material> material;
+			std::shared_ptr<Texture> sprite;
+			std::shared_ptr<VertexArray> vao;
 		};
 
 		struct ShadowSlot
@@ -180,8 +188,8 @@ namespace Loopie {
 		static void FlushRenderQueue();
 		
 		static void ClearParticles();
-		static void AddParticle(const matrix4& transform, const vec4& color);
-		static void FlushParticles(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material);
+		static void AddParticle(const matrix4& transform, const vec4& color, float depth, std::shared_ptr<Material> material, std::shared_ptr<Texture> sprite, std::shared_ptr<VertexArray> vao);
+		static void FlushParticles();
 
 		static void EnableDepth();
 		static void DisableDepth();
@@ -229,6 +237,7 @@ namespace Loopie {
 		static unsigned int s_BoneBufferCapacity;
 
 		static ParticlesData s_ParticlesData;
+		static std::vector<ParticleSortData> s_ParticleQueue;
 
 		static vec4 s_CurrentViewport;
 

@@ -792,9 +792,9 @@ namespace Loopie
 			}
 		}
 
+		Renderer::FlushParticles();
 		Renderer::EnableDepthMask();
 		Renderer::DisableBlend();
-
 
 		
 	}

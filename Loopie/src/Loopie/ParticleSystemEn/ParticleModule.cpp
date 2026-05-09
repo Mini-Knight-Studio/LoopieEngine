@@ -51,16 +51,17 @@ namespace Loopie
 		}
 
 	}
-	void ParticleModule::Render(const matrix4& billboardRotation, const vec3& emitterScale)
+	// Inside ParticleModule.cpp
+	void ParticleModule::Render(const matrix4& billboardRotation, const vec3& emitterScale, const vec3& camPos, std::shared_ptr<Material> material, std::shared_ptr<Texture> sprite, std::shared_ptr<VertexArray> vao)
 	{
 		LP_FUNC();
 		if (!m_active)
 		{
 			return;
 		}
-		
+
 		float life = m_lifeRemaining / m_lifetime;
-		if (life <=0) { life = 0; }
+		if (life <= 0) { life = 0; }
 
 		vec4 color = mix(m_colorEnd, m_colorBegin, life);
 		float size = mix(m_sizeEnd, m_sizeBegin, life);
@@ -73,8 +74,12 @@ namespace Loopie
 			rotate(matrix4(1.0f), m_rotation, vec3(0.0f, 0.0f, 1.0f)) *
 			scale(matrix4(1.0f), finalScale);
 
+		// Calculate squared distance to camera for depth sorting
+		vec3 toCam = camPos - m_position;
+		float depth = dot(toCam, toCam);
 
-		Renderer::AddParticle(transform, color);
+		// Queue it up globally
+		Renderer::AddParticle(transform, color, depth, material, sprite, vao);
 	}
 	
 	vec3 ParticleModule::GetPosition() const

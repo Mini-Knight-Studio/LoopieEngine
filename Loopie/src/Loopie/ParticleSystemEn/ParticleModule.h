@@ -30,7 +30,7 @@ namespace Loopie
 
 			ParticleModule();
 			void Update(float dt);
-			void Render(const matrix4& billboardRotation, const vec3& emitterScale);
+			void Render(const matrix4& billboardRotation, const vec3& emitterScale, const vec3& camPos, std::shared_ptr<Material> material, std::shared_ptr<Texture> sprite, std::shared_ptr<VertexArray> vao);
 
 			vec3 GetPosition() const;
 			void SetPosition(const vec3& pos);

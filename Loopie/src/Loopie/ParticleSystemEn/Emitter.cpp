@@ -1,5 +1,6 @@
 #include "Emitter.h"
 #include "Loopie/ParticleSystemEn/ParticleModule.h"
+#include "Loopie/Components/Transform.h"
 #include "Loopie/Core/Log.h"
 #include "Loopie/Render/Renderer.h"
 #include "Loopie/Core/Random.h"
@@ -90,27 +91,16 @@ namespace Loopie
 		matrix4 billboardRotation = m_billboard.UpdateCalcRotation(cam, m_rotation);
 		vec3 scale = m_applyScale ? m_scale : vec3(1);
 
-		Renderer::ClearParticles();
+		vec3 camPos = cam->GetTransform()->GetWorldPosition();
+
 
 		for (auto it = m_particlePool.begin(); it != m_particlePool.end(); ++it)
 		{
 			if (!it->GetActive())
 				continue;
 
-			it->Render(billboardRotation, scale);
+			it->Render(billboardRotation, scale, camPos, material, m_sprite, quadVAO);
 		}
-
-		m_useSprite.value = m_sprite != nullptr;
-
-		if (m_sprite) {
-			material->SetTexture("u_Sprite", m_sprite);
-		}
-
-		material->SetShaderVariable("u_UseSprite", m_useSprite);
-
-		material->Bind();
-
-		Renderer::FlushParticles(quadVAO, material);
 	}
 	void Emitter::Emit(const ParticleProps& particleProps)
 	{

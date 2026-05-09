@@ -24,6 +24,7 @@ namespace Loopie {
 	unsigned int Renderer::s_BoneBufferCapacity = 0;
 
 	Renderer::ParticlesData Renderer::s_ParticlesData;
+	std::vector<Renderer::ParticleSortData> Renderer::s_ParticleQueue;
 
 	std::unordered_set<Shader*> Renderer::s_FrameUpdatedShaders;
 
@@ -104,6 +105,7 @@ namespace Loopie {
 
 		s_OpaqueRenderQueue.reserve(1000);
 		s_TransparentRenderQueue.reserve(300);
+		s_ParticleQueue.reserve(3000);
 		s_FrameUpdatedShaders.reserve(30);
 		
 
@@ -642,41 +644,90 @@ namespace Loopie {
 
 	void Renderer::ClearParticles()
 	{
+		s_ParticleQueue.clear();
 		s_ParticlesData.transformsBatch.clear();
 		s_ParticlesData.colorsBatch.clear();
 	}
 
-	void Renderer::AddParticle(const matrix4& transform, const vec4& color)
+	void Renderer::AddParticle(const matrix4& transform, const vec4& color, float depth, std::shared_ptr<Material> material, std::shared_ptr<Texture> sprite, std::shared_ptr<VertexArray> vao)
 	{
-		s_ParticlesData.colorsBatch.emplace_back(color);
-		s_ParticlesData.transformsBatch.emplace_back(transform);
+		s_ParticleQueue.push_back({ transform, color, depth, material, sprite, vao });
 	}
 
-	void Renderer::FlushParticles(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material)
+	void Renderer::FlushParticles()
 	{
-		if (s_ParticlesData.transformsBatch.empty()) return;
+		if (s_ParticleQueue.empty()) return;
 
-		vao->Bind();
-		s_ParticlesData.TransformVBO->SetData(s_ParticlesData.transformsBatch.data(), s_ParticlesData.transformsBatch.size() * sizeof(matrix4));
+		std::sort(s_ParticleQueue.begin(), s_ParticleQueue.end(), [](const ParticleSortData& a, const ParticleSortData& b) {
+			return a.depth > b.depth;
+			});
 
-		for (int i = 0; i < 4; i++) {
-			glEnableVertexAttribArray(2 + i);
-			glVertexAttribPointer(2 + i, 4, GL_FLOAT, GL_FALSE, sizeof(matrix4), (void*)(sizeof(vec4) * i));
-			glVertexAttribDivisor(2 + i, 1);
+		int batchStart = 0;
+
+		UniformValue useSpriteVal;
+		useSpriteVal.type = UniformType_bool;
+
+		for (size_t i = 0; i <= s_ParticleQueue.size(); i++)
+		{
+			bool isEnd = (i == s_ParticleQueue.size());
+			bool stateChanged = false;
+
+			if (!isEnd && i > batchStart) {
+				const auto& prev = s_ParticleQueue[i - 1];
+				const auto& curr = s_ParticleQueue[i];
+				if (prev.sprite != curr.sprite) {
+					stateChanged = true;
+				}
+			}
+
+			if (stateChanged || isEnd)
+			{
+				int batchSize = i - batchStart;
+				if (batchSize == 0) 
+					continue;
+
+				auto& firstParticle = s_ParticleQueue[batchStart];
+
+				s_ParticlesData.transformsBatch.clear();
+				s_ParticlesData.colorsBatch.clear();
+				for (size_t j = batchStart; j < i; j++) {
+					s_ParticlesData.transformsBatch.push_back(s_ParticleQueue[j].transform);
+					s_ParticlesData.colorsBatch.push_back(s_ParticleQueue[j].color);
+				}
+
+				firstParticle.vao->Bind();
+				s_ParticlesData.TransformVBO->SetData(s_ParticlesData.transformsBatch.data(), s_ParticlesData.transformsBatch.size() * sizeof(matrix4));
+
+				for (int k = 0; k < 4; k++) {
+					glEnableVertexAttribArray(2 + k);
+					glVertexAttribPointer(2 + k, 4, GL_FLOAT, GL_FALSE, sizeof(matrix4), (void*)(sizeof(vec4) * k));
+					glVertexAttribDivisor(2 + k, 1);
+				}
+
+				s_ParticlesData.ColorVBO->SetData(s_ParticlesData.colorsBatch.data(), s_ParticlesData.colorsBatch.size() * sizeof(vec4));
+				glEnableVertexAttribArray(6);
+				glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(vec4), (void*)0);
+				glVertexAttribDivisor(6, 1);
+
+				useSpriteVal.value = (firstParticle.sprite != nullptr);
+
+				if (firstParticle.sprite) {
+					firstParticle.material->SetTexture("u_Sprite", firstParticle.sprite);
+				}
+				firstParticle.material->SetShaderVariable("u_UseSprite", useSpriteVal);
+
+				firstParticle.material->Bind();
+				SetFrameUniforms(firstParticle.material->GetShader());
+
+				glDrawElementsInstanced(GL_TRIANGLES, firstParticle.vao->GetIndexBuffer().GetCount(), GL_UNSIGNED_INT, nullptr, batchSize);
+
+				firstParticle.vao->Unbind();
+
+				batchStart = i;
+			}
 		}
 
-		s_ParticlesData.ColorVBO->SetData(s_ParticlesData.colorsBatch.data(), s_ParticlesData.colorsBatch.size() * sizeof(vec4));
-
-		glEnableVertexAttribArray(6);
-		glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(vec4), (void*)0);
-		glVertexAttribDivisor(6, 1);
-
-		material->Bind();
-		SetFrameUniforms(material->GetShader());
-
-		glDrawElementsInstanced(GL_TRIANGLES, vao->GetIndexBuffer().GetCount(), GL_UNSIGNED_INT, nullptr, s_ParticlesData.transformsBatch.size());
-
-		vao->Unbind();
+		s_ParticleQueue.clear();
 	}
 
 	unsigned int Renderer::UploadBones(const std::vector<matrix4>& bones)
