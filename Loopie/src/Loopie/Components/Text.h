@@ -62,6 +62,9 @@ namespace Loopie
 		TextVerticalAlignment GetVerticalAlignment() const { return m_verticalAlignment; }
 		void SetVerticalAlignment(TextVerticalAlignment alignment) { m_verticalAlignment = alignment; }
 
+		bool GetJustified() const { return m_justified; }
+		void SetJustified(bool justified) { m_justified = justified; }
+
 		std::shared_ptr<Font> GetFont() const { return m_font; }
 		void SetFont(const std::shared_ptr<Font>& font);
 
@@ -80,6 +83,7 @@ namespace Loopie
 		float m_fontSize = 24.0f;
 		TextHorizontalAlignment m_horizontalAlignment = TextHorizontalAlignment::Left;
 		TextVerticalAlignment m_verticalAlignment = TextVerticalAlignment::Top;
+		bool m_justified = false;
 
 		std::shared_ptr<Font> m_font;
 	};

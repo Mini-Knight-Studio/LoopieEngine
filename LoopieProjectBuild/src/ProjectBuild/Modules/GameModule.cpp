@@ -137,8 +137,8 @@ namespace Loopie
 			const vec2 pixelPos((p.x + bmin.x * ws.x) * job.OverlayScale.x, (p.y + bmin.y * ws.y) * job.OverlayScale.y);
 			const vec2 pixelSize(s.x * ws.x * job.OverlayScale.x, s.y * ws.y * job.OverlayScale.y);
 
-			UIRenderer::DrawTextContainer(pixelPos, pixelSize, text->GetText(), text->GetFont(), text->GetColor(), text->GetScale(),
-				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment());
+			UIRenderer::DrawTextContainer(pixelPos, pixelSize, text->GetText(), text->GetFont(), text->GetColor(), text->GetScale() * job.OverlayScale.x,
+				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetJustified());
 			break;
 		}
 		}
@@ -233,7 +233,7 @@ namespace Loopie
 			const matrix4 model = rt->GetLocalToWorldMatrix() * glm::translate(matrix4(1.0f), vec3(bmin.x, bmin.y, 0.0f));
 
 			UIRenderer::DrawTextWorld(model, vec2(w, h), text->GetText(), text->GetFont(), text->GetColor(), text->GetScale(),
-				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment());
+				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetJustified());
 			break;
 		}
 		}
@@ -579,59 +579,6 @@ namespace Loopie
 	}
 
 
-	void GameModule::RenderUIRecursive(const std::shared_ptr<Entity>& entity, vec2& scale)
-	{
-		if (!entity || !entity->GetIsActive())
-			return;
-
-		Image* img = entity->GetComponent<Image>();
-		Text* text = entity->GetComponent<Text>();
-		RectTransform* rt = entity->GetComponent<RectTransform>();
-
-		if (img && img->GetIsActive() && rt)
-		{
-			const vec3 p = rt->GetWorldPosition();
-			const vec3 ws3 = rt->GetWorldScale();
-			const vec2 ws(ws3.x, ws3.y);
-			const vec3 bmin = rt->GetLocalBoundsMin();
-			const vec3 bmax = rt->GetLocalBoundsMax();
-			const vec2 s(bmax.x - bmin.x, bmax.y - bmin.y);
-
-			const vec2 pixelSize(s.x * ws.x * scale.x, s.y * ws.y * scale.y);
-			const vec2 pixelPos((p.x + bmin.x * ws.x) * scale.x, (p.y + bmin.y * ws.y) * scale.y);
-
-			vec4 color = img->GetTint();
-			std::shared_ptr<Texture> texture = img->GetTexture();
-
-			if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
-			{
-				button->GetCurrentColor(color);
-				button->GetCurrentTexture(texture);
-			}
-
-			UIRenderer::DrawImage(pixelPos, pixelSize, texture, color, img->GetUVRect());
-		}
-
-		if (text && text->GetIsActive() && rt)
-		{
-			const vec3 p = rt->GetWorldPosition();
-			const vec3 ws3 = rt->GetWorldScale();
-			const vec2 ws(ws3.x, ws3.y);
-			const vec3 bmin = rt->GetLocalBoundsMin();
-			const vec3 bmax = rt->GetLocalBoundsMax();
-			const vec2 s(bmax.x - bmin.x, bmax.y - bmin.y);
-
-			const vec2 pixelPos((p.x + bmin.x * ws.x) * scale.x, (p.y + bmin.y * ws.y) * scale.y);
-			const vec2 pixelSize(s.x * ws.x * scale.x, s.y * ws.y * scale.y);
-
-			UIRenderer::DrawTextContainer(pixelPos, pixelSize, text->GetText(), text->GetFont(), text->GetColor(), text->GetScale() * job.OverlayScale.x,
-				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment());
-		}
-
-		for (const auto& child : entity->GetChildren())
-			RenderUIRecursive(child, scale);
-	}
-
 	void GameModule::RenderUI()
 	{
 		ivec2 size = Application::GetInstance().GetWindow().GetSize();
@@ -756,7 +703,7 @@ namespace Loopie
 			const matrix4 model = rt->GetLocalToWorldMatrix() * glm::translate(matrix4(1.0f), vec3(bmin.x, bmin.y, 0.0f));
 
 			UIRenderer::DrawTextWorld(model, vec2(w, h), text->GetText(), text->GetFont(), text->GetColor(), text->GetScale(),
-				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment());
+				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetJustified());
 		}
 
 		for (const auto& child : entity->GetChildren())

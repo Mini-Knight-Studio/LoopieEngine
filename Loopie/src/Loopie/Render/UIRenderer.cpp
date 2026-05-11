@@ -11,6 +11,9 @@
 
 #include "glad/glad.h"
 
+#include <algorithm>
+#include <vector>
+
 namespace Loopie
 {
 	bool UIRenderer::s_initialized = false;
@@ -188,7 +191,7 @@ namespace Loopie
 	}
 
 	void UIRenderer::DrawTextContainer(const vec2& posPixels, const vec2& sizePixels, const std::string& text, const std::shared_ptr<Font>& font, const vec4& color, float scale,
-							  TextSizeMode sizeMode, float fontSize, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign)
+						  TextSizeMode sizeMode, float fontSize, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign, bool justified)
 	{
 		EnsureInit();
 
@@ -213,12 +216,33 @@ namespace Loopie
 			fontScale = (px / denom) * baseScale;
 		}
 
+		std::vector<float> lineWidths;
+		std::vector<int> lineSpaceCounts;
+		lineWidths.reserve(8);
+		lineSpaceCounts.reserve(8);
+
+		float lastNonSpaceX = 0.0f;
+		int pendingSpaces = 0;
+		int expandableSpaces = 0;
+		bool hadNonSpace = false;
+
+		auto pushLine = [&]()
+		{
+			lineWidths.push_back(lastNonSpaceX);
+			lineSpaceCounts.push_back(expandableSpaces);
+			lastNonSpaceX = 0.0f;
+			pendingSpaces = 0;
+			expandableSpaces = 0;
+			hadNonSpace = false;
+		};
+
 		for (size_t i = 0; i < text.size(); i++)
 		{
 			const unsigned char ch = (unsigned char)text[i];
 
 			if (ch == '\n')
 			{
+				pushLine();
 				x = 0.0f;
 				y -= (float)font->GetLineHeight() * fontScale;
 				continue;
@@ -238,8 +262,27 @@ namespace Loopie
 			maxX = std::max(maxX, xpos + w);
 			maxY = std::max(maxY, ypos + h);
 
-			x += ((float)g->advance / 64.0f) * fontScale;
+			const float adv = ((float)g->advance / 64.0f) * fontScale;
+			if (ch == ' ')
+			{
+				if (hadNonSpace)
+					pendingSpaces++;
+				x += adv;
+			}
+			else
+			{
+				if (hadNonSpace && pendingSpaces > 0)
+				{
+					expandableSpaces += pendingSpaces;
+					pendingSpaces = 0;
+				}
+
+				hadNonSpace = true;
+				x += adv;
+				lastNonSpaceX = x;
+			}
 		}
+		pushLine();
 
 		const float textW = std::max(1.0f, maxX - minX);
 		const float textH = std::max(1.0f, maxY - minY);
@@ -264,17 +307,41 @@ namespace Loopie
 		const float contentW = textW * fitScale;
 		const float contentH = textH * fitScale;
 
-		const float ax = AlignFactor(hAlign);
+		const float ax = justified ? 0.0f : AlignFactor(hAlign);
 		const float ay = AlignFactor(vAlign);
 
 		const float alignOffsetX = ax * (sizePixels.x - contentW);
 		const float alignOffsetY = ay * (sizePixels.y - contentH);
 
-		const float ox = (- minX * fitScale) + alignOffsetX;
-		const float oy = (- minY * fitScale) + alignOffsetY;
+		const float ox = (-minX * fitScale) + alignOffsetX;
+		const float oy = (-minY * fitScale) + alignOffsetY;
 
 		x = 0.0f;
 		y = 0.0f;
+
+		size_t lineIndex = 0;
+		float extraAccum = 0.0f;
+		pendingSpaces = 0;
+		hadNonSpace = false;
+
+		auto computeExtraPerSpace = [&](size_t idx) -> float
+		{
+			if (!justified)
+				return 0.0f;
+			if (idx + 1 >= lineWidths.size() && lineWidths.size() > 1)
+				return 0.0f;
+			const int spaces = (idx < lineSpaceCounts.size()) ? lineSpaceCounts[idx] : 0;
+			if (spaces <= 0)
+				return 0.0f;
+			const float safeFit = std::max(0.0001f, fitScale);
+			const float targetLineW = sizePixels.x / safeFit;
+			const float delta = targetLineW - lineWidths[idx];
+			if (delta <= 0.01f)
+				return 0.0f;
+			return delta / (float)spaces;
+		};
+
+		float extraPerSpace = computeExtraPerSpace(lineIndex);
 
 		for (size_t i = 0; i < text.size(); i++)
 		{
@@ -284,6 +351,12 @@ namespace Loopie
 			{
 				x = 0.0f;
 				y -= (float)font->GetLineHeight() * fontScale;
+
+				lineIndex++;
+				extraAccum = 0.0f;
+				pendingSpaces = 0;
+				hadNonSpace = false;
+				extraPerSpace = computeExtraPerSpace(lineIndex);
 				continue;
 			}
 
@@ -291,7 +364,23 @@ namespace Loopie
 			if (!g)
 				continue;
 
-			const float xpos = posPixels.x + (x + (float)g->bearing.x * fontScale) * fitScale + ox;
+			const bool isSpace = (ch == ' ');
+			if (!isSpace)
+			{
+				if (extraPerSpace > 0.0f && hadNonSpace && pendingSpaces > 0)
+				{
+					extraAccum += extraPerSpace * (float)pendingSpaces;
+					pendingSpaces = 0;
+				}
+				hadNonSpace = true;
+			}
+			else
+			{
+				if (extraPerSpace > 0.0f && hadNonSpace)
+					pendingSpaces++;
+			}
+
+			const float xpos = posPixels.x + ((x + (float)g->bearing.x * fontScale) + extraAccum) * fitScale + ox;
 			const float ypos = posPixels.y + (y - ((float)g->size.y - (float)g->bearing.y) * fontScale) * fitScale + oy;
 
 			const float w = (float)g->size.x * fontScale * fitScale;
@@ -319,7 +408,7 @@ namespace Loopie
 	}
 
 	void UIRenderer::DrawTextWorld(const matrix4& modelMatrix, const vec2& sizePixels, const std::string& text, const std::shared_ptr<Font>& font, const vec4& color, float scale,
-								   TextSizeMode sizeMode, float fontSize, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign)
+							   TextSizeMode sizeMode, float fontSize, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign, bool justified)
 	{
 		EnsureInit();
 
@@ -344,12 +433,33 @@ namespace Loopie
 			fontScale = (px / denom) * baseScale;
 		}
 
+		std::vector<float> lineWidths;
+		std::vector<int> lineSpaceCounts;
+		lineWidths.reserve(8);
+		lineSpaceCounts.reserve(8);
+
+		float lastNonSpaceX = 0.0f;
+		int pendingSpaces = 0;
+		int expandableSpaces = 0;
+		bool hadNonSpace = false;
+
+		auto pushLine = [&]()
+		{
+			lineWidths.push_back(lastNonSpaceX);
+			lineSpaceCounts.push_back(expandableSpaces);
+			lastNonSpaceX = 0.0f;
+			pendingSpaces = 0;
+			expandableSpaces = 0;
+			hadNonSpace = false;
+		};
+
 		for (size_t i = 0; i < text.size(); i++)
 		{
 			const unsigned char ch = (unsigned char)text[i];
 
 			if (ch == '\n')
 			{
+				pushLine();
 				x = 0.0f;
 				y -= (float)font->GetLineHeight() * fontScale;
 				continue;
@@ -369,8 +479,27 @@ namespace Loopie
 			maxX = std::max(maxX, xpos + w);
 			maxY = std::max(maxY, ypos + h);
 
-			x += ((float)g->advance / 64.0f) * fontScale;
+			const float adv = ((float)g->advance / 64.0f) * fontScale;
+			if (ch == ' ')
+			{
+				if (hadNonSpace)
+					pendingSpaces++;
+				x += adv;
+			}
+			else
+			{
+				if (hadNonSpace && pendingSpaces > 0)
+				{
+					expandableSpaces += pendingSpaces;
+					pendingSpaces = 0;
+				}
+
+				hadNonSpace = true;
+				x += adv;
+				lastNonSpaceX = x;
+			}
 		}
+		pushLine();
 
 		const float textW = std::max(1.0f, maxX - minX);
 		const float textH = std::max(1.0f, maxY - minY);
@@ -395,7 +524,7 @@ namespace Loopie
 		const float contentW = textW * fitScale;
 		const float contentH = textH * fitScale;
 
-		const float ax = AlignFactor(hAlign);
+		const float ax = justified ? 0.0f : AlignFactor(hAlign);
 		const float ay = AlignFactor(vAlign);
 
 		const float alignOffsetX = ax * (sizePixels.x - contentW);
@@ -407,6 +536,30 @@ namespace Loopie
 		x = 0.0f;
 		y = 0.0f;
 
+		size_t lineIndex = 0;
+		float extraAccum = 0.0f;
+		pendingSpaces = 0;
+		hadNonSpace = false;
+
+		auto computeExtraPerSpace = [&](size_t idx) -> float
+		{
+			if (!justified)
+				return 0.0f;
+			if (idx + 1 >= lineWidths.size() && lineWidths.size() > 1)
+				return 0.0f;
+			const int spaces = (idx < lineSpaceCounts.size()) ? lineSpaceCounts[idx] : 0;
+			if (spaces <= 0)
+				return 0.0f;
+			const float safeFit = std::max(0.0001f, fitScale);
+			const float targetLineW = sizePixels.x / safeFit;
+			const float delta = targetLineW - lineWidths[idx];
+			if (delta <= 0.01f)
+				return 0.0f;
+			return delta / (float)spaces;
+		};
+
+		float extraPerSpace = computeExtraPerSpace(lineIndex);
+
 		for (size_t i = 0; i < text.size(); i++)
 		{
 			const unsigned char ch = (unsigned char)text[i];
@@ -415,6 +568,12 @@ namespace Loopie
 			{
 				x = 0.0f;
 				y -= (float)font->GetLineHeight() * fontScale;
+
+				lineIndex++;
+				extraAccum = 0.0f;
+				pendingSpaces = 0;
+				hadNonSpace = false;
+				extraPerSpace = computeExtraPerSpace(lineIndex);
 				continue;
 			}
 
@@ -422,7 +581,23 @@ namespace Loopie
 			if (!g)
 				continue;
 
-			const float xpos = (x + (float)g->bearing.x * fontScale) * fitScale + ox;
+			const bool isSpace = (ch == ' ');
+			if (!isSpace)
+			{
+				if (extraPerSpace > 0.0f && hadNonSpace && pendingSpaces > 0)
+				{
+					extraAccum += extraPerSpace * (float)pendingSpaces;
+					pendingSpaces = 0;
+				}
+				hadNonSpace = true;
+			}
+			else
+			{
+				if (extraPerSpace > 0.0f && hadNonSpace)
+					pendingSpaces++;
+			}
+
+			const float xpos = ((x + (float)g->bearing.x * fontScale) + extraAccum) * fitScale + ox;
 			const float ypos = (y - ((float)g->size.y - (float)g->bearing.y) * fontScale) * fitScale + oy;
 
 			const float w = (float)g->size.x * fontScale * fitScale;

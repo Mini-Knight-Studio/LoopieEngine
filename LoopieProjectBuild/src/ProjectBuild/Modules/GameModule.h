@@ -73,7 +73,6 @@ namespace Loopie {
 
 		void SeparateDynamicEntities(const std::unordered_set<Entity*>& entities, std::unordered_set<Entity*>& dynamicEntities);
 
-		void RenderUIRecursive(const std::shared_ptr<Entity>& entity, vec2& scale);
 		void RenderUI();
 		void RenderSceneUIRecursive(const std::shared_ptr<Entity>& entity);
 		void RenderSceneUI(Camera* camera);
