@@ -2,6 +2,7 @@
 
 #include "Loopie/Core/Application.h"
 #include "Loopie/Core/Log.h"
+#include "Loopie/Core/Time.h"
 #include "Loopie/Components/Image.h"
 #include "Loopie/Components/RectTransform.h"
 #include "Loopie/Components/ScriptClass.h"
@@ -13,6 +14,7 @@
 #include <mono/metadata/class.h>
 #include <mono/metadata/object.h>
 
+#include <algorithm>
 #include <unordered_set>
 
 namespace Loopie
@@ -29,7 +31,41 @@ namespace Loopie
 
 	void Button::Submit()
 	{
-		TriggerClick();
+		if (!ScriptingManager::IsRunning())
+			return;
+		if (!m_interactable)
+			return;
+
+		if (m_submitPressDuration > 0.0f)
+		{
+			SetPressed(true);
+			m_submitPressTimer = m_submitPressDuration;
+		}
+
+		InvokeOnClick();
+	}
+
+	void Button::SetSubmitPressDuration(float seconds)
+	{
+		m_submitPressDuration = std::max(0.0f, seconds);
+		if (m_submitPressTimer > m_submitPressDuration)
+			m_submitPressTimer = m_submitPressDuration;
+	}
+
+	void Button::OnUpdate()
+	{
+		if (!ScriptingManager::IsRunning())
+			return;
+
+		if (m_submitPressTimer <= 0.0f)
+			return;
+
+		m_submitPressTimer -= (float)Time::GetDeltaTime();
+		if (m_submitPressTimer <= 0.0f)
+		{
+			m_submitPressTimer = 0.0f;
+			SetPressed(false);
+		}
 	}
 
 	void Button::Init()
@@ -111,6 +147,7 @@ namespace Loopie
 
 		if (!m_interactable)
 		{
+			m_submitPressTimer = 0.0f;
 			m_isHovered = false;
 			m_isPressed = false;
 			ApplyState(VisualState::Disabled);
@@ -449,6 +486,7 @@ namespace Loopie
 
 		node.CreateField<bool>("interactable", m_interactable);
 		node.CreateField<int>("transition_mode", static_cast<int>(m_transitionMode));
+		node.CreateField<float>("submit_press_duration", m_submitPressDuration);
 
 		auto writeColor = [&](const char* name, const vec4& c)
 		{
@@ -512,6 +550,7 @@ namespace Loopie
 		DeserializeNavigation(data);
 		m_interactable = data.GetValue<bool>("interactable", true).Result;
 		m_transitionMode = static_cast<VisualTransitionMode>(data.GetValue<int>("transition_mode", 0).Result);
+		m_submitPressDuration = std::max(0.0f, data.GetValue<float>("submit_press_duration", m_submitPressDuration).Result);
 		m_visualPropagationMode = static_cast<VisualPropagationMode>(data.GetValue<int>("visual_propagation_mode", 0).Result);
 
 		auto readColor = [&](const char* name, vec4& out)
@@ -622,6 +661,7 @@ namespace Loopie
 		CloneNavigation(otherButton);
 		m_interactable = otherButton.m_interactable;
 		m_transitionMode = otherButton.m_transitionMode;
+		m_submitPressDuration = otherButton.m_submitPressDuration;
 		m_normalColor = otherButton.m_normalColor;
 		m_hoveredColor = otherButton.m_hoveredColor;
 		m_pressedColor = otherButton.m_pressedColor;

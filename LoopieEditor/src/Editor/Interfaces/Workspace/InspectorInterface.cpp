@@ -2196,6 +2196,10 @@ namespace Loopie {
 			if (ImGui::Checkbox("Interactable", &interactable))
 				button->SetInteractable(interactable);
 
+			float submitPress = button->GetSubmitPressDuration();
+			if (ImGui::DragFloat("Submit Press Duration (s)", &submitPress, 0.01f, 0.0f, 2.0f, "%.2f"))
+				button->SetSubmitPressDuration(submitPress);
+
 			ImGui::SeparatorText("Transition");
 
 			Button::VisualTransitionMode mode = button->GetTransitionMode();

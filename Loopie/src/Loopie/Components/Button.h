@@ -55,7 +55,7 @@ namespace Loopie
 		~Button() override = default;
 
 		void Init() override;
-		void OnUpdate() override {}
+		void OnUpdate() override;
 
 		bool CanFocus() const override;
 		void Submit() override;
@@ -69,6 +69,9 @@ namespace Loopie
 
 		bool IsHovered() const { return m_isHovered; }
 		bool IsPressed() const { return m_isPressed; }
+
+		float GetSubmitPressDuration() const { return m_submitPressDuration; }
+		void SetSubmitPressDuration(float seconds);
 
 		void SetHovered(bool hovered);
 		void SetPressed(bool pressed);
@@ -148,5 +151,7 @@ namespace Loopie
 		VisualTransitionMode m_transitionMode = VisualTransitionMode::ColorTint;
 		VisualPropagationMode m_visualPropagationMode = VisualPropagationMode::None;
 		std::vector<UUID> m_visualPropagationTargets;
+		float m_submitPressTimer = 0.0f;
+		float m_submitPressDuration = 0.10f;
 	};
 }
