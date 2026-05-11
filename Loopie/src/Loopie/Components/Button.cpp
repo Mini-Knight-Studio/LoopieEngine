@@ -5,12 +5,15 @@
 #include "Loopie/Components/Image.h"
 #include "Loopie/Components/RectTransform.h"
 #include "Loopie/Components/ScriptClass.h"
+#include "Loopie/Components/Text.h"
 #include "Loopie/Resources/ResourceManager.h"
 #include "Loopie/Scene/Scene.h"
 #include "Loopie/Scripting/ScriptingManager.h"
 
 #include <mono/metadata/class.h>
 #include <mono/metadata/object.h>
+
+#include <unordered_set>
 
 namespace Loopie
 {
@@ -39,7 +42,7 @@ namespace Loopie
 		if (!GetOwner()->HasComponent<RectTransform>())
 			GetOwner()->ReplaceTransform<RectTransform>();
 
-		ApplyState(m_interactable ? VisualState::Normal : VisualState::Disabled);
+		ApplyState(m_interactable ? VisualState::Normal : VisualState::Disabled, true);
 	}
 
 	void Button::SetTransitionMode(VisualTransitionMode mode)
@@ -48,31 +51,58 @@ namespace Loopie
 			return;
 
 		m_transitionMode = mode;
-		ApplyState(m_currentState);
+		ApplyState(m_currentState, true);
 	}
 
 	void Button::SetNormalTexture(const std::shared_ptr<Texture>& texture)
 	{
 		m_normalTexture = texture;
-		ApplyState(m_currentState);
+		ApplyState(m_currentState, true);
 	}
 
 	void Button::SetHoveredTexture(const std::shared_ptr<Texture>& texture)
 	{
 		m_hoveredTexture = texture;
-		ApplyState(m_currentState);
+		ApplyState(m_currentState, true);
 	}
 
 	void Button::SetPressedTexture(const std::shared_ptr<Texture>& texture)
 	{
 		m_pressedTexture = texture;
-		ApplyState(m_currentState);
+		ApplyState(m_currentState, true);
 	}
 
 	void Button::SetDisabledTexture(const std::shared_ptr<Texture>& texture)
 	{
 		m_disabledTexture = texture;
-		ApplyState(m_currentState);
+		ApplyState(m_currentState, true);
+	}
+
+	void Button::SetVisualPropagationMode(VisualPropagationMode mode)
+	{
+		if (m_visualPropagationMode == mode)
+			return;
+
+		m_visualPropagationMode = mode;
+		ApplyState(m_currentState, true);
+	}
+
+	void Button::SetVisualPropagationTargets(const std::vector<UUID>& targets)
+	{
+		m_visualPropagationTargets.clear();
+		m_visualPropagationTargets.reserve(targets.size());
+		std::unordered_set<UUID> seen;
+		seen.reserve(targets.size());
+		for (const UUID& id : targets)
+		{
+			if (id == UUID::Invalid)
+				continue;
+			if (seen.find(id) != seen.end())
+				continue;
+			seen.insert(id);
+			m_visualPropagationTargets.push_back(id);
+		}
+		ApplyState(m_currentState, true);
 	}
 
 	void Button::SetInteractable(bool v)
@@ -164,26 +194,98 @@ namespace Loopie
 		m_onClickFunctionCalls[functionCall.EntityUUID].push_back(functionCall);
 	}
 
-	void Button::ApplyState(VisualState state)
+	void Button::ApplyState(VisualState state, bool force)
 	{
-		if (m_currentState == state)
+		if (!force && m_currentState == state)
 			return;
 
 		m_currentState = state;
 
-		Image* img = GetOwner() ? GetOwner()->GetComponent<Image>() : nullptr;
-		if (!img || !img->GetIsActive())
+		// Apply to this button's own visuals (if it has an Image)
+		if (auto owner = GetOwner())
+		{
+			Image* img = owner->GetComponent<Image>();
+			if (img && img->GetIsActive())
+			{
+				switch (m_transitionMode)
+				{
+					case VisualTransitionMode::ColorTint:
+						ApplyStateTint(*img, state);
+						break;
+
+					case VisualTransitionMode::TextureSwap:
+						ApplyStateTexture(*img, state);
+						break;
+				}
+			}
+		}
+
+		// Apply to propagation targets
+		ApplyVisualStateToPropagationTargets(state);
+	}
+
+	void Button::ApplyVisualStateToEntity(const std::shared_ptr<Entity>& entity, VisualState state) const
+	{
+		if (!entity)
+			return;
+		if (!entity->GetIsActiveInHierarchy())
 			return;
 
-		switch (m_transitionMode)
+		if (Image* img = entity->GetComponent<Image>())
 		{
-			case VisualTransitionMode::ColorTint:
-				ApplyStateTint(*img, state);
-				break;
+			if (img->GetIsActive())
+			{
+				switch (m_transitionMode)
+				{
+					case VisualTransitionMode::ColorTint:
+						ApplyStateTint(*img, state);
+						break;
+					case VisualTransitionMode::TextureSwap:
+						ApplyStateTexture(*img, state);
+						break;
+				}
+			}
+		}
 
-			case VisualTransitionMode::TextureSwap:
-				ApplyStateTexture(*img, state);
-				break;
+		if (Text* text = entity->GetComponent<Text>())
+		{
+			if (text->GetIsActive())
+				ApplyStateColor(*text, state);
+		}
+	}
+
+	void Button::ApplyVisualStateToPropagationTargets(VisualState state) const
+	{
+		if (m_visualPropagationMode == VisualPropagationMode::None)
+			return;
+
+		Scene& scene = Application::GetInstance().GetScene();
+		const auto owner = GetOwner();
+		const UUID ownerUUID = owner ? owner->GetUUID() : UUID::Invalid;
+
+		if (m_visualPropagationMode == VisualPropagationMode::Children)
+		{
+			if (!owner)
+				return;
+
+			std::vector<std::shared_ptr<Entity>> children;
+			owner->GetRecursiveChildren(children);
+			for (const auto& child : children)
+				ApplyVisualStateToEntity(child, state);
+			return;
+		}
+
+		if (m_visualPropagationMode == VisualPropagationMode::Targets)
+		{
+			for (const UUID& targetUUID : m_visualPropagationTargets)
+			{
+				if (targetUUID == UUID::Invalid)
+					continue;
+				if (targetUUID == ownerUUID)
+					continue;
+
+				ApplyVisualStateToEntity(scene.GetEntity(targetUUID), state);
+			}
 		}
 	}
 
@@ -238,6 +340,17 @@ namespace Loopie
 
 		if (tex)
 			image.SetTexture(tex);
+	}
+
+	void Button::ApplyStateColor(Text& text, VisualState state) const
+	{
+		switch (state)
+		{
+			case VisualState::Normal: text.SetColor(m_normalColor); break;
+			case VisualState::Hovered: text.SetColor(m_hoveredColor); break;
+			case VisualState::Pressed: text.SetColor(m_pressedColor); break;
+			case VisualState::Disabled: text.SetColor(m_disabledColor); break;
+		}
 	}
 
 	void Button::InvokeOnClick()
@@ -362,6 +475,15 @@ namespace Loopie
 		writeTexture("pressed_texture", m_pressedTexture);
 		writeTexture("disabled_texture", m_disabledTexture);
 
+		node.CreateField<int>("visual_propagation_mode", static_cast<int>(m_visualPropagationMode));
+		JsonNode propagationTargets = node.CreateArrayField("visual_propagation_targets");
+		for (const UUID& target : m_visualPropagationTargets)
+		{
+			if (target == UUID::Invalid)
+				continue;
+			propagationTargets.AddArrayElement<std::string>(target.Get());
+		}
+
 		JsonNode onClickBindings = node.CreateObjectField("on_click_bindings");
 		for (const auto& [entityUUID, functionCalls] : m_onClickFunctionCalls)
 		{
@@ -390,6 +512,7 @@ namespace Loopie
 		DeserializeNavigation(data);
 		m_interactable = data.GetValue<bool>("interactable", true).Result;
 		m_transitionMode = static_cast<VisualTransitionMode>(data.GetValue<int>("transition_mode", 0).Result);
+		m_visualPropagationMode = static_cast<VisualPropagationMode>(data.GetValue<int>("visual_propagation_mode", 0).Result);
 
 		auto readColor = [&](const char* name, vec4& out)
 		{
@@ -434,6 +557,21 @@ namespace Loopie
 		readTexture("pressed_texture", m_pressedTexture);
 		readTexture("disabled_texture", m_disabledTexture);
 
+		m_visualPropagationTargets.clear();
+		JsonNode propagationTargets = data.Child("visual_propagation_targets");
+		if (propagationTargets.IsValid() && propagationTargets.IsArray())
+		{
+			const unsigned int n = propagationTargets.Size();
+			m_visualPropagationTargets.reserve(n);
+			for (unsigned int i = 0; i < n; ++i)
+			{
+				JsonResult<std::string> uuidStr = propagationTargets.GetArrayElement<std::string>(i);
+				if (!uuidStr.Found || !UUID::IsValid(uuidStr.Result))
+					continue;
+				m_visualPropagationTargets.emplace_back(UUID(uuidStr.Result));
+			}
+		}
+
 		m_onClickFunctionCalls.clear();
 
 		JsonNode onClickBindings = data.Child("on_click_bindings");
@@ -474,7 +612,7 @@ namespace Loopie
 			}
 		}
 
-		ApplyState(m_interactable ? VisualState::Normal : VisualState::Disabled);
+		ApplyState(m_interactable ? VisualState::Normal : VisualState::Disabled, true);
 	}
 
 	void Button::Clone(const std::shared_ptr<Entity> entity, const Component& other)
@@ -493,7 +631,9 @@ namespace Loopie
 		m_pressedTexture = otherButton.m_pressedTexture;
 		m_disabledTexture = otherButton.m_disabledTexture;
 		m_onClickFunctionCalls = otherButton.m_onClickFunctionCalls;
-		ApplyState(m_interactable ? VisualState::Normal : VisualState::Disabled);
+		m_visualPropagationMode = otherButton.m_visualPropagationMode;
+		m_visualPropagationTargets = otherButton.m_visualPropagationTargets;
+		ApplyState(m_interactable ? VisualState::Normal : VisualState::Disabled, true);
 	}
 
 	bool Button::IsFunctionCallConfigured(const FunctionCall& functionCall)

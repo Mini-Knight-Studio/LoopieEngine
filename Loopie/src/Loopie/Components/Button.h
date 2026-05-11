@@ -32,6 +32,13 @@ namespace Loopie
 			TextureSwap,
 		};
 
+		enum class VisualPropagationMode
+		{
+			None = 0,
+			Children = 1,
+			Targets = 2,
+		};
+
 		enum class VisualState
 		{
 			Normal,
@@ -98,18 +105,27 @@ namespace Loopie
 		void SetOnClickFunctionCalls(const std::vector<FunctionCall>& functionCalls);
 		void AddOnClickFunctionCall(const FunctionCall& functionCall);
 
+		VisualPropagationMode GetVisualPropagationMode() const { return m_visualPropagationMode; }
+		void SetVisualPropagationMode(VisualPropagationMode mode);
+
+		const std::vector<UUID>& GetVisualPropagationTargets() const { return m_visualPropagationTargets; }
+		void SetVisualPropagationTargets(const std::vector<UUID>& targets);
+
 	private:
 
 		static bool IsFunctionCallConfigured(const FunctionCall& functionCall);
 		static bool TryResolveTarget(const FunctionCall& functionCall, std::shared_ptr<Entity>& entity, ScriptClass*& scriptComponent);
 
-		void ApplyState(VisualState state);
+		void ApplyState(VisualState state, bool force = false);
+		void ApplyVisualStateToEntity(const std::shared_ptr<Entity>& entity, VisualState state) const;
+		void ApplyVisualStateToPropagationTargets(VisualState state) const;
 		void OnFocused() override;
 		void OnBlurred() override;
 		void InvokeOnClick();
 
 		void ApplyStateTint(class Image& image, VisualState state) const;
 		void ApplyStateTexture(class Image& image, VisualState state) const;
+		void ApplyStateColor(class Text& text, VisualState state) const;
 
 	private:
 		bool m_interactable = true;
@@ -130,5 +146,7 @@ namespace Loopie
 		bool m_isPressed = false;
 		VisualState m_currentState = VisualState::Normal;
 		VisualTransitionMode m_transitionMode = VisualTransitionMode::ColorTint;
+		VisualPropagationMode m_visualPropagationMode = VisualPropagationMode::None;
+		std::vector<UUID> m_visualPropagationTargets;
 	};
 }

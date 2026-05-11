@@ -2242,9 +2242,72 @@ namespace Loopie {
 				}
 			}
 
-			ImGui::SeparatorText("");
-
 			Scene& scene = Application::GetInstance().GetScene();
+
+			ImGui::SeparatorText("Visual Propagation");
+			Button::VisualPropagationMode propagationMode = button->GetVisualPropagationMode();
+			int propagationModeIndex = static_cast<int>(propagationMode);
+			const char* propagationLabels[] = { "None", "Children", "Targets" };
+			if (ImGui::Combo("Propagate", &propagationModeIndex, propagationLabels, IM_ARRAYSIZE(propagationLabels)))
+				button->SetVisualPropagationMode(static_cast<Button::VisualPropagationMode>(propagationModeIndex));
+
+			if (button->GetVisualPropagationMode() == Button::VisualPropagationMode::Targets)
+			{
+				std::vector<UUID> targets = button->GetVisualPropagationTargets();
+				bool targetsModified = false;
+
+				if (ImGui::TreeNode("Targets"))
+				{
+					if (targets.empty())
+						ImGui::TextDisabled("No targets configured.");
+
+					for (size_t i = 0; i < targets.size();)
+					{
+						ImGui::PushID(static_cast<int>(i));
+
+						std::shared_ptr<Entity> selectedEntity = scene.GetEntity(targets[i]);
+						const std::string entityPreview = selectedEntity ? selectedEntity->GetName() : "Missing Entity";
+
+						const float removeButtonWidth = 26.0f;
+						const float available = ImGui::GetContentRegionAvail().x;
+						ImGui::Button(entityPreview.c_str(), ImVec2(std::max(1.0f, available - removeButtonWidth - 6.0f), 20));
+						if (selectedEntity && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && ImGui::IsItemHovered())
+							HierarchyInterface::SelectEntity(selectedEntity);
+
+						if (std::shared_ptr<Entity> dropped = GetDragDropEntity())
+						{
+							targets[i] = dropped->GetUUID();
+							targetsModified = true;
+						}
+
+						ImGui::SameLine();
+						if (ImGui::Button("X"))
+						{
+							targets.erase(targets.begin() + i);
+							targetsModified = true;
+							ImGui::PopID();
+							continue;
+						}
+
+						ImGui::PopID();
+						++i;
+					}
+
+					ImGui::Button("Drop Entity Here", ImVec2(ImGui::GetContentRegionAvail().x, 20));
+					if (std::shared_ptr<Entity> dropped = GetDragDropEntity())
+					{
+						targets.push_back(dropped->GetUUID());
+						targetsModified = true;
+					}
+
+					ImGui::TreePop();
+				}
+
+				if (targetsModified)
+					button->SetVisualPropagationTargets(targets);
+			}
+
+			ImGui::SeparatorText("");
 			std::vector<FunctionCall> functionCalls = button->GetFlattenedOnClickFunctionCalls();
 			bool modified = false;
 
