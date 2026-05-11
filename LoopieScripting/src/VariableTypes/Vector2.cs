@@ -111,6 +111,18 @@ namespace Loopie
             );
         }
 
+        public static Vector2 MoveTowards(Vector2 current, Vector2 target, float maxDistanceDelta)
+        {
+            Vector2 delta = target - current;
+
+            float distance = (float)delta.magnitude;
+
+            if (distance <= maxDistanceDelta || distance < Mathf.Epsilon)
+                return target;
+
+            return current + delta / distance * maxDistanceDelta;
+        }
+
         public static float Angle(Vector2 a, Vector2 b)
         {
             float dot = Dot(a, b);
