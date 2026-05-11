@@ -145,7 +145,7 @@ namespace Loopie
 				const vec2 pixelPos((p.x + bmin.x * ws.x) * job.OverlayScale.x, (p.y + bmin.y * ws.y) * job.OverlayScale.y);
 				const vec2 pixelSize(s.x * ws.x * job.OverlayScale.x, s.y * ws.y * job.OverlayScale.y);
 
-				UIRenderer::DrawTextContainer(pixelPos, pixelSize, text->GetText(), text->GetFont(), text->GetColor(), text->GetScale(),
+				UIRenderer::DrawTextContainer(pixelPos, pixelSize, text->GetText(), text->GetFont(), text->GetColor(), text->GetScale() * job.OverlayScale.x,
 					text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment());
 				break;
 			}
