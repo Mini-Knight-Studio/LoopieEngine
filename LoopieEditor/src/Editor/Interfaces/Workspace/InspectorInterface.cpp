@@ -325,7 +325,7 @@ namespace Loopie {
 				DrawAudioListener(static_cast<AudioListener*>(component));
 			}
 			else if (component->GetTypeID() == Text::GetTypeIDStatic()) {
-				DrawText(static_cast<Text*>(component));
+				DrawTextContainer(static_cast<Text*>(component));
 			}
 			else if (component->GetTypeID() == Button::GetTypeIDStatic()) {
 				DrawButton(static_cast<Button*>(component));
@@ -2007,7 +2007,7 @@ namespace Loopie {
 		ImGui::PopID();
 	}
 
-	void InspectorInterface::DrawText(Text* text)
+	void InspectorInterface::DrawTextContainer(Text* text)
 	{
 		ImGui::PushID(text);
 

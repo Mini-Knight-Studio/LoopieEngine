@@ -65,7 +65,7 @@ namespace Loopie {
 		void DrawCanvas(Canvas* canvas);
 		void DrawCanvasScaler(CanvasScaler* canvasScaler);
 		void DrawImage(Image* image);
-		void DrawText(Text* text);
+		void DrawTextContainer(Text* text);
 		void DrawButton(Button* button);
 		void DrawUIManager(UIManager* uiManager);
 		void DrawNavigation(UIElement* element);

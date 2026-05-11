@@ -187,7 +187,7 @@ namespace Loopie
 		Renderer::FlushRenderItem(s_quadVAO, s_material, modelMatrix);
 	}
 
-	void UIRenderer::DrawText(const vec2& posPixels, const vec2& sizePixels, const std::string& text, const std::shared_ptr<Font>& font, const vec4& color, float scale,
+	void UIRenderer::DrawTextContainer(const vec2& posPixels, const vec2& sizePixels, const std::string& text, const std::shared_ptr<Font>& font, const vec4& color, float scale,
 							  TextSizeMode sizeMode, float fontSize, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign)
 	{
 		EnsureInit();
