@@ -329,7 +329,7 @@ namespace Loopie
 
 		if (Button* button = entity->GetComponent<Button>())
 		{
-			if (button != this && button->GetIsActive())
+			if (button != this)
 			{
 				button->ApplyExternalVisualState(state);
 				return;
