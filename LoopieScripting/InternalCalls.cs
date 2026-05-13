@@ -782,6 +782,8 @@ namespace Loopie
         #endregion
         #region MeshRenderer
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static string MeshRenderer_RaycastEntityPick(ref Vector3 origin, ref Vector3 direction, float maxDistance);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void MeshRenderer_GetInstancedMaterial(string entityID, string componentID, out string resourceID, out int index);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static int MeshRenderer_GetMaterialInt(string entityID, string componentID, string key);

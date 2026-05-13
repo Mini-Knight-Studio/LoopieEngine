@@ -921,6 +921,52 @@ namespace Loopie {
 		return true;
 	}
 
+	std::shared_ptr<Entity> Scene::PickEntityByRaycast(const Ray& raycast) const
+	{
+		float minDistance = std::numeric_limits<float>::max();
+		std::shared_ptr<Entity> selectedEntity;
+
+		std::vector<vec3> triVertexData;
+		triVertexData.reserve(3);
+		triVertexData.resize(3);
+		vec3 meshHitPoint;
+
+		std::unordered_set<Entity*> possibleEntities;
+		Application::GetInstance().GetScene().GetOctree().CollectIntersectingObjectsWithRay(raycast.StartPoint(), raycast.Direction(), possibleEntities);
+		for (const auto& entity : possibleEntities)
+		{
+			if (!entity->GetIsActive())
+				continue;
+			MeshRenderer* renderer = entity->GetComponent<MeshRenderer>();
+			if (!renderer || !renderer->GetLocalIsActive() || !renderer->GetMesh())
+				continue;
+			const AABB& aabb = renderer->GetWorldAABB();
+			if (!aabb.IntersectsRay(raycast.StartPoint(), raycast.EndPoint()))
+				continue;
+			const MeshData& meshData = renderer->GetMesh()->GetData();
+			Triangle triangle;
+
+			unsigned int  triangleCount = (unsigned int)meshData.Indices.size() / 3;
+
+			for (unsigned int i = 0; i < triangleCount; i++)
+			{
+				if (!renderer->GetTriangle(i, triangle)) continue;
+				triVertexData[0] = triangle.v0;
+				triVertexData[1] = triangle.v1;
+				triVertexData[2] = triangle.v2;
+				if (!raycast.Intersects(triVertexData, true, meshHitPoint))
+					continue;
+				float distance = glm::distance(raycast.StartPoint(), meshHitPoint);
+				if (distance < minDistance)
+				{
+					minDistance = distance;
+					selectedEntity = entity->shared_from_this();
+				}
+			}
+		}
+		return selectedEntity;
+	}
+
 	void Scene::OnNotify(const EngineNotification& id)
 	{
 		if (id == EngineNotification::OnRuntimeStart)

@@ -3,6 +3,7 @@
 #include "Loopie/Core/UUID.h"
 #include "Loopie/Scene/Entity.h"
 #include "Loopie/Math/MathTypes.h"
+#include "Loopie/Math/Ray.h"
 #include "Loopie/Math/Octree.h"
 
 #include "Loopie/Events/IObserver.h"
@@ -70,6 +71,8 @@ namespace Loopie {
 		bool RequestLoad(const UUID& uuid);
 		bool HasLoadRequest() { return m_loadRequest; }
 		const UUID& GetRequestedSceneID() { return m_requestedSceneToLoad; }
+
+		std::shared_ptr<Entity> PickEntityByRaycast(const Ray& raycast) const;
 	public:
 
 	private:

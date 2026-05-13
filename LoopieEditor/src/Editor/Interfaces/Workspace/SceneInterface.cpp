@@ -489,54 +489,14 @@ namespace Loopie {
 	void SceneInterface::MousePick(bool getParent)
 	{
 		Ray mouseRay = MouseRay();
-		float minDistance = std::numeric_limits<float>::max();
-		std::shared_ptr<Entity> selectedEntity;
+		
+		std::shared_ptr<Entity> selected = Application::GetInstance().GetScene().PickEntityByRaycast(mouseRay);
 
-		std::vector<vec3> triVertexData;
-		triVertexData.reserve(3);
-		triVertexData.resize(3);
-		vec3 meshHitPoint;
-
-		std::unordered_set<Entity*> possibleEntities;
-		Application::GetInstance().GetScene().GetOctree().CollectIntersectingObjectsWithRay(mouseRay.StartPoint(), mouseRay.Direction(), possibleEntities);
-		for (const auto& entity : possibleEntities)
-		{
-			if (!entity->GetIsActive())
-				continue;
-			MeshRenderer* renderer = entity->GetComponent<MeshRenderer>();
-			if (!renderer || !renderer->GetLocalIsActive() || !renderer->GetMesh())
-				continue;
-			const AABB& aabb = renderer->GetWorldAABB();
-			if(!aabb.IntersectsRay(mouseRay.StartPoint(), mouseRay.EndPoint()))
-				continue;
-			const MeshData& meshData = renderer->GetMesh()->GetData();
-			Triangle triangle;
-
-			unsigned int  triangleCount = (unsigned int)meshData.Indices.size() / 3;
-
-			for (unsigned int i = 0; i < triangleCount; i++)
-			{
-				if (!renderer->GetTriangle(i, triangle)) continue;
-				triVertexData[0] = triangle.v0;
-				triVertexData[1] = triangle.v1;
-				triVertexData[2] = triangle.v2;
-				if (!mouseRay.Intersects(triVertexData, true, meshHitPoint))
-					continue;
-				float distance = glm::distance(mouseRay.StartPoint(), meshHitPoint);
-				if (distance < minDistance)
-				{
-					minDistance = distance;
-					selectedEntity = entity->shared_from_this();
-				}
-			}
-		}
-		if (selectedEntity && getParent) {
-			std::shared_ptr<Entity> parent = selectedEntity->GetParent().lock();
+		if (selected && getParent) {
+			std::shared_ptr<Entity> parent = selected->GetParent().lock();
 			if(parent && parent != Application::GetInstance().GetScene().GetRootEntity())
-				selectedEntity = parent;
+				selected = parent;
 		}
-
-
-		HierarchyInterface::SelectEntity(selectedEntity);
+		HierarchyInterface::SelectEntity(selected);
 	}
 }
