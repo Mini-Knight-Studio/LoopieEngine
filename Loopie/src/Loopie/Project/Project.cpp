@@ -92,6 +92,7 @@ namespace Loopie {
 
 			  <ItemGroup>
 				<Compile Include="**\*.cs" />
+				<Compile Include="**\*.shader" />
 			  </ItemGroup>
 
 			  <ItemGroup>

@@ -209,7 +209,10 @@ namespace Loopie {
     void AudioSource::Stop() {
         m_hasStarted = false;
         if (m_isEvent && m_eventInstance) m_eventInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
-        else if (!m_isEvent && m_channel) m_channel->stop();
+        else if (!m_isEvent && m_channel) {
+            m_channel->stop();
+            m_channel = nullptr;
+        }
     }
 
     void AudioSource::SetLoop(bool active) {

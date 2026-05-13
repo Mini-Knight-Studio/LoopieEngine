@@ -70,5 +70,11 @@ namespace Loopie
             Vector4 colorRGBA = color.rgba;
             InternalCalls.MeshRenderer_SetMaterialVector4(entity.ID, ID, key, ref colorRGBA);
         }
+
+
+        public static Entity RaycastPickEntity(Vector3 origin, Vector3 direction, float maxDistance)
+        {
+            return new Entity(InternalCalls.MeshRenderer_RaycastEntityPick(ref origin, ref direction, maxDistance));
+        }
     }
 }

@@ -2961,6 +2961,20 @@ namespace Loopie
 
 #pragma MeshRenderer
 
+	static MonoString* MeshRenderer_RaycastEntityPick(vec3* origin, vec3* direction, float maxDistance) {
+		Ray ray(*origin, *direction, maxDistance);
+
+		
+		const Scene* scene = Utils::GetScene();
+		if (!scene)
+			return ScriptingManager::CreateString("");
+		std::shared_ptr<Entity> entity = scene->PickEntityByRaycast(ray);
+		if(!entity)
+			return ScriptingManager::CreateString("");
+
+		return ScriptingManager::CreateString(entity->GetUUID().Get().c_str());
+	}
+
 	static void MeshRenderer_GetInstancedMaterial(MonoString* entityID, MonoString* componentID, MonoString** resourceID, int* index) {
 
 		*index = 0;
@@ -3646,6 +3660,7 @@ namespace Loopie
 		ADD_INTERNAL_CALL(AudioMixer_SetBusVolume);
 		ADD_INTERNAL_CALL(AudioMixer_GetBusVolume);
 
+		ADD_INTERNAL_CALL(MeshRenderer_RaycastEntityPick);
 		ADD_INTERNAL_CALL(MeshRenderer_GetInstancedMaterial);
 		ADD_INTERNAL_CALL(MeshRenderer_GetMaterialInt);
 		ADD_INTERNAL_CALL(MeshRenderer_GetMaterialFloat);
