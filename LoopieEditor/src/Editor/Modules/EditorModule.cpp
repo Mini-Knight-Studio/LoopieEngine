@@ -145,7 +145,11 @@ namespace Loopie
 				const vec2 pixelPos((p.x + bmin.x * ws.x) * job.OverlayScale.x, (p.y + bmin.y * ws.y) * job.OverlayScale.y);
 				const vec2 pixelSize(s.x * ws.x * job.OverlayScale.x, s.y * ws.y * job.OverlayScale.y);
 
-				UIRenderer::DrawTextContainer(pixelPos, pixelSize, text->GetText(), text->GetFont(), text->GetColor(), text->GetScale() * job.OverlayScale.x,
+				vec4 textColor = text->GetColor();
+				if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
+					button->GetCurrentColor(textColor);
+
+				UIRenderer::DrawTextContainer(pixelPos, pixelSize, text->GetText(), text->GetFont(), textColor, text->GetScale() * job.OverlayScale.x,
 					text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetJustified());
 				break;
 			}
@@ -856,7 +860,11 @@ namespace Loopie
 			const vec2 pixelPos((p.x + bmin.x * ws.x) * scale.x, (p.y + bmin.y * ws.y) * scale.y);
 			const vec2 pixelSize(s.x * ws.x * scale.x, s.y * ws.y * scale.y);
 
-			UIRenderer::DrawTextContainer(pixelPos, pixelSize, text->GetText(), text->GetFont(), text->GetColor(), text->GetScale() * scale.x,
+			vec4 textColor = text->GetColor();
+			if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
+				button->GetCurrentColor(textColor);
+
+			UIRenderer::DrawTextContainer(pixelPos, pixelSize, text->GetText(), text->GetFont(), textColor, text->GetScale() * scale.x,
 				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetJustified());
 		}
 
@@ -1091,6 +1099,21 @@ namespace Loopie
 		const vec2 mouseLocalPx = m_game.GetMousePosGameLocal();
 		const vec2 targetPixels(static_cast<float>(gameSize.x), static_cast<float>(gameSize.y));
 
+		UIManager* uiManager = nullptr;
+		for (const auto& [uuid, e] : m_currentScene->GetAllEntities())
+		{
+			if (!e || !e->GetIsActive())
+				continue;
+			uiManager = e->GetComponent<UIManager>();
+			if (uiManager && uiManager->GetIsActive())
+				break;
+			uiManager = nullptr;
+		}
+
+		const bool justDown = (inputEvent.GetMouseButtonStatus(0) == KeyState::DOWN);
+		bool hitAnyOnPress = false;
+		bool selectionSetOnPress = false;
+
 		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities())
 		{
 			if (!entity || !entity->GetIsActive())
@@ -1125,15 +1148,26 @@ namespace Loopie
 
 			static bool s_pressedInside = false;
 			static bool s_releasedInside = false;
-			ProcessOverlayButtonsRecursive(entity, mouseCanvas, mouseOverGame, inputEvent, s_pressedInside, s_releasedInside);
+			ProcessOverlayButtonsRecursive(entity, mouseCanvas, mouseOverGame, inputEvent, uiManager,
+				hitAnyOnPress, selectionSetOnPress,
+				s_pressedInside, s_releasedInside);
 			if (s_releasedInside) {
 				s_pressedInside = false;
 				s_releasedInside = false;
 			}
 		}
+
+		if (justDown && !hitAnyOnPress)
+		{
+			if (uiManager)
+				uiManager->ClearSelection();
+		}
 	}
 
-	void EditorModule::ProcessOverlayButtonsRecursive(const std::shared_ptr<Loopie::Entity>& entity, const vec2& mouseCanvas, bool mouseOverGame, const Loopie::InputEventManager& input, bool& pressedInsideAny, bool& releasedInsideAny)
+	void EditorModule::ProcessOverlayButtonsRecursive(const std::shared_ptr<Loopie::Entity>& entity, const vec2& mouseCanvas, bool mouseOverGame,
+		const Loopie::InputEventManager& input, UIManager* uiManager,
+		bool& hitAnyOnPress, bool& selectionSetOnPress,
+		bool& pressedInsideAny, bool& releasedInsideAny)
 	{
 		if (!entity || !entity->GetIsActive())
 			return;
@@ -1173,16 +1207,29 @@ namespace Loopie
 
 			if (justDown && hovered)
 			{
+				hitAnyOnPress = true;
 				pressedInsideAny = true;
+				if (uiManager && !selectionSetOnPress)
+				{
+					uiManager->SetSelectedEntity(entity->GetUUID());
+					selectionSetOnPress = true;
+				}
 			}
 
-			button->SetPressed(down && (hovered || focused) && pressedInsideAny);
+
+			if (pressedInsideAny || down)
+				button->SetPressed(down && (hovered || focused) && pressedInsideAny);
 
 			if (up && pressedInsideAny)
 			{
 				if (hovered) {
 					button->TriggerClick();
 					pressedInsideAny = false;
+					if (uiManager)
+					{
+						uiManager->ClearSelection();
+						selectionSetOnPress = false;
+					}
 				}
 
 				releasedInsideAny = true;
@@ -1191,7 +1238,9 @@ namespace Loopie
 		}
 
 		for (const auto& child : entity->GetChildren())
-			ProcessOverlayButtonsRecursive(child, mouseCanvas, mouseOverGame, input, pressedInsideAny, releasedInsideAny);
+			ProcessOverlayButtonsRecursive(child, mouseCanvas, mouseOverGame, input, uiManager,
+				hitAnyOnPress, selectionSetOnPress,
+				pressedInsideAny, releasedInsideAny);
 	}
 
 

@@ -143,6 +143,7 @@ namespace Loopie
 
 	void Button::ApplyExternalVisualState(VisualState state)
 	{
+		m_externalVisualOverride = true;
 		ApplyState(state, true, false);
 
 		if (auto owner = GetOwner())
@@ -158,6 +159,7 @@ namespace Loopie
 	void Button::SetInteractable(bool v)
 	{
 		m_interactable = v;
+		m_externalVisualOverride = false;
 
 		if (!m_interactable)
 		{
@@ -174,40 +176,82 @@ namespace Loopie
 
 	void Button::SetHovered(bool hovered)
 	{
-		if (!ScriptingManager::IsRunning())
-			return;
+		if (m_externalVisualOverride)
+		{
+			const bool direct = hovered || IsFocused() || m_isPressed;
+			if (!direct)
+				return;
+			m_externalVisualOverride = false;
+		}
 
 		m_isHovered = hovered;
 
+		const bool applyToComponents = ScriptingManager::IsRunning();
+
 		if (!m_interactable)
 		{
-			ApplyState(VisualState::Disabled);
+			if (applyToComponents)
+				ApplyState(VisualState::Disabled);
+			else
+				m_currentState = VisualState::Disabled;
 			return;
 		}
 
 		if (m_isPressed)
-			ApplyState(VisualState::Pressed);
+		{
+			if (applyToComponents)
+				ApplyState(VisualState::Pressed);
+			else
+				m_currentState = VisualState::Pressed;
+		}
 		else
-			ApplyState(m_isHovered ? VisualState::Hovered : VisualState::Normal);
+		{
+			const VisualState state = m_isHovered ? VisualState::Hovered : VisualState::Normal;
+			if (applyToComponents)
+				ApplyState(state);
+			else
+				m_currentState = state;
+		}
 	}
 
 	void Button::SetPressed(bool pressed)
 	{
-		if (!ScriptingManager::IsRunning())
-			return;
+		if (m_externalVisualOverride)
+		{
+			const bool direct = pressed || IsFocused() || m_isHovered;
+			if (!direct)
+				return;
+			m_externalVisualOverride = false;
+		}
 
 		m_isPressed = pressed;
 
+		const bool applyToComponents = ScriptingManager::IsRunning();
+
 		if (!m_interactable)
 		{
-			ApplyState(VisualState::Disabled);
+			if (applyToComponents)
+				ApplyState(VisualState::Disabled);
+			else
+				m_currentState = VisualState::Disabled;
 			return;
 		}
 
 		if (m_isPressed)
-			ApplyState(VisualState::Pressed);
+		{
+			if (applyToComponents)
+				ApplyState(VisualState::Pressed);
+			else
+				m_currentState = VisualState::Pressed;
+		}
 		else
-			ApplyState(m_isHovered ? VisualState::Hovered : VisualState::Normal);
+		{
+			const VisualState state = m_isHovered ? VisualState::Hovered : VisualState::Normal;
+			if (applyToComponents)
+				ApplyState(state);
+			else
+				m_currentState = state;
+		}
 	}
 
 	void Button::TriggerClick()
@@ -352,6 +396,7 @@ namespace Loopie
 
 	void Button::OnFocused()
 	{
+		m_externalVisualOverride = false;
 		m_isHovered = true;
 		if (!m_interactable)
 		{
@@ -365,6 +410,7 @@ namespace Loopie
 
 	void Button::OnBlurred()
 	{
+		m_externalVisualOverride = false;
 		m_isHovered = false;
 		m_isPressed = false;
 		if (!m_interactable)

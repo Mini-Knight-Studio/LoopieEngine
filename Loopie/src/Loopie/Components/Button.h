@@ -149,6 +149,7 @@ namespace Loopie
 
 		bool m_isHovered = false;
 		bool m_isPressed = false;
+		bool m_externalVisualOverride = false;
 		VisualState m_currentState = VisualState::Normal;
 		VisualTransitionMode m_transitionMode = VisualTransitionMode::ColorTint;
 		VisualPropagationMode m_visualPropagationMode = VisualPropagationMode::None;

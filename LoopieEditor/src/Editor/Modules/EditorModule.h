@@ -20,6 +20,7 @@ namespace Loopie {
 	class Camera;
 	class Material;
 	class Shader;
+	class UIManager;
 
 	class EditorModule : public Module, public IObserver<EngineNotification> {
 	public:
@@ -78,7 +79,10 @@ namespace Loopie {
 		void RenderSceneUI(Camera* camera);
 
 		void ProcessOverlayButtonsInput();
-		static void ProcessOverlayButtonsRecursive(const std::shared_ptr<Loopie::Entity>& entity, const vec2& mouseCanvas, bool mouseOverGame, const Loopie::InputEventManager& input, bool& pressedInsideAny, bool& releasedInsideAny);
+		void ProcessOverlayButtonsRecursive(const std::shared_ptr<Loopie::Entity>& entity, const vec2& mouseCanvas, bool mouseOverGame,
+			const Loopie::InputEventManager& input, UIManager* uiManager,
+			bool& hitAnyOnPress, bool& selectionSetOnPress,
+			bool& pressedInsideAny, bool& releasedInsideAny);
 
 	private:
 		InspectorInterface m_inspector;

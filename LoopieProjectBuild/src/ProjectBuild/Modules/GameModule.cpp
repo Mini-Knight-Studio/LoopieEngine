@@ -92,55 +92,59 @@ namespace Loopie
 
 		switch (job.Type)
 		{
-		case UIJobType::Image:
-		{
-			Image* img = entity->GetComponent<Image>();
-			if (!img || !img->GetIsActive())
-				return;
-
-			const vec3 p = rt->GetWorldPosition();
-			const vec3 ws3 = rt->GetWorldScale();
-			const vec2 ws(ws3.x, ws3.y);
-			const vec3 bmin = rt->GetLocalBoundsMin();
-			const vec3 bmax = rt->GetLocalBoundsMax();
-			const vec2 s(bmax.x - bmin.x, bmax.y - bmin.y);
-
-			const vec2 pixelSize(s.x * ws.x * job.OverlayScale.x, s.y * ws.y * job.OverlayScale.y);
-			const vec2 pixelPos((p.x + bmin.x * ws.x) * job.OverlayScale.x, (p.y + bmin.y * ws.y) * job.OverlayScale.y);
-
-			vec4 color = img->GetTint();
-			std::shared_ptr<Texture> texture = img->GetTexture();
-
-			if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
+			case UIJobType::Image:
 			{
-				button->GetCurrentColor(color);
-				button->GetCurrentTexture(texture);
+				Image* img = entity->GetComponent<Image>();
+				if (!img || !img->GetIsActive())
+					return;
+
+				const vec3 p = rt->GetWorldPosition();
+				const vec3 ws3 = rt->GetWorldScale();
+				const vec2 ws(ws3.x, ws3.y);
+				const vec3 bmin = rt->GetLocalBoundsMin();
+				const vec3 bmax = rt->GetLocalBoundsMax();
+				const vec2 s(bmax.x - bmin.x, bmax.y - bmin.y);
+
+				const vec2 pixelSize(s.x * ws.x * job.OverlayScale.x, s.y * ws.y * job.OverlayScale.y);
+				const vec2 pixelPos((p.x + bmin.x * ws.x) * job.OverlayScale.x, (p.y + bmin.y * ws.y) * job.OverlayScale.y);
+
+				vec4 color = img->GetTint();
+				std::shared_ptr<Texture> texture = img->GetTexture();
+
+				if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
+				{
+					button->GetCurrentColor(color);
+					button->GetCurrentTexture(texture);
+				}
+
+				UIRenderer::DrawImage(pixelPos, pixelSize, texture, color, img->GetUVRect());
+				break;
 			}
 
-			UIRenderer::DrawImage(pixelPos, pixelSize, texture, color, img->GetUVRect());
-			break;
-		}
+			case UIJobType::Text:
+			{
+				Text* text = entity->GetComponent<Text>();
+				if (!text || !text->GetIsActive())
+					return;
 
-		case UIJobType::Text:
-		{
-			Text* text = entity->GetComponent<Text>();
-			if (!text || !text->GetIsActive())
-				return;
+				const vec3 p = rt->GetWorldPosition();
+				const vec3 ws3 = rt->GetWorldScale();
+				const vec2 ws(ws3.x, ws3.y);
+				const vec3 bmin = rt->GetLocalBoundsMin();
+				const vec3 bmax = rt->GetLocalBoundsMax();
+				const vec2 s(bmax.x - bmin.x, bmax.y - bmin.y);
 
-			const vec3 p = rt->GetWorldPosition();
-			const vec3 ws3 = rt->GetWorldScale();
-			const vec2 ws(ws3.x, ws3.y);
-			const vec3 bmin = rt->GetLocalBoundsMin();
-			const vec3 bmax = rt->GetLocalBoundsMax();
-			const vec2 s(bmax.x - bmin.x, bmax.y - bmin.y);
+				const vec2 pixelPos((p.x + bmin.x * ws.x) * job.OverlayScale.x, (p.y + bmin.y * ws.y) * job.OverlayScale.y);
+				const vec2 pixelSize(s.x * ws.x * job.OverlayScale.x, s.y * ws.y * job.OverlayScale.y);
 
-			const vec2 pixelPos((p.x + bmin.x * ws.x) * job.OverlayScale.x, (p.y + bmin.y * ws.y) * job.OverlayScale.y);
-			const vec2 pixelSize(s.x * ws.x * job.OverlayScale.x, s.y * ws.y * job.OverlayScale.y);
+				vec4 textColor = text->GetColor();
+				if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
+					button->GetCurrentColor(textColor);
 
-			UIRenderer::DrawTextContainer(pixelPos, pixelSize, text->GetText(), text->GetFont(), text->GetColor(), text->GetScale() * job.OverlayScale.x,
-				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetJustified());
-			break;
-		}
+				UIRenderer::DrawTextContainer(pixelPos, pixelSize, text->GetText(), text->GetFont(), textColor, text->GetScale() * job.OverlayScale.x,
+					text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetJustified());
+				break;
+			}
 		}
 	}
 
@@ -187,55 +191,59 @@ namespace Loopie
 
 		switch (job.Type)
 		{
-		case UIJobType::Image:
-		{
-			Image* img = entity->GetComponent<Image>();
-			if (!img || !img->GetIsActive())
-				return;
-
-			const std::shared_ptr<Texture> tex = img->GetTexture();
-			if (!tex)
-				return;
-
-			const vec3 bmin = rt->GetLocalBoundsMin();
-			const vec3 bmax = rt->GetLocalBoundsMax();
-			const float w = bmax.x - bmin.x;
-			const float h = bmax.y - bmin.y;
-
-			matrix4 model = rt->GetLocalToWorldMatrix()
-				* glm::translate(matrix4(1.0f), vec3(bmin.x, bmin.y, 0.0f))
-				* glm::scale(matrix4(1.0f), vec3(w, h, 1.0f));
-
-			vec4 color = img->GetTint();
-			std::shared_ptr<Texture> texture = img->GetTexture();
-
-			if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
+			case UIJobType::Image:
 			{
-				button->GetCurrentColor(color);
-				button->GetCurrentTexture(texture);
+				Image* img = entity->GetComponent<Image>();
+				if (!img || !img->GetIsActive())
+					return;
+
+				const std::shared_ptr<Texture> tex = img->GetTexture();
+				if (!tex)
+					return;
+
+				const vec3 bmin = rt->GetLocalBoundsMin();
+				const vec3 bmax = rt->GetLocalBoundsMax();
+				const float w = bmax.x - bmin.x;
+				const float h = bmax.y - bmin.y;
+
+				matrix4 model = rt->GetLocalToWorldMatrix()
+					* glm::translate(matrix4(1.0f), vec3(bmin.x, bmin.y, 0.0f))
+					* glm::scale(matrix4(1.0f), vec3(w, h, 1.0f));
+
+				vec4 color = img->GetTint();
+				std::shared_ptr<Texture> texture = img->GetTexture();
+
+				if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
+				{
+					button->GetCurrentColor(color);
+					button->GetCurrentTexture(texture);
+				}
+
+				UIRenderer::DrawImageWorld(model, texture, color, img->GetUVRect());
+				break;
 			}
 
-			UIRenderer::DrawImageWorld(model, texture, color, img->GetUVRect());
-			break;
-		}
+			case UIJobType::Text:
+			{
+				Text* text = entity->GetComponent<Text>();
+				if (!text || !text->GetIsActive())
+					return;
 
-		case UIJobType::Text:
-		{
-			Text* text = entity->GetComponent<Text>();
-			if (!text || !text->GetIsActive())
-				return;
+				const vec3 bmin = rt->GetLocalBoundsMin();
+				const vec3 bmax = rt->GetLocalBoundsMax();
+				const float w = bmax.x - bmin.x;
+				const float h = bmax.y - bmin.y;
 
-			const vec3 bmin = rt->GetLocalBoundsMin();
-			const vec3 bmax = rt->GetLocalBoundsMax();
-			const float w = bmax.x - bmin.x;
-			const float h = bmax.y - bmin.y;
+				const matrix4 model = rt->GetLocalToWorldMatrix() * glm::translate(matrix4(1.0f), vec3(bmin.x, bmin.y, 0.0f));
 
-			const matrix4 model = rt->GetLocalToWorldMatrix() * glm::translate(matrix4(1.0f), vec3(bmin.x, bmin.y, 0.0f));
+				vec4 textColor = text->GetColor();
+				if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
+					button->GetCurrentColor(textColor);
 
-			UIRenderer::DrawTextWorld(model, vec2(w, h), text->GetText(), text->GetFont(), text->GetColor(), text->GetScale(),
-				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetJustified());
-			break;
-		}
+				UIRenderer::DrawTextWorld(model, vec2(w, h), text->GetText(), text->GetFont(), textColor, text->GetScale(),
+					text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetJustified());
+				break;
+			}
 		}
 	}
 
@@ -702,7 +710,11 @@ namespace Loopie
 
 			const matrix4 model = rt->GetLocalToWorldMatrix() * glm::translate(matrix4(1.0f), vec3(bmin.x, bmin.y, 0.0f));
 
-			UIRenderer::DrawTextWorld(model, vec2(w, h), text->GetText(), text->GetFont(), text->GetColor(), text->GetScale(),
+			vec4 textColor = text->GetColor();
+			if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
+				button->GetCurrentColor(textColor);
+
+			UIRenderer::DrawTextWorld(model, vec2(w, h), text->GetText(), text->GetFont(), textColor, text->GetScale(),
 				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetJustified());
 		}
 
@@ -780,6 +792,21 @@ namespace Loopie
 		const vec2 mouseLocalPx = inputEvent.GetMousePosition();
 		const vec2 targetPixels(static_cast<float>(gameSize.x), static_cast<float>(gameSize.y));
 
+		UIManager* uiManager = nullptr;
+		for (const auto& [uuid, e] : m_currentScene->GetAllEntities())
+		{
+			if (!e || !e->GetIsActive())
+				continue;
+			uiManager = e->GetComponent<UIManager>();
+			if (uiManager && uiManager->GetIsActive())
+				break;
+			uiManager = nullptr;
+		}
+
+		const bool justDown = (inputEvent.GetMouseButtonStatus(0) == KeyState::DOWN);
+		bool hitAnyOnPress = false;
+		bool selectionSetOnPress = false;
+
 		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities())
 		{
 			if (!entity || !entity->GetIsActive())
@@ -814,16 +841,28 @@ namespace Loopie
 
 			static bool s_pressedInside = false;
 			static bool s_releasedInside = false;
-			ProcessOverlayButtonsRecursive(entity, mouseCanvas, true, inputEvent, s_pressedInside, s_releasedInside);
-			if (s_releasedInside) {
+			ProcessOverlayButtonsRecursive(entity, mouseCanvas, true, inputEvent, uiManager,
+				hitAnyOnPress, selectionSetOnPress,
+				s_pressedInside, s_releasedInside);
+			if (s_releasedInside)
+			{
 				s_pressedInside = false;
 				s_releasedInside = false;
 			}
 		}
 
+		if (justDown && !hitAnyOnPress)
+		{
+			if (uiManager)
+				uiManager->ClearSelection();
+		}
+
 	}
 
-	void GameModule::ProcessOverlayButtonsRecursive(const std::shared_ptr<Loopie::Entity>& entity, const vec2& mouseCanvas, bool mouseOverGame, const Loopie::InputEventManager& input, bool& pressedInsideAny, bool& releasedInsideAny)
+	void GameModule::ProcessOverlayButtonsRecursive(const std::shared_ptr<Loopie::Entity>& entity, const vec2& mouseCanvas, bool mouseOverGame,
+		const Loopie::InputEventManager& input, UIManager* uiManager,
+		bool& hitAnyOnPress, bool& selectionSetOnPress,
+		bool& pressedInsideAny, bool& releasedInsideAny)
 	{
 		if (!entity || !entity->GetIsActive())
 			return;
@@ -863,16 +902,28 @@ namespace Loopie
 
 			if (justDown && hovered)
 			{
+				hitAnyOnPress = true;
 				pressedInsideAny = true;
+				if (uiManager && !selectionSetOnPress)
+				{
+					uiManager->SetSelectedEntity(entity->GetUUID());
+					selectionSetOnPress = true;
+				}
 			}
 
-			button->SetPressed(down && (hovered || focused) && pressedInsideAny);
+			if (pressedInsideAny || down)
+				button->SetPressed(down && (hovered || focused) && pressedInsideAny);
 
 			if (up && pressedInsideAny)
 			{
 				if (hovered) {
 					button->TriggerClick();
 					pressedInsideAny = false;
+					if (uiManager)
+					{
+						uiManager->ClearSelection();
+						selectionSetOnPress = false;
+					}
 				}
 
 				releasedInsideAny = true;
@@ -881,6 +932,8 @@ namespace Loopie
 		}
 
 		for (const auto& child : entity->GetChildren())
-			ProcessOverlayButtonsRecursive(child, mouseCanvas, mouseOverGame, input, pressedInsideAny, releasedInsideAny);
+			ProcessOverlayButtonsRecursive(child, mouseCanvas, mouseOverGame, input, uiManager,
+				hitAnyOnPress, selectionSetOnPress,
+				pressedInsideAny, releasedInsideAny);
 	}
 }
