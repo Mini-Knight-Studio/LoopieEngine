@@ -73,6 +73,11 @@ namespace Loopie {
 		void SetAxisDeadzone(float value) { m_axisDeadZone = value; }
 		float GetAxisDeadzone() { return m_axisDeadZone; }
 
+		void StartShake(float intensity, float duration = 0);
+		void StopShake();
+		void UpdateShake();
+		void ResetShake();
+
 		void SetMouseCaptured(bool capture);
 
 		bool IsMouseCaptured() const;
@@ -132,6 +137,10 @@ namespace Loopie {
 
 		float m_axisDeadZone = 0.15f;
 		float m_axisSmoothing = 64.0f;
+
+		double m_shakeRemainingTime = 0.0;
+		float m_currentShakeIntensity = 0.0f;
+		float m_targetShakeIntensity = 0.0f;
 
 		std::vector<const char*> m_droppedFiles;
 

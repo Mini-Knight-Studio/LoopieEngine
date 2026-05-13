@@ -433,6 +433,12 @@ namespace Loopie
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static int Input_GetCurrentDeviceType();
 
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Input_StartShake(float intensity, float duration);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Input_StopShake();
+
         #endregion
         #region Time
         [MethodImplAttribute(MethodImplOptions.InternalCall)]

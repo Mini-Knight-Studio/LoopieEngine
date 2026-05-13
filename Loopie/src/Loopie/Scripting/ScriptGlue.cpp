@@ -1499,6 +1499,14 @@ namespace Loopie
 		return (int)Application::GetInstance().GetInputEvent().GetCurrentDeviceType();
 	}
 
+	static void Input_StartShake(float intensity,  float duration) {
+		Application::GetInstance().GetInputEvent().StartShake(intensity,duration);
+	}
+
+	static void Input_StopShake() {
+		Application::GetInstance().GetInputEvent().StopShake();
+	}
+
 
 #pragma endregion
 
@@ -3501,6 +3509,8 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Input_SetAxisDeadzone);
 		ADD_INTERNAL_CALL(Input_GetAxisDeadzone);
 		ADD_INTERNAL_CALL(Input_GetCurrentDeviceType);
+		ADD_INTERNAL_CALL(Input_StartShake);
+		ADD_INTERNAL_CALL(Input_StopShake);
 
 		ADD_INTERNAL_CALL(Time_GetDeltaTime);
 		ADD_INTERNAL_CALL(Time_GetFixedDeltaTime);

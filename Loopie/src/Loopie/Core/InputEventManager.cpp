@@ -138,9 +138,12 @@ namespace Loopie {
 				}
 
 				case SDL_EVENT_GAMEPAD_ADDED: {
-					SDL_Gamepad* gamepad = SDL_OpenGamepad(event.gdevice.which);
-					if (gamepad) {
-						Log::Info("Gamepad connected: {0}", SDL_GetGamepadName(gamepad));
+					if (m_gamepadController) {
+						SDL_CloseGamepad(m_gamepadController);
+					}
+					m_gamepadController = SDL_OpenGamepad(event.gdevice.which);
+					if (m_gamepadController) {
+						Log::Info("Gamepad connected: {0}", SDL_GetGamepadName(m_gamepadController));
 					}
 					break;
 				}
@@ -151,6 +154,7 @@ namespace Loopie {
 						SDL_CloseGamepad(m_gamepadController);
 						m_gamepadController = nullptr;
 					}
+					ResetShake();
 					break;
 				}
 
@@ -173,6 +177,8 @@ namespace Loopie {
 		{
 			m_axesSmoothed[i] += (m_axesRaw[i] - m_axesSmoothed[i]) * t;
 		}
+
+		UpdateShake();
 	}
 
 	KeyState InputEventManager::GetKeyStatus(SDL_Scancode keyCode) const
@@ -319,6 +325,64 @@ namespace Loopie {
 	bool InputEventManager::HasFileBeenDropped() const
 	{
 		return !m_droppedFiles.empty();
+	}
+
+	void InputEventManager::StartShake(float intensity, float duration)
+	{
+		if(!m_gamepadController) {
+			return;
+		}
+
+		intensity = std::clamp(intensity, 0.0f, 1.0f);
+		m_targetShakeIntensity = intensity;
+
+		m_currentShakeIntensity = intensity;
+		Uint16 rumbleValue = static_cast<Uint16>(intensity * 65535.0f);
+		SDL_RumbleGamepad(m_gamepadController, rumbleValue, rumbleValue, 0);
+
+		if (duration > 0)
+			m_shakeRemainingTime = static_cast<double>(duration);
+		else
+			m_shakeRemainingTime = 0.0;
+	}
+
+	void InputEventManager::StopShake()
+	{
+		m_targetShakeIntensity = 0.0f;
+		m_shakeRemainingTime = 0.0;
+
+		if (!m_gamepadController)
+			return;
+
+		m_currentShakeIntensity = 0.0f;
+		SDL_RumbleGamepad(m_gamepadController, 0, 0, 0);
+	}
+
+	void InputEventManager::UpdateShake()
+	{
+		if (!m_gamepadController)
+			return;
+
+		float dt = Time::GetDeltaTime();
+
+		if (m_shakeRemainingTime > 0.0) {
+			m_shakeRemainingTime -= dt;
+			if (m_shakeRemainingTime <= 0.0) {
+				StopShake();
+			}
+		}
+
+		m_currentShakeIntensity = m_targetShakeIntensity;
+
+		Uint16 rumbleValue = static_cast<Uint16>(m_currentShakeIntensity * 65535.0f);
+		SDL_RumbleGamepad(m_gamepadController, rumbleValue, rumbleValue, 0);
+	}
+
+	void InputEventManager::ResetShake()
+	{
+		m_shakeRemainingTime = 0.0;
+		m_targetShakeIntensity = 0.0f;
+		m_currentShakeIntensity = 0.0f;
 	}
 
 	void InputEventManager::SetMouseCaptured(bool capture)

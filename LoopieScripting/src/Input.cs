@@ -199,5 +199,17 @@ namespace Loopie
         {
             return (InputDevice)InternalCalls.Input_GetCurrentDeviceType();
         }
+
+        public static void StartShake(float intensity, float duration)
+        {
+            if (duration < 0)
+                return;
+            InternalCalls.Input_StartShake(intensity, duration);
+        }
+
+        public static void StopShake()
+        {
+            InternalCalls.Input_StopShake();
+        }
     }
 }
