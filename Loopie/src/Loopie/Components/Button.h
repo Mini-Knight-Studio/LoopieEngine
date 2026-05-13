@@ -114,12 +114,14 @@ namespace Loopie
 		const std::vector<UUID>& GetVisualPropagationTargets() const { return m_visualPropagationTargets; }
 		void SetVisualPropagationTargets(const std::vector<UUID>& targets);
 
+		void ApplyExternalVisualState(VisualState state);
+
 	private:
 
 		static bool IsFunctionCallConfigured(const FunctionCall& functionCall);
 		static bool TryResolveTarget(const FunctionCall& functionCall, std::shared_ptr<Entity>& entity, ScriptClass*& scriptComponent);
 
-		void ApplyState(VisualState state, bool force = false);
+		void ApplyState(VisualState state, bool force = false, bool propagate = true);
 		void ApplyVisualStateToEntity(const std::shared_ptr<Entity>& entity, VisualState state) const;
 		void ApplyVisualStateToPropagationTargets(VisualState state) const;
 		void OnFocused() override;

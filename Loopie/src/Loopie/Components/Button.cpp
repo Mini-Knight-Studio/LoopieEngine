@@ -141,6 +141,20 @@ namespace Loopie
 		ApplyState(m_currentState, true);
 	}
 
+	void Button::ApplyExternalVisualState(VisualState state)
+	{
+		ApplyState(state, true, false);
+
+		if (auto owner = GetOwner())
+		{
+			if (Text* text = owner->GetComponent<Text>())
+			{
+				if (text->GetIsActive())
+					ApplyStateColor(*text, state);
+			}
+		}
+	}
+
 	void Button::SetInteractable(bool v)
 	{
 		m_interactable = v;
@@ -231,7 +245,7 @@ namespace Loopie
 		m_onClickFunctionCalls[functionCall.EntityUUID].push_back(functionCall);
 	}
 
-	void Button::ApplyState(VisualState state, bool force)
+	void Button::ApplyState(VisualState state, bool force, bool propagate)
 	{
 		if (!force && m_currentState == state)
 			return;
@@ -258,7 +272,8 @@ namespace Loopie
 		}
 
 		// Apply to propagation targets
-		ApplyVisualStateToPropagationTargets(state);
+		if (propagate)
+			ApplyVisualStateToPropagationTargets(state);
 	}
 
 	void Button::ApplyVisualStateToEntity(const std::shared_ptr<Entity>& entity, VisualState state) const
@@ -267,6 +282,15 @@ namespace Loopie
 			return;
 		if (!entity->GetIsActiveInHierarchy())
 			return;
+
+		if (Button* button = entity->GetComponent<Button>())
+		{
+			if (button != this && button->GetIsActive())
+			{
+				button->ApplyExternalVisualState(state);
+				return;
+			}
+		}
 
 		if (Image* img = entity->GetComponent<Image>())
 		{
