@@ -4,12 +4,30 @@
 #include "Loopie/Core/Application.h"
 #include "Loopie/Render/Renderer.h"
 
+#include "Loopie/Resources/AssetRegistry.h"
+#include "Loopie/Resources/ResourceManager.h"
+#include "Loopie/Importers/TextureImporter.h"
+
 #include <imgui.h>
 
 namespace Loopie {
 
 	GameInterface::GameInterface() {
 		m_buffer = std::make_shared<FrameBuffer>(1, 1);
+
+		std::vector<std::string> iconsToLoad = {
+			"assets\\icons\\icon_debug.png"
+		};
+
+		std::vector<Metadata> iconsToLoadMetadatas;
+		for (size_t i = 0; i < iconsToLoad.size(); i++)
+		{
+			Metadata& meta = AssetRegistry::GetOrCreateMetadata(iconsToLoad[i]);
+			TextureImporter::ImportImage(iconsToLoad[i], meta);
+			iconsToLoadMetadatas.emplace_back(meta);
+		}
+
+		m_gizmoIcon = ResourceManager::GetTexture(iconsToLoadMetadatas[0]);
 	}
 
 	void GameInterface::Render() {
@@ -20,6 +38,8 @@ namespace Loopie {
 
 			ImVec2 size = ImGui::GetContentRegionAvail();
 			m_windowSize = { (int)size.x, (int)size.y };
+
+			ImVec2 cursorPos = ImGui::GetCursorPos();
 
 			const ImVec2 imageMin = ImGui::GetCursorScreenPos();
 			const ImVec2 mouse = ImGui::GetMousePos();
@@ -32,6 +52,9 @@ namespace Loopie {
 
 			if(GetCamera())
 				ImGui::Image((ImTextureID)m_buffer->GetTextureId(), size, ImVec2(0, 1), ImVec2(1, 0));
+
+			ImGui::SetCursorPos(cursorPos);
+			DrawHelperBar();
 		}
 		else
 		{
@@ -88,5 +111,30 @@ namespace Loopie {
 		m_buffer->Bind();
 		m_buffer->Clear();
 		m_buffer->Unbind();
+	}
+
+	void GameInterface::DrawHelperBar()
+	{
+		ImVec2 buttonsSize = ImVec2(15, 15);
+		ImVec2 framePadding = ImVec2(4, 4);
+		ImVec2 itemSpacing = ImVec2(15, 8);
+
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, itemSpacing);
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, framePadding);
+
+
+		float availableWidth = ImGui::GetContentRegionAvail().x - buttonsSize.x - framePadding.x * 2;
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + availableWidth);
+
+		bool hasStyle = m_showGizmos;
+		if(hasStyle)
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0, 0.5, 0.75, 1.0));
+		if (ImGui::ImageButton("show_gizmo", (ImTextureID)m_gizmoIcon->GetRendererId(), buttonsSize)) {
+			m_showGizmos = !m_showGizmos;
+		}
+		if (hasStyle)
+			ImGui::PopStyleColor();
+
+		ImGui::PopStyleVar(2);
 	}
 }

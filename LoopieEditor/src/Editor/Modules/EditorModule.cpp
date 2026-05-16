@@ -413,7 +413,7 @@ namespace Loopie
 					RenderWorld(cam);
 					
 
-					if (cam == m_game.GetCamera())
+					if (cam == m_game.GetCamera() && m_game.ShowGizmos())
 					{
 						{
 							LP_SCOPE_N("Gizmos");

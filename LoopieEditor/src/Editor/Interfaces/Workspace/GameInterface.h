@@ -1,3 +1,8 @@
+#pragma once
+
+
+#include "Loopie/Resources/Types/Texture.h"
+
 #include "Editor/Interfaces/Interface.h"
 #include "Loopie/Render/FrameBuffer.h"
 
@@ -25,6 +30,12 @@ namespace Loopie {
 		vec2 GetMousePosGameLocal() const { return m_mousePosGameLocal; }
 		ivec2 GetGameSize() const { return m_windowSize; }
 
+		bool ShowGizmos() const { return m_showGizmos; }
+		void SetIfShowGizmos(bool show) { m_showGizmos = show; }
+
+	private:
+		void DrawHelperBar();
+
 	private:
 		bool m_visible = false;
 		std::shared_ptr<FrameBuffer> m_buffer;
@@ -32,5 +43,9 @@ namespace Loopie {
 
 		bool m_mouseOverGame = false;
 		vec2 m_mousePosGameLocal = vec2(0.0f);
+
+		bool m_showGizmos = true;
+
+		std::shared_ptr<Texture> m_gizmoIcon;
 	};
 }
