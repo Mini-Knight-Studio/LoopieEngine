@@ -29,6 +29,12 @@ namespace Loopie
 		FixedSize
 	};
 
+	enum class TextWrapMode
+	{
+		NoWrap,
+		Wrap
+	};
+
 	class Text : public UIElement
 	{
 	public:
@@ -52,6 +58,9 @@ namespace Loopie
 
 		TextSizeMode GetSizeMode() const { return m_sizeMode; }
 		void SetSizeMode(TextSizeMode mode) { m_sizeMode = mode; }
+
+		TextWrapMode GetWrapMode() const { return m_wrapMode; }
+		void SetWrapMode(TextWrapMode mode) { m_wrapMode = mode; }
 
 		float GetFontSize() const { return m_fontSize; }
 		void SetFontSize(float size) { m_fontSize = size; }
@@ -77,6 +86,7 @@ namespace Loopie
 		float m_scale = 1.0f;
 
 		TextSizeMode m_sizeMode = TextSizeMode::AutoSize;
+		TextWrapMode m_wrapMode = TextWrapMode::NoWrap;
 		float m_fontSize = 24.0f;
 		TextHorizontalAlignment m_horizontalAlignment = TextHorizontalAlignment::Left;
 		TextVerticalAlignment m_verticalAlignment = TextVerticalAlignment::Top;

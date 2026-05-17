@@ -128,6 +128,7 @@ namespace Loopie {
 		textNode.CreateField<float>("scale", m_scale);
 
 		textNode.CreateField<int>("size_mode", (int)m_sizeMode);
+		textNode.CreateField<int>("wrap_mode", (int)m_wrapMode);
 		textNode.CreateField<float>("font_size", m_fontSize);
 		textNode.CreateField<int>("horizontal_alignment", (int)m_horizontalAlignment);
 		textNode.CreateField<int>("vertical_alignment", (int)m_verticalAlignment);
@@ -161,6 +162,7 @@ namespace Loopie {
 		m_scale = data.GetValue<float>("scale", 1.0f).Result;
 
 		m_sizeMode = (TextSizeMode)data.GetValue<int>("size_mode", (int)TextSizeMode::AutoSize).Result;
+		m_wrapMode = (TextWrapMode)data.GetValue<int>("wrap_mode", (int)TextWrapMode::NoWrap).Result;
 		m_fontSize = data.GetValue<float>("font_size", 24.0f).Result;
 		m_horizontalAlignment = (TextHorizontalAlignment)data.GetValue<int>("horizontal_alignment", (int)TextHorizontalAlignment::Left).Result;
 		m_verticalAlignment = (TextVerticalAlignment)data.GetValue<int>("vertical_alignment", (int)TextVerticalAlignment::Top).Result;
@@ -195,6 +197,7 @@ namespace Loopie {
 		m_color = otherText.m_color;
 		m_scale = otherText.m_scale;
 		m_sizeMode = otherText.m_sizeMode;
+		m_wrapMode = otherText.m_wrapMode;
 		m_fontSize = otherText.m_fontSize;
 		m_horizontalAlignment = otherText.m_horizontalAlignment;
 		m_verticalAlignment = otherText.m_verticalAlignment;

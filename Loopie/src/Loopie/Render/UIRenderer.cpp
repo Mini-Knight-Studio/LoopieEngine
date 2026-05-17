@@ -11,6 +11,8 @@
 
 #include "glad/glad.h"
 
+#include <algorithm>
+
 namespace Loopie
 {
 	bool UIRenderer::s_initialized = false;
@@ -106,6 +108,148 @@ namespace Loopie
 		}
 	}
 
+	bool UIRenderer::IsSpaceExceptNewline(char c)
+	{
+		return c == ' ' || c == '\t' || c == '\v' || c == '\f' || c == '\r';
+	}
+
+	float UIRenderer::MeasureCharAdvance(const std::shared_ptr<Font>& font, unsigned char ch, float fontScale, float spaceAdvance)
+	{
+		if (ch == '\t')
+			return spaceAdvance * 4.0f;
+		if (ch == ' ')
+			return spaceAdvance;
+
+		const FontGlyph* g = font ? font->GetGlyph((int)ch) : nullptr;
+		if (!g)
+			return 0.0f;
+		return ((float)g->advance / 64.0f) * fontScale;
+	}
+
+	float UIRenderer::MeasureStringAdvance(const std::shared_ptr<Font>& font, const std::string& s, float fontScale, float spaceAdvance)
+	{
+		float width = 0.0f;
+		for (size_t i = 0; i < s.size(); ++i)
+			width += MeasureCharAdvance(font, (unsigned char)s[i], fontScale, spaceAdvance);
+		return width;
+	}
+
+	std::string UIRenderer::WrapTextToWidth(const std::string& text, const std::shared_ptr<Font>& font, float fontScale,
+		float maxWidth, TextWrapMode wrapMode)
+	{
+		if (wrapMode == TextWrapMode::NoWrap)
+			return text;
+		if (!font || text.empty() || maxWidth <= 0.0f)
+			return text;
+
+		float spaceAdvance = 4.0f * fontScale;
+		if (const FontGlyph* spaceGlyph = font->GetGlyph((int)' '))
+			spaceAdvance = std::max(0.0f, ((float)spaceGlyph->advance / 64.0f) * fontScale);
+		if (spaceAdvance <= 0.0f)
+			spaceAdvance = 4.0f * fontScale;
+
+		std::string out;
+		out.reserve(text.size() + 16);
+		std::string line;
+		line.reserve(128);
+		float lineW = 0.0f;
+		bool pendingSpace = false;
+
+		auto flushLine = [&]()
+		{
+			out += line;
+			line.clear();
+			lineW = 0.0f;
+			pendingSpace = false;
+		};
+
+		auto appendWord = [&](const std::string& word)
+		{
+			if (word.empty())
+				return;
+
+			const float wordW = MeasureStringAdvance(font, word, fontScale, spaceAdvance);
+			const float spaceW = (!line.empty() && pendingSpace) ? spaceAdvance : 0.0f;
+			const float required = wordW + spaceW;
+
+			const bool fitsCurrentLine = line.empty() || (lineW + required <= maxWidth);
+			if (fitsCurrentLine)
+			{
+				if (!line.empty() && pendingSpace)
+				{
+					line += ' ';
+					lineW += spaceAdvance;
+				}
+				pendingSpace = false;
+				line += word;
+				lineW += wordW;
+				return;
+			}
+
+			flushLine();
+			out += '\n';
+
+			if (wordW <= maxWidth)
+			{
+				line = word;
+				lineW = wordW;
+				return;
+			}
+
+			std::string segment;
+			segment.reserve(word.size());
+			float segW = 0.0f;
+			for (size_t i = 0; i < word.size(); ++i)
+			{
+				const unsigned char ch = (unsigned char)word[i];
+				const float adv = MeasureCharAdvance(font, ch, fontScale, spaceAdvance);
+				if (!segment.empty() && (segW + adv > maxWidth))
+				{
+					out += segment;
+					out += '\n';
+					segment.clear();
+					segW = 0.0f;
+				}
+				segment.push_back((char)ch);
+				segW += adv;
+			}
+
+			line = segment;
+			lineW = segW;
+		};
+
+		std::string word;
+		word.reserve(32);
+		for (size_t i = 0; i < text.size(); ++i)
+		{
+			const char c = text[i];
+			if (c == '\r')
+				continue;
+			if (c == '\n')
+			{
+				appendWord(word);
+				word.clear();
+				flushLine();
+				out += '\n';
+				continue;
+			}
+			if (IsSpaceExceptNewline(c))
+			{
+				appendWord(word);
+				word.clear();
+				if (!line.empty())
+					pendingSpace = true;
+				continue;
+			}
+
+			word.push_back(c);
+		}
+
+		appendWord(word);
+		out += line;
+		return out;
+	}
+
 	void UIRenderer::DrawRect(const vec2& posPixels, const vec2& sizePixels, const vec4& color)
 	{
 		EnsureInit();
@@ -188,11 +332,18 @@ namespace Loopie
 	}
 
 	void UIRenderer::DrawTextContainer(const vec2& posPixels, const vec2& sizePixels, const std::string& text, const std::shared_ptr<Font>& font, const vec4& color, float scale,
-						  TextSizeMode sizeMode, float fontSize, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign)
+					  TextSizeMode sizeMode, float fontSize, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign, TextWrapMode wrapMode)
 	{
 		EnsureInit();
 
-		if (!s_quadVAO || !s_material || !font || font->GetRendererId() == 0 || text.empty())
+		if (!s_quadVAO || !s_material || !font || text.empty())
+			return;
+
+		if (font->GetRendererId() == 0)
+			font->Load();
+
+		auto atlasTB = font->GetAtlasTextureBuffer();
+		if (!atlasTB || atlasTB->GetRendererID() == 0)
 			return;
 
 		float x = 0.0f;
@@ -213,9 +364,13 @@ namespace Loopie
 			fontScale = (px / denom) * baseScale;
 		}
 
-		for (size_t i = 0; i < text.size(); i++)
+		const std::string renderText = WrapTextToWidth(text, font, fontScale, sizePixels.x, wrapMode);
+		if (renderText.empty())
+			return;
+
+		for (size_t i = 0; i < renderText.size(); i++)
 		{
-			const unsigned char ch = (unsigned char)text[i];
+			const unsigned char ch = (unsigned char)renderText[i];
 
 			if (ch == '\n')
 			{
@@ -259,7 +414,7 @@ namespace Loopie
 		c.type = UniformType_vec4;
 		c.value = color;
 		s_material->SetShaderVariable("u_Color", c);
-		s_material->SetTextureBufferOverride(font->GetAtlasTextureBuffer());
+		s_material->SetTextureBufferOverride(atlasTB);
 
 		const float contentW = textW * fitScale;
 		const float contentH = textH * fitScale;
@@ -276,9 +431,9 @@ namespace Loopie
 		x = 0.0f;
 		y = 0.0f;
 
-		for (size_t i = 0; i < text.size(); i++)
+		for (size_t i = 0; i < renderText.size(); i++)
 		{
-			const unsigned char ch = (unsigned char)text[i];
+			const unsigned char ch = (unsigned char)renderText[i];
 
 			if (ch == '\n')
 			{
@@ -319,11 +474,18 @@ namespace Loopie
 	}
 
 	void UIRenderer::DrawTextWorld(const matrix4& modelMatrix, const vec2& sizePixels, const std::string& text, const std::shared_ptr<Font>& font, const vec4& color, float scale,
-							   TextSizeMode sizeMode, float fontSize, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign)
+						   TextSizeMode sizeMode, float fontSize, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign, TextWrapMode wrapMode)
 	{
 		EnsureInit();
 
-		if (!s_quadVAO || !s_material || !font || font->GetRendererId() == 0 || text.empty())
+		if (!s_quadVAO || !s_material || !font || text.empty())
+			return;
+
+		if (font->GetRendererId() == 0)
+			font->Load();
+
+		auto atlasTB = font->GetAtlasTextureBuffer();
+		if (!atlasTB || atlasTB->GetRendererID() == 0)
 			return;
 
 		float x = 0.0f;
@@ -344,9 +506,13 @@ namespace Loopie
 			fontScale = (px / denom) * baseScale;
 		}
 
-		for (size_t i = 0; i < text.size(); i++)
+		const std::string renderText = WrapTextToWidth(text, font, fontScale, sizePixels.x, wrapMode);
+		if (renderText.empty())
+			return;
+
+		for (size_t i = 0; i < renderText.size(); i++)
 		{
-			const unsigned char ch = (unsigned char)text[i];
+			const unsigned char ch = (unsigned char)renderText[i];
 
 			if (ch == '\n')
 			{
@@ -390,7 +556,7 @@ namespace Loopie
 		c.type = UniformType_vec4;
 		c.value = color;
 		s_material->SetShaderVariable("u_Color", c);
-		s_material->SetTextureBufferOverride(font->GetAtlasTextureBuffer());
+		s_material->SetTextureBufferOverride(atlasTB);
 
 		const float contentW = textW * fitScale;
 		const float contentH = textH * fitScale;
@@ -407,9 +573,9 @@ namespace Loopie
 		x = 0.0f;
 		y = 0.0f;
 
-		for (size_t i = 0; i < text.size(); i++)
+		for (size_t i = 0; i < renderText.size(); i++)
 		{
-			const unsigned char ch = (unsigned char)text[i];
+			const unsigned char ch = (unsigned char)renderText[i];
 
 			if (ch == '\n')
 			{

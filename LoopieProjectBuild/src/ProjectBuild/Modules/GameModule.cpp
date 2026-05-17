@@ -142,7 +142,7 @@ namespace Loopie
 					button->GetCurrentColor(textColor);
 
 				UIRenderer::DrawTextContainer(pixelPos, pixelSize, text->GetText(), text->GetFont(), text->GetColor(), text->GetScale()*job.OverlayScale.x,
-				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment());
+				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetWrapMode());
 				break;
 			}
 		}
@@ -241,7 +241,7 @@ namespace Loopie
 					button->GetCurrentColor(textColor);
 
 				UIRenderer::DrawTextWorld(model, vec2(w, h), text->GetText(), text->GetFont(), textColor, text->GetScale(),
-					text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment());
+					text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetWrapMode());
 				break;
 			}
 		}
@@ -715,7 +715,7 @@ namespace Loopie
 				button->GetCurrentColor(textColor);
 
 			UIRenderer::DrawTextWorld(model, vec2(w, h), text->GetText(), text->GetFont(), textColor, text->GetScale(),
-				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment());
+				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetWrapMode());
 		}
 
 		for (const auto& child : entity->GetChildren())

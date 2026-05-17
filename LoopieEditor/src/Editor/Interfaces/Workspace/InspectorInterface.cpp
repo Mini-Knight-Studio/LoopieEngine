@@ -2098,6 +2098,14 @@ namespace Loopie {
 				text->SetSizeMode(static_cast<TextSizeMode>(sizeModeIndex));
 			}
 
+			TextWrapMode wrapMode = text->GetWrapMode();
+			int wrapModeIndex = static_cast<int>(wrapMode);
+			const char* wrapModeLabels[] = { "No Wrap", "Wrap" };
+			if (ImGui::Combo("Auto Multiline", &wrapModeIndex, wrapModeLabels, IM_ARRAYSIZE(wrapModeLabels)))
+			{
+				text->SetWrapMode(static_cast<TextWrapMode>(wrapModeIndex));
+			}
+
 			const bool isFixed = (text->GetSizeMode() == TextSizeMode::FixedSize);
 			if (!isFixed)
 				ImGui::BeginDisabled();
