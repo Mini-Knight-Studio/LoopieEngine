@@ -29,7 +29,7 @@ namespace Loopie
 		uint64_t TraversalIndex = 0;
 	};
 
-	UIElement* UIManager::FindUIElementComponent(const std::shared_ptr<Entity>& entity)
+	UIElement* UIManager::FindUIElementComponent(const std::shared_ptr<Entity>& entity, bool allowInactive)
 	{
 		if (!entity)
 			return nullptr;
@@ -43,8 +43,15 @@ namespace Loopie
 			UIElement* ui = component->AsUIElement();
 			if (!ui)
 				continue;
-			if (ui->CanFocus())
-				return ui;
+			if (allowInactive) {
+				if (ui->IsFocusable())
+					return ui;
+			}
+			else {
+				if (ui->CanFocus())
+					return ui;
+			}
+			
 		}
 
 		return nullptr;
@@ -112,7 +119,7 @@ namespace Loopie
 			return true;
 
 		std::shared_ptr<Entity> entity = scene.GetEntity(desired);
-		UIElement* ui = FindUIElementComponent(entity);
+		UIElement* ui = FindUIElementComponent(entity, true);
 		if (!ui || !ui->IsFocusable())
 			return false;
 
@@ -331,7 +338,7 @@ namespace Loopie
 		if (!(m_selectedEntity == UUID::Invalid))
 		{
 			std::shared_ptr<Entity> oldEntity = scene.GetEntity(m_selectedEntity);
-			if (UIElement* oldUI = FindUIElementComponent(oldEntity))
+			if (UIElement* oldUI = FindUIElementComponent(oldEntity, true))
 				oldUI->Blur();
 		}
 
@@ -341,7 +348,7 @@ namespace Loopie
 			return;
 
 		std::shared_ptr<Entity> newEntity = scene.GetEntity(entityUUID);
-		UIElement* newUI = FindUIElementComponent(newEntity);
+		UIElement* newUI = FindUIElementComponent(newEntity, true);
 		if (!newUI || !newUI->IsFocusable())
 			return;
 
