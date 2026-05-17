@@ -13,6 +13,13 @@ namespace Loopie
 	class SpriteAnimator : public Component
 	{
 	public:
+
+		enum AnimationUpdateMode
+		{
+			DeltaTime,
+			UnscaledDeltaTime
+		};
+
 		DEFINE_TYPE(SpriteAnimator)
 
 		SpriteAnimator() = default;
@@ -55,9 +62,14 @@ namespace Loopie
 		void Play();
 		void Stop(bool resetTime = true);
 
+		void SetAnimationMode(AnimationUpdateMode mode) { m_mode = mode; }
+		AnimationUpdateMode GetAnimationMode() const { return m_mode; }
+
 	private:
 		vec4 ComputeUVRect(int frameIndex) const;
 		void ApplyFrame(int frameIndex);
+
+		float GetUpdateTime() const;
 
 	private:
 		std::shared_ptr<Texture> m_texture;
@@ -71,5 +83,7 @@ namespace Loopie
 		bool m_playing = true;
 		double m_time = 0.0;
 		int m_lastAppliedFrame = -1;
+
+		AnimationUpdateMode m_mode = AnimationUpdateMode::DeltaTime;
 	};
 }

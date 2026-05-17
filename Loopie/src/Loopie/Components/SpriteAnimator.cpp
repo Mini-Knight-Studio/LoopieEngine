@@ -60,7 +60,7 @@ namespace Loopie
 		if (!m_texture)
 			return;
 
-		m_time += Time::GetDeltaTime();
+		m_time += GetUpdateTime();
 
 		int localFrame = 0;
 		if (fps > 0.0f)
@@ -231,6 +231,19 @@ namespace Loopie
 		m_lastAppliedFrame = frameIndex;
 	}
 
+	float SpriteAnimator::GetUpdateTime() const
+	{
+		switch (m_mode)
+		{
+		case Loopie::SpriteAnimator::DeltaTime:
+			return Time::GetDeltaTime();
+		case Loopie::SpriteAnimator::UnscaledDeltaTime:
+			return Time::GetUnscaledDeltaTime();
+		default:
+			return 0;
+		}
+	}
+
 	JsonNode SpriteAnimator::Serialize(JsonNode& parent) const
 	{
 		JsonNode node = parent.CreateObjectField("sprite_animator");
@@ -248,6 +261,8 @@ namespace Loopie
 		node.CreateField<bool>("loop", m_loop);
 		node.CreateField<bool>("play_on_start", m_playOnStart);
 		node.CreateField<bool>("playing", m_playing);
+		node.CreateField<int>("mode", (int)m_mode);
+
 
 		return node;
 	}
@@ -285,6 +300,8 @@ namespace Loopie
 		m_playOnStart = data.GetValue<bool>("play_on_start", true).Result;
 		m_playing = data.GetValue<bool>("playing", m_playOnStart).Result;
 
+		m_mode = (AnimationUpdateMode)data.GetValue<int>("mode", 0).Result;
+
 		m_time = 0.0;
 		m_lastAppliedFrame = -1;
 	}
@@ -302,5 +319,6 @@ namespace Loopie
 		m_playing = otherAnim.m_playing;
 		m_time = 0.0;
 		m_lastAppliedFrame = -1;
+		m_mode = otherAnim.m_mode;
 	}
 }
