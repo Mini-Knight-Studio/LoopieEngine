@@ -113,7 +113,7 @@ namespace Loopie
 
 		std::shared_ptr<Entity> entity = scene.GetEntity(desired);
 		UIElement* ui = FindUIElementComponent(entity);
-		if (!ui || !ui->CanFocus())
+		if (!ui || !ui->IsFocusable())
 			return false;
 
 		ui->Focus();
@@ -342,7 +342,7 @@ namespace Loopie
 
 		std::shared_ptr<Entity> newEntity = scene.GetEntity(entityUUID);
 		UIElement* newUI = FindUIElementComponent(newEntity);
-		if (!newUI || !newUI->CanFocus())
+		if (!newUI || !newUI->IsFocusable())
 			return;
 
 		m_selectedEntity = entityUUID;
