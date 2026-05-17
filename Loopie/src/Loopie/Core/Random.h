@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <random>
 
 namespace Loopie {
 
@@ -18,7 +19,18 @@ namespace Loopie {
             return (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
         }
 
+        struct AutoSeeder {
+            AutoSeeder() {
+                std::random_device rd;
+                uint64_t pcgSeed = (static_cast<uint64_t>(rd()) << 32) | rd();
+                Random::Seed(pcgSeed);
+            }
+        };
+        inline static AutoSeeder s_Seeder;
+
     public:
+        Random() = delete;
+
         static void Seed(uint64_t seed) {
             state = 0;
             inc = (seed << 1u) | 1u;
@@ -55,7 +67,17 @@ namespace Loopie {
             return state;
         }
 
+        struct AutoSeeder {
+            AutoSeeder() {
+                std::random_device rd;
+                FRandom::Seed(rd());
+            }
+        };
+        inline static AutoSeeder s_Seeder;
+
     public:
+        FRandom() = delete;
+
         static void Seed(uint32_t seed) {
             state = seed ? seed : 0xA3C59AC3;
         }

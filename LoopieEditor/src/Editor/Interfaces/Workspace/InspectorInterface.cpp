@@ -1984,6 +1984,15 @@ namespace Loopie {
 			if (ImGui::DragFloat("FPS", &fps, 0.25f, 0.0f, 240.0f))
 				spriteAnimator->SetFPS(fps);
 
+			SpriteAnimator::AnimationUpdateMode currentMode = spriteAnimator->GetAnimationMode();
+			const char* modeNames[] = { "Delta Time", "Unscaled Delta Time" };
+			int currentModeIndex = static_cast<int>(currentMode);
+
+			if (ImGui::Combo("Update Mode", &currentModeIndex, modeNames, IM_ARRAYSIZE(modeNames)))
+			{
+				spriteAnimator->SetAnimationMode(static_cast<SpriteAnimator::AnimationUpdateMode>(currentModeIndex));
+			}
+
 			bool loop = spriteAnimator->GetLoop();
 			if (ImGui::Checkbox("Loop", &loop))
 				spriteAnimator->SetLoop(loop);
