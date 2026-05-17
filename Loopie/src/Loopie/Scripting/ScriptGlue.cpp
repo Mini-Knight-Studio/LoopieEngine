@@ -2630,6 +2630,27 @@ namespace Loopie
 			text->SetText(Utils::MonoStringToString(textValue));
 		}
 	}
+
+	static void Text_SetVisibleCharacters(MonoString* entityID, MonoString* componentID, int charsVisible) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		Text* text = Utils::GetComponent<Text>(entity, componentID);
+		if (text) {
+			text->SetVisibleCharacters(charsVisible);
+		}
+	}
+
+	static int Text_GetVisibleCharacters(MonoString* entityID, MonoString* componentID) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return 0;
+		Text* text = Utils::GetComponent<Text>(entity, componentID);
+		if (text) {
+			return text->GetVisibleCharacters();
+		}
+		return 0;
+	}
 #pragma endregion
 
 #pragma region Button
@@ -3630,6 +3651,8 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Text_SetColor);
 		ADD_INTERNAL_CALL(Text_GetText);
 		ADD_INTERNAL_CALL(Text_SetText);
+		ADD_INTERNAL_CALL(Text_GetVisibleCharacters);
+		ADD_INTERNAL_CALL(Text_SetVisibleCharacters);
 
 		ADD_INTERNAL_CALL(Button_IsInteractable);
 		ADD_INTERNAL_CALL(Button_SetInteractable);

@@ -19,6 +19,24 @@ namespace Loopie {
 			GetOwner()->ReplaceTransform<RectTransform>();
 	}
 
+	void Text::OnUpdate()
+	{
+		if (m_autoFitRect && m_sizeMode == TextSizeMode::FixedSize && m_font)
+		{
+			auto* rt = GetOwner() ? GetOwner()->GetComponent<RectTransform>() : nullptr;
+			if (rt)
+			{
+				const vec2 measured = MeasureLocalSizeFixed();
+
+				const float paddingX = 2.0f;
+				const float paddingY = 2.0f;
+
+				rt->SetWidth(measured.x + paddingX);
+				rt->SetHeight(measured.y + paddingY);
+			}
+		}
+	}
+
 	void Text::RenderGizmo() const
 	{
 		auto* rt = GetOwner() ? GetOwner()->GetComponent<RectTransform>() : nullptr;
@@ -158,6 +176,7 @@ namespace Loopie {
 		textNode.CreateField<float>("letter_spacing", m_letterSpacing);
 		textNode.CreateField<int>("horizontal_alignment", (int)m_horizontalAlignment);
 		textNode.CreateField<int>("vertical_alignment", (int)m_verticalAlignment);
+		textNode.CreateField<bool>("auto_fit", m_autoFitRect);
 
 		if (m_font)
 			textNode.CreateField<std::string>("font_uuid", m_font->GetUUID().Get());
@@ -195,6 +214,7 @@ namespace Loopie {
 		m_letterSpacing = data.GetValue<float>("letter_spacing", 0.0f).Result;
 		m_horizontalAlignment = (TextHorizontalAlignment)data.GetValue<int>("horizontal_alignment", (int)TextHorizontalAlignment::Left).Result;
 		m_verticalAlignment = (TextVerticalAlignment)data.GetValue<int>("vertical_alignment", (int)TextVerticalAlignment::Top).Result;
+		m_autoFitRect = data.GetValue<bool>("auto_fit", false).Result;
 
 		DeserializeDrawOrder(data);
 		DeserializeNavigation(data);
@@ -233,6 +253,7 @@ namespace Loopie {
 		m_letterSpacing = otherText.m_letterSpacing;
 		m_horizontalAlignment = otherText.m_horizontalAlignment;
 		m_verticalAlignment = otherText.m_verticalAlignment;
+		m_autoFitRect = otherText.m_autoFitRect;
 		m_font = otherText.m_font;
 		CloneDrawOrder(otherText);
 		CloneNavigation(otherText);

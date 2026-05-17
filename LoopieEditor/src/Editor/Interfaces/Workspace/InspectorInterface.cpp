@@ -2168,18 +2168,10 @@ namespace Loopie {
 			if (!canAutoFit)
 				ImGui::BeginDisabled();
 
-			static bool s_autoFitRect = true;
-			ImGui::Checkbox("Auto Fit Rect to Text", &s_autoFitRect);
-
-			if (s_autoFitRect && canAutoFit)
+			bool autoFitRect = text->GetAutoFitRect();
+			if (ImGui::Checkbox("Auto Fit Rect to Text", &autoFitRect))
 			{
-				const vec2 measured = text->MeasureLocalSizeFixed();
-
-				const float paddingX = 2.0f;
-				const float paddingY = 2.0f;
-
-				rt->SetWidth(measured.x + paddingX);
-				rt->SetHeight(measured.y + paddingY);
+				text->SetAutoFitRect(autoFitRect);
 			}
 
 			if (!canAutoFit)

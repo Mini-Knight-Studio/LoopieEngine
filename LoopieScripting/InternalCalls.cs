@@ -677,6 +677,12 @@ namespace Loopie
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Text_SetText(string entityID, string componentID, string text);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Text_SetVisibleCharacters(string entityID, string componentID, int charsVisible);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static int Text_GetVisibleCharacters(string entityID, string componentID);
         #endregion
         #region Button
         [MethodImplAttribute(MethodImplOptions.InternalCall)]

@@ -45,6 +45,8 @@ namespace Loopie
 
 		void Init() override;
 
+		void OnUpdate() override;
+
 		void RenderGizmo() const override;
 
 		const std::string &GetText() const { return m_text; }
@@ -86,6 +88,9 @@ namespace Loopie
 		std::shared_ptr<Font> GetFont() const { return m_font; }
 		void SetFont(const std::shared_ptr<Font> &font);
 
+		bool GetAutoFitRect() const { return m_autoFitRect; }
+		void SetAutoFitRect(bool autoFit) { m_autoFitRect = autoFit; }
+
 		vec2 MeasureLocalSizeFixed() const;
 
 		JsonNode Serialize(JsonNode &parent) const override;
@@ -104,6 +109,7 @@ namespace Loopie
 		float m_wordSpacing = 0.0f;
 		float m_letterSpacing = 0.0f;
 		int visibleCharacters = -1;
+		bool m_autoFitRect = true;
 		TextHorizontalAlignment m_horizontalAlignment = TextHorizontalAlignment::Left;
 		TextVerticalAlignment m_verticalAlignment = TextVerticalAlignment::Top;
 
