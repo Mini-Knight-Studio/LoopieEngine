@@ -78,6 +78,14 @@ namespace Loopie {
 		const float px = (m_fontSize <= 0.0f) ? (float)m_font->GetPixelSize() : m_fontSize;
 		const float denom = (float)std::max(1, m_font->GetPixelSize());
 		const float fontScale = (px / denom) * baseScale;
+		const float lineAdvance = ((float)m_font->GetLineHeight() + m_lineSpacing) * fontScale;
+		const float letterAdvance = m_letterSpacing * fontScale;
+		const FontGlyph* spaceGlyph = m_font->GetGlyph((int)' ');
+		const float baseSpaceAdvance = spaceGlyph ? ((float)spaceGlyph->advance / 64.0f) * fontScale : 4.0f * fontScale;
+		const float wordAdvance = baseSpaceAdvance + (m_wordSpacing * fontScale);
+
+		bool lineStart = true;
+		bool lastWasSpace = true;
 
 		for (size_t i = 0; i < m_text.size(); i++)
 		{
@@ -86,9 +94,22 @@ namespace Loopie {
 			if (ch == '\n')
 			{
 				x = 0.0f;
-				y -= (float)m_font->GetLineHeight() * fontScale;
+				y -= lineAdvance;
+				lineStart = true;
+				lastWasSpace = true;
 				continue;
 			}
+
+			if (ch == '\t' || ch == ' ')
+			{
+				x += (ch == '\t') ? wordAdvance * 4.0f : wordAdvance;
+				lineStart = false;
+				lastWasSpace = true;
+				continue;
+			}
+
+			if (!lineStart && !lastWasSpace)
+				x += letterAdvance;
 
 			const FontGlyph* g = m_font->GetGlyph((int)ch);
 			if (!g)
@@ -105,6 +126,8 @@ namespace Loopie {
 			maxY = std::max(maxY, ypos + h);
 
 			x += ((float)g->advance / 64.0f) * fontScale;
+			lineStart = false;
+			lastWasSpace = false;
 		}
 
 		const float textW = std::max(0.0f, maxX - minX);
@@ -130,6 +153,9 @@ namespace Loopie {
 		textNode.CreateField<int>("size_mode", (int)m_sizeMode);
 		textNode.CreateField<int>("wrap_mode", (int)m_wrapMode);
 		textNode.CreateField<float>("font_size", m_fontSize);
+		textNode.CreateField<float>("line_spacing", m_lineSpacing);
+		textNode.CreateField<float>("word_spacing", m_wordSpacing);
+		textNode.CreateField<float>("letter_spacing", m_letterSpacing);
 		textNode.CreateField<int>("horizontal_alignment", (int)m_horizontalAlignment);
 		textNode.CreateField<int>("vertical_alignment", (int)m_verticalAlignment);
 
@@ -164,6 +190,9 @@ namespace Loopie {
 		m_sizeMode = (TextSizeMode)data.GetValue<int>("size_mode", (int)TextSizeMode::AutoSize).Result;
 		m_wrapMode = (TextWrapMode)data.GetValue<int>("wrap_mode", (int)TextWrapMode::NoWrap).Result;
 		m_fontSize = data.GetValue<float>("font_size", 24.0f).Result;
+		m_lineSpacing = data.GetValue<float>("line_spacing", 0.0f).Result;
+		m_wordSpacing = data.GetValue<float>("word_spacing", 0.0f).Result;
+		m_letterSpacing = data.GetValue<float>("letter_spacing", 0.0f).Result;
 		m_horizontalAlignment = (TextHorizontalAlignment)data.GetValue<int>("horizontal_alignment", (int)TextHorizontalAlignment::Left).Result;
 		m_verticalAlignment = (TextVerticalAlignment)data.GetValue<int>("vertical_alignment", (int)TextVerticalAlignment::Top).Result;
 
@@ -199,6 +228,9 @@ namespace Loopie {
 		m_sizeMode = otherText.m_sizeMode;
 		m_wrapMode = otherText.m_wrapMode;
 		m_fontSize = otherText.m_fontSize;
+		m_lineSpacing = otherText.m_lineSpacing;
+		m_wordSpacing = otherText.m_wordSpacing;
+		m_letterSpacing = otherText.m_letterSpacing;
 		m_horizontalAlignment = otherText.m_horizontalAlignment;
 		m_verticalAlignment = otherText.m_verticalAlignment;
 		m_font = otherText.m_font;

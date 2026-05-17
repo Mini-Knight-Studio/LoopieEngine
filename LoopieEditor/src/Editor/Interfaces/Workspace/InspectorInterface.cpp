@@ -2133,6 +2133,20 @@ namespace Loopie {
 				text->SetVerticalAlignment(static_cast<TextVerticalAlignment>(vAlignIndex));
 			}
 
+			ImGui::SeparatorText("Spacing");
+
+			float lineSpacing = text->GetLineSpacing();
+			if (ImGui::DragFloat("Line Spacing", &lineSpacing, 0.1f, -256.0f, 256.0f, "%.2f"))
+				text->SetLineSpacing(lineSpacing);
+
+			float wordSpacing = text->GetWordSpacing();
+			if (ImGui::DragFloat("Word Spacing", &wordSpacing, 0.1f, -256.0f, 256.0f, "%.2f"))
+				text->SetWordSpacing(wordSpacing);
+
+			float letterSpacing = text->GetLetterSpacing();
+			if (ImGui::DragFloat("Letter Spacing", &letterSpacing, 0.1f, -256.0f, 256.0f, "%.2f"))
+				text->SetLetterSpacing(letterSpacing);
+
 			ImGui::SeparatorText("Auto Fit Rect (Fixed Size)");
 
 			RectTransform* rt = text->GetOwner() ? text->GetOwner()->GetComponent<RectTransform>() : nullptr;

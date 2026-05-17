@@ -22,10 +22,12 @@ namespace Loopie {
 		static void DrawImageWorld(const matrix4& modelMatrix, const std::shared_ptr<Texture>& texture, const vec4& tint, const vec4& uvRect);
 
 		static void DrawTextContainer(const vec2& posPixels, const vec2& sizePixels, const std::string& text, const std::shared_ptr<Font>& font, const vec4& color, float scale,
-			TextSizeMode sizeMode, float fontSize, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign, TextWrapMode wrapMode = TextWrapMode::NoWrap);
+			TextSizeMode sizeMode, float fontSize, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign, TextWrapMode wrapMode = TextWrapMode::NoWrap,
+			float lineSpacing = 0.0f, float wordSpacing = 0.0f, float letterSpacing = 0.0f);
 
 		static void DrawTextWorld(const matrix4& modelMatrix, const vec2& sizePixels, const std::string& text, const std::shared_ptr<Font>& font, const vec4& color, float scale,
-			TextSizeMode sizeMode, float fontSize, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign, TextWrapMode wrapMode = TextWrapMode::NoWrap);
+			TextSizeMode sizeMode, float fontSize, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign, TextWrapMode wrapMode = TextWrapMode::NoWrap,
+			float lineSpacing = 0.0f, float wordSpacing = 0.0f, float letterSpacing = 0.0f);
 
 	private:
 		static void EnsureInit();
@@ -35,9 +37,9 @@ namespace Loopie {
 
 		static bool IsSpaceExceptNewline(char c);
 		static float MeasureCharAdvance(const std::shared_ptr<Font>& font, unsigned char ch, float fontScale, float spaceAdvance);
-		static float MeasureStringAdvance(const std::shared_ptr<Font>& font, const std::string& s, float fontScale, float spaceAdvance);
+		static float MeasureStringAdvance(const std::shared_ptr<Font>& font, const std::string& s, float fontScale, float spaceAdvance, float letterSpacing);
 		static std::string WrapTextToWidth(const std::string& text, const std::shared_ptr<Font>& font, float fontScale,
-			float maxWidth, TextWrapMode wrapMode);
+			float maxWidth, TextWrapMode wrapMode, float letterSpacing, float wordSpacing);
 
 	private:
 		static bool s_initialized;

@@ -65,6 +65,15 @@ namespace Loopie
 		float GetFontSize() const { return m_fontSize; }
 		void SetFontSize(float size) { m_fontSize = size; }
 
+		float GetLineSpacing() const { return m_lineSpacing; }
+		void SetLineSpacing(float spacing) { m_lineSpacing = spacing; }
+
+		float GetWordSpacing() const { return m_wordSpacing; }
+		void SetWordSpacing(float spacing) { m_wordSpacing = spacing; }
+
+		float GetLetterSpacing() const { return m_letterSpacing; }
+		void SetLetterSpacing(float spacing) { m_letterSpacing = spacing; }
+
 		TextHorizontalAlignment GetHorizontalAlignment() const { return m_horizontalAlignment; }
 		void SetHorizontalAlignment(TextHorizontalAlignment alignment) { m_horizontalAlignment = alignment; }
 
@@ -88,6 +97,9 @@ namespace Loopie
 		TextSizeMode m_sizeMode = TextSizeMode::AutoSize;
 		TextWrapMode m_wrapMode = TextWrapMode::NoWrap;
 		float m_fontSize = 24.0f;
+		float m_lineSpacing = 0.0f;
+		float m_wordSpacing = 0.0f;
+		float m_letterSpacing = 0.0f;
 		TextHorizontalAlignment m_horizontalAlignment = TextHorizontalAlignment::Left;
 		TextVerticalAlignment m_verticalAlignment = TextVerticalAlignment::Top;
 

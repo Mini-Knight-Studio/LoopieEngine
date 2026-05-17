@@ -20,26 +20,42 @@ namespace Loopie
 	std::shared_ptr<VertexBuffer> UIRenderer::s_quadVBO = nullptr;
 	std::shared_ptr<IndexBuffer> UIRenderer::s_quadEBO = nullptr;
 	std::shared_ptr<Material> UIRenderer::s_material = nullptr;
-	Shader* UIRenderer::s_shader = nullptr;
-	
+	Shader *UIRenderer::s_shader = nullptr;
+
 	void UIRenderer::Init()
 	{
 		if (s_initialized)
 			return;
 
 		const float vertices[] =
-		{
-			// pos                // uv
-			0.0f, 0.0f, 0.0f,     0.0f, 1.0f,
-			1.0f, 0.0f, 0.0f,     1.0f, 1.0f,
-			1.0f, 1.0f, 0.0f,     1.0f, 0.0f,
-			0.0f, 1.0f, 0.0f,     0.0f, 0.0f,
-		};
+			{
+				// pos                // uv
+				0.0f,
+				0.0f,
+				0.0f,
+				0.0f,
+				1.0f,
+				1.0f,
+				0.0f,
+				0.0f,
+				1.0f,
+				1.0f,
+				1.0f,
+				1.0f,
+				0.0f,
+				1.0f,
+				0.0f,
+				0.0f,
+				1.0f,
+				0.0f,
+				0.0f,
+				0.0f,
+			};
 
-		const unsigned int indices[] = { 0,1,2,2,3,0 };
+		const unsigned int indices[] = {0, 1, 2, 2, 3, 0};
 
 		s_quadVBO = std::make_shared<VertexBuffer>(vertices, (unsigned int)sizeof(vertices));
-		BufferLayout& layout = s_quadVBO->GetLayout();
+		BufferLayout &layout = s_quadVBO->GetLayout();
 		layout.AddLayoutElement(0, GLVariableType::FLOAT, 3, "a_Position");
 		layout.AddLayoutElement(1, GLVariableType::FLOAT, 2, "a_TexCoord");
 
@@ -48,8 +64,8 @@ namespace Loopie
 		s_quadVAO = std::make_shared<VertexArray>();
 		s_quadVAO->AddBuffer(s_quadVBO.get(), s_quadEBO.get());
 
-		const char* uiMatPath = "assets\\materials\\ui_default.mat";
-		Metadata& meta = AssetRegistry::GetOrCreateMetadata(uiMatPath);
+		const char *uiMatPath = "assets\\materials\\ui_default.mat";
+		Metadata &meta = AssetRegistry::GetOrCreateMetadata(uiMatPath);
 		if (!meta.HasCache)
 		{
 			MaterialImporter::ImportMaterial(uiMatPath, meta);
@@ -62,7 +78,6 @@ namespace Loopie
 		s_shader = new Shader("assets\\shaders\\UIQuad.shader");
 		s_material->SetShader(*s_shader);
 		s_initialized = true;
-
 	}
 
 	void UIRenderer::Shutdown()
@@ -73,7 +88,7 @@ namespace Loopie
 		s_quadVAO.reset();
 		s_quadVBO.reset();
 		s_quadEBO.reset();
-		
+
 		s_material.reset();
 		s_initialized = false;
 	}
@@ -113,29 +128,35 @@ namespace Loopie
 		return c == ' ' || c == '\t' || c == '\v' || c == '\f' || c == '\r';
 	}
 
-	float UIRenderer::MeasureCharAdvance(const std::shared_ptr<Font>& font, unsigned char ch, float fontScale, float spaceAdvance)
+	float UIRenderer::MeasureCharAdvance(const std::shared_ptr<Font> &font, unsigned char ch, float fontScale, float spaceAdvance)
 	{
 		if (ch == '\t')
 			return spaceAdvance * 4.0f;
 		if (ch == ' ')
 			return spaceAdvance;
 
-		const FontGlyph* g = font ? font->GetGlyph((int)ch) : nullptr;
+		const FontGlyph *g = font ? font->GetGlyph((int)ch) : nullptr;
 		if (!g)
 			return 0.0f;
 		return ((float)g->advance / 64.0f) * fontScale;
 	}
 
-	float UIRenderer::MeasureStringAdvance(const std::shared_ptr<Font>& font, const std::string& s, float fontScale, float spaceAdvance)
+	float UIRenderer::MeasureStringAdvance(const std::shared_ptr<Font> &font, const std::string &s, float fontScale, float spaceAdvance, float letterSpacing)
 	{
 		float width = 0.0f;
+		bool first = true;
 		for (size_t i = 0; i < s.size(); ++i)
+		{
+			if (!first)
+				width += letterSpacing * fontScale;
 			width += MeasureCharAdvance(font, (unsigned char)s[i], fontScale, spaceAdvance);
+			first = false;
+		}
 		return width;
 	}
 
-	std::string UIRenderer::WrapTextToWidth(const std::string& text, const std::shared_ptr<Font>& font, float fontScale,
-		float maxWidth, TextWrapMode wrapMode)
+	std::string UIRenderer::WrapTextToWidth(const std::string &text, const std::shared_ptr<Font> &font, float fontScale,
+											float maxWidth, TextWrapMode wrapMode, float letterSpacing, float wordSpacing)
 	{
 		if (wrapMode == TextWrapMode::NoWrap)
 			return text;
@@ -143,7 +164,7 @@ namespace Loopie
 			return text;
 
 		float spaceAdvance = 4.0f * fontScale;
-		if (const FontGlyph* spaceGlyph = font->GetGlyph((int)' '))
+		if (const FontGlyph *spaceGlyph = font->GetGlyph((int)' '))
 			spaceAdvance = std::max(0.0f, ((float)spaceGlyph->advance / 64.0f) * fontScale);
 		if (spaceAdvance <= 0.0f)
 			spaceAdvance = 4.0f * fontScale;
@@ -154,6 +175,7 @@ namespace Loopie
 		line.reserve(128);
 		float lineW = 0.0f;
 		bool pendingSpace = false;
+		const float wordAdvance = spaceAdvance + (wordSpacing * fontScale);
 
 		auto flushLine = [&]()
 		{
@@ -163,13 +185,13 @@ namespace Loopie
 			pendingSpace = false;
 		};
 
-		auto appendWord = [&](const std::string& word)
+		auto appendWord = [&](const std::string &word)
 		{
 			if (word.empty())
 				return;
 
-			const float wordW = MeasureStringAdvance(font, word, fontScale, spaceAdvance);
-			const float spaceW = (!line.empty() && pendingSpace) ? spaceAdvance : 0.0f;
+			const float wordW = MeasureStringAdvance(font, word, fontScale, spaceAdvance, letterSpacing);
+			const float spaceW = (!line.empty() && pendingSpace) ? wordAdvance : 0.0f;
 			const float required = wordW + spaceW;
 
 			const bool fitsCurrentLine = line.empty() || (lineW + required <= maxWidth);
@@ -178,7 +200,7 @@ namespace Loopie
 				if (!line.empty() && pendingSpace)
 				{
 					line += ' ';
-					lineW += spaceAdvance;
+					lineW += wordAdvance;
 				}
 				pendingSpace = false;
 				line += word;
@@ -203,13 +225,16 @@ namespace Loopie
 			{
 				const unsigned char ch = (unsigned char)word[i];
 				const float adv = MeasureCharAdvance(font, ch, fontScale, spaceAdvance);
-				if (!segment.empty() && (segW + adv > maxWidth))
+				const float spacing = !segment.empty() ? (letterSpacing * fontScale) : 0.0f;
+				if (!segment.empty() && (segW + spacing + adv > maxWidth))
 				{
 					out += segment;
 					out += '\n';
 					segment.clear();
 					segW = 0.0f;
 				}
+				if (!segment.empty())
+					segW += letterSpacing * fontScale;
 				segment.push_back((char)ch);
 				segW += adv;
 			}
@@ -250,11 +275,11 @@ namespace Loopie
 		return out;
 	}
 
-	void UIRenderer::DrawRect(const vec2& posPixels, const vec2& sizePixels, const vec4& color)
+	void UIRenderer::DrawRect(const vec2 &posPixels, const vec2 &sizePixels, const vec4 &color)
 	{
 		EnsureInit();
 
-		if(!s_quadVAO || !s_material)
+		if (!s_quadVAO || !s_material)
 			return;
 
 		UniformValue uv;
@@ -263,7 +288,7 @@ namespace Loopie
 		s_material->SetShaderVariable("u_UVRect", uv);
 
 		matrix4 model(1.0f);
-		model = glm::translate(model, vec3(posPixels.x,posPixels.y, 0.0f));
+		model = glm::translate(model, vec3(posPixels.x, posPixels.y, 0.0f));
 		model = glm::scale(model, vec3(sizePixels.x, sizePixels.y, 1.0f));
 
 		UniformValue c;
@@ -274,12 +299,12 @@ namespace Loopie
 		Renderer::FlushRenderItem(s_quadVAO, s_material, model);
 	}
 
-	void UIRenderer::DrawImage(const vec2& posPixels, const vec2& sizePixels, const std::shared_ptr<Texture>& texture, const vec4& tint)
+	void UIRenderer::DrawImage(const vec2 &posPixels, const vec2 &sizePixels, const std::shared_ptr<Texture> &texture, const vec4 &tint)
 	{
 		DrawImage(posPixels, sizePixels, texture, tint, vec4(0.0f, 0.0f, 1.0f, 1.0f));
 	}
 
-	void UIRenderer::DrawImage(const vec2& posPixels, const vec2& sizePixels, const std::shared_ptr<Texture>& texture, const vec4& tint, const vec4& uvRect)
+	void UIRenderer::DrawImage(const vec2 &posPixels, const vec2 &sizePixels, const std::shared_ptr<Texture> &texture, const vec4 &tint, const vec4 &uvRect)
 	{
 		EnsureInit();
 
@@ -305,12 +330,12 @@ namespace Loopie
 		Renderer::FlushRenderItem(s_quadVAO, s_material, model);
 	}
 
-	void UIRenderer::DrawImageWorld(const matrix4& modelMatrix, const std::shared_ptr<Texture>& texture, const vec4& tint)
+	void UIRenderer::DrawImageWorld(const matrix4 &modelMatrix, const std::shared_ptr<Texture> &texture, const vec4 &tint)
 	{
 		DrawImageWorld(modelMatrix, texture, tint, vec4(0.0f, 0.0f, 1.0f, 1.0f));
 	}
 
-	void UIRenderer::DrawImageWorld(const matrix4& modelMatrix, const std::shared_ptr<Texture>& texture, const vec4& tint, const vec4& uvRect)
+	void UIRenderer::DrawImageWorld(const matrix4 &modelMatrix, const std::shared_ptr<Texture> &texture, const vec4 &tint, const vec4 &uvRect)
 	{
 		EnsureInit();
 		if (!s_quadVAO || !s_material || !texture)
@@ -325,14 +350,15 @@ namespace Loopie
 		uv.type = UniformType_vec4;
 		uv.value = uvRect;
 		s_material->SetShaderVariable("u_UVRect", uv);
-		
-		s_material->SetTexture("u_Albedo",texture);
-		
+
+		s_material->SetTexture("u_Albedo", texture);
+
 		Renderer::FlushRenderItem(s_quadVAO, s_material, modelMatrix);
 	}
 
-	void UIRenderer::DrawTextContainer(const vec2& posPixels, const vec2& sizePixels, const std::string& text, const std::shared_ptr<Font>& font, const vec4& color, float scale,
-					  TextSizeMode sizeMode, float fontSize, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign, TextWrapMode wrapMode)
+	void UIRenderer::DrawTextContainer(const vec2 &posPixels, const vec2 &sizePixels, const std::string &text, const std::shared_ptr<Font> &font, const vec4 &color, float scale,
+									   TextSizeMode sizeMode, float fontSize, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign, TextWrapMode wrapMode,
+									   float lineSpacing, float wordSpacing, float letterSpacing)
 	{
 		EnsureInit();
 
@@ -364,9 +390,17 @@ namespace Loopie
 			fontScale = (px / denom) * baseScale;
 		}
 
-		const std::string renderText = WrapTextToWidth(text, font, fontScale, sizePixels.x, wrapMode);
+		const std::string renderText = WrapTextToWidth(text, font, fontScale, sizePixels.x, wrapMode, letterSpacing, wordSpacing);
 		if (renderText.empty())
 			return;
+
+		const float lineAdvance = ((float)font->GetLineHeight() + lineSpacing) * fontScale;
+		const float letterAdvance = letterSpacing * fontScale;
+		const FontGlyph *spaceGlyph = font->GetGlyph((int)' ');
+		const float baseSpaceAdvance = spaceGlyph ? ((float)spaceGlyph->advance / 64.0f) * fontScale : 4.0f * fontScale;
+		const float wordAdvance = baseSpaceAdvance + (wordSpacing * fontScale);
+		bool lineStart = true;
+		bool lastWasSpace = true;
 
 		for (size_t i = 0; i < renderText.size(); i++)
 		{
@@ -375,11 +409,24 @@ namespace Loopie
 			if (ch == '\n')
 			{
 				x = 0.0f;
-				y -= (float)font->GetLineHeight() * fontScale;
+				y -= lineAdvance;
+				lineStart = true;
+				lastWasSpace = true;
 				continue;
 			}
 
-			const FontGlyph* g = font->GetGlyph((int)ch);
+			if (ch == '\t' || ch == ' ')
+			{
+				x += (ch == '\t') ? wordAdvance * 4.0f : wordAdvance;
+				lineStart = false;
+				lastWasSpace = true;
+				continue;
+			}
+
+			if (!lineStart && !lastWasSpace)
+				x += letterAdvance;
+
+			const FontGlyph *g = font->GetGlyph((int)ch);
 			if (!g)
 				continue;
 
@@ -394,6 +441,8 @@ namespace Loopie
 			maxY = std::max(maxY, ypos + h);
 
 			x += ((float)g->advance / 64.0f) * fontScale;
+			lineStart = false;
+			lastWasSpace = false;
 		}
 
 		const float textW = std::max(1.0f, maxX - minX);
@@ -431,6 +480,9 @@ namespace Loopie
 		x = 0.0f;
 		y = 0.0f;
 
+		lineStart = true;
+		lastWasSpace = true;
+
 		for (size_t i = 0; i < renderText.size(); i++)
 		{
 			const unsigned char ch = (unsigned char)renderText[i];
@@ -438,11 +490,24 @@ namespace Loopie
 			if (ch == '\n')
 			{
 				x = 0.0f;
-				y -= (float)font->GetLineHeight() * fontScale;
+				y -= lineAdvance;
+				lineStart = true;
+				lastWasSpace = true;
 				continue;
 			}
 
-			const FontGlyph* g = font->GetGlyph((int)ch);
+			if (ch == '\t' || ch == ' ')
+			{
+				x += (ch == '\t') ? wordAdvance * 4.0f : wordAdvance;
+				lineStart = false;
+				lastWasSpace = true;
+				continue;
+			}
+
+			if (!lineStart && !lastWasSpace)
+				x += letterAdvance;
+
+			const FontGlyph *g = font->GetGlyph((int)ch);
 			if (!g)
 				continue;
 
@@ -464,6 +529,9 @@ namespace Loopie
 			Renderer::FlushRenderItem(s_quadVAO, s_material, model);
 
 			x += ((float)g->advance / 64.0f) * fontScale;
+
+			lineStart = false;
+			lastWasSpace = false;
 		}
 
 		UniformValue uvReset;
@@ -473,8 +541,9 @@ namespace Loopie
 		s_material->ClearTextureBufferOverride();
 	}
 
-	void UIRenderer::DrawTextWorld(const matrix4& modelMatrix, const vec2& sizePixels, const std::string& text, const std::shared_ptr<Font>& font, const vec4& color, float scale,
-						   TextSizeMode sizeMode, float fontSize, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign, TextWrapMode wrapMode)
+	void UIRenderer::DrawTextWorld(const matrix4 &modelMatrix, const vec2 &sizePixels, const std::string &text, const std::shared_ptr<Font> &font, const vec4 &color, float scale,
+								   TextSizeMode sizeMode, float fontSize, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign, TextWrapMode wrapMode,
+								   float lineSpacing, float wordSpacing, float letterSpacing)
 	{
 		EnsureInit();
 
@@ -506,9 +575,17 @@ namespace Loopie
 			fontScale = (px / denom) * baseScale;
 		}
 
-		const std::string renderText = WrapTextToWidth(text, font, fontScale, sizePixels.x, wrapMode);
+		const std::string renderText = WrapTextToWidth(text, font, fontScale, sizePixels.x, wrapMode, letterSpacing, wordSpacing);
 		if (renderText.empty())
 			return;
+
+		const float lineAdvance = ((float)font->GetLineHeight() + lineSpacing) * fontScale;
+		const float letterAdvance = letterSpacing * fontScale;
+		const FontGlyph *spaceGlyph = font->GetGlyph((int)' ');
+		const float baseSpaceAdvance = spaceGlyph ? ((float)spaceGlyph->advance / 64.0f) * fontScale : 4.0f * fontScale;
+		const float wordAdvance = baseSpaceAdvance + (wordSpacing * fontScale);
+		bool lineStart = true;
+		bool lastWasSpace = true;
 
 		for (size_t i = 0; i < renderText.size(); i++)
 		{
@@ -517,11 +594,24 @@ namespace Loopie
 			if (ch == '\n')
 			{
 				x = 0.0f;
-				y -= (float)font->GetLineHeight() * fontScale;
+				y -= lineAdvance;
+				lineStart = true;
+				lastWasSpace = true;
 				continue;
 			}
 
-			const FontGlyph* g = font->GetGlyph((int)ch);
+			if (ch == '\t' || ch == ' ')
+			{
+				x += (ch == '\t') ? wordAdvance * 4.0f : wordAdvance;
+				lineStart = false;
+				lastWasSpace = true;
+				continue;
+			}
+
+			if (!lineStart && !lastWasSpace)
+				x += letterAdvance;
+
+			const FontGlyph *g = font->GetGlyph((int)ch);
 			if (!g)
 				continue;
 
@@ -573,6 +663,9 @@ namespace Loopie
 		x = 0.0f;
 		y = 0.0f;
 
+		lineStart = true;
+		lastWasSpace = true;
+
 		for (size_t i = 0; i < renderText.size(); i++)
 		{
 			const unsigned char ch = (unsigned char)renderText[i];
@@ -580,14 +673,27 @@ namespace Loopie
 			if (ch == '\n')
 			{
 				x = 0.0f;
-				y -= (float)font->GetLineHeight() * fontScale;
+				y -= lineAdvance;
+				lineStart = true;
+				lastWasSpace = true;
 				continue;
 			}
 
-			const FontGlyph* g = font->GetGlyph((int)ch);
+			if (ch == '\t' || ch == ' ')
+			{
+				x += (ch == '\t') ? wordAdvance * 4.0f : wordAdvance;
+				lineStart = false;
+				lastWasSpace = true;
+				continue;
+			}
+
+			if (!lineStart && !lastWasSpace)
+				x += letterAdvance;
+
+			const FontGlyph *g = font->GetGlyph((int)ch);
 			if (!g)
 				continue;
-				
+
 			const float xpos = (x + (float)g->bearing.x * fontScale) * fitScale + ox;
 			const float ypos = (y - ((float)g->size.y - (float)g->bearing.y) * fontScale) * fitScale + oy;
 
@@ -606,6 +712,9 @@ namespace Loopie
 			Renderer::FlushRenderItem(s_quadVAO, s_material, modelMatrix * glyphLocal);
 
 			x += ((float)g->advance / 64.0f) * fontScale;
+
+			lineStart = false;
+			lastWasSpace = false;
 		}
 
 		UniformValue uvReset;
