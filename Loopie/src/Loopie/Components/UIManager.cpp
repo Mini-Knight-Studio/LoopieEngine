@@ -113,7 +113,7 @@ namespace Loopie
 
 		std::shared_ptr<Entity> entity = scene.GetEntity(desired);
 		UIElement* ui = FindUIElementComponent(entity);
-		if (!ui || !ui->GetIsActive() || !ui->CanFocus())
+		if (!ui || !ui->CanFocus())
 			return false;
 
 		ui->Focus();
