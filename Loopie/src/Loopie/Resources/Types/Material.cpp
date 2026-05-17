@@ -74,8 +74,21 @@ namespace Loopie
 			if (!texture)
 				texture = Texture::GetDefault();
 
-			texture->m_tb->Bind(textureSlot);
-			m_shader.SetUniformInt(name, textureSlot);
+			if (texture->m_tb && texture->m_tb->GetRendererID() != 0)
+			{
+				texture->m_tb->Bind(textureSlot);
+				m_shader.SetUniformInt(name, textureSlot);
+			}
+			else
+			{
+				// Ensure default is bound if this texture has no GPU buffer
+				auto def = Texture::GetDefault();
+				if (def && def->m_tb)
+				{
+					def->m_tb->Bind(textureSlot);
+					m_shader.SetUniformInt(name, textureSlot);
+				}
+			}
 
 			textureSlot++;
 		}

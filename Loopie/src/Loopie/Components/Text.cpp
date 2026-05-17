@@ -131,7 +131,6 @@ namespace Loopie {
 		textNode.CreateField<float>("font_size", m_fontSize);
 		textNode.CreateField<int>("horizontal_alignment", (int)m_horizontalAlignment);
 		textNode.CreateField<int>("vertical_alignment", (int)m_verticalAlignment);
-		textNode.CreateField<bool>("justified", m_justified);
 
 		if (m_font)
 			textNode.CreateField<std::string>("font_uuid", m_font->GetUUID().Get());
@@ -165,7 +164,6 @@ namespace Loopie {
 		m_fontSize = data.GetValue<float>("font_size", 24.0f).Result;
 		m_horizontalAlignment = (TextHorizontalAlignment)data.GetValue<int>("horizontal_alignment", (int)TextHorizontalAlignment::Left).Result;
 		m_verticalAlignment = (TextVerticalAlignment)data.GetValue<int>("vertical_alignment", (int)TextVerticalAlignment::Top).Result;
-		m_justified = data.GetValue<bool>("justified", false).Result;
 
 		DeserializeDrawOrder(data);
 		DeserializeNavigation(data);
@@ -200,7 +198,6 @@ namespace Loopie {
 		m_fontSize = otherText.m_fontSize;
 		m_horizontalAlignment = otherText.m_horizontalAlignment;
 		m_verticalAlignment = otherText.m_verticalAlignment;
-		m_justified = otherText.m_justified;
 		m_font = otherText.m_font;
 		CloneDrawOrder(otherText);
 		CloneNavigation(otherText);

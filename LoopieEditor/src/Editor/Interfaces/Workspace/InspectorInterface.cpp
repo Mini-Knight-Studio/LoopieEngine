@@ -2109,14 +2109,6 @@ namespace Loopie {
 			if (!isFixed)
 				ImGui::EndDisabled();
 
-			bool justified = text->GetJustified();
-			if (ImGui::Checkbox("Justified Text", &justified))
-				text->SetJustified(justified);
-
-			const bool disableHorizontal = text->GetJustified();
-			if (disableHorizontal)
-				ImGui::BeginDisabled();
-
 			TextHorizontalAlignment hAlign = text->GetHorizontalAlignment();
 			int hAlignIndex = static_cast<int>(hAlign);
 			const char* hAlignLabels[] = { "Left", "Center", "Right" };
@@ -2124,9 +2116,6 @@ namespace Loopie {
 			{
 				text->SetHorizontalAlignment(static_cast<TextHorizontalAlignment>(hAlignIndex));
 			}
-
-			if (disableHorizontal)
-				ImGui::EndDisabled();
 
 			TextVerticalAlignment vAlign = text->GetVerticalAlignment();
 			int vAlignIndex = static_cast<int>(vAlign);
