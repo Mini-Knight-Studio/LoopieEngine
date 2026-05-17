@@ -2147,6 +2147,10 @@ namespace Loopie {
 			if (ImGui::DragFloat("Letter Spacing", &letterSpacing, 0.1f, -256.0f, 256.0f, "%.2f"))
 				text->SetLetterSpacing(letterSpacing);
 
+			int visibleCharacters = text->GetVisibleCharacters();
+			if (ImGui::DragInt("Visible Characters", &visibleCharacters, 1.0f, 0, 100000))
+				text->SetVisibleCharacters(visibleCharacters);
+
 			ImGui::SeparatorText("Auto Fit Rect (Fixed Size)");
 
 			RectTransform* rt = text->GetOwner() ? text->GetOwner()->GetComponent<RectTransform>() : nullptr;

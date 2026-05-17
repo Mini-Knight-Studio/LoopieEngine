@@ -22,6 +22,25 @@ namespace Loopie
 	std::shared_ptr<Material> UIRenderer::s_material = nullptr;
 	Shader *UIRenderer::s_shader = nullptr;
 
+	static std::vector<std::string> SplitLines(const std::string &text)
+	{
+		std::vector<std::string> lines;
+
+		size_t start = 0;
+		size_t end = text.find('\n');
+
+		while (end != std::string::npos)
+		{
+			lines.push_back(text.substr(start, end - start));
+			start = end + 1;
+			end = text.find('\n', start);
+		}
+
+		lines.push_back(text.substr(start));
+
+		return lines;
+	}
+
 	void UIRenderer::Init()
 	{
 		if (s_initialized)
@@ -358,7 +377,7 @@ namespace Loopie
 
 	void UIRenderer::DrawTextContainer(const vec2 &posPixels, const vec2 &sizePixels, const std::string &text, const std::shared_ptr<Font> &font, const vec4 &color, float scale,
 									   TextSizeMode sizeMode, float fontSize, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign, TextWrapMode wrapMode,
-									   float lineSpacing, float wordSpacing, float letterSpacing)
+									   float lineSpacing, float wordSpacing, float letterSpacing, int visibleCharacters)
 	{
 		EnsureInit();
 
@@ -390,7 +409,13 @@ namespace Loopie
 			fontScale = (px / denom) * baseScale;
 		}
 
-		const std::string renderText = WrapTextToWidth(text, font, fontScale, sizePixels.x, wrapMode, letterSpacing, wordSpacing);
+		const TextWrapMode effectiveWrap =
+			(sizeMode == TextSizeMode::AutoSize)
+				? TextWrapMode::NoWrap
+				: wrapMode;
+
+		const std::string renderText =
+			WrapTextToWidth(text, font, fontScale, sizePixels.x, effectiveWrap, letterSpacing, wordSpacing);
 		if (renderText.empty())
 			return;
 
@@ -401,6 +426,33 @@ namespace Loopie
 		const float wordAdvance = baseSpaceAdvance + (wordSpacing * fontScale);
 		bool lineStart = true;
 		bool lastWasSpace = true;
+
+		const auto lines = SplitLines(renderText);
+
+		std::vector<float> lineWidths;
+		lineWidths.reserve(lines.size());
+
+		float maxLineWidth = 0.0f;
+
+		for (const auto &line : lines)
+		{
+			float w = MeasureStringAdvance(
+				font,
+				line,
+				fontScale,
+				wordAdvance,
+				letterSpacing);
+
+			lineWidths.push_back(w);
+			maxLineWidth = std::max(maxLineWidth, w);
+		}
+
+		int visibleCount =
+			(visibleCharacters < 0)
+				? (int)renderText.size()
+				: visibleCharacters;
+
+		int drawn = 0;
 
 		for (size_t i = 0; i < renderText.size(); i++)
 		{
@@ -430,6 +482,14 @@ namespace Loopie
 			if (!g)
 				continue;
 
+			if (drawn >= visibleCount)
+			{
+				x += ((float)g->advance / 64.0f) * fontScale;
+				lineStart = false;
+				lastWasSpace = false;
+				continue;
+			}
+
 			const float xpos = x + (float)g->bearing.x * fontScale;
 			const float ypos = y - ((float)g->size.y - (float)g->bearing.y) * fontScale;
 			const float w = (float)g->size.x * fontScale;
@@ -445,7 +505,14 @@ namespace Loopie
 			lastWasSpace = false;
 		}
 
-		const float textW = std::max(1.0f, maxX - minX);
+		const float textW = std::max(1.0f, maxLineWidth);
+		int lineCount = 1;
+		for (char c : renderText)
+		{
+			if (c == '\n')
+				lineCount++;
+		}
+
 		const float textH = std::max(1.0f, maxY - minY);
 
 		float fitScale = 1.0f;
@@ -483,6 +550,11 @@ namespace Loopie
 		lineStart = true;
 		lastWasSpace = true;
 
+		size_t currentLine = 0;
+
+		float lineOffsetX =
+			(textW - lineWidths[currentLine]) * ax;
+
 		for (size_t i = 0; i < renderText.size(); i++)
 		{
 			const unsigned char ch = (unsigned char)renderText[i];
@@ -511,7 +583,17 @@ namespace Loopie
 			if (!g)
 				continue;
 
-			const float xpos = posPixels.x + (x + (float)g->bearing.x * fontScale) * fitScale + ox;
+			if (drawn >= visibleCount)
+			{
+				x += ((float)g->advance / 64.0f) * fontScale;
+				lineStart = false;
+				lastWasSpace = false;
+				continue;
+			}
+
+			const float xpos = posPixels.x +
+							   (x + (float)g->bearing.x * fontScale + lineOffsetX) * fitScale +
+							   ox;
 			const float ypos = posPixels.y + (y - ((float)g->size.y - (float)g->bearing.y) * fontScale) * fitScale + oy;
 
 			const float w = (float)g->size.x * fontScale * fitScale;
@@ -530,6 +612,7 @@ namespace Loopie
 
 			x += ((float)g->advance / 64.0f) * fontScale;
 
+			drawn++;
 			lineStart = false;
 			lastWasSpace = false;
 		}
@@ -543,7 +626,7 @@ namespace Loopie
 
 	void UIRenderer::DrawTextWorld(const matrix4 &modelMatrix, const vec2 &sizePixels, const std::string &text, const std::shared_ptr<Font> &font, const vec4 &color, float scale,
 								   TextSizeMode sizeMode, float fontSize, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign, TextWrapMode wrapMode,
-								   float lineSpacing, float wordSpacing, float letterSpacing)
+								   float lineSpacing, float wordSpacing, float letterSpacing, int visibleCharacters)
 	{
 		EnsureInit();
 
@@ -587,6 +670,33 @@ namespace Loopie
 		bool lineStart = true;
 		bool lastWasSpace = true;
 
+		const auto lines = SplitLines(renderText);
+
+		std::vector<float> lineWidths;
+		lineWidths.reserve(lines.size());
+
+		float maxLineWidth = 0.0f;
+
+		for (const auto &line : lines)
+		{
+			float w = MeasureStringAdvance(
+				font,
+				line,
+				fontScale,
+				wordAdvance,
+				letterSpacing);
+
+			lineWidths.push_back(w);
+			maxLineWidth = std::max(maxLineWidth, w);
+		}
+
+		int visibleCount =
+			(visibleCharacters < 0)
+				? (int)renderText.size()
+				: visibleCharacters;
+
+		int drawn = 0;
+
 		for (size_t i = 0; i < renderText.size(); i++)
 		{
 			const unsigned char ch = (unsigned char)renderText[i];
@@ -615,6 +725,14 @@ namespace Loopie
 			if (!g)
 				continue;
 
+			if (drawn >= visibleCount)
+			{
+				x += ((float)g->advance / 64.0f) * fontScale;
+				lineStart = false;
+				lastWasSpace = false;
+				continue;
+			}
+
 			const float xpos = x + (float)g->bearing.x * fontScale;
 			const float ypos = y - ((float)g->size.y - (float)g->bearing.y) * fontScale;
 			const float w = (float)g->size.x * fontScale;
@@ -628,8 +746,16 @@ namespace Loopie
 			x += ((float)g->advance / 64.0f) * fontScale;
 		}
 
-		const float textW = std::max(1.0f, maxX - minX);
-		const float textH = std::max(1.0f, maxY - minY);
+		const float textW = std::max(1.0f, maxLineWidth);
+		int lineCount = 1;
+		for (char c : renderText)
+		{
+			if (c == '\n')
+				lineCount++;
+		}
+
+		const float textH =
+			std::max(lineAdvance, lineCount * lineAdvance);
 
 		float fitScale = 1.0f;
 		if (sizeMode == TextSizeMode::AutoSize)
@@ -666,6 +792,11 @@ namespace Loopie
 		lineStart = true;
 		lastWasSpace = true;
 
+		size_t currentLine = 0;
+
+		float lineOffsetX =
+			(textW - lineWidths[currentLine]) * ax;
+
 		for (size_t i = 0; i < renderText.size(); i++)
 		{
 			const unsigned char ch = (unsigned char)renderText[i];
@@ -693,6 +824,14 @@ namespace Loopie
 			const FontGlyph *g = font->GetGlyph((int)ch);
 			if (!g)
 				continue;
+
+			if (drawn >= visibleCount)
+			{
+				x += ((float)g->advance / 64.0f) * fontScale;
+				lineStart = false;
+				lastWasSpace = false;
+				continue;
+			}
 
 			const float xpos = (x + (float)g->bearing.x * fontScale) * fitScale + ox;
 			const float ypos = (y - ((float)g->size.y - (float)g->bearing.y) * fontScale) * fitScale + oy;
@@ -713,6 +852,7 @@ namespace Loopie
 
 			x += ((float)g->advance / 64.0f) * fontScale;
 
+			drawn++;
 			lineStart = false;
 			lastWasSpace = false;
 		}

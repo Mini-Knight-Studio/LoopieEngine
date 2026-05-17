@@ -47,11 +47,11 @@ namespace Loopie
 
 		void RenderGizmo() const override;
 
-		const std::string& GetText() const { return m_text; }
-		void SetText(const std::string& text) { m_text = text; }
+		const std::string &GetText() const { return m_text; }
+		void SetText(const std::string &text) { m_text = text; }
 
-		const vec4& GetColor() const { return m_color; }
-		void SetColor(const vec4& color) { m_color = color; }
+		const vec4 &GetColor() const { return m_color; }
+		void SetColor(const vec4 &color) { m_color = color; }
 
 		float GetScale() const { return m_scale; }
 		void SetScale(float scale) { m_scale = scale; }
@@ -74,6 +74,9 @@ namespace Loopie
 		float GetLetterSpacing() const { return m_letterSpacing; }
 		void SetLetterSpacing(float spacing) { m_letterSpacing = spacing; }
 
+		int GetVisibleCharacters() const { return visibleCharacters; }
+		void SetVisibleCharacters(int v) { visibleCharacters = v; }
+
 		TextHorizontalAlignment GetHorizontalAlignment() const { return m_horizontalAlignment; }
 		void SetHorizontalAlignment(TextHorizontalAlignment alignment) { m_horizontalAlignment = alignment; }
 
@@ -81,13 +84,13 @@ namespace Loopie
 		void SetVerticalAlignment(TextVerticalAlignment alignment) { m_verticalAlignment = alignment; }
 
 		std::shared_ptr<Font> GetFont() const { return m_font; }
-		void SetFont(const std::shared_ptr<Font>& font);
+		void SetFont(const std::shared_ptr<Font> &font);
 
 		vec2 MeasureLocalSizeFixed() const;
 
-		JsonNode Serialize(JsonNode& parent) const override;
-		void Deserialize(const JsonNode& data) override;
-		void Clone(const std::shared_ptr<Entity> entity, const Component& other) override;
+		JsonNode Serialize(JsonNode &parent) const override;
+		void Deserialize(const JsonNode &data) override;
+		void Clone(const std::shared_ptr<Entity> entity, const Component &other) override;
 
 	private:
 		std::string m_text = "Text";
@@ -100,6 +103,7 @@ namespace Loopie
 		float m_lineSpacing = 0.0f;
 		float m_wordSpacing = 0.0f;
 		float m_letterSpacing = 0.0f;
+		int visibleCharacters = -1;
 		TextHorizontalAlignment m_horizontalAlignment = TextHorizontalAlignment::Left;
 		TextVerticalAlignment m_verticalAlignment = TextVerticalAlignment::Top;
 

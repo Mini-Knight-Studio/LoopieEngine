@@ -151,7 +151,7 @@ namespace Loopie
 
 				UIRenderer::DrawTextContainer(pixelPos, pixelSize, text->GetText(), text->GetFont(), textColor, text->GetScale() * job.OverlayScale.x,
 					text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetWrapMode(),
-					text->GetLineSpacing(), text->GetWordSpacing(), text->GetLetterSpacing());
+					text->GetLineSpacing(), text->GetWordSpacing(), text->GetLetterSpacing(), text->GetVisibleCharacters());
 				break;
 			}
 		}
@@ -247,7 +247,7 @@ namespace Loopie
 
 				UIRenderer::DrawTextWorld(model, vec2(w, h), text->GetText(), text->GetFont(), text->GetColor(), text->GetScale(),
 					text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetWrapMode(),
-					text->GetLineSpacing(), text->GetWordSpacing(), text->GetLetterSpacing());
+					text->GetLineSpacing(), text->GetWordSpacing(), text->GetLetterSpacing(), text->GetVisibleCharacters());
 				break;
 			}
 		}
@@ -868,7 +868,7 @@ namespace Loopie
 
 			UIRenderer::DrawTextContainer(pixelPos, pixelSize, text->GetText(), text->GetFont(), textColor, text->GetScale() * scale.x,
 				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetWrapMode(),
-				text->GetLineSpacing(), text->GetWordSpacing(), text->GetLetterSpacing());
+				text->GetLineSpacing(), text->GetWordSpacing(), text->GetLetterSpacing(), text->GetVisibleCharacters());
 		}
 
 		for (const auto& child : entity->GetChildren())
@@ -1014,7 +1014,7 @@ namespace Loopie
 
 			UIRenderer::DrawTextWorld(model, vec2(w, h), text->GetText(), text->GetFont(), text->GetColor(), text->GetScale(),
 				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetWrapMode(),
-				text->GetLineSpacing(), text->GetWordSpacing(), text->GetLetterSpacing());
+				text->GetLineSpacing(), text->GetWordSpacing(), text->GetLetterSpacing(), text->GetVisibleCharacters());
 		}
 
 		for (const auto& child : entity->GetChildren())
