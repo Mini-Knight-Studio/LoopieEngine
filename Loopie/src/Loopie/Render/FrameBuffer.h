@@ -15,6 +15,7 @@ namespace Loopie
 
 		void Resize(unsigned int width, unsigned int height);
 
+		unsigned int GetRendererId() { return m_rendererID; }
 		unsigned int GetTextureId() { return m_textureBufferID; }
 		unsigned int GetDepthId() { return m_depthTextureID; }
 		unsigned int GetWidth() { return m_width; }
@@ -23,7 +24,6 @@ namespace Loopie
 	private:
 		unsigned int m_rendererID = 0;
 
-		unsigned int m_renderBufferID = 0;
 		unsigned int m_textureBufferID = 0;
 		unsigned int m_depthTextureID = 0;
 		unsigned int m_width = 0;

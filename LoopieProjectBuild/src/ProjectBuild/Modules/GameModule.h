@@ -3,6 +3,7 @@
 #include "Loopie/Core/Module.h"
 #include "Loopie/Events/IObserver.h"
 #include "Loopie/Events/EventTypes.h"
+#include "Loopie/Render/FrameBuffer.h"
 
 #include "Loopie/Core/Application.h"
 #include <memory>
@@ -86,6 +87,8 @@ namespace Loopie {
 	private:
 
 		Scene* m_currentScene = nullptr;
+
+		std::shared_ptr<Loopie::FrameBuffer> m_mainFrameBuffer;
 
 		DebugGameMode mode;
 	};

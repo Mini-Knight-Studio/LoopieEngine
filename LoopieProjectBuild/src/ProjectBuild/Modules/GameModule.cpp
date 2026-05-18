@@ -285,8 +285,13 @@ namespace Loopie
 
 		Application::GetInstance().m_notifier.AddObserver(this);
 
+
+		glm::ivec2 windowSize = Application::GetInstance().GetWindow().GetSize();
+		m_mainFrameBuffer = std::make_shared<FrameBuffer>(windowSize.x, windowSize.y);
+
 		mode = DebugGameMode::START;
 
+		// Initialize the main FrameBuffer for the build
 	}
 
 	void GameModule::OnUnload()
@@ -299,7 +304,6 @@ namespace Loopie
 	static bool dirtyShadows = false;
 	void GameModule::OnUpdate()
 	{
-
 		Application& app = Application::GetInstance();
 		InputEventManager& inputEvent = app.GetInputEvent();
 		AudioManager::Update();
@@ -319,40 +323,80 @@ namespace Loopie
 		}
 
 		const std::vector<Camera*>& cameras = Renderer::GetRendererCameras();
-		for (Camera* cam : cameras) {
+		for (Camera* cam : cameras)
+		{
 			if (!cam->GetIsActive())
 				continue;
 
 			std::shared_ptr<FrameBuffer> buffer = cam->GetRenderTarget();
-			bool mainCamera = cam == Camera::GetMainCamera();
+			const bool mainCamera = (cam == Camera::GetMainCamera());
+
+			if (mainCamera && !buffer)
+			{
+				buffer = m_mainFrameBuffer;
+
+				glm::ivec2 windowSize = app.GetWindow().GetSize();
+				if (buffer->GetWidth() != windowSize.x || buffer->GetHeight() != windowSize.y)
+				{
+					buffer->Resize(windowSize.x, windowSize.y);
+				}
+			}
 
 			RenderShadows(cam);
 
-			if (mainCamera) {
-				ivec2 windowSize = app.GetWindow().GetSize();
+			if (buffer)
+			{
+				buffer->Bind();
+				Renderer::SetViewport(0, 0, buffer->GetWidth(), buffer->GetHeight());
+				if (mainCamera)
+				{
+					cam->SetViewport(0, 0, buffer->GetWidth(), buffer->GetHeight());
+				}
+			}
+			else
+			{
+				glm::ivec2 windowSize = app.GetWindow().GetSize();
 				cam->SetViewport(0, 0, windowSize.x, windowSize.y);
 				Renderer::SetViewport(0, 0, windowSize.x, windowSize.y);
 			}
-			else {
-				buffer->Bind();
-				Renderer::SetViewport(0, 0, buffer->GetWidth(), buffer->GetHeight());
-			}
-
-			
 
 			Renderer::BeginScene(cam->GetViewMatrix(), cam->GetProjectionMatrix(), cam->GetIsEditorCamera());
 			RenderWorld(cam);
+
 			Renderer::SetSceneDepthTexture(buffer ? buffer->GetDepthId() : 0);
 			Renderer::SetSceneFrustrumValues(cam->GetNearPlane(), cam->GetFarPlane());
+
 			Renderer::EndScene();
 			RenderParticles(cam);
 
-			if (!mainCamera) {
+			if (mainCamera)
+			{
+				RenderUI();
+			}
+
+			if (buffer)
+			{
 				buffer->Unbind();
+			}
+
+			if (mainCamera && buffer)
+			{
+				glm::ivec2 windowSize = app.GetWindow().GetSize();
+
+				glBindFramebuffer(GL_READ_FRAMEBUFFER, buffer->GetRendererId());
+				glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+				glBlitFramebuffer(
+					0, 0, buffer->GetWidth(), buffer->GetHeight(),
+					0, 0, windowSize.x, windowSize.y,
+					GL_COLOR_BUFFER_BIT,
+					GL_NEAREST
+				);
+
+				glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 			}
 		}
 
-		RenderUI();
 
 		ProcessOverlayButtonsInput();
 
@@ -362,7 +406,6 @@ namespace Loopie
 			mode = DebugGameMode::UPDATING;
 		if (mode == END)
 			mode = DebugGameMode::DEACTIVATED;
-
 	}
 
 
@@ -372,12 +415,15 @@ namespace Loopie
 
 			bool errors = false;
 			for (const auto& [uuid, entity] : m_currentScene->GetAllEntities()) {
-				std::vector<ScriptClass*> scripts = entity->GetComponents<ScriptClass>();
-				for (size_t i = 0; i < scripts.size(); i++)
+				if (auto* scripts = entity->GetComponentsRaw<ScriptClass>())
 				{
-					if (!scripts[i]->GetScriptingClass()) {
-						errors = true;
-						Log::Error("Failed to start the game. Check the scripts || Entity: {0}   Component UUID: {1}", scripts[i]->GetOwner()->GetName(), scripts[i]->GetUUID().Get());
+					for (Component* comp : *scripts)
+					{
+						ScriptClass* script = static_cast<ScriptClass*>(comp);
+						if (!script->GetScriptingClass()) {
+							errors = true;
+							Log::Error("Failed to start the game. Check the scripts || Entity: {0}   Component UUID: {1}", script->GetOwner()->GetName(), script->GetUUID().Get());
+						}
 					}
 				}
 			}
@@ -573,6 +619,7 @@ namespace Loopie
 			}
 		}
 
+		Renderer::FlushParticles();
 		Renderer::EnableDepthMask();
 		Renderer::DisableBlend();
 	}
@@ -587,7 +634,6 @@ namespace Loopie
 				dynamicEntities.insert(entity);
 		}
 	}
-
 
 	void GameModule::RenderUI()
 	{
@@ -668,62 +714,6 @@ namespace Loopie
 		Renderer::EnableDepth();
 	}
 
-	void GameModule::RenderSceneUIRecursive(const std::shared_ptr<Entity>& entity)
-	{
-		if (!entity || !entity->GetIsActive())
-			return;
-
-		Image* img = entity->GetComponent<Image>();
-		Text* text = entity->GetComponent<Text>();
-		RectTransform* rt = entity->GetComponent<RectTransform>();
-
-		if (img && img->GetIsActive() && rt)
-		{
-			const std::shared_ptr<Texture> tex = img->GetTexture();
-			if (tex)
-			{
-				const vec3 bmin = rt->GetLocalBoundsMin();
-				const vec3 bmax = rt->GetLocalBoundsMax();
-				const float w = bmax.x - bmin.x;
-				const float h = bmax.y - bmin.y;
-
-				matrix4 model = rt->GetLocalToWorldMatrix()
-					* glm::translate(matrix4(1.0f), vec3(bmin.x, bmin.y, 0.0f))
-					* glm::scale(matrix4(1.0f), vec3(w, h, 1.0f));
-				vec4 color = img->GetTint();
-				std::shared_ptr<Texture> texture = img->GetTexture();
-
-				if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
-				{
-					button->GetCurrentColor(color);
-					button->GetCurrentTexture(texture);
-				}
-
-				UIRenderer::DrawImageWorld(model, texture, color, img->GetUVRect());
-			}
-		}
-
-		if (text && text->GetIsActive() && rt)
-		{
-			const vec3 bmin = rt->GetLocalBoundsMin();
-			const vec3 bmax = rt->GetLocalBoundsMax();
-			const float w = bmax.x - bmin.x;
-			const float h = bmax.y - bmin.y;
-
-			const matrix4 model = rt->GetLocalToWorldMatrix() * glm::translate(matrix4(1.0f), vec3(bmin.x, bmin.y, 0.0f));
-
-			vec4 textColor = text->GetColor();
-			if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
-				button->GetCurrentColor(textColor);
-
-			UIRenderer::DrawTextWorld(model, vec2(w, h), text->GetText(), text->GetFont(), textColor, text->GetScale(),
-				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetWrapMode(),
-				text->GetLineSpacing(), text->GetWordSpacing(), text->GetLetterSpacing(), text->GetVisibleCharacters());
-		}
-
-		for (const auto& child : entity->GetChildren())
-			RenderSceneUIRecursive(child);
-	}
 
 	void GameModule::RenderSceneUI(Camera* camera)
 	{
