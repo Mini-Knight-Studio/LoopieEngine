@@ -1768,14 +1768,14 @@ namespace Loopie
 			audioSource->Play();
 	}
 
-	static void AudioSource_Stop(MonoString* entityID, MonoString* componentID)
+	static void AudioSource_Stop(MonoString* entityID, MonoString* componentID, float fadeTime)
 	{
 		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
 		if (!entity)
 			return;
 		AudioSource* audioSource = Utils::GetComponent<AudioSource>(entity, componentID);
 		if (audioSource)
-			audioSource->Stop();
+			audioSource->Stop(fadeTime);
 	}
 
 	static void AudioSource_SetLoop(MonoString* entityID, MonoString* componentID, MonoBoolean loop)
@@ -1891,6 +1891,25 @@ namespace Loopie
 		audioSource->Get3DMinMaxDistance(minVal, maxVal);
 		*min = minVal;
 		*max = maxVal;
+	}
+
+	static void AudioSource_TransitionTo(MonoString* entityID, MonoString* componentID, MonoString* audioID, float timeOut, float timeIn, bool crossFade) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		AudioSource* audioSource = Utils::GetComponent<AudioSource>(entity, componentID);
+		if (audioSource) {
+
+			UUID uuidClip = UUID(Utils::MonoStringToString(audioID));
+			std::shared_ptr<AudioClip> clip = nullptr;
+			Metadata* meta = AssetRegistry::GetMetadata(uuidClip);
+			if (meta) {
+				clip = ResourceManager::GetAudioClip(*meta);
+				Log::Info("YES");
+			}else
+				Log::Info("NO");
+			audioSource->TransitionTo(clip, timeOut, timeIn, crossFade);
+		}
 	}
 
 #pragma endregion
@@ -3568,6 +3587,7 @@ namespace Loopie
 		ADD_INTERNAL_CALL(AudioSource_SetVolume);
 		ADD_INTERNAL_CALL(AudioSource_SetPan);
 		ADD_INTERNAL_CALL(AudioSource_SetSet3DMinMaxDistance);
+		ADD_INTERNAL_CALL(AudioSource_TransitionTo);
 
 		ADD_INTERNAL_CALL(AudioSource_IsLooping);
 		ADD_INTERNAL_CALL(AudioSource_GetPitch);

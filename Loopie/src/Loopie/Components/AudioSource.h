@@ -57,7 +57,7 @@ namespace Loopie {
 
         void SetCurrentClip(int index);
         void Play();
-        void Stop();
+        void Stop(float fadeOutTime = 0.0f);
         void LoadResource();
 
         void SetLoop(bool active);
@@ -88,12 +88,17 @@ namespace Loopie {
         void SetLoopStrategy(AudioLoopStrategy strategy);
         void SetNoLoopStrategy(AudioNoLoopStrategy strategy);
 
+        void TransitionTo(std::shared_ptr<AudioClip> clip, float timeOut, float timeIn, bool crossFade = true);
+
         JsonNode Serialize(JsonNode& parent) const override;
         void Deserialize(const JsonNode& data) override;
 		void Clone(const std::shared_ptr<Entity> entity, const Component& other) override;
 
     private:
         const AudioBus* ResolveBus() const;
+
+        void ProcessFading(float dt);
+        void UpdateSpatialization();
     private:
 
         friend class AudioManager;
@@ -121,6 +126,25 @@ namespace Loopie {
 
         AudioLoopStrategy m_loopStrategy = AudioLoopStrategy::Repetitive;
         AudioNoLoopStrategy m_noLoopStrategy = AudioNoLoopStrategy::First;
+
+        bool m_isTransitioning = false;
+        bool m_isCrossFading = true;
+        bool m_waitingToFadeIn = false;
+        bool m_isStopping = false;
+
+        float m_fadeTimerOut = 0.0f;
+        float m_fadeTimerIn = 0.0f;
+        float m_fadeDurationOut = 0.0f;
+        float m_fadeDurationIn = 0.0f;
+
+        float m_startVolumeFadeOut = 1.0f;
+        float m_targetVolumeFadeIn = 1.0f;
+
+        FMOD::Channel* m_fadingChannel = nullptr;
+        FMOD::Studio::EventInstance* m_fadingEvent = nullptr;
+
+        std::shared_ptr<AudioClip> m_pendingClip = nullptr;
+        std::shared_ptr<AudioClip> m_crossFadeClip = nullptr;
 
         std::string m_busPath = "";
     };

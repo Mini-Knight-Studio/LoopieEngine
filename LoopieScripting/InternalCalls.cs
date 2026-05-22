@@ -273,7 +273,7 @@ namespace Loopie
         internal extern static void AudioSource_Play(string entityID, string componentID);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void AudioSource_Stop(string entityID, string componentID);
+        internal extern static void AudioSource_Stop(string entityID, string componentID, float fadeTime);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void AudioSource_SetLoop(string entityID, string componentID, bool value);
@@ -304,6 +304,9 @@ namespace Loopie
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void AudioSource_GetSet3DMinMaxDistance(string id, string componentID, out float min, out float max);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void AudioSource_TransitionTo(string id, string componentID, string audioID, float fadeOut, float fadeIn, bool crossFade);
         #endregion
         #region Camera
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
