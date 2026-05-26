@@ -48,5 +48,11 @@ namespace Loopie
         {
             InternalCalls.Text_SetColor(entity.ID, ID, ref color);
         }
+
+        public int VisibleCharacters
+        {
+            get => InternalCalls.Text_GetVisibleCharacters(entity.ID, ID);
+            set => InternalCalls.Text_SetVisibleCharacters(entity.ID, ID, value);
+        }
     }
 }

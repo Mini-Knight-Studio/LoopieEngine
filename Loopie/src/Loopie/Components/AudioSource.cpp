@@ -2,6 +2,7 @@
 #include "Loopie/Audio/AudioManager.h"
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Resources/ResourceManager.h"
+#include "Loopie/Core/Time.h"
 
 #include "Loopie/Profiler/Profiler.h"
 
@@ -44,39 +45,8 @@ namespace Loopie {
     void AudioSource::OnUpdate() {
         LP_FUNC();
 
-        Transform* t = GetOwner()->GetTransform();
-        if (!t) return;
-
-        if (m_isEvent && m_eventInstance) {
-            if (m_isSpatial) {
-                FMOD_VECTOR pos = AudioManager::VectorToFmod(t->GetPosition());
-                FMOD_3D_ATTRIBUTES attr = { {0} };
-                attr.position = pos;
-                attr.forward = AudioManager::VectorToFmod(t->Forward());
-                attr.up = AudioManager::VectorToFmod(t->Up());
-                m_eventInstance->set3DAttributes(&attr);
-            }
-        }
-        else if (!m_isEvent && m_channel) {
-            bool isPlaying = false;
-            m_channel->isPlaying(&isPlaying);
-
-            if (isPlaying) {
-                if (m_isSpatial) {
-                    FMOD_VECTOR pos = AudioManager::VectorToFmod(t->GetPosition());
-                    FMOD_VECTOR vel = { 0, 0, 0 };
-                    m_channel->set3DAttributes(&pos, &vel);
-                }
-            }
-            else if (m_hasStarted) {
-                if (m_isLooping) {
-                    NextTrack();
-                }
-                else {
-                    m_hasStarted = false;
-                }
-            }
-        }
+        ProcessFading(Time::GetDeltaTime());
+        UpdateSpatialization();
     }
 
     void AudioSource::NextTrack() {
@@ -142,7 +112,7 @@ namespace Loopie {
         }
     }
 
-    void AudioSource::Play() {
+    void AudioSource::Play(float startTime) {
         if (m_audioClips.empty())
             return;
 
@@ -163,7 +133,13 @@ namespace Loopie {
         if (!clip)
             return;
 
+        unsigned int startTimeMs = static_cast<unsigned int>(startTime * 1000.0f);
+
         if (m_isEvent && m_eventInstance) {
+            if (startTime > 0.0f) {
+                m_eventInstance->setTimelinePosition(startTimeMs);
+            }
+
             m_eventInstance->start();
             m_hasStarted = true;
 
@@ -171,7 +147,12 @@ namespace Loopie {
             m_eventInstance->setVolume(m_volume);
         }
         else if (!m_isEvent && clip->GetSound()) {
-            Stop();
+
+            if (m_channel) {
+                m_channel->stop();
+                m_channel = nullptr;
+            }
+
             FMOD::Channel* newChannel = nullptr;
             AudioManager::PlaySound(clip->GetSound(), &newChannel, true);
             m_channel = newChannel;
@@ -179,10 +160,8 @@ namespace Loopie {
             if (m_channel) {
                 FMOD_MODE mode = m_isSpatial ? (FMOD_3D | FMOD_3D_LINEARROLLOFF) : FMOD_2D;
                 mode |= FMOD_LOOP_OFF;
-               
+
                 m_channel->setChannelGroup(ResolveBus()->group);
-
-
                 m_channel->setMode(mode);
 
                 if (m_isSpatial) {
@@ -200,18 +179,60 @@ namespace Loopie {
                 m_channel->setVolume(m_volume);
                 m_channel->setPan(m_pan);
 
+                if (startTime > 0.0f) {
+                    m_channel->setPosition(startTimeMs, FMOD_TIMEUNIT_MS);
+                }
+
                 m_channel->setPaused(false);
                 m_hasStarted = true;
             }
         }
     }
 
-    void AudioSource::Stop() {
-        m_hasStarted = false;
-        if (m_isEvent && m_eventInstance) m_eventInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
-        else if (!m_isEvent && m_channel) {
-            m_channel->stop();
+    void AudioSource::Stop(float fadeOutTime) {
+        if (fadeOutTime > 0.0f) {
+            if (!m_isEvent && m_channel) {
+                m_fadingChannel = m_channel;
+                m_fadingChannel->getVolume(&m_startVolumeFadeOut);
+            }
+            else if (m_isEvent && m_eventInstance) {
+                m_fadingEvent = m_eventInstance;
+                m_fadingEvent->getVolume(&m_startVolumeFadeOut);
+            }
+
+            m_isTransitioning = true;
+            m_isStopping = true;
+            m_fadeDurationOut = fadeOutTime;
+            m_fadeTimerOut = 0.0f;
+
             m_channel = nullptr;
+            m_eventInstance = nullptr;
+
+            m_pendingClip = nullptr;
+            m_waitingToFadeIn = false;
+            m_isCrossFading = false;
+        }
+        else {
+            m_hasStarted = false;
+            m_isTransitioning = false;
+            m_isStopping = false;
+            m_waitingToFadeIn = false;
+            m_pendingClip = nullptr;
+
+            if (m_isEvent && m_eventInstance) m_eventInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
+            else if (!m_isEvent && m_channel) {
+                m_channel->stop();
+                m_channel = nullptr;
+            }
+
+            if (m_fadingEvent) {
+                m_fadingEvent->stop(FMOD_STUDIO_STOP_IMMEDIATE);
+                m_fadingEvent = nullptr;
+            }
+            if (m_fadingChannel) {
+                m_fadingChannel->stop();
+                m_fadingChannel = nullptr;
+            }
         }
     }
 
@@ -257,6 +278,27 @@ namespace Loopie {
         }
     }
 
+    void AudioSource::SetPlaybackTime(float timeInSeconds)
+    {
+        if (timeInSeconds < 0.0f) {
+            timeInSeconds = 0.0f;
+        }
+
+        unsigned int timeMs = static_cast<unsigned int>(timeInSeconds * 1000.0f);
+
+        if (m_isEvent && m_eventInstance) {
+            m_eventInstance->setTimelinePosition(timeMs);
+        }
+        else if (!m_isEvent && m_channel) {
+            bool isPlaying = false;
+            m_channel->isPlaying(&isPlaying);
+
+            if (isPlaying || m_hasStarted) {
+                m_channel->setPosition(timeMs, FMOD_TIMEUNIT_MS);
+            }
+        }
+    }
+
     void AudioSource::UpdateChannelMode() {
         if (!m_isEvent && m_channel) {
 
@@ -279,6 +321,27 @@ namespace Loopie {
 
         if(m_channel)
             m_channel->setChannelGroup(ResolveBus()->group);
+    }
+
+    float AudioSource::GetPlaybackTime() const
+    {
+        if (!m_hasStarted)
+            return 0.0f;
+
+        if (m_isEvent && m_eventInstance) {
+            int positionMs = 0;
+            if (m_eventInstance->getTimelinePosition(&positionMs) == FMOD_OK) {
+                return static_cast<float>(positionMs) / 1000.0f;
+            }
+        }
+        else if (!m_isEvent && m_channel) {
+            unsigned int positionMs = 0;
+            if (m_channel->getPosition(&positionMs, FMOD_TIMEUNIT_MS) == FMOD_OK) {
+                return static_cast<float>(positionMs) / 1000.0f;
+            }
+        }
+
+        return 0.0f;
     }
 
     const std::string AudioSource::GetBusPath() const {
@@ -304,6 +367,56 @@ namespace Loopie {
     void AudioSource::SetNoLoopStrategy(AudioNoLoopStrategy strategy) {
         m_noLoopStrategy = strategy;
         
+    }
+
+    void AudioSource::TransitionTo(std::shared_ptr<AudioClip> clip, float timeOut, float timeIn, bool crossFade) {
+        if (!clip) {
+            Stop(timeOut);
+            return;
+        }
+
+        if (!m_isEvent && m_channel) {
+            m_fadingChannel = m_channel;
+            m_fadingChannel->getVolume(&m_startVolumeFadeOut);
+        }
+        else if (m_isEvent && m_eventInstance) {
+            m_fadingEvent = m_eventInstance;
+            m_fadingEvent->getVolume(&m_startVolumeFadeOut);
+        }
+
+        m_isTransitioning = true;
+        m_isStopping = false;
+        m_isCrossFading = crossFade;
+        m_fadeDurationOut = timeOut;
+        m_fadeDurationIn = timeIn;
+        m_fadeTimerOut = 0.0f;
+        m_fadeTimerIn = 0.0f;
+
+        m_channel = nullptr;
+        m_eventInstance = nullptr;
+
+        if (m_isCrossFading) {
+            m_crossFadeClip = m_audioClips[m_currentClipIndex];
+            m_audioClips.clear();
+            m_audioClips.push_back(clip);
+            m_currentClipIndex = 0;
+
+            LoadResource();
+            Play();
+
+            if (!m_isEvent && m_channel) {
+                m_channel->setVolume(0.0f);
+            }
+            else if (m_isEvent && m_eventInstance) {
+                m_eventInstance->setVolume(0.0f);
+            }
+
+            m_waitingToFadeIn = false;
+        }
+        else {
+            m_pendingClip = clip;
+            m_waitingToFadeIn = true;
+        }
     }
 
     JsonNode AudioSource::Serialize(JsonNode& parent) const {
@@ -391,6 +504,138 @@ namespace Loopie {
     const AudioBus* AudioSource::ResolveBus() const
     {
         return AudioManager::GetBus(m_busPath);
+    }
+
+    void AudioSource::ProcessFading(float dt) {
+        if (!m_isTransitioning) 
+            return;
+
+        if (m_fadeTimerOut < m_fadeDurationOut) {
+            m_fadeTimerOut += dt;
+            float tOut = m_fadeDurationOut > 0.0f ? std::min(m_fadeTimerOut / m_fadeDurationOut, 1.0f) : 1.0f;
+
+            float curveOut = std::sqrt(1.0f - tOut);
+            float newVolOut = m_startVolumeFadeOut * curveOut;
+
+            if (m_fadingChannel)
+                m_fadingChannel->setVolume(newVolOut);
+            if (m_fadingEvent) 
+                m_fadingEvent->setVolume(newVolOut);
+
+            if (tOut >= 1.0f) {
+                if (m_fadingChannel) { 
+                    m_fadingChannel->stop(); 
+                    m_fadingChannel = nullptr; 
+                }
+                if (m_fadingEvent) {
+                    m_fadingEvent->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT); 
+                    m_fadingEvent = nullptr; 
+                }
+
+                if (m_isStopping) {
+                    m_hasStarted = false;
+                    m_isTransitioning = false;
+                    m_isStopping = false;
+                    return;
+                }
+
+                if (!m_isCrossFading && m_waitingToFadeIn) {
+                    if (m_pendingClip) {
+                        m_audioClips.clear();
+                        m_audioClips.push_back(m_pendingClip);
+                        m_currentClipIndex = 0;
+
+                        LoadResource();
+                        Play();
+                        if (!m_isEvent && m_channel) {
+                            m_channel->setVolume(0.0f);
+                        }
+                        else if (m_isEvent && m_eventInstance) {
+                            m_eventInstance->setVolume(0.0f);
+                        }
+                    }
+                    m_waitingToFadeIn = false;
+                    m_pendingClip = nullptr;
+                }
+            }
+        }
+        else if (m_fadeDurationOut == 0.0f && !m_isCrossFading && m_waitingToFadeIn) {
+            m_waitingToFadeIn = false;
+        }
+
+        if (!m_isStopping && !m_waitingToFadeIn) {
+            bool needsFadeIn = (m_fadeTimerIn < m_fadeDurationIn) || (m_fadeDurationIn == 0.0f && m_fadeTimerIn == 0.0f);
+
+            if (needsFadeIn) {
+                m_fadeTimerIn += dt;
+                float tIn = m_fadeDurationIn > 0.0f ? std::min(m_fadeTimerIn / m_fadeDurationIn, 1.0f) : 1.0f;
+                float curveIn = std::sqrt(tIn);
+                float newVolIn = m_volume * curveIn;
+
+                if (!m_isEvent && m_channel) 
+                    m_channel->setVolume(newVolIn);
+                if (m_isEvent && m_eventInstance)
+                    m_eventInstance->setVolume(newVolIn);
+
+                if (m_fadeDurationIn == 0.0f) m_fadeTimerIn = 1.0f;
+            }
+        }
+
+        if (!m_isStopping && m_fadeTimerOut >= m_fadeDurationOut && m_fadeTimerIn >= m_fadeDurationIn && !m_waitingToFadeIn) {
+            m_isTransitioning = false;
+            m_crossFadeClip = nullptr;
+            m_pendingClip = nullptr;
+        }
+    }
+
+    void AudioSource::UpdateSpatialization() {
+        Transform* t = GetOwner()->GetTransform();
+        if (!t) return;
+
+        if (m_isEvent && m_eventInstance) {
+            if (m_isSpatial) {
+                FMOD_VECTOR pos = AudioManager::VectorToFmod(t->GetPosition());
+                FMOD_3D_ATTRIBUTES attr = { {0} };
+                attr.position = pos;
+                attr.forward = AudioManager::VectorToFmod(t->Forward());
+                attr.up = AudioManager::VectorToFmod(t->Up());
+                m_eventInstance->set3DAttributes(&attr);
+            }
+        }
+        else if (!m_isEvent && m_channel) {
+            bool isPlaying = false;
+            m_channel->isPlaying(&isPlaying);
+
+            if (isPlaying) {
+                if (m_isSpatial) {
+                    FMOD_VECTOR pos = AudioManager::VectorToFmod(t->GetPosition());
+                    FMOD_VECTOR vel = { 0, 0, 0 };
+                    m_channel->set3DAttributes(&pos, &vel);
+                }
+            }
+            else if (m_hasStarted) {
+                if (m_isLooping) {
+                    NextTrack();
+                }
+                else {
+                    m_hasStarted = false;
+                }
+            }
+        }
+
+        if (m_fadingEvent && m_isSpatial) {
+            FMOD_VECTOR pos = AudioManager::VectorToFmod(t->GetPosition());
+            FMOD_3D_ATTRIBUTES attr = { {0} };
+            attr.position = pos;
+            attr.forward = AudioManager::VectorToFmod(t->Forward());
+            attr.up = AudioManager::VectorToFmod(t->Up());
+            m_fadingEvent->set3DAttributes(&attr);
+        }
+        if (m_fadingChannel && m_isSpatial) {
+            FMOD_VECTOR pos = AudioManager::VectorToFmod(t->GetPosition());
+            FMOD_VECTOR vel = { 0, 0, 0 };
+            m_fadingChannel->set3DAttributes(&pos, &vel);
+        }
     }
 
 }

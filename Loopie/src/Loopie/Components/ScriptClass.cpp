@@ -30,7 +30,11 @@ namespace Loopie
 	{
 		m_scriptingClass = ScriptingManager::GetScriptingClass(m_className);
 
+		if (!m_scriptingClass)
+			return;
+
 		ScriptingManager::AttachCurrentThread();
+
 
 		m_instance = m_scriptingClass->Instantiate();
 

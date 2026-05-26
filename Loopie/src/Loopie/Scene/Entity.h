@@ -191,6 +191,10 @@ namespace Loopie {
 		void SetOrder(int order);
 		void SortChildrenByOrder();
 
+		bool GetDontDestroyOnLoad() const;
+		bool GetLocalDontDestroyOnLoad() const { return m_dontDestroyOnLoad; }
+		void SetDontDestroyOnLoad(bool dontDestroy) { m_dontDestroyOnLoad = dontDestroy; }
+
 		// If a parent is set up, then it means this is its child and will update it accordingly
 		void SetParent(const std::shared_ptr<Entity>& parent, bool keepLocal = true, bool setOrder = true);
 
@@ -213,6 +217,7 @@ namespace Loopie {
 		std::string m_name;
 		bool m_isActive = true;
 		bool m_isStatic = true;
+		bool m_dontDestroyOnLoad = false;
 		int m_order = -1;
 	};
 }

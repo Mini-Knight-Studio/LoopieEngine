@@ -4,16 +4,16 @@ namespace Loopie
 {
     public class AudioSource : Component
     {
-       
 
-        public void Play()
+
+        public void Play(float playTime = 0.0f)
         {
-            InternalCalls.AudioSource_Play(entity.ID, ID);
+            InternalCalls.AudioSource_Play(entity.ID, ID, playTime);
         }
 
-        public void Stop()
+        public void Stop(float fadeTime = 0.0f)
         {
-            InternalCalls.AudioSource_Stop(entity.ID, ID);
+            InternalCalls.AudioSource_Stop(entity.ID, ID, fadeTime);
         }
 
         public bool Looping
@@ -78,6 +78,24 @@ namespace Loopie
         public void Get3DMinMaxDistance(out float min, out float max)
         {
             InternalCalls.AudioSource_GetSet3DMinMaxDistance(entity.ID, ID, out min, out max);
+        }
+
+        public void TransitionTo(string clipID, float fadeOut, float fadeIn, bool crossFade = false)
+        {
+            InternalCalls.AudioSource_TransitionTo(entity.ID, ID, clipID, fadeOut, fadeIn, crossFade);
+        }
+
+        public float PlaybackTime
+        { get { return GetPlaybackTime(); } set { SetPlaybackTime(value); } }
+
+        public float GetPlaybackTime()
+        {
+            return InternalCalls.AudioSource_GetPlaybackTime(entity.ID, ID);
+        }
+
+        public void SetPlaybackTime(float timeInSeconds)
+        {
+            InternalCalls.AudioSource_SetPlaybackTime(entity.ID, ID, timeInSeconds);
         }
     }
 

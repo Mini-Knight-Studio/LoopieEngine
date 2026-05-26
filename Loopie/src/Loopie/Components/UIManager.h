@@ -86,7 +86,7 @@ namespace Loopie
 	private:
 		struct PickCandidate;
 
-		static UIElement* FindUIElementComponent(const std::shared_ptr<Entity>& entity);
+		static UIElement* FindUIElementComponent(const std::shared_ptr<Entity>& entity, bool allowInactive = false);
 		static bool CandidateLess(const PickCandidate& a, const PickCandidate& b);
 		static void CollectOverlayPickCandidatesRecursive(const std::shared_ptr<Entity>& entity, const vec2& mouseCanvas,
 			int canvasSortingLayer, int canvasOrderInLayer,

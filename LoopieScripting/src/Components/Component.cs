@@ -89,6 +89,16 @@ namespace Loopie
         {
             CoroutineSystem.StopCoroutine(coroutine);
         }
+
+        public void DontDestroyOnLoad()
+        {
+            InternalCalls.Entity_DontDestroyOnLoad(entity.ID);
+        }
+
+        public void DestroyOnLoad()
+        {
+            InternalCalls.Entity_DestroyOnLoad(entity.ID);
+        }
     }
 
 }

@@ -150,7 +150,8 @@ namespace Loopie
 					button->GetCurrentColor(textColor);
 
 				UIRenderer::DrawTextContainer(pixelPos, pixelSize, text->GetText(), text->GetFont(), textColor, text->GetScale() * job.OverlayScale.x,
-					text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetJustified());
+					text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetWrapMode(),
+					text->GetLineSpacing(), text->GetWordSpacing(), text->GetLetterSpacing(), text->GetVisibleCharacters());
 				break;
 			}
 		}
@@ -245,7 +246,8 @@ namespace Loopie
 				const matrix4 model = rt->GetLocalToWorldMatrix() * glm::translate(matrix4(1.0f), vec3(bmin.x, bmin.y, 0.0f));
 
 				UIRenderer::DrawTextWorld(model, vec2(w, h), text->GetText(), text->GetFont(), text->GetColor(), text->GetScale(),
-					text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetJustified());
+					text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetWrapMode(),
+					text->GetLineSpacing(), text->GetWordSpacing(), text->GetLetterSpacing(), text->GetVisibleCharacters());
 				break;
 			}
 		}
@@ -865,7 +867,8 @@ namespace Loopie
 				button->GetCurrentColor(textColor);
 
 			UIRenderer::DrawTextContainer(pixelPos, pixelSize, text->GetText(), text->GetFont(), textColor, text->GetScale() * scale.x,
-				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetJustified());
+				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetWrapMode(),
+				text->GetLineSpacing(), text->GetWordSpacing(), text->GetLetterSpacing(), text->GetVisibleCharacters());
 		}
 
 		for (const auto& child : entity->GetChildren())
@@ -1010,7 +1013,8 @@ namespace Loopie
 			const matrix4 model = rt->GetLocalToWorldMatrix() * glm::translate(matrix4(1.0f), vec3(bmin.x, bmin.y, 0.0f));
 
 			UIRenderer::DrawTextWorld(model, vec2(w, h), text->GetText(), text->GetFont(), text->GetColor(), text->GetScale(),
-				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetJustified());
+				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetWrapMode(),
+				text->GetLineSpacing(), text->GetWordSpacing(), text->GetLetterSpacing(), text->GetVisibleCharacters());
 		}
 
 		for (const auto& child : entity->GetChildren())

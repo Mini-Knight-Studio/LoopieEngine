@@ -1987,6 +1987,15 @@ namespace Loopie {
 			if (ImGui::DragFloat("FPS", &fps, 0.25f, 0.0f, 240.0f))
 				spriteAnimator->SetFPS(fps);
 
+			SpriteAnimator::AnimationUpdateMode currentMode = spriteAnimator->GetAnimationMode();
+			const char* modeNames[] = { "Delta Time", "Unscaled Delta Time" };
+			int currentModeIndex = static_cast<int>(currentMode);
+
+			if (ImGui::Combo("Update Mode", &currentModeIndex, modeNames, IM_ARRAYSIZE(modeNames)))
+			{
+				spriteAnimator->SetAnimationMode(static_cast<SpriteAnimator::AnimationUpdateMode>(currentModeIndex));
+			}
+
 			bool loop = spriteAnimator->GetLoop();
 			if (ImGui::Checkbox("Loop", &loop))
 				spriteAnimator->SetLoop(loop);
@@ -2101,6 +2110,14 @@ namespace Loopie {
 				text->SetSizeMode(static_cast<TextSizeMode>(sizeModeIndex));
 			}
 
+			TextWrapMode wrapMode = text->GetWrapMode();
+			int wrapModeIndex = static_cast<int>(wrapMode);
+			const char* wrapModeLabels[] = { "No Wrap", "Wrap" };
+			if (ImGui::Combo("Auto Multiline", &wrapModeIndex, wrapModeLabels, IM_ARRAYSIZE(wrapModeLabels)))
+			{
+				text->SetWrapMode(static_cast<TextWrapMode>(wrapModeIndex));
+			}
+
 			const bool isFixed = (text->GetSizeMode() == TextSizeMode::FixedSize);
 			if (!isFixed)
 				ImGui::BeginDisabled();
@@ -2112,14 +2129,6 @@ namespace Loopie {
 			if (!isFixed)
 				ImGui::EndDisabled();
 
-			bool justified = text->GetJustified();
-			if (ImGui::Checkbox("Justified Text", &justified))
-				text->SetJustified(justified);
-
-			const bool disableHorizontal = text->GetJustified();
-			if (disableHorizontal)
-				ImGui::BeginDisabled();
-
 			TextHorizontalAlignment hAlign = text->GetHorizontalAlignment();
 			int hAlignIndex = static_cast<int>(hAlign);
 			const char* hAlignLabels[] = { "Left", "Center", "Right" };
@@ -2127,9 +2136,6 @@ namespace Loopie {
 			{
 				text->SetHorizontalAlignment(static_cast<TextHorizontalAlignment>(hAlignIndex));
 			}
-
-			if (disableHorizontal)
-				ImGui::EndDisabled();
 
 			TextVerticalAlignment vAlign = text->GetVerticalAlignment();
 			int vAlignIndex = static_cast<int>(vAlign);
@@ -2139,6 +2145,24 @@ namespace Loopie {
 				text->SetVerticalAlignment(static_cast<TextVerticalAlignment>(vAlignIndex));
 			}
 
+			ImGui::SeparatorText("Spacing");
+
+			float lineSpacing = text->GetLineSpacing();
+			if (ImGui::DragFloat("Line Spacing", &lineSpacing, 0.1f, -256.0f, 256.0f, "%.2f"))
+				text->SetLineSpacing(lineSpacing);
+
+			float wordSpacing = text->GetWordSpacing();
+			if (ImGui::DragFloat("Word Spacing", &wordSpacing, 0.1f, -256.0f, 256.0f, "%.2f"))
+				text->SetWordSpacing(wordSpacing);
+
+			float letterSpacing = text->GetLetterSpacing();
+			if (ImGui::DragFloat("Letter Spacing", &letterSpacing, 0.1f, -256.0f, 256.0f, "%.2f"))
+				text->SetLetterSpacing(letterSpacing);
+
+			int visibleCharacters = text->GetVisibleCharacters();
+			if (ImGui::DragInt("Visible Characters", &visibleCharacters, 1.0f, 0, 100000))
+				text->SetVisibleCharacters(visibleCharacters);
+
 			ImGui::SeparatorText("Auto Fit Rect (Fixed Size)");
 
 			RectTransform* rt = text->GetOwner() ? text->GetOwner()->GetComponent<RectTransform>() : nullptr;
@@ -2147,18 +2171,10 @@ namespace Loopie {
 			if (!canAutoFit)
 				ImGui::BeginDisabled();
 
-			static bool s_autoFitRect = true;
-			ImGui::Checkbox("Auto Fit Rect to Text", &s_autoFitRect);
-
-			if (s_autoFitRect && canAutoFit)
+			bool autoFitRect = text->GetAutoFitRect();
+			if (ImGui::Checkbox("Auto Fit Rect to Text", &autoFitRect))
 			{
-				const vec2 measured = text->MeasureLocalSizeFixed();
-
-				const float paddingX = 2.0f;
-				const float paddingY = 2.0f;
-
-				rt->SetWidth(measured.x + paddingX);
-				rt->SetHeight(measured.y + paddingY);
+				text->SetAutoFitRect(autoFitRect);
 			}
 
 			if (!canAutoFit)
