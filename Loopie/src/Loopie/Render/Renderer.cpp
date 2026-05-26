@@ -30,6 +30,10 @@ namespace Loopie {
 
 	vec4 Renderer::s_CurrentViewport = {0,0,0,0};
 
+	ShadowSettings Renderer::s_ShadowSettings = ShadowSettings();
+	ShadowQuality Renderer::s_PendingShadowQuality = ShadowQuality::Medium;
+	ShadowFilter Renderer::s_PendingShadowFilter = ShadowFilter::Soft;
+
 	bool Renderer::s_UseGizmos = true;
 	Light* Renderer::s_Lights[MAX_LIGHTS] = {};
 	unsigned short Renderer::s_LightCount = 0;
@@ -72,6 +76,9 @@ namespace Loopie {
 		layout.AddLayoutElement(1, GLVariableType::MATRIX4, 1, "Proj");
 		s_MatricesUniformBuffer = std::make_shared<UniformBuffer>(layout);
 		s_MatricesUniformBuffer->BindToLayout(0);
+
+		// TODO: Pass in shadow settings in the constructor
+		//s_ShadowSettings = std::make_unique<ShadowSettings>(); 
 
 		BufferLayout lightingLayout;
 		lightingLayout.AddLayoutElement(0, GLVariableType::VEC4, 1, "CameraWorldPosLightCount"); // Camera World Position + Light Count
@@ -174,7 +181,6 @@ namespace Loopie {
 		BufferLayout dynamicShadowingLayout;
 		for (int i = 0; i < MAX_SHADOW_CASTING_LIGHTS; ++i)
 		{
-			s_ShadowSlots[i].dynamicMap = std::make_shared<ShadowMap>();
 			dynamicShadowingLayout.AddLayoutElement(i, GLVariableType::MATRIX4, 1, "DynamicLightSpaceMatrix");
 		}
 		s_ShadowingUniformBuffer = std::make_shared<UniformBuffer>(dynamicShadowingLayout);
@@ -183,11 +189,12 @@ namespace Loopie {
 		BufferLayout staticShadowingLayout;
 		for (int i = 0; i < MAX_SHADOW_CASTING_LIGHTS; ++i)
 		{
-			s_ShadowSlots[i].staticMap = std::make_shared<ShadowMap>(STATIC_SHADOW_TEXTURE_DEFINITION, STATIC_SHADOW_TEXTURE_DEFINITION);
 			staticShadowingLayout.AddLayoutElement(i, GLVariableType::MATRIX4, 1, "StaticLightSpaceMatrix");
 		}
 		s_StaticMatricesUniformBuffer = std::make_shared<UniformBuffer>(staticShadowingLayout);
 		s_StaticMatricesUniformBuffer->BindToLayout(4);
+
+		BuildShadowMaps();
 	}
 
 	void Renderer::AssignShadowSlots(const matrix4& cameraViewProj, const Loopie::CameraProjection& camProj, const AABB& sceneAABB)
@@ -484,6 +491,32 @@ namespace Loopie {
 		return orthogonalMat * lightView;
 	}
 
+	void Renderer::SetShadowQuality(ShadowQuality q)
+	{
+		s_PendingShadowQuality = q;
+	}
+
+	void Renderer::SetShadowFilter(ShadowFilter f)
+	{
+		s_PendingShadowFilter = f;
+	}
+
+	void Renderer::ApplyPendingShadowSettings()
+	{
+		if (s_ShadowSettings.GetShadowQuality() != s_PendingShadowQuality)
+		{
+			//	mark every slot dirty(so statics re - bake)
+			s_ShadowSettings.SetShadowQuality(s_PendingShadowQuality);
+			BuildShadowMaps();
+			SetShadowsDirty();
+		}
+
+		if (s_ShadowSettings.GetFilter() != s_PendingShadowFilter)
+		{
+			s_ShadowSettings.SetFilter(s_PendingShadowFilter);
+		}
+	}
+
 	void Renderer::RegisterCamera(Camera& camera) {
 		auto it = std::find(s_RenderCameras.begin(), s_RenderCameras.end(), &camera);
 		if (it == s_RenderCameras.end()) {
@@ -501,6 +534,7 @@ namespace Loopie {
 
 	void Renderer::BeginScene(const matrix4& viewMatrix, const matrix4& projectionMatrix, bool gizmo)
 	{
+		ApplyPendingShadowSettings();
 		s_UseGizmos = gizmo;
 		s_MatricesUniformBuffer->SetData(&projectionMatrix[0][0], 0);
 		s_MatricesUniformBuffer->SetData(&viewMatrix[0][0], 1);
@@ -771,6 +805,9 @@ namespace Loopie {
 		if (shader.GetUniformLocation("lp_Far") != -1)
 			shader.SetUniformFloat("lp_Far", s_FarPlane);
 
+		if (shader.GetUniformLocation("lp_ShadowKernelRadius") != -1)
+			shader.SetUniformInt("lp_ShadowKernelRadius", s_ShadowSettings.GetFilterRadius());
+
 		for (int i = 0; i < MAX_SHADOW_CASTING_LIGHTS; ++i)
 		{
 			std::string name = "lp_ShadowMaps[" + std::to_string(i) + "]";
@@ -791,6 +828,15 @@ namespace Loopie {
 	void Renderer::SetRenderUniforms(std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones)
 	{
 		SetRenderUniforms(material, transform->GetLocalToWorldMatrix(), bones);
+	}
+
+	void Renderer::BuildShadowMaps()
+	{
+		for (int i = 0; i < MAX_SHADOW_CASTING_LIGHTS; ++i)
+		{
+			s_ShadowSlots[i].dynamicMap = std::make_shared<ShadowMap>(s_ShadowSettings.GetDynamicRes(), s_ShadowSettings.GetDynamicRes());
+			s_ShadowSlots[i].staticMap = std::make_shared<ShadowMap>(s_ShadowSettings.GetStaticRes(), s_ShadowSettings.GetStaticRes());
+		}
 	}
 
 	void Renderer::SetRenderUniforms(std::shared_ptr<Material> material, const matrix4& modelMatrix, const std::vector<matrix4>& bones)

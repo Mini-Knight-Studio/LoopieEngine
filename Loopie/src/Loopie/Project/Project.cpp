@@ -7,6 +7,7 @@
 #include "Loopie/Project/ProjectConfig.h"
 
 #include "Loopie/Core/Window.h"
+#include "Loopie/Render/Renderer.h"
 #include "Loopie/Collisions/CollisionProcessor.h"
 #include "Loopie/Audio/AudioManager.h"
 
@@ -53,6 +54,26 @@ namespace Loopie {
 		Application::GetInstance().m_notifier.Notify(EngineNotification::OnProjectChange);
 		return true;
 	}
+
+	void Project::SaveShadowSettings()
+	{
+		JsonData configData = ProjectConfig::GetData();
+		JsonNode engineConfig;
+		if (configData.HasKey("", "engine_config"))
+		{
+			engineConfig = configData.Child("engine_config");
+		}
+		else
+		{
+			engineConfig = configData.CreateObjectField("engine_config");
+		}
+
+		engineConfig.CreateField<int>("shadow_quality", static_cast<int>(Renderer::GetPendingShadowQuality()));
+		engineConfig.CreateField<int>("shadow_filter", static_cast<int>(Renderer::GetPendingShadowFilter()));
+
+		ProjectConfig::Save(configData);
+	}
+
 	const void Project::CreateDefaultPaths()
 	{
 		m_assetsPath = DirectoryManager::CreateFolder(m_projectPath, "Assets");
@@ -128,6 +149,8 @@ namespace Loopie {
 		engineConfigNode.CreateField<bool>("vsync", true);
 		engineConfigNode.CreateField<bool>("fullscreen", false);
 		engineConfigNode.CreateField<int>("target_framerate", 60);
+		engineConfigNode.CreateField<int>("shadow_quality", static_cast<int>(ShadowQuality::Medium));
+		engineConfigNode.CreateField<int>("shadow_filter", static_cast<int>(ShadowFilter::Soft));
 
 		JsonNode collisionLayersNode = engineConfigNode.CreateObjectField("collision_layers");
 		for (size_t i = 0; i < MAX_LAYERS; i++)
@@ -185,7 +208,10 @@ namespace Loopie {
 			engineConfigNode.CreateField<bool>("fullscreen", false);
 		if (!engineConfigNode.HasKey("target_framerate"))
 			engineConfigNode.CreateField<int>("target_framerate", 60);
-
+		if (!engineConfigNode.HasKey("shadow_quality"))
+			engineConfigNode.CreateField<int>("shadow_quality", static_cast<int>(ShadowQuality::Medium));
+		if (!engineConfigNode.HasKey("shadow_filter"))
+			engineConfigNode.CreateField<int>("shadow_filter", static_cast<int>(ShadowFilter::Soft));
 
 		if (!engineConfigNode.HasKey("collision_layers"))
 			collisionLayersNode = engineConfigNode.CreateObjectField("collision_layers");
@@ -257,6 +283,8 @@ namespace Loopie {
 		bool vsync = configData.GetValue<bool>("engine_config.vsync", true).Result;
 		bool fullscreen = configData.GetValue<bool>("engine_config.fullscreen", false).Result;
 		int targetFramerate = configData.GetValue<int>("engine_config.target_framerate", 60).Result;
+		int shadowQualityInt = configData.GetValue<int>("engine_config.shadow_quality",	static_cast<int>(ShadowQuality::Medium)).Result;
+		int shadowFilterInt = configData.GetValue<int>("engine_config.shadow_filter", static_cast<int>(ShadowFilter::Soft)).Result;
 		std::string name = configData.GetValue<std::string>("project_name", m_projectPath.filename().string()).Result;
 
 		for (size_t i = 0; i < MAX_LAYERS; i++)
@@ -310,6 +338,9 @@ namespace Loopie {
 		window.SetVsync(vsync);
 		window.SetWindowFullscreen(fullscreen);
 		window.SetFramerateLimit(targetFramerate);
+
+		Renderer::SetShadowQuality(static_cast<ShadowQuality>(shadowQualityInt));
+		Renderer::SetShadowFilter(static_cast<ShadowFilter>(shadowFilterInt));
 
 		window.SetTitle(name.c_str());
 		m_name = name;

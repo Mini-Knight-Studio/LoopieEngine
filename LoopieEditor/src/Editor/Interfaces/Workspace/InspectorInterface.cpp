@@ -888,7 +888,10 @@ namespace Loopie {
 				if (ImGui::Checkbox("Draw OBB", &drawOBB))
 					meshRenderer->SetDrawOBB(drawOBB);
 				if (ImGui::Checkbox("Cast Shadows", &castsShadows))
+				{
 					meshRenderer->SetCastsShadows(castsShadows);
+					Application::GetInstance().GetScene().OnStaticGeometryChanged();
+				}
 				//ImGui::Text("Shader: %s", meshRenderer->GetShader().GetName().c_str()); ????
 
 				ImGui::TreePop();

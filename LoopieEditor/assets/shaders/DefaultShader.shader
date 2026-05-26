@@ -120,12 +120,14 @@ layout (std140, binding = 4) uniform StaticShadows
 uniform sampler2D u_Albedo;
 uniform sampler2D u_Specular;
 uniform sampler2D u_Normal;
-uniform sampler2D lp_ShadowMaps[4];
-uniform sampler2D lp_StaticShadowMaps[4];
 uniform sampler2D u_Emissive;
 uniform float u_Roughness = 32.0; // highlight, smaller value = broader spotlight (feels more shiny)
 uniform float u_EmissiveIntensity = 0.0;
 uniform vec4 u_Color = vec4(1.0);
+
+uniform sampler2D lp_ShadowMaps[4];
+uniform sampler2D lp_StaticShadowMaps[4];
+uniform int lp_ShadowKernelRadius;
 
 float SampleShadowMap(sampler2D smap, mat4 lightMatrix, vec3 worldPos, vec3 normal, vec3 lightDir, float biasScale)
 {
@@ -138,13 +140,14 @@ float SampleShadowMap(sampler2D smap, mat4 lightMatrix, vec3 worldPos, vec3 norm
     vec2 texelSize = 1.0 / vec2(textureSize(smap, 0));
     float bias = max(0.005 * biasScale * (1.0 - dot(normal, lightDir)), 0.0005 * biasScale);
 
-    for (int x = -1; x <= 1; ++x)
-        for (int y = -1; y <= 1; ++y)
+    for (int x = -lp_ShadowKernelRadius; x <= lp_ShadowKernelRadius; ++x)
+        for (int y = -lp_ShadowKernelRadius; y <= lp_ShadowKernelRadius; ++y)
         {
             float d = texture(smap, coords.xy + vec2(x,y) * texelSize).r;
             shadow += (coords.z - bias) > d ? 0.0 : 1.0;
         }
-    return shadow / 9.0;
+    int diameter = 2 * lp_ShadowKernelRadius + 1;
+    return shadow / float(diameter * diameter);
 }
 
 void main()

@@ -5,6 +5,7 @@
 #include "Loopie/Render/VertexArray.h"
 #include "Loopie/Render/UniformBuffer.h"
 #include "Loopie/Render/ShaderStorageBuffer.h"
+#include "Loopie/Render/ShadowSettings.h"
 #include "Loopie/Components/Camera.h"
 #include "Loopie/Components/Light.h"
 
@@ -16,9 +17,6 @@
 #define MAX_BONES_TOTAL 30000 
 
 #define MAX_PARTICLES 100000 
-
-//#define STATIC_SHADOW_TEXTURE_DEFINITION 8192
-#define STATIC_SHADOW_TEXTURE_DEFINITION 4096
 
 #define DYNAMIC_SHADOW_TEXTURE_INDEX 8 
 #define STATIC_SHADOW_TEXTURE_INDEX 13
@@ -166,6 +164,14 @@ namespace Loopie {
 		static matrix4 ComputeDirectionalLightMatrix(const matrix4& cameraViewProj, const vec3& lightDir, const Loopie::CameraProjection& camProj);
 		static matrix4 ComputeDirectionalLightMatrixFromAABB(const AABB& sceneBounds, const vec3& lightDir);
 
+		// Shadow Quality Settings
+		static const ShadowSettings& GetShadowSettings() { return s_ShadowSettings; }
+		static void SetShadowQuality(ShadowQuality q); 
+		static ShadowQuality GetPendingShadowQuality() { return s_PendingShadowQuality; }
+		static void SetShadowFilter(ShadowFilter f);   
+		static ShadowFilter GetPendingShadowFilter() { return s_PendingShadowFilter; }
+		static void ApplyPendingShadowSettings();      
+
 		// For water foam usage
 		static void SetSceneDepthTexture(unsigned int textureID) { s_SceneDepthTextureID = textureID; };
 		static void SetSceneFrustrumValues(float nearPlane, float farPlane) { s_NearPlane = nearPlane; s_FarPlane = farPlane; };
@@ -219,6 +225,7 @@ namespace Loopie {
 		static void SetRenderUniforms(std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones = {});
 		static void SetRenderUniforms(std::shared_ptr<Material> material, const matrix4& modelMatrix, const std::vector<matrix4>& bones = {});
 		
+		static void BuildShadowMaps();
 
 		static unsigned int UploadBones(const std::vector<matrix4>& bones);
 
@@ -241,6 +248,10 @@ namespace Loopie {
 
 		static vec4 s_CurrentViewport;
 
+		static ShadowSettings s_ShadowSettings;
+		static ShadowQuality  s_PendingShadowQuality;
+		static ShadowFilter   s_PendingShadowFilter;
+
 		static bool s_UseGizmos;
 		static Light* s_Lights[MAX_LIGHTS];
 		static unsigned short s_LightCount;
@@ -251,6 +262,7 @@ namespace Loopie {
 		static unsigned int s_SceneDepthTextureID;
 		static float s_NearPlane;
 		static float s_FarPlane;
+
 
 	};
 }

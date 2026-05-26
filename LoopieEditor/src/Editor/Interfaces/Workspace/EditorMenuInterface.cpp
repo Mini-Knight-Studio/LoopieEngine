@@ -10,6 +10,7 @@
 #include "Loopie/Collisions/CollisionProcessor.h"
 #include "Loopie/Scripting/ScriptingManager.h"
 #include "Loopie/Audio/AudioManager.h"
+#include "Loopie/Render/Renderer.h"
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -110,6 +111,54 @@ namespace Loopie {
 				if (ImGui::MenuItem("Reload Last Saved Scene... "))
 				{
 					Application::GetInstance().GetScene().ReadAndLoadSceneFile(Application::GetInstance().GetScene().GetFilePath());
+				}
+
+				if (ImGui::MenuItem("Set Shadow Quality to Low "))
+				{
+					Renderer::SetShadowQuality(ShadowQuality::Low);
+					Application::GetInstance().m_activeProject.SaveShadowSettings();
+				}
+
+				if (ImGui::MenuItem("Set Shadow Quality to Medium "))
+				{
+					Renderer::SetShadowQuality(ShadowQuality::Medium);
+					Application::GetInstance().m_activeProject.SaveShadowSettings();
+				}
+
+				if (ImGui::MenuItem("Set Shadow Quality to High "))
+				{
+					Renderer::SetShadowQuality(ShadowQuality::High);
+					Application::GetInstance().m_activeProject.SaveShadowSettings();
+				}
+
+				if (ImGui::MenuItem("Set Shadow Quality to Ultra "))
+				{
+					Renderer::SetShadowQuality(ShadowQuality::Ultra);
+					Application::GetInstance().m_activeProject.SaveShadowSettings();
+				}
+
+				if (ImGui::MenuItem("Set Shadow Filter to Hard "))
+				{
+					Renderer::SetShadowFilter(ShadowFilter::Hard);
+					Application::GetInstance().m_activeProject.SaveShadowSettings();
+				}
+
+				if (ImGui::MenuItem("Set Shadow Filter to Soft "))
+				{
+					Renderer::SetShadowFilter(ShadowFilter::Soft);
+					Application::GetInstance().m_activeProject.SaveShadowSettings();
+				}
+
+				if (ImGui::MenuItem("Set Shadow Filter to Softer "))
+				{
+					Renderer::SetShadowFilter(ShadowFilter::Softer);
+					Application::GetInstance().m_activeProject.SaveShadowSettings();
+				}
+
+				if (ImGui::MenuItem("Set Shadow Filter to Softest "))
+				{
+					Renderer::SetShadowFilter(ShadowFilter::Softest);
+					Application::GetInstance().m_activeProject.SaveShadowSettings();
 				}
 
 				ImGui::EndMenu();

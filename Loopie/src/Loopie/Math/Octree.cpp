@@ -198,6 +198,7 @@ namespace Loopie
         {
             if (auto mesh = e->GetComponent<MeshRenderer>())
             {
+                if (!mesh->GetCastsShadows()) continue;
                 result.Enclose(mesh->GetWorldAABB());
             }
         }
