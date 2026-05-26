@@ -5,6 +5,7 @@
 #include "Loopie/Core/Window.h"
 #include "Loopie/Files/FileDialog.h"
 #include "Loopie/Files/DirectoryManager.h"
+#include "Loopie/Render/Renderer.h"
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Project/ProjectConfig.h"
 #include "Loopie/Collisions/CollisionProcessor.h"
@@ -113,54 +114,6 @@ namespace Loopie {
 					Application::GetInstance().GetScene().ReadAndLoadSceneFile(Application::GetInstance().GetScene().GetFilePath());
 				}
 
-				if (ImGui::MenuItem("Set Shadow Quality to Low "))
-				{
-					Renderer::SetShadowQuality(ShadowQuality::Low);
-					Application::GetInstance().m_activeProject.SaveShadowSettings();
-				}
-
-				if (ImGui::MenuItem("Set Shadow Quality to Medium "))
-				{
-					Renderer::SetShadowQuality(ShadowQuality::Medium);
-					Application::GetInstance().m_activeProject.SaveShadowSettings();
-				}
-
-				if (ImGui::MenuItem("Set Shadow Quality to High "))
-				{
-					Renderer::SetShadowQuality(ShadowQuality::High);
-					Application::GetInstance().m_activeProject.SaveShadowSettings();
-				}
-
-				if (ImGui::MenuItem("Set Shadow Quality to Ultra "))
-				{
-					Renderer::SetShadowQuality(ShadowQuality::Ultra);
-					Application::GetInstance().m_activeProject.SaveShadowSettings();
-				}
-
-				if (ImGui::MenuItem("Set Shadow Filter to Hard "))
-				{
-					Renderer::SetShadowFilter(ShadowFilter::Hard);
-					Application::GetInstance().m_activeProject.SaveShadowSettings();
-				}
-
-				if (ImGui::MenuItem("Set Shadow Filter to Soft "))
-				{
-					Renderer::SetShadowFilter(ShadowFilter::Soft);
-					Application::GetInstance().m_activeProject.SaveShadowSettings();
-				}
-
-				if (ImGui::MenuItem("Set Shadow Filter to Softer "))
-				{
-					Renderer::SetShadowFilter(ShadowFilter::Softer);
-					Application::GetInstance().m_activeProject.SaveShadowSettings();
-				}
-
-				if (ImGui::MenuItem("Set Shadow Filter to Softest "))
-				{
-					Renderer::SetShadowFilter(ShadowFilter::Softest);
-					Application::GetInstance().m_activeProject.SaveShadowSettings();
-				}
-
 				ImGui::EndMenu();
 			}
 
@@ -169,6 +122,15 @@ namespace Loopie {
 				if(ImGui::MenuItem("Collision Matrix"))
 				{
 					m_showCollisionMatrixMenu = true;
+				}
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("Renderer"))
+			{
+				if (ImGui::MenuItem("Settings"))
+				{
+					m_showRenderConfigMenu = true;
 				}
 				ImGui::EndMenu();
 			}
@@ -215,6 +177,9 @@ namespace Loopie {
 
 		if (m_showInfoConfigMenu)
 			RenderInfoConfigMenu();
+
+		if (m_showRenderConfigMenu)
+			RenderRenderConfigMenu();
 
 		if (m_showCollisionMatrixMenu)
 			RenderCollisionMatrixMenu();
@@ -632,6 +597,47 @@ namespace Loopie {
 		if (ImGui::Button("Save Changes", ImVec2(buttonWidth, 0)))
 		{
 			AudioManager::SaveAudioMixer();
+		}
+
+		ImGui::End();
+	}
+
+	void EditorMenuInterface::RenderRenderConfigMenu()
+	{
+		
+		ImGui::Begin("Render Settings", &m_showRenderConfigMenu, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize);
+
+		if (!ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+		{
+			ImGui::SetWindowFocus();
+		}
+
+		ShadowQuality currentQuality = Renderer::GetPendingShadowQuality();
+		int currentModeIndex = static_cast<int>(currentQuality);
+		const char* shadowQualityNames[] = { "Low", "Medium", "High", "Ultra"};
+
+		if (ImGui::Combo("Shadow Quality", &currentModeIndex, shadowQualityNames, IM_ARRAYSIZE(shadowQualityNames)))
+		{
+			Renderer::SetShadowQuality(static_cast<ShadowQuality>(currentModeIndex));
+		}
+
+		ShadowFilter currentFilter = Renderer::GetPendingShadowFilter();
+		currentModeIndex = static_cast<int>(currentFilter);
+		const char* shadowFilterNames[] = { "Hard", "Soft", "Softer", "Softest" };
+
+		if (ImGui::Combo("Shadow Filter", &currentModeIndex, shadowFilterNames, IM_ARRAYSIZE(shadowFilterNames)))
+		{
+			Renderer::SetShadowFilter(static_cast<ShadowFilter>(currentModeIndex));
+		}
+
+		ImGui::Dummy(ImVec2(0, 15));
+		float windowWidth = ImGui::GetContentRegionAvail().x;
+		float buttonWidth = 100.0f;
+		ImGui::SetCursorPosX((windowWidth)-buttonWidth);
+
+		if (ImGui::Button("Save Changes", ImVec2(buttonWidth, 0)))
+		{
+			Renderer::SaveRenderSettintgs();
 		}
 
 		ImGui::End();

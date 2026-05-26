@@ -1,4 +1,6 @@
 #include "ShadowSettings.h"
+#include "ShadowSettings.h"
+#include "ShadowSettings.h"
 
 
 namespace Loopie
@@ -15,6 +17,23 @@ namespace Loopie
 		return ShadowQuality::Medium; // default option
 	}
 
+	const char* GetPresetQualityString(ShadowQuality quality)
+	{
+		switch (quality)
+		{
+			case Loopie::ShadowQuality::Low:
+				return "Low";
+			case Loopie::ShadowQuality::Medium:
+				return "Medium";
+			case Loopie::ShadowQuality::High:
+				return "High";
+			case Loopie::ShadowQuality::Ultra:
+				return "Ultra";
+			default:
+				return "Unknown";
+		}
+	}
+
 	ShadowFilter GetShadowFilterFromString(std::string string)
 	{
 		if (string == "Hard")
@@ -25,6 +44,23 @@ namespace Loopie
 			return ShadowFilter::Softest;
 
 		return ShadowFilter::Soft; // default option
+	}
+
+	const char* GetShadowFilterString(ShadowFilter filter)
+	{
+		switch (filter)
+		{
+		case Loopie::ShadowFilter::Hard:
+			return "Hard";
+		case Loopie::ShadowFilter::Soft:
+			return "Soft";
+		case Loopie::ShadowFilter::Softer:
+			return "Softer";
+		case Loopie::ShadowFilter::Softest:
+			return "Softest";
+		default:
+			return "Unknown";
+		}
 	}
 
 	ShadowQualityPreset LookupQualityPreset(ShadowQuality quality)

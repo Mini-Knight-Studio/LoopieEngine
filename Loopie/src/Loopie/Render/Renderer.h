@@ -170,7 +170,6 @@ namespace Loopie {
 		static ShadowQuality GetPendingShadowQuality() { return s_PendingShadowQuality; }
 		static void SetShadowFilter(ShadowFilter f);   
 		static ShadowFilter GetPendingShadowFilter() { return s_PendingShadowFilter; }
-		static void ApplyPendingShadowSettings();      
 
 		// For water foam usage
 		static void SetSceneDepthTexture(unsigned int textureID) { s_SceneDepthTextureID = textureID; };
@@ -220,6 +219,8 @@ namespace Loopie {
 
 		static void SetDepthWrite(bool enable);
 
+		static void SaveRenderSettintgs();
+
 	private:
 		static void SetFrameUniforms(Shader& shader);
 		static void SetRenderUniforms(std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones = {});
@@ -228,6 +229,8 @@ namespace Loopie {
 		static void BuildShadowMaps();
 
 		static unsigned int UploadBones(const std::vector<matrix4>& bones);
+
+		static void ApplyPendingShadowSettings();      
 
 	private:
 		static std::vector<RenderItem> s_OpaqueRenderQueue;
