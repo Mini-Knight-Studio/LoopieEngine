@@ -270,7 +270,7 @@ namespace Loopie
         #endregion
         #region AudioSource
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void AudioSource_Play(string entityID, string componentID);
+        internal extern static void AudioSource_Play(string entityID, string componentID, float startTime);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void AudioSource_Stop(string entityID, string componentID, float fadeTime);
@@ -291,6 +291,9 @@ namespace Loopie
         internal extern static void AudioSource_SetSet3DMinMaxDistance(string entityID, string componentID, float min, float max);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void AudioSource_SetPlaybackTime(string entityID, string componentID, float timeInSeconds);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static bool AudioSource_IsLooping(string entityID, string componentID);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
@@ -304,6 +307,9 @@ namespace Loopie
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void AudioSource_GetSet3DMinMaxDistance(string id, string componentID, out float min, out float max);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static float AudioSource_GetPlaybackTime(string entityID, string componentID);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void AudioSource_TransitionTo(string id, string componentID, string audioID, float fadeOut, float fadeIn, bool crossFade);
@@ -516,6 +522,12 @@ namespace Loopie
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal extern static string Entity_GetChildByName(string entityID, string entityName, bool deepSearch);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void Entity_DontDestroyOnLoad(string entityID);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void Entity_DestroyOnLoad(string entityID);
         #endregion
         #region Component
         [MethodImplAttribute(MethodImplOptions.InternalCall)]

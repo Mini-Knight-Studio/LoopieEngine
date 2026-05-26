@@ -329,6 +329,17 @@ namespace Loopie {
 			m_childrenEntities[i]->m_order = i;
 	}
 
+	bool Entity::GetDontDestroyOnLoad() const
+	{
+		std::shared_ptr<Entity> parent = GetParent().lock();
+
+		if (parent) {
+			return m_dontDestroyOnLoad || parent->GetDontDestroyOnLoad();
+		}
+
+		return m_dontDestroyOnLoad;
+	}
+
 	void Entity::SetParent(const std::shared_ptr<Entity>& parent, bool keepLocal, bool setOrder)
 	{
 		// Prevents parenting to its own son

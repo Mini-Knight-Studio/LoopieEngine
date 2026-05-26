@@ -507,6 +507,22 @@ namespace Loopie
 		return ScriptingManager::CreateString(child->GetUUID().Get().c_str());
 	}
 
+	static void Entity_DontDestroyOnLoad(MonoString* entityID) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+
+		entity->SetDontDestroyOnLoad(true);
+	}
+
+	static void Entity_DestroyOnLoad(MonoString* entityID) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+
+		entity->SetDontDestroyOnLoad(false);
+	}
+
 #pragma endregion
 
 #pragma region Transform
@@ -1758,14 +1774,14 @@ namespace Loopie
 #pragma endregion
 
 #pragma region AudioSource
-	static void AudioSource_Play(MonoString* entityID, MonoString* componentID)
+	static void AudioSource_Play(MonoString* entityID, MonoString* componentID, float startTime)
 	{
 		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
 		if (!entity)
 			return;
 		AudioSource* audioSource = Utils::GetComponent<AudioSource>(entity, componentID);
 		if (audioSource)
-			audioSource->Play();
+			audioSource->Play(startTime);
 	}
 
 	static void AudioSource_Stop(MonoString* entityID, MonoString* componentID, float fadeTime)
@@ -1891,6 +1907,27 @@ namespace Loopie
 		audioSource->Get3DMinMaxDistance(minVal, maxVal);
 		*min = minVal;
 		*max = maxVal;
+	}
+
+	static void AudioSource_SetPlaybackTime(MonoString* entityID, MonoString* componentID, float timeInSeconds)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		AudioSource* audioSource = Utils::GetComponent<AudioSource>(entity, componentID);
+		if (audioSource)
+			audioSource->SetPlaybackTime(timeInSeconds);
+	}
+
+	static float AudioSource_GetPlaybackTime(MonoString* entityID, MonoString* componentID)
+	{
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return 0;
+		AudioSource* audioSource = Utils::GetComponent<AudioSource>(entity, componentID);
+		if (audioSource)
+			return audioSource->GetPlaybackTime();
+		return 0;
 	}
 
 	static void AudioSource_TransitionTo(MonoString* entityID, MonoString* componentID, MonoString* audioID, float timeOut, float timeIn, bool crossFade) {
@@ -3431,6 +3468,8 @@ namespace Loopie
 		ADD_INTERNAL_CALL(Entity_GetChildCount);
 		ADD_INTERNAL_CALL(Entity_GetChild);
 		ADD_INTERNAL_CALL(Entity_GetChildByName);
+		ADD_INTERNAL_CALL(Entity_DontDestroyOnLoad);
+		ADD_INTERNAL_CALL(Entity_DestroyOnLoad);
 
 		ADD_INTERNAL_CALL(Component_SetActive);
 		ADD_INTERNAL_CALL(Component_IsActive);
@@ -3587,13 +3626,14 @@ namespace Loopie
 		ADD_INTERNAL_CALL(AudioSource_SetVolume);
 		ADD_INTERNAL_CALL(AudioSource_SetPan);
 		ADD_INTERNAL_CALL(AudioSource_SetSet3DMinMaxDistance);
-		ADD_INTERNAL_CALL(AudioSource_TransitionTo);
-
+		ADD_INTERNAL_CALL(AudioSource_SetPlaybackTime);
 		ADD_INTERNAL_CALL(AudioSource_IsLooping);
 		ADD_INTERNAL_CALL(AudioSource_GetPitch);
 		ADD_INTERNAL_CALL(AudioSource_GetVolume);
 		ADD_INTERNAL_CALL(AudioSource_GetPan);
 		ADD_INTERNAL_CALL(AudioSource_GetSet3DMinMaxDistance);
+		ADD_INTERNAL_CALL(AudioSource_GetPlaybackTime);
+		ADD_INTERNAL_CALL(AudioSource_TransitionTo);
 
 		ADD_INTERNAL_CALL(Collisions_Raycast);
 		ADD_INTERNAL_CALL(Collisions_RaycastWithColliderAvoidance);

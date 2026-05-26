@@ -549,18 +549,38 @@ namespace Loopie {
 		ResourceManager::ProtectResources();
 
 		m_loadRequest = false;
+		std::vector<std::shared_ptr<Entity>> persistentEntities;
 
 		if (ScriptingManager::IsRunning()) {
-			for(const auto& [uuid, entity] : m_entities)
+
+			for (auto it = m_entities.begin(); it != m_entities.end(); ++it)
 			{
-				for (Component* component : entity->GetComponents())
+				if (it->second->GetLocalDontDestroyOnLoad())
 				{
-					if (!component)
-						continue;
-					if (component->GetTypeID() == ScriptClass::GetTypeIDStatic())
+					std::shared_ptr<Entity> parent = it->second->GetParent().lock();
+					if (parent && !parent->GetDontDestroyOnLoad())
 					{
-						ScriptClass* scriptComp = static_cast<ScriptClass*>(component);
-						scriptComp->InvokeOnDestroy();
+						it->second->SetParent(nullptr, true, false);
+					}
+				}
+			}
+
+			for (auto it = m_entities.begin(); it != m_entities.end(); it++)
+			{
+				if (it->second->GetDontDestroyOnLoad())
+				{
+					persistentEntities.push_back(it->second);
+				}
+				else {
+					for (Component* component : it->second->GetComponents())
+					{
+						if (!component)
+							continue;
+						if (component->GetTypeID() == ScriptClass::GetTypeIDStatic())
+						{
+							ScriptClass* scriptComp = static_cast<ScriptClass*>(component);
+							scriptComp->InvokeOnDestroy();
+						}
 					}
 				}
 			}
@@ -574,6 +594,19 @@ namespace Loopie {
 
 		m_rootEntity = std::make_shared<Entity>("scene");
 		m_rootEntity->AddComponent<Transform>();
+
+
+		for (auto& entity : persistentEntities)
+		{
+			m_entities[entity->GetUUID()] = entity;
+			m_octree->Insert(entity);
+
+			if (!entity->GetParent().lock())
+			{
+				m_rootEntity->AddChild(entity, false);
+			}
+		}
+
 
 		JsonData saveData = Json::ReadFromFile(filePath);
 
@@ -1019,6 +1052,7 @@ namespace Loopie {
 				{
 					scripts[i]->DestroyInstance();
 				}
+				entity->SetDontDestroyOnLoad(false);
 			}
 		}
 	}
@@ -1088,11 +1122,18 @@ namespace Loopie {
 		if (!entity)
 			return;
 
-		auto children = entity->GetChildren(); // Making a copy instead of referencing just in case
+		auto children = entity->GetChildren();
 
 		for (const auto& child : children)
 		{
-			RemoveEntityRecursive(child);
+			if (ScriptingManager::IsRunning() && child->GetDontDestroyOnLoad())
+			{
+				child->SetParent(m_rootEntity, true, false);
+			}
+			else
+			{
+				RemoveEntityRecursive(child);
+			}
 		}
 
 		if (std::shared_ptr<Entity> parent = entity->GetParent().lock())

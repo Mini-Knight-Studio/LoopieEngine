@@ -56,7 +56,7 @@ namespace Loopie {
 		void RemoveClip(int index);
 
         void SetCurrentClip(int index);
-        void Play();
+        void Play(float startTime = 0.0f);
         void Stop(float fadeOutTime = 0.0f);
         void LoadResource();
 
@@ -68,6 +68,7 @@ namespace Loopie {
 		void SetIfPlayOnAwake(bool playOnAwake) { m_playOnAwake = playOnAwake; }
 		AudioLoopStrategy GetLoopStrategy() const { return m_loopStrategy; }
 		AudioNoLoopStrategy GetNoLoopStrategy() const { return m_noLoopStrategy; }
+        void SetPlaybackTime(float timeInSeconds);
 
 		std::vector<std::shared_ptr<AudioClip>>& GetAudioClips() { return m_audioClips; }
 		int GetCurrentClipIndex() const { return m_currentClipIndex; }
@@ -78,6 +79,7 @@ namespace Loopie {
         bool IsLooping() const { return m_isLooping; }
 		bool GetIfPlayOnAwake() const { return m_playOnAwake; }
         void Get3DMinMaxDistance(float& minDist, float& maxDist) const { minDist = m_minDistance; maxDist = m_maxDistance; }
+        float GetPlaybackTime() const;
 
         const std::string GetBusPath() const;
         const AudioBus* GetBus() const;

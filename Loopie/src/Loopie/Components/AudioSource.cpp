@@ -112,7 +112,7 @@ namespace Loopie {
         }
     }
 
-    void AudioSource::Play() {
+    void AudioSource::Play(float startTime) {
         if (m_audioClips.empty())
             return;
 
@@ -133,7 +133,13 @@ namespace Loopie {
         if (!clip)
             return;
 
+        unsigned int startTimeMs = static_cast<unsigned int>(startTime * 1000.0f);
+
         if (m_isEvent && m_eventInstance) {
+            if (startTime > 0.0f) {
+                m_eventInstance->setTimelinePosition(startTimeMs);
+            }
+
             m_eventInstance->start();
             m_hasStarted = true;
 
@@ -172,6 +178,10 @@ namespace Loopie {
                 m_channel->setPitch(m_pitch);
                 m_channel->setVolume(m_volume);
                 m_channel->setPan(m_pan);
+
+                if (startTime > 0.0f) {
+                    m_channel->setPosition(startTimeMs, FMOD_TIMEUNIT_MS);
+                }
 
                 m_channel->setPaused(false);
                 m_hasStarted = true;
@@ -268,6 +278,27 @@ namespace Loopie {
         }
     }
 
+    void AudioSource::SetPlaybackTime(float timeInSeconds)
+    {
+        if (timeInSeconds < 0.0f) {
+            timeInSeconds = 0.0f;
+        }
+
+        unsigned int timeMs = static_cast<unsigned int>(timeInSeconds * 1000.0f);
+
+        if (m_isEvent && m_eventInstance) {
+            m_eventInstance->setTimelinePosition(timeMs);
+        }
+        else if (!m_isEvent && m_channel) {
+            bool isPlaying = false;
+            m_channel->isPlaying(&isPlaying);
+
+            if (isPlaying || m_hasStarted) {
+                m_channel->setPosition(timeMs, FMOD_TIMEUNIT_MS);
+            }
+        }
+    }
+
     void AudioSource::UpdateChannelMode() {
         if (!m_isEvent && m_channel) {
 
@@ -290,6 +321,27 @@ namespace Loopie {
 
         if(m_channel)
             m_channel->setChannelGroup(ResolveBus()->group);
+    }
+
+    float AudioSource::GetPlaybackTime() const
+    {
+        if (!m_hasStarted)
+            return 0.0f;
+
+        if (m_isEvent && m_eventInstance) {
+            int positionMs = 0;
+            if (m_eventInstance->getTimelinePosition(&positionMs) == FMOD_OK) {
+                return static_cast<float>(positionMs) / 1000.0f;
+            }
+        }
+        else if (!m_isEvent && m_channel) {
+            unsigned int positionMs = 0;
+            if (m_channel->getPosition(&positionMs, FMOD_TIMEUNIT_MS) == FMOD_OK) {
+                return static_cast<float>(positionMs) / 1000.0f;
+            }
+        }
+
+        return 0.0f;
     }
 
     const std::string AudioSource::GetBusPath() const {

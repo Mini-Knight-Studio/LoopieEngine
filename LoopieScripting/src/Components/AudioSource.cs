@@ -4,11 +4,11 @@ namespace Loopie
 {
     public class AudioSource : Component
     {
-       
 
-        public void Play()
+
+        public void Play(float playTime = 0.0f)
         {
-            InternalCalls.AudioSource_Play(entity.ID, ID);
+            InternalCalls.AudioSource_Play(entity.ID, ID, playTime);
         }
 
         public void Stop(float fadeTime = 0.0f)
@@ -83,6 +83,19 @@ namespace Loopie
         public void TransitionTo(string clipID, float fadeOut, float fadeIn, bool crossFade = false)
         {
             InternalCalls.AudioSource_TransitionTo(entity.ID, ID, clipID, fadeOut, fadeIn, crossFade);
+        }
+
+        public float PlaybackTime
+        { get { return GetPlaybackTime(); } set { SetPlaybackTime(value); } }
+
+        public float GetPlaybackTime()
+        {
+            return InternalCalls.AudioSource_GetPlaybackTime(entity.ID, ID);
+        }
+
+        public void SetPlaybackTime(float timeInSeconds)
+        {
+            InternalCalls.AudioSource_SetPlaybackTime(entity.ID, ID, timeInSeconds);
         }
     }
 
