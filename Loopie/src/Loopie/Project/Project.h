@@ -22,8 +22,6 @@ namespace Loopie {
 		const std::filesystem::path& GetConfigPath() const { return m_congifPath; }
 		const std::filesystem::path& GetGameDLLPath() const { return m_gameDLLPath; }
 
-		void SaveShadowSettings(); // called whenever settings are changed
-
 	private:
 		const void CreateDefaultPaths();
 		const void CreateProjFiles();

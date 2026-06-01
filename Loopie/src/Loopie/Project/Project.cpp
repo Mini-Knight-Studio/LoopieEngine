@@ -55,24 +55,6 @@ namespace Loopie {
 		return true;
 	}
 
-	void Project::SaveShadowSettings()
-	{
-		JsonData configData = ProjectConfig::GetData();
-		JsonNode engineConfig;
-		if (configData.HasKey("", "engine_config"))
-		{
-			engineConfig = configData.Child("engine_config");
-		}
-		else
-		{
-			engineConfig = configData.CreateObjectField("engine_config");
-		}
-
-		engineConfig.CreateField<int>("shadow_quality", static_cast<int>(Renderer::GetPendingShadowQuality()));
-		engineConfig.CreateField<int>("shadow_filter", static_cast<int>(Renderer::GetPendingShadowFilter()));
-
-		ProjectConfig::Save(configData);
-	}
 
 	const void Project::CreateDefaultPaths()
 	{

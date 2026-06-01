@@ -2,6 +2,8 @@
 
 #include "Loopie/Core/Assert.h"
 #include "Loopie/Core/Time.h"
+#include "Loopie/Project/Project.h"
+#include "Loopie/Project/ProjectConfig.h"
 #include "Loopie/Components/Transform.h"
 #include "Loopie/Render/Gizmo.h"
 #include "Loopie/Render/ShadowMap.h"
@@ -945,6 +947,25 @@ namespace Loopie {
 	void Renderer::SetDepthWrite(bool enable)
 	{
 		glDepthMask(enable ? GL_TRUE : GL_FALSE);
+	}
+
+	void Renderer::SaveRenderSettintgs()
+	{
+		JsonData configData = ProjectConfig::GetData();
+		JsonNode engineConfig;
+		if (configData.HasKey("", "engine_config"))
+		{
+			engineConfig = configData.Child("engine_config");
+		}
+		else
+		{
+			engineConfig = configData.CreateObjectField("engine_config");
+		}
+
+		engineConfig.CreateField<int>("shadow_quality", static_cast<int>(s_ShadowSettings.GetShadowQuality()));
+		engineConfig.CreateField<int>("shadow_filter", static_cast<int>(s_ShadowSettings.GetFilter()));
+
+		ProjectConfig::Save(configData);
 	}
 
 }

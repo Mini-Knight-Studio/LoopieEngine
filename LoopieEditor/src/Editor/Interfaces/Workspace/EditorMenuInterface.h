@@ -22,6 +22,7 @@ namespace Loopie {
 		void RenderInfoConfigMenu();
 		void RenderCollisionMatrixMenu();
 		void RenderAudioConfigMenu();
+		void RenderRenderConfigMenu();
 
 
 		void HotKeys(const InputEventManager& inputEvent);
@@ -43,6 +44,7 @@ namespace Loopie {
 		bool m_showInfoConfigMenu = false;
 		bool m_showCollisionMatrixMenu = false;
 		bool m_showAudioConfigMenu = false;
+		bool m_showRenderConfigMenu = false;
 
 
 		/// Plot

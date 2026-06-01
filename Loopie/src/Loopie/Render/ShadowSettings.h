@@ -35,7 +35,9 @@ namespace Loopie
 	};
 
 	ShadowQuality GetPresetQualityFromString(std::string string = "Medium");
+	const char* GetPresetQualityString(ShadowQuality quality);
 	ShadowFilter GetShadowFilterFromString(std::string string = "Soft");
+	const char* GetShadowFilterString(ShadowFilter filter);
 
 	ShadowQualityPreset LookupQualityPreset(ShadowQuality quality = ShadowQuality::Medium);
 	int LookupStaticRes(ShadowQuality quality = ShadowQuality::Medium);

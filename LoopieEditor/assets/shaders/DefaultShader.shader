@@ -195,7 +195,7 @@ void main()
             if (shadowIndex >= 0)
             {
                 dynamicShadow = SampleShadowMap(lp_ShadowMaps[shadowIndex], lp_LightSpaceMatrix[shadowIndex], v_WorldPos, normal, lightDir, 1.0);
-                staticShadow = SampleShadowMap(lp_StaticShadowMaps[shadowIndex], lp_StaticLightSpaceMatrix[shadowIndex], v_WorldPos, normal, lightDir, 3.0);
+                 staticShadow = SampleShadowMap(lp_StaticShadowMaps[shadowIndex], lp_StaticLightSpaceMatrix[shadowIndex], v_WorldPos, normal, lightDir, 1.0);
             }
             float shadow = dynamicShadow * staticShadow;
 
@@ -233,7 +233,7 @@ void main()
             if (shadowIndex >= 0)
             {
                dynamicShadow = SampleShadowMap(lp_ShadowMaps[shadowIndex], lp_LightSpaceMatrix[shadowIndex], v_WorldPos, normal, lightDir, 1.0);
-               staticShadow = SampleShadowMap(lp_StaticShadowMaps[shadowIndex], lp_StaticLightSpaceMatrix[shadowIndex], v_WorldPos, normal, lightDir, 3.0);
+               staticShadow = SampleShadowMap(lp_StaticShadowMaps[shadowIndex], lp_StaticLightSpaceMatrix[shadowIndex], v_WorldPos, normal, lightDir, 1.0);
             }
             float shadow = dynamicShadow * staticShadow;
 
