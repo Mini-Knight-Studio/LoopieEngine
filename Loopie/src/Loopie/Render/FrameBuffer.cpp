@@ -5,11 +5,26 @@
 
 namespace Loopie
 {
-	FrameBuffer::FrameBuffer(unsigned int width, unsigned int height)
+	FrameBuffer::FrameBuffer(unsigned int width, unsigned int height, FrameBufferFormat internalFormat, bool withDepth)
 	{
 		glGenFramebuffers(1, &m_rendererID);
 		glGenTextures(1, &m_textureBufferID);	
-		glGenTextures(1, &m_depthTextureID);
+		if (withDepth)
+		{
+			glGenTextures(1, &m_depthTextureID);
+		}
+
+		switch (internalFormat)
+		{
+		default:
+		case FrameBufferFormat::RGBA16F:
+			m_internalFormat = GL_RGBA16F;
+			break;
+		case FrameBufferFormat::RGBA8:
+			m_internalFormat = GL_RGBA8;
+			break;
+		}
+
 		Resize(width, height);
 
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -46,9 +61,11 @@ namespace Loopie
 	void FrameBuffer::Resize(unsigned int width, unsigned int height)
 	{
 		Bind();
+		
+		unsigned int type = (m_internalFormat == GL_RGBA16F ? GL_FLOAT : GL_UNSIGNED_BYTE);
 
 		glBindTexture(GL_TEXTURE_2D, m_textureBufferID);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+		glTexImage2D(GL_TEXTURE_2D, 0, m_internalFormat, width, height, 0, GL_RGBA, type, nullptr);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_textureBufferID, 0);

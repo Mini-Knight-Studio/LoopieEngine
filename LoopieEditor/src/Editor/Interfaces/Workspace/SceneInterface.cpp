@@ -26,7 +26,8 @@ namespace Loopie {
 
 	SceneInterface::SceneInterface() {
 		m_camera = std::make_shared<OrbitalCamera>();
-		m_buffer = std::make_shared<FrameBuffer>(1,1);
+		m_hdrBuffer = std::make_shared<FrameBuffer>(1,1, Loopie::FrameBuffer::FrameBufferFormat::RGBA16F);
+		m_ldrBuffer = std::make_shared<FrameBuffer>(1,1, Loopie::FrameBuffer::FrameBufferFormat::RGBA8);
 		m_camera->GetCamera()->GetTransform()->SetPosition({ 0,5,-10.f });
 
 		std::vector<std::string> iconsToLoad = {
@@ -107,7 +108,7 @@ namespace Loopie {
 				m_interacted = ImGui::IsMouseDown(ImGuiMouseButton_Left) || ImGui::IsMouseDown(ImGuiMouseButton_Right) || ImGui::IsMouseDown(ImGuiMouseButton_Middle);
 			else 
 				m_interacted = false;
-			ImGui::Image((ImTextureID)m_buffer->GetTextureId(), size, ImVec2(0,1), ImVec2(1,0));
+			ImGui::Image((ImTextureID)m_ldrBuffer->GetTextureId(), size, ImVec2(0,1), ImVec2(1,0));
 
 			Drop();
 
@@ -155,35 +156,39 @@ namespace Loopie {
 
 	void SceneInterface::StartScene()
 	{
-		m_buffer->Bind();
+		m_hdrBuffer->Bind();
 
-		ivec2 textureSize = ivec2(m_buffer->GetWidth(), m_buffer->GetHeight());
+		ivec2 textureSize = ivec2(m_hdrBuffer->GetWidth(), m_hdrBuffer->GetHeight());
 		Renderer::SetViewport(0, 0, (unsigned int)m_windowSize.x, (unsigned int)m_windowSize.y);
 		if (m_windowSize.x != textureSize.x || m_windowSize.y != textureSize.y) {
 			m_camera->GetCamera()->SetViewport(0, 0, m_windowSize.x, m_windowSize.y);
-			m_buffer->Resize(m_windowSize.x, m_windowSize.y);
+			m_hdrBuffer->Resize(m_windowSize.x, m_windowSize.y);
+			m_ldrBuffer->Resize(m_windowSize.x, m_windowSize.y);
 		}
 
-		m_buffer->Clear();	
+		m_hdrBuffer->Clear();
 	}
 
 	void SceneInterface::EndScene()
 	{
-		m_buffer->Unbind();
+		m_hdrBuffer->Unbind();
 	}
 
 	void SceneInterface::PrepareFrameBuffer()
 	{
 		m_camera->GetCamera()->SetViewport(0, 0, m_windowSize.x, m_windowSize.y);
 
-		ivec2 textureSize = ivec2(m_buffer->GetWidth(), m_buffer->GetHeight());
+		ivec2 textureSize = ivec2(m_hdrBuffer->GetWidth(), m_hdrBuffer->GetHeight());
 		if (m_windowSize.x != textureSize.x || m_windowSize.y != textureSize.y) 
 		{
-			m_buffer->Resize(m_windowSize.x, m_windowSize.y);
+			m_hdrBuffer->Resize(m_windowSize.x, m_windowSize.y);
+			m_ldrBuffer->Resize(m_windowSize.x, m_windowSize.y);
 		}
-		m_buffer->Bind();
-		m_buffer->Clear();
-		m_buffer->Unbind();
+	}
+
+	void SceneInterface::ResolveToLDR()
+	{
+		Renderer::TonemapPass(m_hdrBuffer->GetTextureId(), *m_ldrBuffer);
 	}
 
 	void SceneInterface::HotKeysBasic(const InputEventManager& inputEvent)
@@ -359,8 +364,8 @@ namespace Loopie {
 
 	Ray SceneInterface::MouseRay()
 	{
-		float ndcX = (2.0f * m_mousePosition.x) / m_buffer->GetWidth() - 1.0f;
-		float ndcY = 1.0f - (2.0f * m_mousePosition.y) / m_buffer->GetHeight(); // flip Y for GL
+		float ndcX = (2.0f * m_mousePosition.x) / m_hdrBuffer->GetWidth() - 1.0f;
+		float ndcY = 1.0f - (2.0f * m_mousePosition.y) / m_hdrBuffer->GetHeight(); // flip Y for GL
 
 		vec4 rayClipNear(ndcX, ndcY, -1.0f, 1.0f);
 		vec4 rayClipFar(ndcX, ndcY, 1.0f, 1.0f);

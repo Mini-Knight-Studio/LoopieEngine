@@ -396,8 +396,8 @@ namespace Loopie
 				if (!cam->GetIsActive())
 					continue;
 
-				std::shared_ptr<FrameBuffer> buffer = cam->GetRenderTarget();
-				if (!buffer)
+				std::shared_ptr<FrameBuffer> hdrBuffer = cam->GetRenderTarget();
+				if (!hdrBuffer)
 					continue;
 
 				{
@@ -407,8 +407,8 @@ namespace Loopie
 
 				{
 					LP_SCOPE_N("Main Render");
-					buffer->Bind();
-					Renderer::SetViewport(0, 0, buffer->GetWidth(), buffer->GetHeight());
+					hdrBuffer->Bind();
+					Renderer::SetViewport(0, 0, hdrBuffer->GetWidth(), hdrBuffer->GetHeight());
 
 					Renderer::BeginScene(cam->GetViewMatrix(), cam->GetProjectionMatrix(), cam->GetIsEditorCamera());
 
@@ -444,15 +444,26 @@ namespace Loopie
 							}
 						}
 					}
-					Renderer::SetSceneDepthTexture(buffer->GetDepthId());
+					Renderer::SetSceneDepthTexture(hdrBuffer->GetDepthId());
 					Renderer::SetSceneFrustrumValues(cam->GetNearPlane(), cam->GetFarPlane()); // needed for depth testing
 
 					Renderer::EndScene();
 					RenderParticles(cam);
 
 					
-					buffer->Unbind();
+					hdrBuffer->Unbind();
 				}
+			}
+		}
+
+		{
+			if (m_scene.IsVisible())
+			{
+				m_scene.ResolveToLDR();
+			}
+			if (m_game.IsVisible())
+			{
+				m_game.ResolveToLDR();
 			}
 		}
 
@@ -878,7 +889,7 @@ namespace Loopie
 	void EditorModule::RenderUI()
 	{
 		LP_FUNC();
-		std::shared_ptr<FrameBuffer> buffer = m_game.GetFrameBuffer();
+		std::shared_ptr<FrameBuffer> buffer = m_game.GetLDRFrameBuffer();
 		if (!buffer)
 			return;
 

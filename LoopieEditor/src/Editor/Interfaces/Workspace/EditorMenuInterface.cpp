@@ -132,6 +132,23 @@ namespace Loopie {
 				{
 					m_showRenderConfigMenu = true;
 				}
+
+				ImGui::Text("Exposure:");
+				ImGui::SameLine();
+				float currentExposure = Renderer::GetExposure();
+				if (ImGui::SliderFloat("##Exposure", &currentExposure, MIN_EXPOSURE_VALUE, MAX_EXPOSURE_VALUE))
+				{
+					Renderer::SetExposure(currentExposure);
+				}
+				if (ImGui::MenuItem("Reset Exposure to 1.0"))
+				{
+					Renderer::SetExposure(1.0f);
+				}
+
+				if (ImGui::MenuItem("Save Renderer Settings"))
+				{
+					Renderer::SaveRenderSettintgs();
+				}
 				ImGui::EndMenu();
 			}
 

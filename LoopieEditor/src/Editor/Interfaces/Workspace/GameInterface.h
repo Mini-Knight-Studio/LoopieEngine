@@ -22,7 +22,9 @@ namespace Loopie {
 		bool IsVisible() { return m_visible; }
 
 		void PrepareFrameBuffer();
-		std::shared_ptr<FrameBuffer> GetFrameBuffer() const { return m_buffer; }
+		std::shared_ptr<FrameBuffer> GetFrameBuffer() const { return m_hdrBuffer; }
+		std::shared_ptr<FrameBuffer> GetLDRFrameBuffer() const { return m_ldrBuffer; }
+		void ResolveToLDR();
 
 		Camera* GetCamera();
 
@@ -38,7 +40,9 @@ namespace Loopie {
 
 	private:
 		bool m_visible = false;
-		std::shared_ptr<FrameBuffer> m_buffer;
+		std::shared_ptr<FrameBuffer> m_hdrBuffer;
+		std::shared_ptr<FrameBuffer> m_ldrBuffer;
+
 		ivec2 m_windowSize = ivec2(0);
 
 		bool m_mouseOverGame = false;

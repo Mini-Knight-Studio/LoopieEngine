@@ -42,6 +42,9 @@ namespace Loopie {
 	Renderer::ShadowSlot Renderer::s_ShadowSlots[MAX_SHADOW_CASTING_LIGHTS] = { nullptr };
 	unsigned short Renderer::s_ShadowCount = 0;
 	std::unique_ptr<Shader> Renderer::s_ShadowMapShader = nullptr;
+	std::unique_ptr<Shader> Renderer::s_TonemapShader = nullptr;
+	GLuint Renderer::s_DummyVAO = 0;
+	float Renderer::s_Exposure = 1.0f;
 
 	unsigned int Renderer::s_SceneDepthTextureID = 0;
 	float Renderer::s_NearPlane = 0.3f;
@@ -120,6 +123,7 @@ namespace Loopie {
 
 		s_LightCount = 0;
 		InitShadowMapping();
+		InitPostProcessing();
 	}
 
 	void Renderer::Shutdown() {
@@ -964,8 +968,61 @@ namespace Loopie {
 
 		engineConfig.CreateField<int>("shadow_quality", static_cast<int>(s_ShadowSettings.GetShadowQuality()));
 		engineConfig.CreateField<int>("shadow_filter", static_cast<int>(s_ShadowSettings.GetFilter()));
+		engineConfig.CreateField<float>("exposure", static_cast<float>(s_Exposure));
 
 		ProjectConfig::Save(configData);
 	}
 
+	void Renderer::InitPostProcessing()
+	{
+		s_TonemapShader = std::make_unique<Shader>("assets/shaders/Tonemap.shader");
+		if (!s_TonemapShader->GetIsValidShader())
+		{
+			Log::Error("Tonemap shader failed to compile!");
+		}
+
+		glGenVertexArrays(1, &s_DummyVAO);
+	}
+
+	// Passes the hdr texture into an ldr one
+	void Renderer::TonemapPass(unsigned int hdrTextureID, FrameBuffer& ldrTarget)
+	{
+		ldrTarget.Bind();
+		SetViewport(0, 0, ldrTarget.GetWidth(), ldrTarget.GetHeight());
+		DisableDepth();
+		s_TonemapShader->Bind();
+		
+		glBindVertexArray(s_DummyVAO);
+		glActiveTexture(GL_TEXTURE0 + TONEMAP_TEXTURE_INDEX);
+		glBindTexture(GL_TEXTURE_2D, hdrTextureID);
+		s_TonemapShader->SetUniformInt("lp_HDRBuffer", TONEMAP_TEXTURE_INDEX);
+		s_TonemapShader->SetUniformFloat("lp_Exposure", s_Exposure);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+		
+		EnableDepth();
+		s_TonemapShader->Unbind();
+		ldrTarget.Unbind();
+		glActiveTexture(GL_TEXTURE0);
+	}
+
+	float Renderer::GetExposure()
+	{
+		return s_Exposure;
+	}
+
+	void Renderer::SetExposure(float exposure)
+	{
+		if (exposure < MIN_EXPOSURE_VALUE)
+		{
+			s_Exposure = MIN_EXPOSURE_VALUE;
+		}
+		else if (exposure > MAX_EXPOSURE_VALUE)
+		{
+			s_Exposure = MAX_EXPOSURE_VALUE;
+		}
+		else
+		{
+			s_Exposure = exposure;
+		}
+	}
 }

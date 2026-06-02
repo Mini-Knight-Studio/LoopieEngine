@@ -20,6 +20,10 @@
 
 #define DYNAMIC_SHADOW_TEXTURE_INDEX 8 
 #define STATIC_SHADOW_TEXTURE_INDEX 13
+#define TONEMAP_TEXTURE_INDEX 17
+
+#define MIN_EXPOSURE_VALUE 0.05f
+#define MAX_EXPOSURE_VALUE 64.0f
 
 namespace Loopie {
 	class Transform;
@@ -221,6 +225,12 @@ namespace Loopie {
 
 		static void SaveRenderSettintgs();
 
+		// Post-processing
+		static void InitPostProcessing();
+		static void TonemapPass(unsigned int hdrTextureID, FrameBuffer& ldrTarget);
+		static float GetExposure();
+		static void SetExposure(float exposure);
+
 	private:
 		static void SetFrameUniforms(Shader& shader);
 		static void SetRenderUniforms(std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones = {});
@@ -261,6 +271,11 @@ namespace Loopie {
 		static ShadowSlot s_ShadowSlots[MAX_SHADOW_CASTING_LIGHTS];
 		static unsigned short s_ShadowCount;
 		static std::unique_ptr<Shader> s_ShadowMapShader;
+
+		// Post-processing
+		static std::unique_ptr<Shader> s_TonemapShader;
+		static GLuint s_DummyVAO; // for fullscreen VAO, needs value
+		static float s_Exposure;
 
 		static unsigned int s_SceneDepthTextureID;
 		static float s_NearPlane;
