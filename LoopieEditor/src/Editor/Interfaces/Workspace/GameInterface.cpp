@@ -117,7 +117,10 @@ namespace Loopie {
 
 	void GameInterface::ResolveToLDR()
 	{
-		Renderer::TonemapPass(m_hdrBuffer->GetTextureId(), *m_ldrBuffer);
+		Renderer::BloomExtractPass(m_hdrBuffer->GetTextureId());
+		Renderer::BloomDownsamplePass();
+		Renderer::BloomUpsamplePass();
+		Renderer::TonemapPass(m_hdrBuffer->GetTextureId(), *m_ldrBuffer, Renderer::GetBloomChain()[0]->GetTextureId());
 	}
 
 	void GameInterface::DrawHelperBar()

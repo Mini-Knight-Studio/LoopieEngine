@@ -45,6 +45,12 @@ namespace Loopie {
 	std::unique_ptr<Shader> Renderer::s_TonemapShader = nullptr;
 	GLuint Renderer::s_DummyVAO = 0;
 	float Renderer::s_Exposure = 1.0f;
+	std::vector<std::shared_ptr<FrameBuffer>> Renderer::s_BloomChain = { nullptr };
+	std::unique_ptr<Shader> Renderer::s_BloomExtractShader = nullptr;
+	float Renderer::s_BloomThreshold = 1.0f;
+	float Renderer::s_BloomStrength = 0.04f;
+	std::unique_ptr<Shader> Renderer::s_BloomDownsampleShader = nullptr;
+	std::unique_ptr<Shader> Renderer::s_BloomUpsampleShader = nullptr;
 
 	unsigned int Renderer::s_SceneDepthTextureID = 0;
 	float Renderer::s_NearPlane = 0.3f;
@@ -81,9 +87,6 @@ namespace Loopie {
 		layout.AddLayoutElement(1, GLVariableType::MATRIX4, 1, "Proj");
 		s_MatricesUniformBuffer = std::make_shared<UniformBuffer>(layout);
 		s_MatricesUniformBuffer->BindToLayout(0);
-
-		// TODO: Pass in shadow settings in the constructor
-		//s_ShadowSettings = std::make_unique<ShadowSettings>(); 
 
 		BufferLayout lightingLayout;
 		lightingLayout.AddLayoutElement(0, GLVariableType::VEC4, 1, "CameraWorldPosLightCount"); // Camera World Position + Light Count
@@ -969,6 +972,8 @@ namespace Loopie {
 		engineConfig.CreateField<int>("shadow_quality", static_cast<int>(s_ShadowSettings.GetShadowQuality()));
 		engineConfig.CreateField<int>("shadow_filter", static_cast<int>(s_ShadowSettings.GetFilter()));
 		engineConfig.CreateField<float>("exposure", static_cast<float>(s_Exposure));
+		engineConfig.CreateField<float>("bloom_threshold", static_cast<float>(s_BloomThreshold));
+		engineConfig.CreateField<float>("bloom_strength", static_cast<float>(s_BloomStrength));
 
 		ProjectConfig::Save(configData);
 	}
@@ -980,12 +985,26 @@ namespace Loopie {
 		{
 			Log::Error("Tonemap shader failed to compile!");
 		}
-
+		s_BloomExtractShader = std::make_unique<Shader>("assets/shaders/BloomExtract.shader");
+		if (!s_BloomExtractShader->GetIsValidShader())
+		{
+			Log::Error("Bloom Extract shader failed to compile!");
+		}
+		s_BloomDownsampleShader = std::make_unique<Shader>("assets/shaders/BloomDownsample.shader");
+		if (!s_BloomDownsampleShader->GetIsValidShader())
+		{
+			Log::Error("Bloom Downsample shader failed to compile!");
+		}
+		s_BloomUpsampleShader = std::make_unique<Shader>("assets/shaders/BloomUpsample.shader");
+		if (!s_BloomUpsampleShader->GetIsValidShader())
+		{
+			Log::Error("Bloom Upsample shader failed to compile!");
+		}
 		glGenVertexArrays(1, &s_DummyVAO);
 	}
 
 	// Passes the hdr texture into an ldr one
-	void Renderer::TonemapPass(unsigned int hdrTextureID, FrameBuffer& ldrTarget)
+	void Renderer::TonemapPass(unsigned int hdrTextureID, FrameBuffer& ldrTarget, unsigned int bloomTextureID)
 	{
 		ldrTarget.Bind();
 		SetViewport(0, 0, ldrTarget.GetWidth(), ldrTarget.GetHeight());
@@ -996,9 +1015,15 @@ namespace Loopie {
 		glActiveTexture(GL_TEXTURE0 + TONEMAP_TEXTURE_INDEX);
 		glBindTexture(GL_TEXTURE_2D, hdrTextureID);
 		s_TonemapShader->SetUniformInt("lp_HDRBuffer", TONEMAP_TEXTURE_INDEX);
-		s_TonemapShader->SetUniformFloat("lp_Exposure", s_Exposure);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
 		
+		glActiveTexture(GL_TEXTURE0 + BLOOM_TEXTURE_INDEX);
+		glBindTexture(GL_TEXTURE_2D, bloomTextureID);
+		s_TonemapShader->SetUniformInt("lp_BloomBuffer", BLOOM_TEXTURE_INDEX);
+
+		s_TonemapShader->SetUniformFloat("lp_Exposure", s_Exposure);
+		s_TonemapShader->SetUniformFloat("lp_BloomStrength", s_BloomStrength); 
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+
 		EnableDepth();
 		s_TonemapShader->Unbind();
 		ldrTarget.Unbind();
@@ -1024,5 +1049,127 @@ namespace Loopie {
 		{
 			s_Exposure = exposure;
 		}
+	}
+
+	void Renderer::SetBloomThreshold(float bloomThreshold)
+	{
+		s_BloomThreshold = bloomThreshold;
+	}
+
+	float Renderer::GetBloomThreshold()
+	{
+		return s_BloomThreshold;
+	}
+
+	void Renderer::SetBloomStrength(float bloomStrength)
+	{
+		s_BloomStrength = bloomStrength;
+	}
+
+	float Renderer::GetBloomStrength()
+	{
+		return s_BloomStrength;
+	}
+
+	void Renderer::BloomExtractPass(unsigned int hdrTextureID)
+	{
+		EnsureBloomChain(s_CurrentViewport.z, s_CurrentViewport.w);
+		FrameBuffer& dst = *s_BloomChain[0];  
+		dst.Bind();
+		SetViewport(0, 0, dst.GetWidth(), dst.GetHeight());
+		DisableDepth();
+		s_BloomExtractShader->Bind();
+
+		glBindVertexArray(s_DummyVAO);
+		glActiveTexture(GL_TEXTURE0 + BLOOM_TEXTURE_INDEX);   
+		glBindTexture(GL_TEXTURE_2D, hdrTextureID);
+		s_BloomExtractShader->SetUniformInt("lp_hdrBuffer", BLOOM_TEXTURE_INDEX);
+		s_BloomExtractShader->SetUniformFloat("lp_BloomThreshold", s_BloomThreshold);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+
+		EnableDepth();
+		s_BloomExtractShader->Unbind();
+		dst.Unbind();
+		glActiveTexture(GL_TEXTURE0);
+	}
+
+	void Renderer::BloomDownsamplePass()
+	{
+		DisableDepth();
+		s_BloomDownsampleShader->Bind();
+		glBindVertexArray(s_DummyVAO);
+
+		for (size_t i = 1; i < s_BloomChain.size(); ++i)
+		{
+			FrameBuffer& dst = *s_BloomChain[i];
+			FrameBuffer& src = *s_BloomChain[i - 1];
+
+			dst.Bind();
+			SetViewport(0, 0, dst.GetWidth(), dst.GetHeight());
+			glActiveTexture(GL_TEXTURE0 + BLOOM_TEXTURE_INDEX);
+			glBindTexture(GL_TEXTURE_2D, src.GetTextureId());
+			s_BloomDownsampleShader->SetUniformInt("lp_SourceTexture", BLOOM_TEXTURE_INDEX);
+			s_BloomDownsampleShader->SetUniformVec2("lp_SrcTexelSize", glm::vec2({ 1.0f / src.GetWidth(), 1.0f / src.GetHeight() }));
+			glDrawArrays(GL_TRIANGLES, 0, 3);
+			dst.Unbind();
+		}
+
+		EnableDepth();
+		s_BloomDownsampleShader->Unbind();
+		glActiveTexture(GL_TEXTURE0);
+	}
+
+	void Renderer::BloomUpsamplePass()
+	{
+		EnableBlend();
+		BlendFunction(BlendFactorMode::ONE, BlendFactorMode::ONE);
+
+		s_BloomUpsampleShader->Bind();
+		glBindVertexArray(s_DummyVAO);
+
+		for (int i = BLOOM_MIP_COUNT - 1; i > 0; --i)
+		{
+			FrameBuffer& src = *s_BloomChain[i];    
+			FrameBuffer& dst = *s_BloomChain[i - 1];
+
+			dst.Bind();
+			SetViewport(0, 0, dst.GetWidth(), dst.GetHeight());
+
+			glActiveTexture(GL_TEXTURE0 + BLOOM_TEXTURE_INDEX);
+			glBindTexture(GL_TEXTURE_2D, src.GetTextureId());
+			s_BloomUpsampleShader->SetUniformInt("lp_SourceTexture", BLOOM_TEXTURE_INDEX);
+
+			glDrawArrays(GL_TRIANGLES, 0, 3);
+		}
+
+		DisableBlend();
+		s_BloomUpsampleShader->Unbind();
+		glActiveTexture(GL_TEXTURE0);
+	}
+
+	void Renderer::EnsureBloomChain(unsigned int fullWidth, unsigned int fullHeight)
+	{
+		unsigned int newWidth = fullWidth >> 1;
+		unsigned int newHeight = fullHeight >> 1;
+		if (s_BloomChain.size() == BLOOM_MIP_COUNT)
+		{
+			if (s_BloomChain[0]->GetWidth() == newWidth && s_BloomChain[0]->GetHeight() == newHeight)
+			{
+				return;
+			}
+		}
+
+		s_BloomChain.clear();
+		for (int i = 0; i < BLOOM_MIP_COUNT; ++i)
+		{
+			unsigned int w = glm::max((unsigned int)1, fullWidth >> (i + 1));	// using max to ensure the texture doesn't become size 0
+			unsigned int h = glm::max((unsigned int)1, fullHeight >> (i + 1));
+			s_BloomChain.push_back(std::make_shared<FrameBuffer>(w, h, FrameBuffer::FrameBufferFormat::RGBA16F, false));
+		}
+	}
+
+	std::vector<std::shared_ptr<FrameBuffer>> Renderer::GetBloomChain()
+	{
+		return s_BloomChain;
 	}
 }

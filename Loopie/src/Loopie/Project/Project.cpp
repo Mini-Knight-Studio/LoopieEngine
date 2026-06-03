@@ -134,6 +134,8 @@ namespace Loopie {
 		engineConfigNode.CreateField<int>("shadow_quality", static_cast<int>(ShadowQuality::Medium));
 		engineConfigNode.CreateField<int>("shadow_filter", static_cast<int>(ShadowFilter::Soft));
 		engineConfigNode.CreateField<float>("exposure", 1.0f);
+		engineConfigNode.CreateField<float>("bloom_threshold", 1.0f);
+		engineConfigNode.CreateField<float>("bloom_strength", 0.04f);
 
 		JsonNode collisionLayersNode = engineConfigNode.CreateObjectField("collision_layers");
 		for (size_t i = 0; i < MAX_LAYERS; i++)
@@ -197,6 +199,10 @@ namespace Loopie {
 			engineConfigNode.CreateField<int>("shadow_filter", static_cast<int>(ShadowFilter::Soft));
 		if (!engineConfigNode.HasKey("exposure"))
 			engineConfigNode.CreateField<float>("exposure", 1.0f);
+		if (!engineConfigNode.HasKey("bloom_threshold"))
+			engineConfigNode.CreateField<float>("bloom_threshold", 1.0f);
+		if (!engineConfigNode.HasKey("bloom_strength"))
+			engineConfigNode.CreateField<float>("bloom_strength", 0.04f);
 
 		if (!engineConfigNode.HasKey("collision_layers"))
 			collisionLayersNode = engineConfigNode.CreateObjectField("collision_layers");
@@ -271,6 +277,8 @@ namespace Loopie {
 		int shadowQualityInt = configData.GetValue<int>("engine_config.shadow_quality",	static_cast<int>(ShadowQuality::Medium)).Result;
 		int shadowFilterInt = configData.GetValue<int>("engine_config.shadow_filter", static_cast<int>(ShadowFilter::Soft)).Result;
 		float exposure = configData.GetValue<float>("engine_config.exposure", 1.0f).Result;
+		float bloomThreshold = configData.GetValue<float>("engine_config.bloom_threshold", 1.0f).Result;
+		float bloomStrength = configData.GetValue<float>("engine_config.bloom_strength", 0.04f).Result;
 		std::string name = configData.GetValue<std::string>("project_name", m_projectPath.filename().string()).Result;
 
 		for (size_t i = 0; i < MAX_LAYERS; i++)
@@ -328,6 +336,8 @@ namespace Loopie {
 		Renderer::SetShadowQuality(static_cast<ShadowQuality>(shadowQualityInt));
 		Renderer::SetShadowFilter(static_cast<ShadowFilter>(shadowFilterInt));
 		Renderer::SetExposure(exposure);
+		Renderer::SetBloomThreshold(bloomThreshold);
+		Renderer::SetBloomStrength(bloomStrength);
 
 		window.SetTitle(name.c_str());
 		m_name = name;

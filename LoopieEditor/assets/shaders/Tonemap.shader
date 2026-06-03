@@ -1,34 +1,36 @@
 [vertex]
 #version 460 core
 
-out vec2 v_UV;
+out vec2 v_TexCoord;
 void main()
 {
     vec2 uv = vec2((gl_VertexID << 1) & 2, gl_VertexID & 2);
-    v_UV = uv;
+    v_TexCoord = uv;
     gl_Position = vec4(uv * 2.0 - 1.0, 0.0, 1.0);
 }
 
 [fragment]
 #version 460 core
 
-in vec2 v_UV;
+in vec2 v_TexCoord;
 out vec4 FragColor;
 
 uniform sampler2D lp_HDRBuffer;
+uniform sampler2D lp_BloomBuffer;
 uniform float lp_Exposure;
+uniform float lp_BloomStrength;
 
 // Normal -> Lava visible up to 47.0
 //void main()
 //{
-//    vec3 color = texture(lp_HDRBuffer, v_UV).rgb;
+//    vec3 color = texture(lp_HDRBuffer, v_TexCoord).rgb;
 //    FragColor = vec4(color, 1.0);
 //}
 
 // Reinhard -> 1.0 = 0.5 -> Lava visible up to 800 ish
 //void main()
 //{
-//    vec3 hdr = texture(lp_HDRBuffer, v_UV).rgb;
+//    vec3 hdr = texture(lp_HDRBuffer, v_TexCoord).rgb;
 //    vec3 mapped = hdr * lp_Exposure;         
 //    mapped = mapped / (mapped + vec3(1.0));  
 //    FragColor = vec4(mapped, 1.0);
@@ -47,8 +49,11 @@ vec3 ACESFilm(vec3 x)
 
 void main()
 {
-    vec3 hdr = texture(lp_HDRBuffer, v_UV).rgb;
-    vec3 mapped = hdr * lp_Exposure;
-    mapped = ACESFilm(mapped);
-    FragColor = vec4(mapped, 1.0);
+    vec3 hdr = texture(lp_HDRBuffer, v_TexCoord).rgb;
+    vec3 bloom = texture(lp_BloomBuffer, v_TexCoord).rgb;
+    //vec3 combined = mix(hdr, bloom, lp_BloomStrength);  // -> more artistical
+    vec3 combined = hdr + bloom * lp_BloomStrength;  // -> more physically reallistic
+    combined *= lp_Exposure;
+    combined = ACESFilm(combined);
+    FragColor = vec4(combined, 1.0);
 }

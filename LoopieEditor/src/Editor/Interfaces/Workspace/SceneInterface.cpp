@@ -109,6 +109,12 @@ namespace Loopie {
 			else 
 				m_interacted = false;
 			ImGui::Image((ImTextureID)m_ldrBuffer->GetTextureId(), size, ImVec2(0,1), ImVec2(1,0));
+			
+			// Debug to see blooming alone!
+			/*if (Renderer::s_BloomChain.size() > 1)
+			{
+				ImGui::Image(Renderer::s_BloomChain[0]->GetTextureId(), size, ImVec2(0, 1), ImVec2(1, 0));
+			}*/
 
 			Drop();
 
@@ -188,7 +194,10 @@ namespace Loopie {
 
 	void SceneInterface::ResolveToLDR()
 	{
-		Renderer::TonemapPass(m_hdrBuffer->GetTextureId(), *m_ldrBuffer);
+		Renderer::BloomExtractPass(m_hdrBuffer->GetTextureId());
+		Renderer::BloomDownsamplePass();
+		Renderer::BloomUpsamplePass();
+		Renderer::TonemapPass(m_hdrBuffer->GetTextureId(), *m_ldrBuffer, Renderer::GetBloomChain()[0]->GetTextureId());
 	}
 
 	void SceneInterface::HotKeysBasic(const InputEventManager& inputEvent)

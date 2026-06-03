@@ -25,6 +25,9 @@
 #define MIN_EXPOSURE_VALUE 0.05f
 #define MAX_EXPOSURE_VALUE 64.0f
 
+#define BLOOM_TEXTURE_INDEX 18
+#define BLOOM_MIP_COUNT 5
+
 namespace Loopie {
 	class Transform;
 	class ShadowMap;
@@ -227,9 +230,19 @@ namespace Loopie {
 
 		// Post-processing
 		static void InitPostProcessing();
-		static void TonemapPass(unsigned int hdrTextureID, FrameBuffer& ldrTarget);
+		static void TonemapPass(unsigned int hdrTextureID, FrameBuffer& ldrTarget, unsigned int bloomTextureID);
 		static float GetExposure();
+		static void SetBloomThreshold(float bloomThreshold);
+		static float GetBloomThreshold();
+		static void SetBloomStrength(float bloomStrength);
+		static float GetBloomStrength();
 		static void SetExposure(float exposure);
+		static void BloomExtractPass(unsigned int hdrTextureID);
+		static void BloomDownsamplePass();
+		static void BloomUpsamplePass();
+		static void EnsureBloomChain(unsigned int fullWidth, unsigned int fullHeight);
+		static std::vector<std::shared_ptr<FrameBuffer>> GetBloomChain(); 
+
 
 	private:
 		static void SetFrameUniforms(Shader& shader);
@@ -276,6 +289,12 @@ namespace Loopie {
 		static std::unique_ptr<Shader> s_TonemapShader;
 		static GLuint s_DummyVAO; // for fullscreen VAO, needs value
 		static float s_Exposure;
+		static std::unique_ptr<Shader> s_BloomExtractShader;
+		static std::vector<std::shared_ptr<FrameBuffer>> s_BloomChain;
+		static float s_BloomThreshold;
+		static float s_BloomStrength;
+		static std::unique_ptr<Shader> s_BloomDownsampleShader;
+		static std::unique_ptr<Shader> s_BloomUpsampleShader;
 
 		static unsigned int s_SceneDepthTextureID;
 		static float s_NearPlane;

@@ -145,6 +145,22 @@ namespace Loopie {
 					Renderer::SetExposure(1.0f);
 				}
 
+				ImGui::Text("Bloom Threshold:");
+				ImGui::SameLine();
+				float currentBloomThreshold = Renderer::GetBloomThreshold();
+				if (ImGui::SliderFloat("##Bloom Threshold", &currentBloomThreshold, 0.5, 2.0))
+				{
+					Renderer::SetBloomThreshold(currentBloomThreshold);
+				}
+				
+				ImGui::Text("Bloom Strength:");
+				ImGui::SameLine();
+				float currentBloomStrength = Renderer::GetBloomStrength();
+				if (ImGui::SliderFloat("##Bloom Strength", &currentBloomStrength, 0.01, 0.20))
+				{
+					Renderer::SetBloomStrength(currentBloomStrength);
+				}
+
 				if (ImGui::MenuItem("Save Renderer Settings"))
 				{
 					Renderer::SaveRenderSettintgs();
