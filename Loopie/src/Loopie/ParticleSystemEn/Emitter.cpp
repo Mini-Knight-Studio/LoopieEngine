@@ -39,6 +39,8 @@ namespace Loopie
 		m_particleProperties.ColorEnd = vec4(1, 1, 1, 1);
 		m_particleProperties.SizeBegin = 1;
 		m_particleProperties.SizeEnd = 1;
+		m_particleProperties.EmissiveBegin = 1.0f;
+		m_particleProperties.EmissiveEnd = 1.0f;
 		m_particleProperties.SizeVariation = 0.5;
 		m_particleProperties.LifeTime = 1;
 
@@ -164,6 +166,8 @@ namespace Loopie
 		//color
 		particle.SetColorBegin(particleProps.ColorBegin);
 		particle.SetColorEnd(particleProps.ColorEnd);
+		particle.SetEmissiveBegin(particleProps.EmissiveBegin);
+		particle.SetEmissiveEnd(particleProps.EmissiveEnd);
 
 		//size
 		float sizeBegin = particleProps.SizeBegin + RandomFloat(-particleProps.SizeVariation * 0.5f, particleProps.SizeVariation * 0.5f);

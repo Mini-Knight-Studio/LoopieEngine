@@ -1422,6 +1422,8 @@ namespace Loopie {
 		ImGui::DragFloat3("Rotation Speed Variation", &props.RotationSpeedVariation.x, 0.1f, 0.0f, 200.0f, "%.2f");
 		ImGui::ColorEdit4("Color Begin", &props.ColorBegin.x);
 		ImGui::ColorEdit4("Color End", &props.ColorEnd.x);
+		ImGui::DragFloat("Emissive Begin", &props.EmissiveBegin);
+		ImGui::DragFloat("Emissive End", &props.EmissiveEnd);
 		ImGui::DragFloat("Size Begin", &props.SizeBegin, 0.01f, 0.0f, 100.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
 		ImGui::DragFloat("Size End", &props.SizeEnd, 0.01f, 0.0f, 100.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
 		ImGui::DragFloat("Size Variation", &props.SizeVariation, 0.01f, 0.0f, 50.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);

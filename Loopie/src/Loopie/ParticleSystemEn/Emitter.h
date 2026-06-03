@@ -21,6 +21,8 @@ namespace Loopie
 		vec3 PositionVariation = vec3(0.0f);
 		vec4 ColorBegin = vec4(1.0f, 0.0f, 0.0f, 1.0f);
 		vec4 ColorEnd = vec4(0.0f, 0.0f, 1.0f, 1.0f);
+		float EmissiveBegin = 1.0f;
+		float EmissiveEnd = 1.0f;
 		float SizeBegin = 1.0f;
 		float SizeEnd = 0.0f;
 		float SizeVariation = 0.0f;

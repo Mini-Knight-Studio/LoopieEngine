@@ -20,6 +20,8 @@ namespace Loopie
 			float m_sizeEnd;
 			float m_lifetime;
 			float m_lifeRemaining;
+			float m_emissiveBegin;
+			float m_emissiveEnd;
 			bool m_active;
 			vec3 m_localOffset; 
 			vec3 m_emitterPos; 
@@ -66,6 +68,12 @@ namespace Loopie
 
 			float GetSizeEnd() const;
 			void SetSizeEnd(float size);
+
+			float GetEmissiveBegin() const;
+			void SetEmissiveBegin(float emissiveBegin);
+
+			float GetEmissiveEnd() const;
+			void SetEmissiveEnd(float emissiveEnd);
 
 			bool GetActive()const;
 			void SetActive(bool act);
