@@ -50,6 +50,7 @@ namespace Loopie {
 			std::shared_ptr<Entity> Entity;
 			UIJobType Type;
 			vec2 OverlayScale{ 1.0f, 1.0f };
+			float AlphaMultiplier = 1.0f;
 			int CanvasSortingLayer = 0;
 			int CanvasOrderInLayer = 0;
 			int ElementSortingLayer = 0;
@@ -58,14 +59,16 @@ namespace Loopie {
 		};
 
 		static void CollectOverlayUIJobsRecursive(const std::shared_ptr<Entity>& entity, const vec2& overlayScale,
-			int canvasSortingLayer, int canvasOrderInLayer,
+			int canvasSortingLayer, int canvasOrderInLayer, float inheritedAlpha,
 			std::vector<UIJob>& outJobs, uint64_t& inOutTraversal);
 		static void DrawOverlayUIJob(const UIJob& job);
 
 		static void CollectWorldUIJobsRecursive(const std::shared_ptr<Entity>& entity,
-			int canvasSortingLayer, int canvasOrderInLayer,
+			int canvasSortingLayer, int canvasOrderInLayer, float inheritedAlpha,
 			std::vector<UIJob>& outJobs, uint64_t& inOutTraversal);
 		static void DrawWorldUIJob(const UIJob& job);
+
+		static void ApplyAlphaMultiplier(vec4& color, float alphaMultiplier) {color.a *= alphaMultiplier;}
 
 		bool UpdateComponents(DebugGameMode mode);
 		void RenderWorld(Camera* camera);
@@ -76,7 +79,6 @@ namespace Loopie {
 		void SeparateDynamicEntities(const std::unordered_set<Entity*>& entities, std::unordered_set<Entity*>& dynamicEntities);
 
 		void RenderUI();
-		void RenderSceneUIRecursive(const std::shared_ptr<Entity>& entity);
 		void RenderSceneUI(Camera* camera);
 
 		void ProcessOverlayButtonsInput();

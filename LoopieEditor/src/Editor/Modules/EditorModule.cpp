@@ -28,6 +28,7 @@
 #include "Loopie/Components/Transform.h"
 #include "Loopie/Components/RectTransform.h"
 #include "Loopie/Components/Canvas.h"
+#include "Loopie/Components/CanvasGroup.h"
 #include "Loopie/Components/AudioListener.h"
 #include "Loopie/Components/AudioSource.h"
 #include "Loopie/Components/Image.h"
@@ -58,11 +59,15 @@
 namespace Loopie
 {
 	void EditorModule::CollectOverlayUIJobsRecursive(const std::shared_ptr<Entity>& entity, const vec2& overlayScale,
-		int canvasSortingLayer, int canvasOrderInLayer,
+		int canvasSortingLayer, int canvasOrderInLayer, float inheritedAlpha,
 		std::vector<UIJob>& outJobs, uint64_t& inOutTraversal)
 	{
 		if (!entity || !entity->GetIsActive())
 			return;
+
+		float currentAlpha = inheritedAlpha;
+		if (CanvasGroup* canvasGroup = entity->GetComponent<CanvasGroup>(); canvasGroup && canvasGroup->GetIsActive())
+			currentAlpha *= canvasGroup->GetAlpha();
 
 		RectTransform* rt = entity->GetComponent<RectTransform>();
 		if (rt)
@@ -70,6 +75,7 @@ namespace Loopie
 			if (Image* img = entity->GetComponent<Image>(); img && img->GetIsActive())
 			{
 				outJobs.push_back(UIJob{ entity, UIJobType::Image, overlayScale,
+					currentAlpha,
 					canvasSortingLayer, canvasOrderInLayer,
 					img->GetSortingLayer(), img->GetOrderInLayer(),
 					inOutTraversal++ });
@@ -78,6 +84,7 @@ namespace Loopie
 			if (Text* text = entity->GetComponent<Text>(); text && text->GetIsActive())
 			{
 				outJobs.push_back(UIJob{ entity, UIJobType::Text, overlayScale,
+					currentAlpha,
 					canvasSortingLayer, canvasOrderInLayer,
 					text->GetSortingLayer(), text->GetOrderInLayer(),
 					inOutTraversal++ });
@@ -85,7 +92,7 @@ namespace Loopie
 		}
 
 		for (const auto& child : entity->GetChildren())
-			CollectOverlayUIJobsRecursive(child, overlayScale, canvasSortingLayer, canvasOrderInLayer, outJobs, inOutTraversal);
+			CollectOverlayUIJobsRecursive(child, overlayScale, canvasSortingLayer, canvasOrderInLayer, currentAlpha, outJobs, inOutTraversal);
 	}
 
 	void EditorModule::DrawOverlayUIJob(const UIJob& job)
@@ -125,6 +132,8 @@ namespace Loopie
 					button->GetCurrentTexture(texture);
 				}
 
+				ApplyAlphaMultiplier(color, job.AlphaMultiplier);
+
 				UIRenderer::DrawImage(pixelPos, pixelSize, texture, color, img->GetUVRect());
 				break;
 			}
@@ -149,6 +158,8 @@ namespace Loopie
 				if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
 					button->GetCurrentColor(textColor);
 
+				ApplyAlphaMultiplier(textColor, job.AlphaMultiplier);
+
 				UIRenderer::DrawTextContainer(pixelPos, pixelSize, text->GetText(), text->GetFont(), textColor, text->GetScale() * job.OverlayScale.x,
 					text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetWrapMode(),
 					text->GetLineSpacing(), text->GetWordSpacing(), text->GetLetterSpacing(), text->GetVisibleCharacters());
@@ -158,11 +169,15 @@ namespace Loopie
 	}
 
 	void EditorModule::CollectWorldUIJobsRecursive(const std::shared_ptr<Entity>& entity,
-		int canvasSortingLayer, int canvasOrderInLayer,
+		int canvasSortingLayer, int canvasOrderInLayer, float inheritedAlpha,
 		std::vector<UIJob>& outJobs, uint64_t& inOutTraversal)
 	{
 		if (!entity || !entity->GetIsActive())
 			return;
+
+		float currentAlpha = inheritedAlpha;
+		if (CanvasGroup* canvasGroup = entity->GetComponent<CanvasGroup>(); canvasGroup && canvasGroup->GetIsActive())
+			currentAlpha *= canvasGroup->GetAlpha();
 
 		RectTransform* rt = entity->GetComponent<RectTransform>();
 		if (rt)
@@ -170,6 +185,7 @@ namespace Loopie
 			if (Image* img = entity->GetComponent<Image>(); img && img->GetIsActive())
 			{
 				outJobs.push_back(UIJob{ entity, UIJobType::Image, vec2(1.0f),
+					currentAlpha,
 					canvasSortingLayer, canvasOrderInLayer,
 					img->GetSortingLayer(), img->GetOrderInLayer(),
 					inOutTraversal++ });
@@ -178,6 +194,7 @@ namespace Loopie
 			if (Text* text = entity->GetComponent<Text>(); text && text->GetIsActive())
 			{
 				outJobs.push_back(UIJob{ entity, UIJobType::Text, vec2(1.0f),
+					currentAlpha,
 					canvasSortingLayer, canvasOrderInLayer,
 					text->GetSortingLayer(), text->GetOrderInLayer(),
 					inOutTraversal++ });
@@ -185,7 +202,7 @@ namespace Loopie
 		}
 
 		for (const auto& child : entity->GetChildren())
-			CollectWorldUIJobsRecursive(child, canvasSortingLayer, canvasOrderInLayer, outJobs, inOutTraversal);
+			CollectWorldUIJobsRecursive(child, canvasSortingLayer, canvasOrderInLayer, currentAlpha, outJobs, inOutTraversal);
 	}
 
 	void EditorModule::DrawWorldUIJob(const UIJob& job)
@@ -228,6 +245,8 @@ namespace Loopie
 					button->GetCurrentTexture(texture);
 				}
 
+				ApplyAlphaMultiplier(color, job.AlphaMultiplier);
+
 				UIRenderer::DrawImageWorld(model, texture, color, img->GetUVRect());
 				break;
 			}
@@ -245,7 +264,13 @@ namespace Loopie
 
 				const matrix4 model = rt->GetLocalToWorldMatrix() * glm::translate(matrix4(1.0f), vec3(bmin.x, bmin.y, 0.0f));
 
-				UIRenderer::DrawTextWorld(model, vec2(w, h), text->GetText(), text->GetFont(), text->GetColor(), text->GetScale(),
+				vec4 textColor = text->GetColor();
+				if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
+					button->GetCurrentColor(textColor);
+
+				ApplyAlphaMultiplier(textColor, job.AlphaMultiplier);
+
+				UIRenderer::DrawTextWorld(model, vec2(w, h), text->GetText(), text->GetFont(), textColor, text->GetScale(),
 					text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetWrapMode(),
 					text->GetLineSpacing(), text->GetWordSpacing(), text->GetLetterSpacing(), text->GetVisibleCharacters());
 				break;
@@ -817,10 +842,14 @@ namespace Loopie
 	}
 
 
-	void EditorModule::RenderUIRecursive(const std::shared_ptr<Entity>& entity, vec2& scale)
+	void EditorModule::RenderUIRecursive(const std::shared_ptr<Entity>& entity, vec2& scale, float inheritedAlpha)
 	{
 		if (!entity || !entity->GetIsActive())
 			return;
+
+		float currentAlpha = inheritedAlpha;
+		if (CanvasGroup* canvasGroup = entity->GetComponent<CanvasGroup>(); canvasGroup && canvasGroup->GetIsActive())
+			currentAlpha *= canvasGroup->GetAlpha();
 
 		Image* img = entity->GetComponent<Image>();
 		Text* text = entity->GetComponent<Text>();
@@ -847,6 +876,8 @@ namespace Loopie
 				button->GetCurrentTexture(texture);
 			}
 
+			ApplyAlphaMultiplier(color, currentAlpha);
+
 			UIRenderer::DrawImage(pixelPos, pixelSize, texture, color, img->GetUVRect());
 		}
 
@@ -866,13 +897,15 @@ namespace Loopie
 			if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
 				button->GetCurrentColor(textColor);
 
+			ApplyAlphaMultiplier(textColor, currentAlpha);
+
 			UIRenderer::DrawTextContainer(pixelPos, pixelSize, text->GetText(), text->GetFont(), textColor, text->GetScale() * scale.x,
 				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetWrapMode(),
 				text->GetLineSpacing(), text->GetWordSpacing(), text->GetLetterSpacing(), text->GetVisibleCharacters());
 		}
 
 		for (const auto& child : entity->GetChildren())
-			RenderUIRecursive(child, scale);
+			RenderUIRecursive(child, scale, currentAlpha);
 	}
 
 	void EditorModule::RenderUI()
@@ -945,7 +978,7 @@ namespace Loopie
 				continue;
 
 			const vec2 overlayScale(targetPixels.x / canvasUnits.x, targetPixels.y / canvasUnits.y);
-			CollectOverlayUIJobsRecursive(entity, overlayScale, canvas->GetSortingLayer(), canvas->GetOrderInLayer(), jobs, traversal);
+			CollectOverlayUIJobsRecursive(entity, overlayScale, canvas->GetSortingLayer(), canvas->GetOrderInLayer(), 1.0f, jobs, traversal);
 		}
 
 		std::sort(jobs.begin(), jobs.end(), [](const UIJob& a, const UIJob& b)
@@ -968,10 +1001,14 @@ namespace Loopie
 		buffer->Unbind();
 	}
 
-	void EditorModule::RenderSceneUIRecursive(const std::shared_ptr<Entity>& entity)
+	void EditorModule::RenderSceneUIRecursive(const std::shared_ptr<Entity>& entity, float inheritedAlpha)
 	{
 		if (!entity || !entity->GetIsActive())
 			return;
+
+		float currentAlpha = inheritedAlpha;
+		if (CanvasGroup* canvasGroup = entity->GetComponent<CanvasGroup>(); canvasGroup && canvasGroup->GetIsActive())
+			currentAlpha *= canvasGroup->GetAlpha();
 
 		Image* img = entity->GetComponent<Image>();
 		Text* text = entity->GetComponent<Text>();
@@ -999,6 +1036,8 @@ namespace Loopie
 					button->GetCurrentTexture(texture);
 				}
 
+				ApplyAlphaMultiplier(color, currentAlpha);
+
 				UIRenderer::DrawImageWorld(model, texture, color, img->GetUVRect());
 			}
 		}
@@ -1012,13 +1051,19 @@ namespace Loopie
 
 			const matrix4 model = rt->GetLocalToWorldMatrix() * glm::translate(matrix4(1.0f), vec3(bmin.x, bmin.y, 0.0f));
 
-			UIRenderer::DrawTextWorld(model, vec2(w, h), text->GetText(), text->GetFont(), text->GetColor(), text->GetScale(),
+			vec4 textColor = text->GetColor();
+			if (auto button = entity->GetComponent<Button>(); button && button->GetIsActive())
+				button->GetCurrentColor(textColor);
+
+			ApplyAlphaMultiplier(textColor, currentAlpha);
+
+			UIRenderer::DrawTextWorld(model, vec2(w, h), text->GetText(), text->GetFont(), textColor, text->GetScale(),
 				text->GetSizeMode(), text->GetFontSize(), text->GetHorizontalAlignment(), text->GetVerticalAlignment(), text->GetWrapMode(),
 				text->GetLineSpacing(), text->GetWordSpacing(), text->GetLetterSpacing(), text->GetVisibleCharacters());
 		}
 
 		for (const auto& child : entity->GetChildren())
-			RenderSceneUIRecursive(child);
+			RenderSceneUIRecursive(child, currentAlpha);
 	}
 
 	void EditorModule::RenderSceneUI(Camera* camera)
@@ -1060,7 +1105,7 @@ namespace Loopie
 				}
 			}
 
-			CollectWorldUIJobsRecursive(entity, canvas->GetSortingLayer(), canvas->GetOrderInLayer(), jobs, traversal);
+			CollectWorldUIJobsRecursive(entity, canvas->GetSortingLayer(), canvas->GetOrderInLayer(), 1.0f, jobs, traversal);
 		}
 
 		std::sort(jobs.begin(), jobs.end(), [](const UIJob& a, const UIJob& b)

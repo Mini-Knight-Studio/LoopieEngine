@@ -10,6 +10,7 @@
 #include "Loopie/Components/Animator.h"
 #include "Loopie/Components/ScriptClass.h"
 #include "Loopie/Components/Canvas.h"
+#include "Loopie/Components/CanvasGroup.h"
 #include "Loopie/Components/CanvasScaler.h"
 #include "Loopie/Components/Image.h"
 #include "Loopie/Components/SpriteAnimator.h"
@@ -291,6 +292,13 @@ namespace Loopie {
 				auto canvas = clone->AddComponent<Canvas>();
 				canvas->Clone(source, *component);
 				canvas->SetIsActive(component->GetLocalIsActive());
+				continue;
+			}
+			else if (compType == CanvasGroup::GetTypeIDStatic())
+			{
+				auto canvasGroup = clone->AddComponent<CanvasGroup>();
+				canvasGroup->Clone(source, *component);
+				canvasGroup->SetIsActive(component->GetLocalIsActive());
 				continue;
 			}
 			/// Image
@@ -765,6 +773,17 @@ namespace Loopie {
 							canvas->Deserialize(node);
 							canvas->SetUUID(componentUUID.Get());
 							canvas->SetIsActive(componentActiveResult.Result);
+						}
+					}
+					else if (componentNode.Contains("canvas_group"))
+					{
+						JsonNode node = componentNode.Child("canvas_group");
+						auto canvasGroup = entity->AddComponent<CanvasGroup>();
+						if (canvasGroup)
+						{
+							canvasGroup->Deserialize(node);
+							canvasGroup->SetUUID(componentUUID.Get());
+							canvasGroup->SetIsActive(componentActiveResult.Result);
 						}
 					}
 					else if (componentNode.Contains("image"))

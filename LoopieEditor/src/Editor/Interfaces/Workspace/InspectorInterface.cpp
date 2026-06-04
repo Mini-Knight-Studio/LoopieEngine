@@ -17,6 +17,7 @@
 
 #include "Loopie/Components/Animator.h"
 #include "Loopie/Components/Canvas.h"
+#include "Loopie/Components/CanvasGroup.h"
 #include "Loopie/Components/CanvasScaler.h"
 #include "Loopie/Components/Image.h"
 #include "Loopie/Components/Text.h"
@@ -308,6 +309,9 @@ namespace Loopie {
 			}
 			else if (component->GetTypeID() == Canvas::GetTypeIDStatic()) {
 				DrawCanvas(static_cast<Canvas*>(component));
+			}
+			else if (component->GetTypeID() == CanvasGroup::GetTypeIDStatic()) {
+				DrawCanvasGroup(static_cast<CanvasGroup*>(component));
 			}
 			else if (component->GetTypeID() == CanvasScaler::GetTypeIDStatic()) {
 				DrawCanvasScaler(static_cast<CanvasScaler*>(component));
@@ -1739,6 +1743,31 @@ namespace Loopie {
 		ImGui::PopID();
 	}
 
+	void InspectorInterface::DrawCanvasGroup(CanvasGroup* canvasGroup)
+	{
+		if (!canvasGroup)
+			return;
+
+		ImGui::PushID(canvasGroup);
+
+		const bool open = ImGui::CollapsingHeader("Canvas Group");
+		ImGui::SetItemTooltip(canvasGroup->GetUUID().Get().c_str());
+		if (ComponentContextMenu(canvasGroup))
+		{
+			ImGui::PopID();
+			return;
+		}
+
+		if (open)
+		{
+			float alpha = canvasGroup->GetAlpha();
+			if (ImGui::SliderFloat("Alpha", &alpha, 0.0f, 1.0f, "%.3f"))
+				canvasGroup->SetAlpha(alpha);
+		}
+
+		ImGui::PopID();
+	}
+
 	void InspectorInterface::DrawCanvasScaler(CanvasScaler* canvasScaler)
 	{
 		if (!canvasScaler)
@@ -3132,6 +3161,15 @@ namespace Loopie {
 					if (ImGui::Selectable("Canvas"))
 					{
 						entity->AddComponent<Canvas>();
+						forceClose = true;
+					}
+				}
+
+				if (!entity->HasComponent<CanvasGroup>() && filter.PassFilter("Canvas Group"))
+				{
+					if (ImGui::Selectable("Canvas Group"))
+					{
+						entity->AddComponent<CanvasGroup>();
 						forceClose = true;
 					}
 				}
