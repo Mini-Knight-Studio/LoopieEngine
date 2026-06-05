@@ -17,6 +17,7 @@
 #include "Loopie/Components/SpriteAnimator.h"
 #include "Loopie/Components/Button.h"
 #include "Loopie/Components/UIManager.h"
+#include "Loopie/Components/CanvasGroup.h"
 
 #include "Loopie/Resources/AssetRegistry.h"
 #include "Loopie/Resources/ResourceManager.h"
@@ -3250,6 +3251,28 @@ namespace Loopie
 
 #pragma endregion
 
+#pragma region CanvasGroup
+	static float CanvasGroup_GetAlpha(MonoString* entityID, MonoString* componentID) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return 0;
+		CanvasGroup* canvasGroup = Utils::GetComponent<CanvasGroup>(entity, componentID);
+		if (!canvasGroup)
+			return 0;
+		return canvasGroup->GetAlpha();
+	}
+
+	static void CanvasGroup_SetAlpha(MonoString* entityID, MonoString* componentID, float alpha) {
+		std::shared_ptr<Entity> entity = Utils::GetEntity(entityID);
+		if (!entity)
+			return;
+		CanvasGroup* canvasGroup = Utils::GetComponent<CanvasGroup>(entity, componentID);
+		if (!canvasGroup)
+			return;
+		canvasGroup->SetAlpha(alpha);
+	}
+
+#pragma endregion
 
 /////RESOURCED
 
@@ -3438,6 +3461,7 @@ namespace Loopie
 		RegisterComponent<Text>();
 		RegisterComponent<Button>();
 		RegisterComponent<UIManager>();
+		RegisterComponent<CanvasGroup>();
 	}
 
 
@@ -3765,6 +3789,9 @@ namespace Loopie
 		ADD_INTERNAL_CALL(MeshRenderer_SetMaterialVector2);
 		ADD_INTERNAL_CALL(MeshRenderer_SetMaterialVector3);
 		ADD_INTERNAL_CALL(MeshRenderer_SetMaterialVector4);
+
+		ADD_INTERNAL_CALL(CanvasGroup_GetAlpha);
+		ADD_INTERNAL_CALL(CanvasGroup_SetAlpha);
 
 		/////// RESOURCES
 

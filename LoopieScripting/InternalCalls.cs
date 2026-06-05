@@ -834,6 +834,13 @@ namespace Loopie
         internal extern static void MeshRenderer_SetMaterialVector4(string entityID, string componentID, string key, ref Vector4 vec4);
 
         #endregion
+        #region CanvasGroup
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static float CanvasGroup_GetAlpha(string entityID, string componentID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void CanvasGroup_SetAlpha(string entityID, string componentID, float alpha);
+        #endregion
 
         //////////RESOURCE INTERNAL CALLS//////////
         ///
