@@ -52,6 +52,8 @@ namespace Loopie {
 	std::unique_ptr<Shader> Renderer::s_BloomDownsampleShader = nullptr;
 	std::unique_ptr<Shader> Renderer::s_BloomUpsampleShader = nullptr;
 
+	Fog* Renderer::s_ActiveFog = nullptr;
+
 	unsigned int Renderer::s_SceneDepthTextureID = 0;
 	float Renderer::s_NearPlane = 0.3f;
 	float Renderer::s_FarPlane = 200.0f;
@@ -653,7 +655,7 @@ namespace Loopie {
 	void Renderer::FlushTransparentRenderQueue()
 	{
 		glTextureBarrier();
-		glActiveTexture(GL_TEXTURE0 + 12); // 12 = Scene Depth Texture Slot, hard-coded
+		glActiveTexture(GL_TEXTURE0 + DEPTH_SCENE_TEXTURE); 
 		glBindTexture(GL_TEXTURE_2D, s_SceneDepthTextureID);
 
 		EnableBlend();
@@ -806,7 +808,7 @@ namespace Loopie {
 			shader.SetUniformFloat("lp_Time", Time::GetRunTime());
 
 		if (shader.GetUniformLocation("lp_SceneDepth") != -1)
-			shader.SetUniformInt("lp_SceneDepth", 12);
+			shader.SetUniformInt("lp_SceneDepth", DEPTH_SCENE_TEXTURE);
 
 		if (shader.GetUniformLocation("lp_Near") != -1)
 			shader.SetUniformFloat("lp_Near", s_NearPlane);
@@ -1004,7 +1006,8 @@ namespace Loopie {
 	}
 
 	// Passes the hdr texture into an ldr one
-	void Renderer::TonemapPass(unsigned int hdrTextureID, FrameBuffer& ldrTarget, unsigned int bloomTextureID)
+	void Renderer::TonemapPass(unsigned int hdrTextureID, FrameBuffer& ldrTarget, unsigned int bloomTextureID,
+							   unsigned int depthTextureID, const matrix4& projection, const matrix4& view)
 	{
 		ldrTarget.Bind();
 		SetViewport(0, 0, ldrTarget.GetWidth(), ldrTarget.GetHeight());
@@ -1022,6 +1025,23 @@ namespace Loopie {
 
 		s_TonemapShader->SetUniformFloat("lp_Exposure", s_Exposure);
 		s_TonemapShader->SetUniformFloat("lp_BloomStrength", s_BloomStrength); 
+
+		glActiveTexture(GL_TEXTURE0 + DEPTH_SCENE_TEXTURE);
+		glBindTexture(GL_TEXTURE_2D, depthTextureID);
+		s_TonemapShader->SetUniformInt("lp_SceneDepth", DEPTH_SCENE_TEXTURE);
+
+		s_TonemapShader->SetUniformMat4("lp_InvProjection", glm::inverse(projection));
+		s_TonemapShader->SetUniformMat4("lp_InvView", glm::inverse(view));
+
+		bool fogOn = s_ActiveFog && s_ActiveFog->GetIsActive() && s_ActiveFog->GetFogEnabled();
+		s_TonemapShader->SetUniformFloat("lp_FogEnabled", fogOn ? 1.0f : 0.0f);
+		s_TonemapShader->SetUniformVec3("lp_FogColor", fogOn ? s_ActiveFog->GetFogColor() : vec3{0, 0, 0});
+		s_TonemapShader->SetUniformFloat("lp_FogStart", fogOn ? s_ActiveFog->GetFogStart() : 0);
+		s_TonemapShader->SetUniformFloat("lp_FogEnd", fogOn ? s_ActiveFog->GetFogEnd() : 0);
+		s_TonemapShader->SetUniformFloat("lp_FogHeightTop", fogOn ? s_ActiveFog->GetFogHeightTop() : 0.0f);
+		s_TonemapShader->SetUniformFloat("lp_FogHeightBottom", fogOn ? s_ActiveFog->GetFogHeightBottom() : 0.0f);
+		s_TonemapShader->SetUniformFloat("lp_FogHeightStrength", fogOn ? s_ActiveFog->GetFogHeightStrength() : 0.0f);
+
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 
 		EnableDepth();
@@ -1171,5 +1191,33 @@ namespace Loopie {
 	std::vector<std::shared_ptr<FrameBuffer>> Renderer::GetBloomChain()
 	{
 		return s_BloomChain;
+	}
+
+	Fog* Renderer::GetFog()
+	{
+		return s_ActiveFog;
+	}
+
+	void Renderer::RegisterFog(Fog* fog)
+	{
+		if (s_ActiveFog)
+		{
+			Log::Warn("Unable to register new fog, as there's an existing fog already.");
+			return;
+		}
+		s_ActiveFog = fog;
+	}
+
+	void Renderer::UnregisterFog(Fog* fog)
+	{
+		if (!s_ActiveFog)
+		{
+			Log::Warn("Unable to unregister fog, there's none registered.");
+			return;
+		}
+		if (fog == s_ActiveFog)
+		{
+			s_ActiveFog = nullptr;
+		}
 	}
 }

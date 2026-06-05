@@ -197,7 +197,9 @@ namespace Loopie {
 		Renderer::BloomExtractPass(m_hdrBuffer->GetTextureId());
 		Renderer::BloomDownsamplePass();
 		Renderer::BloomUpsamplePass();
-		Renderer::TonemapPass(m_hdrBuffer->GetTextureId(), *m_ldrBuffer, Renderer::GetBloomChain()[0]->GetTextureId());
+		Renderer::TonemapPass(m_hdrBuffer->GetTextureId(), *m_ldrBuffer, Renderer::GetBloomChain()[0]->GetTextureId(), 
+							  m_hdrBuffer->GetDepthId(), m_camera->GetCamera()->GetProjectionMatrix(), 
+							  m_camera->GetCamera()->GetViewMatrix());
 	}
 
 	void SceneInterface::HotKeysBasic(const InputEventManager& inputEvent)

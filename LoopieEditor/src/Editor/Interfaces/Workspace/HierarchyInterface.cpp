@@ -10,6 +10,7 @@
 #include "Loopie/Components/Button.h"
 #include "Loopie/Components/CanvasScaler.h"
 #include "Loopie/Components/Light.h"
+#include "Loopie/Components/Fog.h"
 
 #include "Editor/Interfaces/Workspace/SceneInterface.h"
 #include <imgui.h>
@@ -349,7 +350,7 @@ namespace Loopie {
 
 			ImGui::EndMenu();
 		}
-		if (ImGui::BeginMenu("Light"))
+		if (ImGui::BeginMenu("Light & Fog"))
 		{
 			if (ImGui::MenuItem("Ambient"))
 				SelectEntity(CreateLight(LightType::Ambient, "Ambient Light", entity));
@@ -363,8 +364,12 @@ namespace Loopie {
 			if (ImGui::MenuItem("Spot"))
 				SelectEntity(CreateLight(LightType::Spot, "Spot Light", entity));
 
+			if (ImGui::MenuItem("Fog"))
+				SelectEntity(CreateFog("Scene Fog", entity));
+
 			ImGui::EndMenu();
 		}
+
 	}
 
 	void HierarchyInterface::HotKeysSelectedEntiy(const InputEventManager& inputEvent)
@@ -522,4 +527,14 @@ namespace Loopie {
 
 		return newEntity;
 	}
+
+	std::shared_ptr<Entity> HierarchyInterface::CreateFog(const std::string& name, const std::shared_ptr<Entity> parent)
+	{
+		std::shared_ptr<Entity> newEntity = m_scene->CreateEntity(name, parent);
+		newEntity->AddComponent<Fog>();
+
+		return newEntity;
+	}
+
+
 }

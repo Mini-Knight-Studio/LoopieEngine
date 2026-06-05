@@ -27,6 +27,7 @@ namespace Loopie {
 	class UIManager;
 	class UIElement;
 	class Light;
+	class Fog;
 	class AudioSource;
 	class AudioListener;
 	class SpriteAnimator;
@@ -70,6 +71,7 @@ namespace Loopie {
 		void DrawUIManager(UIManager* uiManager);
 		void DrawNavigation(UIElement* element);
 		void DrawLight(Light* light);
+		void DrawFog(Fog* fog);
 		void DrawBoxCollider(BoxCollider* boxCollider);
 		void DrawAudioSource(AudioSource* source);
 		void DrawAudioListener(AudioListener* listener);

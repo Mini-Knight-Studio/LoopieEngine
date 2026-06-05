@@ -8,6 +8,7 @@
 #include "Loopie/Render/ShadowSettings.h"
 #include "Loopie/Components/Camera.h"
 #include "Loopie/Components/Light.h"
+#include "Loopie/Components/Fog.h"
 
 #include <filesystem>
 #include <unordered_set>
@@ -17,6 +18,8 @@
 #define MAX_BONES_TOTAL 30000 
 
 #define MAX_PARTICLES 100000 
+
+#define DEPTH_SCENE_TEXTURE 12
 
 #define DYNAMIC_SHADOW_TEXTURE_INDEX 8 
 #define STATIC_SHADOW_TEXTURE_INDEX 13
@@ -230,7 +233,8 @@ namespace Loopie {
 
 		// Post-processing
 		static void InitPostProcessing();
-		static void TonemapPass(unsigned int hdrTextureID, FrameBuffer& ldrTarget, unsigned int bloomTextureID);
+		static void TonemapPass(unsigned int hdrTextureID, FrameBuffer& ldrTarget, unsigned int bloomTextureID, 
+								unsigned int depthTextureID, const matrix4& projection, const matrix4& view);
 		static float GetExposure();
 		static void SetBloomThreshold(float bloomThreshold);
 		static float GetBloomThreshold();
@@ -243,6 +247,9 @@ namespace Loopie {
 		static void EnsureBloomChain(unsigned int fullWidth, unsigned int fullHeight);
 		static std::vector<std::shared_ptr<FrameBuffer>> GetBloomChain(); 
 
+		static Fog* GetFog();
+		static void RegisterFog(Fog* fog);
+		static void UnregisterFog(Fog* fog);
 
 	private:
 		static void SetFrameUniforms(Shader& shader);
@@ -295,6 +302,8 @@ namespace Loopie {
 		static float s_BloomStrength;
 		static std::unique_ptr<Shader> s_BloomDownsampleShader;
 		static std::unique_ptr<Shader> s_BloomUpsampleShader;
+
+		static Fog* s_ActiveFog;
 
 		static unsigned int s_SceneDepthTextureID;
 		static float s_NearPlane;
