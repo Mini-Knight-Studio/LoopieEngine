@@ -19,6 +19,8 @@
 
 namespace Loopie
 {
+	std::vector<UIManager*> UIManager::s_RegisteredUIManagers = {};
+
 	struct UIManager::PickCandidate
 	{
 		UUID EntityUUID = UUID::Invalid;
@@ -28,6 +30,47 @@ namespace Loopie
 		int ElementOrderInLayer = 0;
 		uint64_t TraversalIndex = 0;
 	};
+
+	UIManager::~UIManager()
+	{
+		UnregisterUIManager(this);
+	}
+
+	void UIManager::Init()
+	{
+		RegisterUIManager(this);
+	}
+
+	void UIManager::RegisterUIManager(UIManager* manager)
+	{
+		if (!manager)
+			return;
+
+		auto it = std::find(s_RegisteredUIManagers.begin(), s_RegisteredUIManagers.end(), manager);
+		if (it == s_RegisteredUIManagers.end())
+			s_RegisteredUIManagers.push_back(manager);
+	}
+
+	void UIManager::UnregisterUIManager(UIManager* manager)
+	{
+		if (!manager)
+			return;
+
+		auto it = std::find(s_RegisteredUIManagers.begin(), s_RegisteredUIManagers.end(), manager);
+		if (it != s_RegisteredUIManagers.end())
+			s_RegisteredUIManagers.erase(it);
+	}
+
+	UIManager* UIManager::GetActiveUIManager()
+	{
+		for (UIManager* manager : s_RegisteredUIManagers)
+		{
+			if (manager && manager->GetIsActive())
+				return manager;
+		}
+
+		return nullptr;
+	}
 
 	UIElement* UIManager::FindUIElementComponent(const std::shared_ptr<Entity>& entity, bool allowInactive)
 	{
@@ -472,20 +515,23 @@ namespace Loopie
 		std::vector<PickCandidate> candidates;
 		candidates.reserve(32);
 
-		for (const auto& [uuid, entity] : scene.GetAllEntities())
+		for (Canvas* canvas : Canvas::GetRegisteredCanvases())
 		{
-			if (!entity || !entity->GetIsActive())
+			if (!canvas || !canvas->GetIsActive())
 				continue;
 
-			Canvas* canvas = entity->GetComponent<Canvas>();
-			RectTransform* canvasRt = entity->GetComponent<RectTransform>();
-			if (!canvas || !canvasRt || !canvas->GetIsActive())
+			auto owner = canvas->GetOwner();
+			if (!owner || !owner->GetIsActive())
+				continue;
+
+			RectTransform* canvasRt = owner->GetComponent<RectTransform>();
+			if (!canvasRt)
 				continue;
 			if (canvas->GetRenderMode() != CanvasRenderMode::ScreenSpaceOverlay)
 				continue;
 
 			vec2 canvasUnits(canvasRt->GetWidth(), canvasRt->GetHeight());
-			if (auto* scaler = entity->GetComponent<CanvasScaler>(); scaler && scaler->GetIsActive())
+			if (auto* scaler = owner->GetComponent<CanvasScaler>(); scaler && scaler->GetIsActive())
 			{
 				canvasUnits = scaler->ComputeOverlayCanvasSize(targetPixels);
 			}
@@ -505,7 +551,7 @@ namespace Loopie
 			const vec2 mouseCanvas(mouseLocalPx.x / sx, ch - (mouseLocalPx.y / sy));
 
 			uint64_t traversal = 0;
-			CollectOverlayPickCandidatesRecursive(entity, mouseCanvas, canvas->GetSortingLayer(), canvas->GetOrderInLayer(), candidates, traversal);
+			CollectOverlayPickCandidatesRecursive(owner, mouseCanvas, canvas->GetSortingLayer(), canvas->GetOrderInLayer(), candidates, traversal);
 		}
 
 		if (candidates.empty())

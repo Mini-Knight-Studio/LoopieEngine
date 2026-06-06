@@ -5,6 +5,8 @@
 #include "Loopie/Events/IObserver.h"
 #include "Loopie/Math/MathTypes.h"
 
+#include <vector>
+
 namespace Loopie {
 
 	enum class CanvasRenderMode
@@ -26,6 +28,9 @@ namespace Loopie {
 		void RenderGizmo() const override;
 
 		void OnNotify(const TransformNotification& id) override;
+		static void RegisterCanvas(Canvas* canvas);
+		static void UnregisterCanvas(Canvas* canvas);
+		static const std::vector<Canvas*>& GetRegisteredCanvases() { return s_RegisteredCanvases; }
 
 		JsonNode Serialize(JsonNode& parent) const override;
 		void Deserialize(const JsonNode& data) override;
@@ -47,5 +52,7 @@ namespace Loopie {
 
 		CanvasRenderMode m_renderMode = CanvasRenderMode::ScreenSpaceOverlay;
 		mutable ivec2 m_lastOverlayTargetPixels = ivec2(-1, -1);
+
+		static std::vector<Canvas*> s_RegisteredCanvases;
 	};
 }

@@ -6,9 +6,15 @@
 #include "Loopie/Render/Gizmo.h"
 #include "Loopie/Core/Log.h"
 
+#include <algorithm>
+
 namespace Loopie {
+	std::vector<Canvas*> Canvas::s_RegisteredCanvases = {};
+
 	Canvas::~Canvas()
 	{
+		UnregisterCanvas(this);
+
 		auto owner = GetOwner();
 		if (!owner)
 			return;
@@ -25,6 +31,8 @@ namespace Loopie {
 		if (!owner)
 			return;
 
+		RegisterCanvas(this);
+
 		RectTransform* rectTransform = owner->GetComponent<RectTransform>();
 		if (!rectTransform)
 		{
@@ -35,6 +43,26 @@ namespace Loopie {
 		rectTransform->m_transformNotifier.AddObserver(this);
 		SyncOverlayRectSizeIfNeeded();
 		m_cornersDirty = true;
+	}
+
+	void Canvas::RegisterCanvas(Canvas* canvas)
+	{
+		if (!canvas)
+			return;
+
+		auto it = std::find(s_RegisteredCanvases.begin(), s_RegisteredCanvases.end(), canvas);
+		if (it == s_RegisteredCanvases.end())
+			s_RegisteredCanvases.push_back(canvas);
+	}
+
+	void Canvas::UnregisterCanvas(Canvas* canvas)
+	{
+		if (!canvas)
+			return;
+
+		auto it = std::find(s_RegisteredCanvases.begin(), s_RegisteredCanvases.end(), canvas);
+		if (it != s_RegisteredCanvases.end())
+			s_RegisteredCanvases.erase(it);
 	}
 
 	void Canvas::OnNotify(const TransformNotification& id)

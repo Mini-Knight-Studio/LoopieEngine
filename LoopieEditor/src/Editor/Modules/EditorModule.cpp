@@ -943,26 +943,26 @@ namespace Loopie
 		jobs.reserve(256);
 		uint64_t traversal = 0;
 
-		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities())
+		for (Canvas* canvas : Canvas::GetRegisteredCanvases())
 		{
-			if (!entity || !entity->GetIsActive())
+			if (!canvas || !canvas->GetIsActive())
 				continue;
 
-			Canvas* canvas = entity->GetComponent<Canvas>();
-			if (!canvas || !canvas->GetIsActive())
+			auto owner = canvas->GetOwner();
+			if (!owner || !owner->GetIsActive())
 				continue;
 
 			if (canvas->GetRenderMode() != CanvasRenderMode::ScreenSpaceOverlay)
 				continue;
 
-			RectTransform* canvasRt = entity->GetComponent<RectTransform>();
+			RectTransform* canvasRt = owner->GetComponent<RectTransform>();
 			if (!canvasRt)
 				continue;
 
 			const vec2 targetPixels(w, h);
 
 			vec2 canvasUnits(canvasRt->GetWidth(), canvasRt->GetHeight());
-			if (auto* scaler = entity->GetComponent<CanvasScaler>(); scaler && scaler->GetIsActive())
+			if (auto* scaler = owner->GetComponent<CanvasScaler>(); scaler && scaler->GetIsActive())
 			{
 				canvasUnits = scaler->ComputeOverlayCanvasSize(targetPixels);
 			}
@@ -978,7 +978,7 @@ namespace Loopie
 				continue;
 
 			const vec2 overlayScale(targetPixels.x / canvasUnits.x, targetPixels.y / canvasUnits.y);
-			CollectOverlayUIJobsRecursive(entity, overlayScale, canvas->GetSortingLayer(), canvas->GetOrderInLayer(), 1.0f, jobs, traversal);
+			CollectOverlayUIJobsRecursive(owner, overlayScale, canvas->GetSortingLayer(), canvas->GetOrderInLayer(), 1.0f, jobs, traversal);
 		}
 
 		std::sort(jobs.begin(), jobs.end(), [](const UIJob& a, const UIJob& b)
@@ -1081,20 +1081,20 @@ namespace Loopie
 		jobs.reserve(256);
 		uint64_t traversal = 0;
 
-		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities())
+		for (Canvas* canvas : Canvas::GetRegisteredCanvases())
 		{
-			if (!entity || !entity->GetIsActive())
+			if (!canvas || !canvas->GetIsActive())
 				continue;
 
-			Canvas* canvas = entity->GetComponent<Canvas>();
-			if (!canvas || !canvas->GetIsActive())
+			auto owner = canvas->GetOwner();
+			if (!owner || !owner->GetIsActive())
 				continue;
 
 			if (!isSceneView && canvas->GetRenderMode() == CanvasRenderMode::ScreenSpaceOverlay)
 				continue;
 
-			RectTransform* canvasRt = entity->GetComponent<RectTransform>();
-			if (auto* scaler = entity->GetComponent<CanvasScaler>(); scaler && scaler->GetIsActive())
+			RectTransform* canvasRt = owner->GetComponent<RectTransform>();
+			if (auto* scaler = owner->GetComponent<CanvasScaler>(); scaler && scaler->GetIsActive())
 			{
 				if (canvasRt)
 				{
@@ -1105,7 +1105,7 @@ namespace Loopie
 				}
 			}
 
-			CollectWorldUIJobsRecursive(entity, canvas->GetSortingLayer(), canvas->GetOrderInLayer(), 1.0f, jobs, traversal);
+			CollectWorldUIJobsRecursive(owner, canvas->GetSortingLayer(), canvas->GetOrderInLayer(), 1.0f, jobs, traversal);
 		}
 
 		std::sort(jobs.begin(), jobs.end(), [](const UIJob& a, const UIJob& b)
@@ -1148,35 +1148,29 @@ namespace Loopie
 		const vec2 mouseLocalPx = m_game.GetMousePosGameLocal();
 		const vec2 targetPixels(static_cast<float>(gameSize.x), static_cast<float>(gameSize.y));
 
-		UIManager* uiManager = nullptr;
-		for (const auto& [uuid, e] : m_currentScene->GetAllEntities())
-		{
-			if (!e || !e->GetIsActive())
-				continue;
-			uiManager = e->GetComponent<UIManager>();
-			if (uiManager && uiManager->GetIsActive())
-				break;
-			uiManager = nullptr;
-		}
+		UIManager* uiManager = UIManager::GetActiveUIManager();
 
 		const bool justDown = (inputEvent.GetMouseButtonStatus(0) == KeyState::DOWN);
 		bool hitAnyOnPress = false;
 		bool selectionSetOnPress = false;
 
-		for (const auto& [uuid, entity] : m_currentScene->GetAllEntities())
+		for (Canvas* canvas : Canvas::GetRegisteredCanvases())
 		{
-			if (!entity || !entity->GetIsActive())
+			if (!canvas || !canvas->GetIsActive())
 				continue;
 
-			Canvas* canvas = entity->GetComponent<Canvas>();
-			RectTransform* canvasRt = entity->GetComponent<RectTransform>();
-			if (!canvas || !canvasRt || !canvas->GetIsActive())
+			auto owner = canvas->GetOwner();
+			if (!owner || !owner->GetIsActive())
+				continue;
+
+			RectTransform* canvasRt = owner->GetComponent<RectTransform>();
+			if (!canvasRt)
 				continue;
 			if (canvas->GetRenderMode() != CanvasRenderMode::ScreenSpaceOverlay)
 				continue;
 
 			vec2 canvasUnits(canvasRt->GetWidth(), canvasRt->GetHeight());
-			if (auto* scaler = entity->GetComponent<CanvasScaler>(); scaler && scaler->GetIsActive())
+			if (auto* scaler = owner->GetComponent<CanvasScaler>(); scaler && scaler->GetIsActive())
 			{
 				canvasUnits = scaler->ComputeOverlayCanvasSize(targetPixels);
 			}
@@ -1197,7 +1191,7 @@ namespace Loopie
 
 			static bool s_pressedInside = false;
 			static bool s_releasedInside = false;
-			ProcessOverlayButtonsRecursive(entity, mouseCanvas, mouseOverGame, inputEvent, uiManager,
+			ProcessOverlayButtonsRecursive(owner, mouseCanvas, mouseOverGame, inputEvent, uiManager,
 				hitAnyOnPress, selectionSetOnPress,
 				s_pressedInside, s_releasedInside);
 			if (s_releasedInside) {

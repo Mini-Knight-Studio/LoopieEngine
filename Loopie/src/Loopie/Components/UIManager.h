@@ -54,9 +54,9 @@ namespace Loopie
 
 
 		UIManager();
-		~UIManager() override = default;
+		~UIManager() override;
 
-		void Init() override {}
+		void Init() override;
 		void OnUpdate() override;
 		void OnSceneDeserialized() override;
 
@@ -67,6 +67,10 @@ namespace Loopie
 		UUID GetSelectedEntity() const { return m_selectedEntity; }
 		void SetSelectedEntity(const UUID& entityUUID);
 		void ClearSelection();
+
+		static void RegisterUIManager(UIManager* manager);
+		static void UnregisterUIManager(UIManager* manager);
+		static UIManager* GetActiveUIManager();
 
 		bool GetBlockNavigation() const { return m_blockNavigation; }
 		void SetBlockNavigation(bool blocked) { m_blockNavigation = blocked; }
@@ -111,5 +115,7 @@ namespace Loopie
 
 		mutable std::unordered_map<AxisKey, bool, AxisKeyHash> m_axisWasActive;
 		bool m_blockNavigation = false;
+
+		static std::vector<UIManager*> s_RegisteredUIManagers;
 	};
 }
