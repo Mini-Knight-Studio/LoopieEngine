@@ -24,7 +24,8 @@ namespace Loopie {
    		Camera* GetCamera() { return m_camera->GetCamera(); }
 
 		void PrepareFrameBuffer();
-		std::shared_ptr<FrameBuffer> GetFrameBuffer() { return m_buffer; }
+		std::shared_ptr<FrameBuffer> GetFrameBuffer() { return m_hdrBuffer; }
+		void ResolveToLDR();
 
 		void ChargeModel(const std::string& modelPath);
 		void ChargeMaterial(const std::string& materialPath);
@@ -48,7 +49,8 @@ namespace Loopie {
 
 	private:
 
-		std::shared_ptr<FrameBuffer> m_buffer;
+		std::shared_ptr<FrameBuffer> m_hdrBuffer; // high dynamic range buffer -> everything is outputted here
+		std::shared_ptr<FrameBuffer> m_ldrBuffer; // low dynamic range buffer -> hdr scales everything back to normal here and we render this
 		std::shared_ptr<OrbitalCamera> m_camera;
 
 		bool m_usingGuizmo = false;

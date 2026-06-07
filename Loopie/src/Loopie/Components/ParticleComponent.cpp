@@ -97,6 +97,8 @@ namespace Loopie
 
 			pProps.CreateField("sizebegin", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().SizeBegin);
 			pProps.CreateField("sizeend", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().SizeEnd);
+			pProps.CreateField("emissivebegin", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().EmissiveBegin);
+			pProps.CreateField("emissiveend", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().EmissiveEnd);
 			pProps.CreateField("sizevariation", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().SizeVariation);
 			pProps.CreateField("lifetime", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().LifeTime);
 
@@ -145,7 +147,6 @@ namespace Loopie
 			vectorNode.CreateField("g", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().ColorBegin.y);
 			vectorNode.CreateField("b", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().ColorBegin.z);
 			vectorNode.CreateField("a", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().ColorBegin.w);
-
 
 			vectorNode = pProps.CreateObjectField("colorend");
 			vectorNode.CreateField("r", m_partSystem.GetEmitterArray()[i]->GetEmissionProperties().ColorEnd.x);
@@ -218,6 +219,8 @@ namespace Loopie
 
 					props.SizeBegin = pPropsNode.GetValue<float>("sizebegin").Result;
 					props.SizeEnd = pPropsNode.GetValue<float>("sizeend").Result;
+					props.EmissiveBegin = pPropsNode.GetValue<float>("emissivebegin", 1.0f).Result;
+					props.EmissiveEnd = pPropsNode.GetValue<float>("emissiveend", 1.0f).Result;
 					props.SizeVariation = pPropsNode.GetValue<float>("sizevariation").Result;
 					props.LifeTime = pPropsNode.GetValue<float>("lifetime").Result;
 

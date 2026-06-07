@@ -42,6 +42,17 @@ namespace Loopie {
 	Renderer::ShadowSlot Renderer::s_ShadowSlots[MAX_SHADOW_CASTING_LIGHTS] = { nullptr };
 	unsigned short Renderer::s_ShadowCount = 0;
 	std::unique_ptr<Shader> Renderer::s_ShadowMapShader = nullptr;
+	std::unique_ptr<Shader> Renderer::s_TonemapShader = nullptr;
+	GLuint Renderer::s_DummyVAO = 0;
+	float Renderer::s_Exposure = 1.0f;
+	std::vector<std::shared_ptr<FrameBuffer>> Renderer::s_BloomChain = { nullptr };
+	std::unique_ptr<Shader> Renderer::s_BloomExtractShader = nullptr;
+	float Renderer::s_BloomThreshold = 1.0f;
+	float Renderer::s_BloomStrength = 0.04f;
+	std::unique_ptr<Shader> Renderer::s_BloomDownsampleShader = nullptr;
+	std::unique_ptr<Shader> Renderer::s_BloomUpsampleShader = nullptr;
+
+	Fog* Renderer::s_ActiveFog = nullptr;
 
 	unsigned int Renderer::s_SceneDepthTextureID = 0;
 	float Renderer::s_NearPlane = 0.3f;
@@ -78,9 +89,6 @@ namespace Loopie {
 		layout.AddLayoutElement(1, GLVariableType::MATRIX4, 1, "Proj");
 		s_MatricesUniformBuffer = std::make_shared<UniformBuffer>(layout);
 		s_MatricesUniformBuffer->BindToLayout(0);
-
-		// TODO: Pass in shadow settings in the constructor
-		//s_ShadowSettings = std::make_unique<ShadowSettings>(); 
 
 		BufferLayout lightingLayout;
 		lightingLayout.AddLayoutElement(0, GLVariableType::VEC4, 1, "CameraWorldPosLightCount"); // Camera World Position + Light Count
@@ -120,6 +128,7 @@ namespace Loopie {
 
 		s_LightCount = 0;
 		InitShadowMapping();
+		InitPostProcessing();
 	}
 
 	void Renderer::Shutdown() {
@@ -646,7 +655,7 @@ namespace Loopie {
 	void Renderer::FlushTransparentRenderQueue()
 	{
 		glTextureBarrier();
-		glActiveTexture(GL_TEXTURE0 + 12); // 12 = Scene Depth Texture Slot, hard-coded
+		glActiveTexture(GL_TEXTURE0 + DEPTH_SCENE_TEXTURE); 
 		glBindTexture(GL_TEXTURE_2D, s_SceneDepthTextureID);
 
 		EnableBlend();
@@ -799,7 +808,7 @@ namespace Loopie {
 			shader.SetUniformFloat("lp_Time", Time::GetRunTime());
 
 		if (shader.GetUniformLocation("lp_SceneDepth") != -1)
-			shader.SetUniformInt("lp_SceneDepth", 12);
+			shader.SetUniformInt("lp_SceneDepth", DEPTH_SCENE_TEXTURE);
 
 		if (shader.GetUniformLocation("lp_Near") != -1)
 			shader.SetUniformFloat("lp_Near", s_NearPlane);
@@ -964,8 +973,251 @@ namespace Loopie {
 
 		engineConfig.CreateField<int>("shadow_quality", static_cast<int>(s_ShadowSettings.GetShadowQuality()));
 		engineConfig.CreateField<int>("shadow_filter", static_cast<int>(s_ShadowSettings.GetFilter()));
+		engineConfig.CreateField<float>("exposure", static_cast<float>(s_Exposure));
+		engineConfig.CreateField<float>("bloom_threshold", static_cast<float>(s_BloomThreshold));
+		engineConfig.CreateField<float>("bloom_strength", static_cast<float>(s_BloomStrength));
 
 		ProjectConfig::Save(configData);
 	}
 
+	void Renderer::InitPostProcessing()
+	{
+		s_TonemapShader = std::make_unique<Shader>("assets/shaders/Tonemap.shader");
+		if (!s_TonemapShader->GetIsValidShader())
+		{
+			Log::Error("Tonemap shader failed to compile!");
+		}
+		s_BloomExtractShader = std::make_unique<Shader>("assets/shaders/BloomExtract.shader");
+		if (!s_BloomExtractShader->GetIsValidShader())
+		{
+			Log::Error("Bloom Extract shader failed to compile!");
+		}
+		s_BloomDownsampleShader = std::make_unique<Shader>("assets/shaders/BloomDownsample.shader");
+		if (!s_BloomDownsampleShader->GetIsValidShader())
+		{
+			Log::Error("Bloom Downsample shader failed to compile!");
+		}
+		s_BloomUpsampleShader = std::make_unique<Shader>("assets/shaders/BloomUpsample.shader");
+		if (!s_BloomUpsampleShader->GetIsValidShader())
+		{
+			Log::Error("Bloom Upsample shader failed to compile!");
+		}
+		glGenVertexArrays(1, &s_DummyVAO);
+	}
+
+	// Passes the hdr texture into an ldr one
+	void Renderer::TonemapPass(unsigned int hdrTextureID, FrameBuffer& ldrTarget, unsigned int bloomTextureID,
+							   unsigned int depthTextureID, const matrix4& projection, const matrix4& view)
+	{
+		ldrTarget.Bind();
+		SetViewport(0, 0, ldrTarget.GetWidth(), ldrTarget.GetHeight());
+		DisableDepth();
+		s_TonemapShader->Bind();
+		
+		glBindVertexArray(s_DummyVAO);
+		glActiveTexture(GL_TEXTURE0 + TONEMAP_TEXTURE_INDEX);
+		glBindTexture(GL_TEXTURE_2D, hdrTextureID);
+		s_TonemapShader->SetUniformInt("lp_HDRBuffer", TONEMAP_TEXTURE_INDEX);
+		
+		glActiveTexture(GL_TEXTURE0 + BLOOM_TEXTURE_INDEX);
+		glBindTexture(GL_TEXTURE_2D, bloomTextureID);
+		s_TonemapShader->SetUniformInt("lp_BloomBuffer", BLOOM_TEXTURE_INDEX);
+
+		s_TonemapShader->SetUniformFloat("lp_Exposure", s_Exposure);
+		s_TonemapShader->SetUniformFloat("lp_BloomStrength", s_BloomStrength); 
+
+		glActiveTexture(GL_TEXTURE0 + DEPTH_SCENE_TEXTURE);
+		glBindTexture(GL_TEXTURE_2D, depthTextureID);
+		s_TonemapShader->SetUniformInt("lp_SceneDepth", DEPTH_SCENE_TEXTURE);
+
+		s_TonemapShader->SetUniformMat4("lp_InvProjection", glm::inverse(projection));
+		s_TonemapShader->SetUniformMat4("lp_InvView", glm::inverse(view));
+
+		bool fogOn = s_ActiveFog && s_ActiveFog->GetIsActive() && s_ActiveFog->GetFogEnabled();
+		s_TonemapShader->SetUniformFloat("lp_FogEnabled", fogOn ? 1.0f : 0.0f);
+		s_TonemapShader->SetUniformVec3("lp_FogColor", fogOn ? s_ActiveFog->GetFogColor() : vec3{0, 0, 0});
+		s_TonemapShader->SetUniformFloat("lp_FogStart", fogOn ? s_ActiveFog->GetFogStart() : 0);
+		s_TonemapShader->SetUniformFloat("lp_FogEnd", fogOn ? s_ActiveFog->GetFogEnd() : 0);
+		s_TonemapShader->SetUniformFloat("lp_FogHeightTop", fogOn ? s_ActiveFog->GetFogHeightTop() : 0.0f);
+		s_TonemapShader->SetUniformFloat("lp_FogHeightBottom", fogOn ? s_ActiveFog->GetFogHeightBottom() : 0.0f);
+		s_TonemapShader->SetUniformFloat("lp_FogHeightStrength", fogOn ? s_ActiveFog->GetFogHeightStrength() : 0.0f);
+
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+
+		EnableDepth();
+		s_TonemapShader->Unbind();
+		ldrTarget.Unbind();
+		glActiveTexture(GL_TEXTURE0);
+	}
+
+	float Renderer::GetExposure()
+	{
+		return s_Exposure;
+	}
+
+	void Renderer::SetExposure(float exposure)
+	{
+		if (exposure < MIN_EXPOSURE_VALUE)
+		{
+			s_Exposure = MIN_EXPOSURE_VALUE;
+		}
+		else if (exposure > MAX_EXPOSURE_VALUE)
+		{
+			s_Exposure = MAX_EXPOSURE_VALUE;
+		}
+		else
+		{
+			s_Exposure = exposure;
+		}
+	}
+
+	void Renderer::SetBloomThreshold(float bloomThreshold)
+	{
+		s_BloomThreshold = bloomThreshold;
+	}
+
+	float Renderer::GetBloomThreshold()
+	{
+		return s_BloomThreshold;
+	}
+
+	void Renderer::SetBloomStrength(float bloomStrength)
+	{
+		s_BloomStrength = bloomStrength;
+	}
+
+	float Renderer::GetBloomStrength()
+	{
+		return s_BloomStrength;
+	}
+
+	void Renderer::BloomExtractPass(unsigned int hdrTextureID)
+	{
+		EnsureBloomChain(s_CurrentViewport.z, s_CurrentViewport.w);
+		FrameBuffer& dst = *s_BloomChain[0];  
+		dst.Bind();
+		SetViewport(0, 0, dst.GetWidth(), dst.GetHeight());
+		DisableDepth();
+		s_BloomExtractShader->Bind();
+
+		glBindVertexArray(s_DummyVAO);
+		glActiveTexture(GL_TEXTURE0 + BLOOM_TEXTURE_INDEX);   
+		glBindTexture(GL_TEXTURE_2D, hdrTextureID);
+		s_BloomExtractShader->SetUniformInt("lp_hdrBuffer", BLOOM_TEXTURE_INDEX);
+		s_BloomExtractShader->SetUniformFloat("lp_BloomThreshold", s_BloomThreshold);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+
+		EnableDepth();
+		s_BloomExtractShader->Unbind();
+		dst.Unbind();
+		glActiveTexture(GL_TEXTURE0);
+	}
+
+	void Renderer::BloomDownsamplePass()
+	{
+		DisableDepth();
+		s_BloomDownsampleShader->Bind();
+		glBindVertexArray(s_DummyVAO);
+
+		for (size_t i = 1; i < s_BloomChain.size(); ++i)
+		{
+			FrameBuffer& dst = *s_BloomChain[i];
+			FrameBuffer& src = *s_BloomChain[i - 1];
+
+			dst.Bind();
+			SetViewport(0, 0, dst.GetWidth(), dst.GetHeight());
+			glActiveTexture(GL_TEXTURE0 + BLOOM_TEXTURE_INDEX);
+			glBindTexture(GL_TEXTURE_2D, src.GetTextureId());
+			s_BloomDownsampleShader->SetUniformInt("lp_SourceTexture", BLOOM_TEXTURE_INDEX);
+			s_BloomDownsampleShader->SetUniformVec2("lp_SrcTexelSize", glm::vec2({ 1.0f / src.GetWidth(), 1.0f / src.GetHeight() }));
+			glDrawArrays(GL_TRIANGLES, 0, 3);
+			dst.Unbind();
+		}
+
+		EnableDepth();
+		s_BloomDownsampleShader->Unbind();
+		glActiveTexture(GL_TEXTURE0);
+	}
+
+	void Renderer::BloomUpsamplePass()
+	{
+		EnableBlend();
+		BlendFunction(BlendFactorMode::ONE, BlendFactorMode::ONE);
+
+		s_BloomUpsampleShader->Bind();
+		glBindVertexArray(s_DummyVAO);
+
+		for (int i = BLOOM_MIP_COUNT - 1; i > 0; --i)
+		{
+			FrameBuffer& src = *s_BloomChain[i];    
+			FrameBuffer& dst = *s_BloomChain[i - 1];
+
+			dst.Bind();
+			SetViewport(0, 0, dst.GetWidth(), dst.GetHeight());
+
+			glActiveTexture(GL_TEXTURE0 + BLOOM_TEXTURE_INDEX);
+			glBindTexture(GL_TEXTURE_2D, src.GetTextureId());
+			s_BloomUpsampleShader->SetUniformInt("lp_SourceTexture", BLOOM_TEXTURE_INDEX);
+
+			glDrawArrays(GL_TRIANGLES, 0, 3);
+		}
+
+		DisableBlend();
+		s_BloomUpsampleShader->Unbind();
+		glActiveTexture(GL_TEXTURE0);
+	}
+
+	void Renderer::EnsureBloomChain(unsigned int fullWidth, unsigned int fullHeight)
+	{
+		unsigned int newWidth = fullWidth >> 1;
+		unsigned int newHeight = fullHeight >> 1;
+		if (s_BloomChain.size() == BLOOM_MIP_COUNT)
+		{
+			if (s_BloomChain[0]->GetWidth() == newWidth && s_BloomChain[0]->GetHeight() == newHeight)
+			{
+				return;
+			}
+		}
+
+		s_BloomChain.clear();
+		for (int i = 0; i < BLOOM_MIP_COUNT; ++i)
+		{
+			unsigned int w = glm::max((unsigned int)1, fullWidth >> (i + 1));	// using max to ensure the texture doesn't become size 0
+			unsigned int h = glm::max((unsigned int)1, fullHeight >> (i + 1));
+			s_BloomChain.push_back(std::make_shared<FrameBuffer>(w, h, FrameBuffer::FrameBufferFormat::RGBA16F, false));
+		}
+	}
+
+	std::vector<std::shared_ptr<FrameBuffer>> Renderer::GetBloomChain()
+	{
+		return s_BloomChain;
+	}
+
+	Fog* Renderer::GetFog()
+	{
+		return s_ActiveFog;
+	}
+
+	void Renderer::RegisterFog(Fog* fog)
+	{
+		if (s_ActiveFog)
+		{
+			Log::Warn("Unable to register new fog, as there's an existing fog already.");
+			return;
+		}
+		s_ActiveFog = fog;
+	}
+
+	void Renderer::UnregisterFog(Fog* fog)
+	{
+		if (!s_ActiveFog)
+		{
+			Log::Warn("Unable to unregister fog, there's none registered.");
+			return;
+		}
+		if (fog == s_ActiveFog)
+		{
+			s_ActiveFog = nullptr;
+		}
+	}
 }

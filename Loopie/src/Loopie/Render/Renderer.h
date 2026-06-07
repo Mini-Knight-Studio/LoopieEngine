@@ -8,6 +8,7 @@
 #include "Loopie/Render/ShadowSettings.h"
 #include "Loopie/Components/Camera.h"
 #include "Loopie/Components/Light.h"
+#include "Loopie/Components/Fog.h"
 
 #include <filesystem>
 #include <unordered_set>
@@ -18,8 +19,17 @@
 
 #define MAX_PARTICLES 100000 
 
+#define DEPTH_SCENE_TEXTURE 12
+
 #define DYNAMIC_SHADOW_TEXTURE_INDEX 8 
 #define STATIC_SHADOW_TEXTURE_INDEX 13
+#define TONEMAP_TEXTURE_INDEX 17
+
+#define MIN_EXPOSURE_VALUE 0.05f
+#define MAX_EXPOSURE_VALUE 64.0f
+
+#define BLOOM_TEXTURE_INDEX 18
+#define BLOOM_MIP_COUNT 5
 
 namespace Loopie {
 	class Transform;
@@ -221,6 +231,26 @@ namespace Loopie {
 
 		static void SaveRenderSettintgs();
 
+		// Post-processing
+		static void InitPostProcessing();
+		static void TonemapPass(unsigned int hdrTextureID, FrameBuffer& ldrTarget, unsigned int bloomTextureID, 
+								unsigned int depthTextureID, const matrix4& projection, const matrix4& view);
+		static float GetExposure();
+		static void SetBloomThreshold(float bloomThreshold);
+		static float GetBloomThreshold();
+		static void SetBloomStrength(float bloomStrength);
+		static float GetBloomStrength();
+		static void SetExposure(float exposure);
+		static void BloomExtractPass(unsigned int hdrTextureID);
+		static void BloomDownsamplePass();
+		static void BloomUpsamplePass();
+		static void EnsureBloomChain(unsigned int fullWidth, unsigned int fullHeight);
+		static std::vector<std::shared_ptr<FrameBuffer>> GetBloomChain(); 
+
+		static Fog* GetFog();
+		static void RegisterFog(Fog* fog);
+		static void UnregisterFog(Fog* fog);
+
 	private:
 		static void SetFrameUniforms(Shader& shader);
 		static void SetRenderUniforms(std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones = {});
@@ -261,6 +291,19 @@ namespace Loopie {
 		static ShadowSlot s_ShadowSlots[MAX_SHADOW_CASTING_LIGHTS];
 		static unsigned short s_ShadowCount;
 		static std::unique_ptr<Shader> s_ShadowMapShader;
+
+		// Post-processing
+		static std::unique_ptr<Shader> s_TonemapShader;
+		static GLuint s_DummyVAO; // for fullscreen VAO, needs value
+		static float s_Exposure;
+		static std::unique_ptr<Shader> s_BloomExtractShader;
+		static std::vector<std::shared_ptr<FrameBuffer>> s_BloomChain;
+		static float s_BloomThreshold;
+		static float s_BloomStrength;
+		static std::unique_ptr<Shader> s_BloomDownsampleShader;
+		static std::unique_ptr<Shader> s_BloomUpsampleShader;
+
+		static Fog* s_ActiveFog;
 
 		static unsigned int s_SceneDepthTextureID;
 		static float s_NearPlane;

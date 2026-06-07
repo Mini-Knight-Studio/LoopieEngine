@@ -13,7 +13,8 @@
 namespace Loopie {
 
 	GameInterface::GameInterface() {
-		m_buffer = std::make_shared<FrameBuffer>(1, 1);
+		m_hdrBuffer = std::make_shared<FrameBuffer>(1, 1, Loopie::FrameBuffer::FrameBufferFormat::RGBA16F);
+		m_ldrBuffer = std::make_shared<FrameBuffer>(1, 1, Loopie::FrameBuffer::FrameBufferFormat::RGBA8);
 
 		std::vector<std::string> iconsToLoad = {
 			"assets\\icons\\icon_debug.png"
@@ -51,7 +52,7 @@ namespace Loopie {
 				local.x < size.x && local.y < size.y;
 
 			if(GetCamera())
-				ImGui::Image((ImTextureID)m_buffer->GetTextureId(), size, ImVec2(0, 1), ImVec2(1, 0));
+				ImGui::Image((ImTextureID)m_ldrBuffer->GetTextureId(), size, ImVec2(0, 1), ImVec2(1, 0));
 
 			ImGui::SetCursorPos(cursorPos);
 			DrawHelperBar();
@@ -75,42 +76,54 @@ namespace Loopie {
 
 	void GameInterface::StartScene()
 	{
-		m_buffer->Bind();
+		m_hdrBuffer->Bind();
 
 		if (!Camera::GetMainCamera()) {
-			m_buffer->Clear();
+			m_hdrBuffer->Clear();
 			return;
 		}
 
-		ivec2 textureSize = ivec2(m_buffer->GetWidth(), m_buffer->GetHeight());
+		ivec2 textureSize = ivec2(m_hdrBuffer->GetWidth(), m_hdrBuffer->GetHeight());
 		vec4 viewportSize = Camera::GetMainCamera()->GetViewport();
 		Renderer::SetViewport(0, 0, (unsigned int)m_windowSize.x, (unsigned int)m_windowSize.y);
 
 		if (m_windowSize.x != textureSize.x || m_windowSize.y != textureSize.y)
-			m_buffer->Resize(m_windowSize.x, m_windowSize.y);
+		{
+			m_hdrBuffer->Resize(m_windowSize.x, m_windowSize.y);
+			m_ldrBuffer->Resize(m_windowSize.x, m_windowSize.y);
+		}
 		if(m_windowSize.x != viewportSize.z || m_windowSize.y != viewportSize.w)
 			Camera::GetMainCamera()->SetViewport(0, 0, m_windowSize.x, m_windowSize.y);
 
-		m_buffer->Clear();
+		m_hdrBuffer->Clear();
 	}
 
 	void GameInterface::EndScene()
 	{
-		m_buffer->Unbind();
+		m_hdrBuffer->Unbind();
 	}
 
 	void GameInterface::PrepareFrameBuffer()
 	{
 		GetCamera()->SetViewport(0, 0, m_windowSize.x, m_windowSize.y);
 
-		ivec2 textureSize = ivec2(m_buffer->GetWidth(), m_buffer->GetHeight());
+		ivec2 textureSize = ivec2(m_hdrBuffer->GetWidth(), m_hdrBuffer->GetHeight());
 		if (m_windowSize.x != textureSize.x || m_windowSize.y != textureSize.y) 
 		{
-			m_buffer->Resize(m_windowSize.x, m_windowSize.y);
+			m_hdrBuffer->Resize(m_windowSize.x, m_windowSize.y);
+			m_ldrBuffer->Resize(m_windowSize.x, m_windowSize.y);
 		}
-		m_buffer->Bind();
-		m_buffer->Clear();
-		m_buffer->Unbind();
+	}
+
+	void GameInterface::ResolveToLDR()
+	{
+		Camera* cam = GetCamera();
+		Renderer::BloomExtractPass(m_hdrBuffer->GetTextureId());
+		Renderer::BloomDownsamplePass();
+		Renderer::BloomUpsamplePass();
+		Renderer::TonemapPass(m_hdrBuffer->GetTextureId(), *m_ldrBuffer, Renderer::GetBloomChain()[0]->GetTextureId(),
+							  m_hdrBuffer->GetDepthId(), cam ? cam->GetProjectionMatrix() : matrix4(1.0f),
+							  cam ? cam->GetViewMatrix() : matrix4(1.0f));
 	}
 
 	void GameInterface::DrawHelperBar()

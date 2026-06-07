@@ -5,7 +5,9 @@ namespace Loopie
 	class FrameBuffer
 	{
 	public:
-		FrameBuffer(unsigned int width, unsigned int height);
+		enum class FrameBufferFormat { RGBA8, RGBA16F };
+		
+		FrameBuffer(unsigned int width, unsigned int height, FrameBufferFormat internalFormat = FrameBufferFormat::RGBA16F, bool withDepth = true);
 		~FrameBuffer();
 
 		void Bind() const;
@@ -28,5 +30,7 @@ namespace Loopie
 		unsigned int m_depthTextureID = 0;
 		unsigned int m_width = 0;
 		unsigned int m_height = 0;
+		unsigned int m_internalFormat = 0;
+		bool m_withDepth = true;
 	};
 }

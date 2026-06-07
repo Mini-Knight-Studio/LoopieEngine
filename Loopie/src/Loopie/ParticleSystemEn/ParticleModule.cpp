@@ -16,6 +16,8 @@ namespace Loopie
 		m_colorEnd = vec4(1, 1, 1, 1);
 		m_sizeBegin = 1;
 		m_sizeEnd = 1;
+		m_emissiveBegin = 1.0f;
+		m_emissiveEnd = 1.0f;
 		m_lifetime = 1;
 		m_lifeRemaining = 0;
 		m_active = false;
@@ -65,6 +67,8 @@ namespace Loopie
 		if (life <= 0) { life = 0; }
 
 		vec4 color = mix(m_colorEnd, m_colorBegin, life);
+		float emissive = mix(m_emissiveEnd, m_emissiveBegin, life);
+		color.x *= emissive; color.y *= emissive; color.z *= emissive;
 		float size = mix(m_sizeEnd, m_sizeBegin, life);
 
 		// transform 
@@ -163,6 +167,25 @@ namespace Loopie
 	void ParticleModule::SetSizeEnd(float size)
 	{
 		m_sizeEnd = size;
+	}
+
+	float ParticleModule::GetEmissiveBegin() const
+	{
+		return m_emissiveBegin;
+	}
+	void ParticleModule::SetEmissiveBegin(float emissiveBegin)
+	{
+		m_emissiveBegin = emissiveBegin;
+	}
+
+	float ParticleModule::GetEmissiveEnd() const
+	{
+		return m_emissiveEnd;
+	}
+
+	void ParticleModule::SetEmissiveEnd(float emissiveEnd)
+	{
+		m_emissiveEnd = emissiveEnd;
 	}
 
 	float ParticleModule::GetLifetime() const

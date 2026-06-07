@@ -25,6 +25,7 @@
 #include "Loopie/Components/UIManager.h"
 #include "Loopie/Components/BoxCollider.h"
 #include "Loopie/Components/Light.h"
+#include "Loopie/Components/Fog.h"
 #include "Loopie/Scripting/ScriptingManager.h"
 #include "Loopie/Importers/TextureImporter.h"
 #include "Loopie/Importers/FontImporter.h"
@@ -339,6 +340,9 @@ namespace Loopie {
 			}
 			else if (component->GetTypeID() == Light::GetTypeIDStatic()) {
 				DrawLight(static_cast<Light*>(component));
+			}
+			else if (component->GetTypeID() == Fog::GetTypeIDStatic()) {
+				DrawFog(static_cast<Fog*>(component));
 			}
 			else if (component->GetTypeID() == SpriteAnimator::GetTypeIDStatic()) {
 				DrawSpriteAnimator(static_cast<SpriteAnimator*>(component));
@@ -1426,6 +1430,8 @@ namespace Loopie {
 		ImGui::DragFloat3("Rotation Speed Variation", &props.RotationSpeedVariation.x, 0.1f, 0.0f, 200.0f, "%.2f");
 		ImGui::ColorEdit4("Color Begin", &props.ColorBegin.x);
 		ImGui::ColorEdit4("Color End", &props.ColorEnd.x);
+		ImGui::DragFloat("Emissive Begin", &props.EmissiveBegin);
+		ImGui::DragFloat("Emissive End", &props.EmissiveEnd);
 		ImGui::DragFloat("Size Begin", &props.SizeBegin, 0.01f, 0.0f, 100.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
 		ImGui::DragFloat("Size End", &props.SizeEnd, 0.01f, 0.0f, 100.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
 		ImGui::DragFloat("Size Variation", &props.SizeVariation, 0.01f, 0.0f, 50.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
@@ -2545,6 +2551,75 @@ namespace Loopie {
 					light->SetInnerConeAngle(cone.x);
 					light->SetOuterConeAngle(cone.y);
 				}
+			}
+		}
+
+		ImGui::PopID();
+	}
+
+	void InspectorInterface::DrawFog(Fog* fog)
+	{
+		ImGui::PushID(fog);
+
+		bool active = fog->GetLocalIsActive();
+		if (ImGui::Checkbox("##comp_active", &active))
+		{
+			fog->SetIsActive(active);
+		}
+		ImGui::SameLine();
+
+		const char* label = "Fog";
+		bool open = ImGui::CollapsingHeader(label, ImGuiTreeNodeFlags_DefaultOpen);
+		bool modified = false;
+		ImGui::SetItemTooltip(fog->GetUUID().Get().c_str());
+		ComponentContextMenu(fog, false);
+
+		static bool uniformScale = false;
+
+		if (open)
+		{
+			vec3 color = fog->GetFogColor();
+			float start = fog->GetFogStart();
+			float end = fog->GetFogEnd();
+			bool enabled = fog->GetFogEnabled();
+			float heightTop = fog->GetFogHeightTop();
+			float heightBottom = fog->GetFogHeightBottom();
+			float heightStrength = fog->GetFogHeightStrength();
+
+
+			if (ImGui::ColorEdit3("Color", &color.x))
+			{
+				fog->SetFogColor(color);
+			}
+
+			if (ImGui::DragFloat("Start", &start, 1.0f))
+			{
+				fog->SetFogStart(start);
+			}
+
+			if (ImGui::DragFloat("End", &end, 1.0f))
+			{
+				fog->SetFogEnd(end);
+			}
+
+			if (ImGui::Checkbox("Enabled", &enabled))
+			{
+				fog->SetFogEnabled(enabled);
+			}
+
+			if (ImGui::DragFloat("Height Top", &heightTop, 1.0f))
+			{
+				fog->SetFogHeightTop(heightTop);
+			}
+
+			if (ImGui::DragFloat("Height Bottom", &heightBottom, 1.0f))
+			{
+				fog->SetFogHeightBottom(heightBottom);
+			}
+
+			if (ImGui::DragFloat("Height Strength", &heightStrength, 0.1f))
+			{
+				fog->SetFogHeightStrength(heightStrength);
 			}
 		}
 

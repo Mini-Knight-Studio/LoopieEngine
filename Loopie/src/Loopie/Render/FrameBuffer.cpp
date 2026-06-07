@@ -5,11 +5,27 @@
 
 namespace Loopie
 {
-	FrameBuffer::FrameBuffer(unsigned int width, unsigned int height)
+	FrameBuffer::FrameBuffer(unsigned int width, unsigned int height, FrameBufferFormat internalFormat, bool withDepth)
 	{
+		m_withDepth = withDepth;
 		glGenFramebuffers(1, &m_rendererID);
 		glGenTextures(1, &m_textureBufferID);	
-		glGenTextures(1, &m_depthTextureID);
+		if (m_withDepth)
+		{
+			glGenTextures(1, &m_depthTextureID);
+		}
+
+		switch (internalFormat)
+		{
+		default:
+		case FrameBufferFormat::RGBA16F:
+			m_internalFormat = GL_RGBA16F;
+			break;
+		case FrameBufferFormat::RGBA8:
+			m_internalFormat = GL_RGBA8;
+			break;
+		}
+
 		Resize(width, height);
 
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -25,7 +41,10 @@ namespace Loopie
 	{
 		glDeleteFramebuffers(1, &m_rendererID);
 		glDeleteTextures(1, &m_textureBufferID);
-		glDeleteTextures(1, &m_depthTextureID);
+		if (m_withDepth)
+		{
+			glDeleteTextures(1, &m_depthTextureID);
+		}
 	}
 
 	void FrameBuffer::Bind() const
@@ -46,18 +65,25 @@ namespace Loopie
 	void FrameBuffer::Resize(unsigned int width, unsigned int height)
 	{
 		Bind();
+		
+		unsigned int type = (m_internalFormat == GL_RGBA16F ? GL_FLOAT : GL_UNSIGNED_BYTE);
 
 		glBindTexture(GL_TEXTURE_2D, m_textureBufferID);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+		glTexImage2D(GL_TEXTURE_2D, 0, m_internalFormat, width, height, 0, GL_RGBA, type, nullptr);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // For bloom (screen wraps and bleeds otherwise)
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_textureBufferID, 0);
 
-		glBindTexture(GL_TEXTURE_2D, m_depthTextureID);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_depthTextureID, 0);
+		if (m_withDepth)
+		{
+			glBindTexture(GL_TEXTURE_2D, m_depthTextureID);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_depthTextureID, 0);
+		}
 	
 		m_width = width;
 		m_height = height;

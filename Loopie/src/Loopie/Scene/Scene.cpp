@@ -31,6 +31,7 @@
 #include "Loopie/Components/Button.h"
 #include "Loopie/Components/UIManager.h"
 #include "Loopie/Components/Light.h"
+#include "Loopie/Components/Fog.h"
 
 #include <unordered_set>
 
@@ -373,6 +374,14 @@ namespace Loopie {
 				light->SetIsActive(component->GetLocalIsActive());
 				continue;
 			}
+			// Fog
+			else if (compType == Fog::GetTypeIDStatic())
+			{
+				auto fog = clone->AddComponent<Fog>();
+				fog->Clone(source, *component);
+				fog->SetIsActive(component->GetLocalIsActive());
+				continue;
+				}
 			// CanvasScaler
 			else if (compType == CanvasScaler::GetTypeIDStatic())
 			{
@@ -874,6 +883,17 @@ namespace Loopie {
 							light->SetIsActive(componentActiveResult.Result);
 						}
 					}
+					else if (componentNode.Contains("fog"))
+					{
+						JsonNode node = componentNode.Child("fog");
+						auto fog = entity->AddComponent<Fog>();
+						if (fog)
+						{
+							fog->Deserialize(node);
+							fog->SetUUID(componentUUID.Get());
+							fog->SetIsActive(componentActiveResult.Result);
+						}
+						}
 					else if (componentNode.Contains("canvas_scaler"))
 					{
 						JsonNode node = componentNode.Child("canvas_scaler");

@@ -309,6 +309,7 @@ namespace Loopie
 
 		glm::ivec2 windowSize = Application::GetInstance().GetWindow().GetSize();
 		m_mainFrameBuffer = std::make_shared<FrameBuffer>(windowSize.x, windowSize.y);
+		m_ldrFrameBuffer = std::make_shared<FrameBuffer>(windowSize.x, windowSize.y, FrameBuffer::FrameBufferFormat::RGBA8);
 
 		mode = DebugGameMode::START;
 
@@ -360,6 +361,7 @@ namespace Loopie
 				if (buffer->GetWidth() != windowSize.x || buffer->GetHeight() != windowSize.y)
 				{
 					buffer->Resize(windowSize.x, windowSize.y);
+					m_ldrFrameBuffer->Resize(windowSize.x, windowSize.y);
 				}
 			}
 
@@ -390,11 +392,6 @@ namespace Loopie
 			Renderer::EndScene();
 			RenderParticles(cam);
 
-			if (mainCamera)
-			{
-				RenderUI();
-			}
-
 			if (buffer)
 			{
 				buffer->Unbind();
@@ -402,18 +399,21 @@ namespace Loopie
 
 			if (mainCamera && buffer)
 			{
+				Renderer::BloomExtractPass(buffer->GetTextureId());
+				Renderer::BloomDownsamplePass();
+				Renderer::BloomUpsamplePass();
+				Renderer::TonemapPass(buffer->GetTextureId(), *m_ldrFrameBuffer, Renderer::GetBloomChain()[0]->GetTextureId(),
+									  buffer->GetDepthId(), cam->GetProjectionMatrix(), cam->GetViewMatrix());
+
+				m_ldrFrameBuffer->Bind();
+				RenderUI();
+				m_ldrFrameBuffer->Unbind();
+
 				glm::ivec2 windowSize = app.GetWindow().GetSize();
-
-				glBindFramebuffer(GL_READ_FRAMEBUFFER, buffer->GetRendererId());
+				glBindFramebuffer(GL_READ_FRAMEBUFFER, m_ldrFrameBuffer->GetRendererId());
 				glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-
-				glBlitFramebuffer(
-					0, 0, buffer->GetWidth(), buffer->GetHeight(),
-					0, 0, windowSize.x, windowSize.y,
-					GL_COLOR_BUFFER_BIT,
-					GL_NEAREST
-				);
-
+				glBlitFramebuffer(0, 0, m_ldrFrameBuffer->GetWidth(), m_ldrFrameBuffer->GetHeight(),
+								  0, 0, windowSize.x, windowSize.y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 				glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 			}
 		}
