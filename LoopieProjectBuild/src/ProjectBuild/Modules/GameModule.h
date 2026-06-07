@@ -89,6 +89,7 @@ namespace Loopie {
 		Scene* m_currentScene = nullptr;
 
 		std::shared_ptr<Loopie::FrameBuffer> m_mainFrameBuffer;
+		std::shared_ptr<Loopie::FrameBuffer> m_ldrFrameBuffer;
 
 		DebugGameMode mode;
 	};

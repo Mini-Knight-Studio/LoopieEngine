@@ -392,7 +392,7 @@ namespace Loopie
 				glBindFramebuffer(GL_READ_FRAMEBUFFER, m_ldrFrameBuffer->GetRendererId());
 				glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 				glBlitFramebuffer(0, 0, m_ldrFrameBuffer->GetWidth(), m_ldrFrameBuffer->GetHeight(),
-					0, 0, windowSize.x, windowSize.y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+								  0, 0, windowSize.x, windowSize.y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 				glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 			}
 		}
