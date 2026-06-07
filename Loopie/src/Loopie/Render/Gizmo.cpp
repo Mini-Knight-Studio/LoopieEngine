@@ -38,16 +38,19 @@ namespace Loopie {
 		delete[] s_Data.LineBufferModel;
 	}
 
-	void Gizmo::BeginGizmo()
+	void Gizmo::BeginGizmo(bool use)
 	{
 		s_Data.LineRender.ShaderProg->Bind();
 
 		StartBatch();
 
-		Gizmo::DrawLine({ 0.0f, 0.0f, 0.0f }, { 0.0f,s_Data.GridHalfSize * s_Data.GridSpacing, 0.0f }, Color::GREEN);
-		Gizmo::DrawLine({ 0.0f, 0.0f, 0.0f }, { s_Data.GridHalfSize * s_Data.GridSpacing, 0.0f, 0.0f }, Color::RED);
-		Gizmo::DrawLine({ 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f,  s_Data.GridHalfSize * s_Data.GridSpacing }, Color::BLUE);
-		DrawGrid();
+		if (use) {
+			Gizmo::DrawLine({ 0.0f, 0.0f, 0.0f }, { 0.0f,s_Data.GridHalfSize * s_Data.GridSpacing, 0.0f }, Color::GREEN);
+			Gizmo::DrawLine({ 0.0f, 0.0f, 0.0f }, { s_Data.GridHalfSize * s_Data.GridSpacing, 0.0f, 0.0f }, Color::RED);
+			Gizmo::DrawLine({ 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f,  s_Data.GridHalfSize * s_Data.GridSpacing }, Color::BLUE);
+			DrawGrid();
+		}
+		
 	}
 
 	void Gizmo::EndGizmo()

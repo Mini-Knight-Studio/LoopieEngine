@@ -601,15 +601,17 @@ namespace Loopie {
 		s_BoneBufferOffset = 0;
 
 		s_FrameUpdatedShaders.clear();
-
-		if (s_UseGizmos)
-			Gizmo::BeginGizmo();
+		Gizmo::BeginGizmo(s_UseGizmos);	
 	}
 
 	void Renderer::EndScene()
 	{
-		FlushRenderQueue();
+		FlushRenderQueue();	
+	}
 
+	void Renderer::FlushGizmos()
+	{
+		EnableDepth();
 		Gizmo::EndGizmo();
 	}
 

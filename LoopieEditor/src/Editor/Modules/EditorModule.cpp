@@ -478,17 +478,30 @@ namespace Loopie
 					
 					hdrBuffer->Unbind();
 				}
-			}
-		}
 
-		{
-			if (m_scene.IsVisible())
-			{
-				m_scene.ResolveToLDR();
-			}
-			if (m_game.IsVisible())
-			{
-				m_game.ResolveToLDR();
+				std::shared_ptr<FrameBuffer> ldrBuffer = nullptr;
+
+				if (cam == m_scene.GetCamera() && m_scene.IsVisible())
+				{
+					m_scene.ResolveToLDR();
+					ldrBuffer = m_scene.GetLDRFrameBuffer();
+				}
+				else if (cam == m_game.GetCamera() && m_game.IsVisible())
+				{
+					m_game.ResolveToLDR();
+					ldrBuffer = m_game.GetLDRFrameBuffer();
+				}
+
+				if (ldrBuffer)
+				{
+					glBindFramebuffer(GL_READ_FRAMEBUFFER, hdrBuffer->GetRendererId());
+					glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ldrBuffer->GetRendererId());
+					glBlitFramebuffer(0, 0, hdrBuffer->GetWidth(), hdrBuffer->GetHeight(),0, 0, ldrBuffer->GetWidth(), ldrBuffer->GetHeight(),GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+					ldrBuffer->Bind();
+					Renderer::SetViewport(0, 0, ldrBuffer->GetWidth(), ldrBuffer->GetHeight());
+					Renderer::FlushGizmos();
+					ldrBuffer->Unbind();
+				}
 			}
 		}
 

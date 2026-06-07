@@ -25,6 +25,7 @@ namespace Loopie {
 
 		void PrepareFrameBuffer();
 		std::shared_ptr<FrameBuffer> GetFrameBuffer() { return m_hdrBuffer; }
+		std::shared_ptr<FrameBuffer> GetLDRFrameBuffer() { return m_ldrBuffer; }
 		void ResolveToLDR();
 
 		void ChargeModel(const std::string& modelPath);

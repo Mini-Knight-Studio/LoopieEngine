@@ -37,7 +37,7 @@ namespace Loopie {
 
 	private:
 
-		static void BeginGizmo();
+		static void BeginGizmo(bool use);
 		static void EndGizmo();
 
 		static void Flush();

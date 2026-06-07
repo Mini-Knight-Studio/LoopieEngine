@@ -192,6 +192,7 @@ namespace Loopie {
 
 		static void BeginScene(const matrix4& viewMatrix, const matrix4& projectionMatrix, bool gizmo = true);
 		static void EndScene();
+		static void FlushGizmos();
 
 		static void AddRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones = {});
 		static void FlushRenderItem(std::shared_ptr<VertexArray> vao, std::shared_ptr<Material> material, const Transform* transform, const std::vector<matrix4>& bones = {});
