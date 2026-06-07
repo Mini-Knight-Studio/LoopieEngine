@@ -565,6 +565,11 @@ namespace Loopie
 				y -= lineAdvance;
 				lineStart = true;
 				lastWasSpace = true;
+				currentLine++;
+                if (currentLine < lineWidths.size())
+                {
+                    lineOffsetX = (textW - lineWidths[currentLine]) * ax;
+                }
 				continue;
 			}
 
@@ -807,6 +812,11 @@ namespace Loopie
 				y -= lineAdvance;
 				lineStart = true;
 				lastWasSpace = true;
+				currentLine++;
+                if (currentLine < lineWidths.size())
+                {
+                    lineOffsetX = (textW - lineWidths[currentLine]) * ax;
+                }
 				continue;
 			}
 
@@ -833,7 +843,7 @@ namespace Loopie
 				continue;
 			}
 
-			const float xpos = (x + (float)g->bearing.x * fontScale) * fitScale + ox;
+			const float xpos = (x + (float)g->bearing.x * fontScale + lineOffsetX) * fitScale + ox;
 			const float ypos = (y - ((float)g->size.y - (float)g->bearing.y) * fontScale) * fitScale + oy;
 
 			const float w = (float)g->size.x * fontScale * fitScale;
