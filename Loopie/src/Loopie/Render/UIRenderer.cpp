@@ -513,7 +513,20 @@ namespace Loopie
 				lineCount++;
 		}
 
-		const float textH = std::max(1.0f, maxY - minY);
+		float fontAscent = ((float)font->GetLineHeight()) * fontScale * 0.75f;
+		float fontDescent = ((float)font->GetLineHeight()) * fontScale * 0.25f;
+
+		if (const FontGlyph* gH = font->GetGlyph((int)'H')) {
+			fontAscent = (float)gH->bearing.y * fontScale;
+		}
+		if (const FontGlyph* gg = font->GetGlyph((int)'g')) {
+			fontDescent = ((float)gg->size.y - (float)gg->bearing.y) * fontScale;
+		}
+
+		const float stableMaxY = fontAscent;
+		const float stableMinY = -(lineCount - 1) * lineAdvance - fontDescent;
+
+		const float textH = std::max(1.0f, stableMaxY - stableMinY);
 
 		float fitScale = 1.0f;
 		if (sizeMode == TextSizeMode::AutoSize)
@@ -542,7 +555,7 @@ namespace Loopie
 		const float alignOffsetY = ay * (sizePixels.y - contentH);
 
 		const float ox = (-minX * fitScale) + alignOffsetX;
-		const float oy = (-minY * fitScale) + alignOffsetY;
+		const float oy = (-stableMinY * fitScale) + alignOffsetY;
 
 		x = 0.0f;
 		y = 0.0f;
