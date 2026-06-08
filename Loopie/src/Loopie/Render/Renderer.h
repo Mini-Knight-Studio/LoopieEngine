@@ -13,7 +13,7 @@
 #include <filesystem>
 #include <unordered_set>
 
-#define MAX_LIGHTS 16 // Can be increased if necessary. Watch out that performance though!
+#define MAX_LIGHTS 32 // Can be increased if necessary. Watch out that performance though!
 #define MAX_SHADOW_CASTING_LIGHTS 4 // Can be increased if necessary. Watch out that performance though!
 #define MAX_BONES_TOTAL 30000 
 
