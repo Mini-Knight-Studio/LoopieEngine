@@ -80,29 +80,64 @@ layout (std140, binding = 1) uniform Lighting
     Light lp_lights[16];
 };
 
-uniform sampler2D u_LavaMapA;
+uniform sampler2D u_LavaMapA; // The two scrolling normal maps that drive the molten surface ripple and specular
 uniform sampler2D u_LavaMapB;
-uniform sampler2D u_Emissive;
+uniform sampler2D u_Emissive; // The glow texture (the bright cracks)
 
-uniform vec2 u_TilingA= vec2(1);
-uniform vec2 u_TilingB= vec2(1);
-uniform vec2 u_TilingEmissive = vec2(1);
+// Foam
+uniform sampler2D lp_SceneDepth; 
+uniform vec4 u_FoamColor = vec4(1.0, 0.85, 0.6, 1.0);
+uniform float u_FoamDistortionStrength = 0.18; // Amplitude of the per-fragment edge ripple. Small = clean shoreline, Large = jagged / inconsistent
+uniform float u_FoamFadeDistance = 0.82; // How far from the shore the foam band extends
+uniform float u_FoamFalloff = 0.89; // How sharply foam fades across the band. High = thin hard edge, low = soft wide gradient
+uniform vec2 u_FoamScroll = vec2(0.22, 0.2); // Speed and direction the noise field drifts. AKA "how fast does it move"
+uniform float u_FoamNoiseScale = 1.5; // Spatial frequency of the froth pattern. High = fine small cells, low = large blobs
+uniform float u_FoamBreathSpeed = 2.2; // Rate of the global intensity pulse over time
+uniform float u_FoamMin = 0.5; // Min foam opacity at shoreline
+uniform float u_FoamMax = 0.900; // Max foam opacity at shoreline
+uniform float u_FoamPhaseScale = 0.03; // How much the breath phase varies across space. 0 = whole rim pulses in unison, high = traveling wave along the shore
 
-uniform vec2 directionA = vec2(0.05, 0.1);
-uniform vec2 directionB = vec2(-0.08, 0.06);
+uniform vec2 u_TilingA= vec2(1); // UV repeat count per map. Higher = smaller, denser pattern
+uniform vec2 u_TilingB= vec2(1); // UV repeat count per map. Higher = smaller, denser pattern
+uniform vec2 u_TilingEmissive = vec2(1); // UV repeat count per map. Higher = smaller, denser pattern
 
-uniform float speedA = 0.05;
-uniform float speedB = 0.12;
+uniform vec2 directionA = vec2(0.05, 0.1); //  Scroll direction of each normal map.
+uniform vec2 directionB = vec2(-0.08, 0.06); //  Scroll direction of each normal map.
 
-uniform float u_Roughness = 32.0; // highlight, smaller value = broader spotlight (feels more shiny)
+uniform float speedA = 0.05; // Scroll speed of each normal map
+uniform float speedB = 0.12; // Scroll speed of each normal map
 
-uniform vec4 u_Color = vec4(1.0);
-uniform vec3 u_Specular = vec3(0.5);
+uniform float u_Shininess = 32.0; // Highlight, smaller value = broader spotlight (feels more shiny)
+
+uniform vec4 u_Color = vec4(1.0); // Base surface color, multiplied into the lit (non-glowing) lava
+uniform vec3 u_Specular = vec3(0.5); // Global UV scale applied to everything
 
 uniform float u_EmissiveIntensity = 0.5;
 
 uniform float lp_Time;
 
+vec3 ReconstructWorldPos(vec2 uv, float depth) 
+{
+    vec4 ndc = vec4(uv * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+    vec4 world = inverse(lp_Projection * lp_View) * ndc;
+    return world.xyz / world.w;   
+}
+
+float hash(vec2 p) 
+{
+    p = fract(p * vec2(123.34, 456.21));
+    p += dot(p, p + 45.32);
+    return fract(p.x * p.y);
+}
+
+float valueNoise(vec2 p) 
+{
+    vec2 i = floor(p), f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    float a = hash(i), b = hash(i + vec2(1,0));
+    float c = hash(i + vec2(0,1)), d = hash(i + vec2(1,1));
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
 
 void main()
 {
@@ -117,6 +152,28 @@ void main()
 
     vec3 blendedNormal = normalize(vec3(normalA + normalB) * 0.5);
     vec3 viewDir = normalize(lp_CameraWorldPosLightCount.xyz - v_WorldPos);
+
+    // Foam
+    vec2 screenUV = gl_FragCoord.xy / textureSize(lp_SceneDepth, 0);
+    float sceneDepthRaw = texture(lp_SceneDepth, screenUV).r;
+
+    vec3 belowPos = ReconstructWorldPos(screenUV, sceneDepthRaw);   
+    vec3 surfNormal = normalize(v_TBNMatrix[2]);                    
+    float submerged = dot(v_WorldPos - belowPos, surfNormal);       
+
+    vec2 uv1 = v_TexCoord * u_FoamNoiseScale       + u_FoamScroll        * lp_Time;
+    vec2 uv2 = v_TexCoord * u_FoamNoiseScale * 2.1 - u_FoamScroll.yx * 1.6 * lp_Time + 17.0;
+    float fbm    = valueNoise(uv1) * 0.6 + valueNoise(uv2) * 0.4;
+    float wobble = (fbm - 0.5) * 2.0 * u_FoamDistortionStrength; 
+
+    float band = pow(1.0 - clamp((submerged + wobble) / u_FoamFadeDistance, 0.0, 1.0), u_FoamFalloff);
+
+    float phase = dot(v_WorldPos.xz, vec2(u_FoamPhaseScale));
+    float breath = sin(lp_Time * u_FoamBreathSpeed + phase) * 0.6 + sin(lp_Time * u_FoamBreathSpeed * 1.93 + phase) * 0.4;
+    float breath01 = breath * 0.5 + 0.5;
+
+    float intensity  = mix(u_FoamMin, u_FoamMax, breath01);
+    float foamAmount = band * intensity;
 
     vec3 totalDiffuse = vec3(0.0);
     vec3 totalSpecular = vec3(0.0);
@@ -137,7 +194,7 @@ void main()
 
             // Specular
             vec3 reflectDir = reflect(-lightDir, blendedNormal);  
-            float spec = pow(max(dot(viewDir, reflectDir), 0.0), u_Roughness);
+            float spec = pow(max(dot(viewDir, reflectDir), 0.0), u_Shininess);
             vec3 specular = u_Specular * spec * lp_lights[i].l_ColorIntensity.xyz * lp_lights[i].l_ColorIntensity.w;  
 
             totalDiffuse += diffuse;
@@ -159,7 +216,7 @@ void main()
 
             // Specular
             vec3 reflectDir = reflect(-lightDir, blendedNormal);  
-            float spec = pow(max(dot(viewDir, reflectDir), 0.0), u_Roughness);
+            float spec = pow(max(dot(viewDir, reflectDir), 0.0), u_Shininess);
             vec3 specular = u_Specular * spec * lp_lights[i].l_ColorIntensity.xyz * lp_lights[i].l_ColorIntensity.w;  
 
             float angle = dot(lp_lights[i].l_DirectionInnerCone.xyz, -lightDir);
@@ -187,7 +244,7 @@ void main()
 
             // Specular
             vec3 reflectDir = reflect(-lightDir, blendedNormal);  
-            float spec = pow(max(dot(viewDir, reflectDir), 0.0), u_Roughness);
+            float spec = pow(max(dot(viewDir, reflectDir), 0.0), u_Shininess);
             vec3 specular = u_Specular * spec * lp_lights[i].l_ColorIntensity.xyz * lp_lights[i].l_ColorIntensity.w;  
 
             totalDiffuse += diffuse * attenuation;
@@ -199,5 +256,6 @@ void main()
     vec3 result = totalDiffuse * u_Color.xyz + totalSpecular;
     float emissiveMask = clamp(length(texEmissive.rgb), 0.0, 1.0);
     result = mix(result, texEmissive.rgb * u_EmissiveIntensity * pulse, emissiveMask);
+    result = mix(result, u_FoamColor.rgb, foamAmount);
     FragColor = vec4(result, 1.0);
 }
