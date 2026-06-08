@@ -190,7 +190,7 @@ namespace Loopie
 		frameIndex = std::clamp(frameIndex, 0, totalFrames - 1);
 
 		const int col = frameIndex % cols;
-		const int row = frameIndex / cols;
+		const int row = rows - 1 - (frameIndex / cols);
 
 		const float tileW = 1.0f / (float)cols;
 		const float tileH = 1.0f / (float)rows;
