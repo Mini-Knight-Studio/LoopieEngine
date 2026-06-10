@@ -220,6 +220,14 @@ namespace Loopie {
 		return nullptr;
 	}
 
+	void Animator::SetLooping(bool loop)
+	{
+		if (IsInTransition())
+			m_nextClipLooping = loop;
+		else
+			m_looping = loop;
+	}
+
 	void Animator::Play(const std::string& clipName, float transitionTime)
 	{
 		if (!m_targetRenderer)
@@ -251,10 +259,12 @@ namespace Loopie {
 						m_currentClip = m_nextClip;
 						m_currentTime = m_nextTime;
 						m_currentClipIndex = m_nextClipIndex;
+						m_looping = m_nextClipLooping;
 					}
 
 					m_nextClip = &clip;
 					m_nextClipIndex = index;
+					m_nextClipLooping = m_looping;
 
 					m_transitionDuration = std::max(transitionTime, 0.0001f);
 					m_transitionTime = 0;
@@ -396,7 +406,6 @@ namespace Loopie {
 
 	void Animator::OnUpdate()
 	{
-
 		LP_FUNC();
 
 		bool frameSwitch = Application::GetInstance().GetWindow().GetFrameSwitch();
@@ -408,15 +417,37 @@ namespace Loopie {
 
 		m_frameSwitch = frameSwitch;
 
-		if (m_inTransition) {
+		if (m_inTransition)
+		{
 			m_nextTime += m_playbackSpeed * dt;
-			if (m_transitionTime >= m_transitionDuration) {
+
+			if (m_nextClip)
+			{
+				float nextDuration = m_nextClip->Duration;
+
+				if (m_nextClipLooping)
+					m_nextTime = fmod(m_nextTime, nextDuration);
+				else
+					m_nextTime = glm::min(m_nextTime, nextDuration);
+			}
+
+			m_transitionTime += m_playbackSpeed * dt;
+
+			if (m_transitionTime >= m_transitionDuration)
+			{
 				m_currentClip = m_nextClip;
 				m_currentClipIndex = m_nextClipIndex;
+				m_currentTime = m_nextTime;
+
+				m_looping = m_nextClipLooping;
+
+				m_nextClip = nullptr;
+				m_nextClipIndex = -1;
+				m_nextTime = 0.0f;
+
 				m_inTransition = false;
 				m_clipCacheDirty = true;
 			}
-			m_transitionTime += m_playbackSpeed * dt;
 		}
 
 		if (m_currentClip && m_isPlaying)
@@ -425,15 +456,15 @@ namespace Loopie {
 
 			float clipDuration = m_currentClip->Duration;
 
-			if (m_looping) {
+			if (m_looping)
+			{
 				m_currentTime = fmod(m_currentTime, clipDuration);
 			}
-			else {
+			else
+			{
 				m_currentTime = glm::min(m_currentTime, clipDuration);
 			}
 		}
-
-		
 
 		CalculateBoneTransform();
 	}

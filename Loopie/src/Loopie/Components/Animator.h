@@ -64,7 +64,7 @@ namespace Loopie {
 		bool IsLooping() const { return m_looping; }
 		bool IsPlaying() const { return m_isPlaying; }
 		bool IsInTransition() const { return m_inTransition; }
-		void SetLooping(bool loop) { m_looping = loop; }
+		void SetLooping(bool loop);
 		float GetPlaybackSpeed() const { return m_playbackSpeed; }
 		void SetPlaybackSpeed(float speed) { m_playbackSpeed = speed; }
 		float GetCurrentTime() const { return m_currentTime; }
@@ -130,6 +130,7 @@ namespace Loopie {
 		bool m_inTransition = false;
 		const AnimationClip* m_nextClip = nullptr;
 		int m_nextClipIndex = -1;
+		bool m_nextClipLooping = false;
 		float m_transitionDuration=0;
 		float m_transitionTime=0;
 		float m_nextTime = 0;
